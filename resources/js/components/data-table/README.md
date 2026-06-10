@@ -1,0 +1,687 @@
+# DataTable
+
+Componente generico para listar recursos Laravel paginados em React, usando TanStack Table para estado da tabela e TanStack Query para buscar dados da API.
+
+Ele assume que a API retorna o formato Laravel Resource paginado:
+
+```ts
+{
+    data: T[]
+    links: {
+        first: string | null
+        last: string | null
+        prev: string | null
+        next: string | null
+    }
+    meta: {
+        current_page: number
+        from: number | null
+        last_page: number
+        per_page: number
+        to: number | null
+        total: number
+    }
+}
+```
+
+## Uso Basico
+
+```tsx
+import type { ColumnDef } from '@tanstack/react-table'
+import { DataTable } from '@/components/data-table'
+
+const columns: ColumnDef<User>[] = [
+    {
+        id: 'name',
+        accessorKey: 'name',
+        header: 'Nome',
+        meta: { label: 'Nome' },
+    },
+    {
+        id: 'email',
+        accessorKey: 'email',
+        header: 'Email',
+        meta: { label: 'Email' },
+    },
+]
+
+<DataTable<User>
+    queryKey="users"
+    endpoint="/api/v1/users"
+    mode="infinite-scroll"
+    columns={columns}
+    keyExtractor={(user) => user.uuid}
+/>
+```
+
+## Props Principais
+
+```ts
+interface DataTableProps<TData> {
+    queryKey: string
+    endpoint: string
+    mode?: 'paginated' | 'infinite-scroll'
+    columns: ColumnDef<TData>[]
+    keyExtractor: (row: TData) => string | number
+    features?: {
+        search?: boolean
+        filters?: boolean
+        columnVisibility?: boolean
+        refresh?: boolean
+        selection?: boolean
+    }
+    filters?: DataTableFilterConfig[]
+    quickFilters?: DataTableQuickFilter[]
+    dateFilterColumns?: DataTableDateColumn[]
+    actions?: DataTableAction<TData>[]
+    actionsConfig?: DataTableActionsConfig
+    bulkActions?: DataTableBulkAction<TData>[]
+    bulkAggregates?: DataTableBulkAggregate<TData>[]
+    bulkActionsConfig?: DataTableBulkActionsConfig
+    infiniteScrollConfig?: {
+        height?: string
+        fitViewport?: boolean
+        viewportBottomOffset?: number
+        minHeight?: number
+        loadMoreThreshold?: string
+    }
+    appearance?: {
+        size?: 'sm' | 'md'
+        gridLines?: 'none' | 'horizontal' | 'vertical' | 'both'
+        rowStyle?: 'plain' | 'striped' | 'soft-striped'
+    }
+    size?: 'sm' | 'md'
+    gridLines?: 'none' | 'horizontal' | 'vertical' | 'both'
+    rowStyle?: 'plain' | 'striped' | 'soft-striped'
+    initialPerPage?: number
+    searchPlaceholder?: string
+    emptyMessage?: string
+}
+```
+
+## Estilos de Tabela
+
+A aparencia pode ser configurada pelo objeto `appearance` ou pelas props diretas `size`, `gridLines` e `rowStyle`. As props diretas vencem o valor dentro de `appearance`.
+
+Defaults:
+
+```tsx
+<DataTable size="md" gridLines="both" rowStyle="plain" />
+```
+
+### Sizes
+
+- `sm`: linhas mais compactas para telas com muitos dados.
+- `md`: tamanho padrao, com mais respiro para leitura.
+
+### Grid Lines
+
+- `both`: horizontal e vertical (default).
+- `horizontal`: apenas linhas entre linhas.
+- `vertical`: apenas separadores entre colunas.
+- `none`: sem bordas internas.
+
+### Row Style
+
+- `plain`: sem alternancia (default).
+- `striped`: alternancia com fundo mais forte.
+- `soft-striped`: alternancia sutil, boa para tabelas densas.
+
+### Combinacoes
+
+```tsx
+// Backoffice denso
+<DataTable appearance={{ size: 'sm', gridLines: 'both', rowStyle: 'plain' }} ... />
+
+// Lista leve com scroll
+<DataTable appearance={{ size: 'md', gridLines: 'none', rowStyle: 'soft-striped' }} ... />
+```
+
+## Colunas
+
+Sempre defina `id` explicitamente nas colunas. Isso evita ambiguidade entre `accessorKey` e o ID interno do TanStack Table, especialmente para visibilidade de colunas, ordenacao e resize.
+
+```tsx
+const columns: ColumnDef<User>[] = [
+    {
+        id: 'created_at',
+        accessorKey: 'created_at',
+        header: 'Criado em',
+        size: 180,
+        cell: ({ row }) => formatDate(row.original.created_at),
+        meta: {
+            label: 'Criado em',
+            type: 'date',
+        },
+    },
+]
+```
+
+Use `meta.label` para o nome exibido no menu de colunas.
+
+Use `meta.initialVisibility = false` para iniciar uma coluna oculta.
+
+```tsx
+{
+    id: 'updated_at',
+    accessorKey: 'updated_at',
+    header: 'Atualizado em',
+    meta: {
+        label: 'Atualizado em',
+        initialVisibility: false,
+    },
+}
+```
+
+## Features
+
+```tsx
+features={{
+    search: true,
+    filters: true,
+    columnVisibility: true,
+    refresh: true,
+    selection: false,
+}}
+```
+
+- `search`: habilita busca global compacta.
+- `filters`: habilita popup de filtros avancados.
+- `columnVisibility`: habilita controle de colunas no menu `Opcoes`.
+- `refresh`: habilita refresh no menu `Opcoes`.
+- `selection`: adiciona coluna de selecao com checkbox. Necessario para usar `bulkActions`.
+
+## Busca Global
+
+A busca global envia `search` para a API. No backend, `PaginationRequest` usa `searchTerm()` e o trait `Searchable` aplica busca nas colunas configuradas no model.
+
+O input inicia compacto como icone. Ele expande no hover/focus e permanece aberto enquanto houver texto.
+
+## Filtros Avancados
+
+Filtros avancados aparecem no popup `Filtros`.
+
+```tsx
+const filters: DataTableFilterConfig[] = [
+    {
+        id: 'name',
+        label: 'Nome',
+        type: 'text',
+        operator: 'contains',
+        placeholder: 'Buscar por nome',
+    },
+    {
+        id: 'email',
+        label: 'Email',
+        type: 'text',
+        operator: 'contains',
+        placeholder: 'Buscar por email',
+    },
+]
+```
+
+Tipos suportados:
+
+- `text`
+- `select`
+- `multi-select`
+- `boolean`
+- `date`
+- `date-range`
+- `number`
+- `number-range`
+- `async-select` reservado para evolucao
+
+Operadores suportados no backend:
+
+- `eq`
+- `contains`
+- `starts_with`
+- `in`
+- `between`
+- `gte`
+- `lte`
+- `null`
+- `not_null`
+
+## Quick Filters
+
+Use quick filters para filtros frequentes que devem ficar direto na toolbar, ao lado da busca.
+
+```tsx
+const quickFilters: DataTableQuickFilter[] = [
+    {
+        id: 'status',
+        label: 'Status',
+        placeholder: 'Todos os status',
+        icon: User,
+        options: [
+            { value: 'active', label: 'Ativo', color: '#22c55e' },
+            { value: 'inactive', label: 'Inativo', color: '#ef4444' },
+            { value: 'pending', label: 'Pendente', color: '#f59e0b' },
+        ],
+        multiple: true,
+        clearable: true,
+        operator: 'in',
+    },
+]
+```
+
+Para boolean/null filters:
+
+```tsx
+const quickFilters: DataTableQuickFilter[] = [
+    {
+        id: 'email_verified_at',
+        label: 'Verificacao',
+        placeholder: 'Verificacao',
+        options: [
+            { label: 'Verificados', value: true, color: '#22c55e' },
+            { label: 'Nao verificados', value: false, color: '#ef4444' },
+        ],
+    },
+]
+```
+
+No serializer atual, `boolean true` vira `not_null` e `boolean false` vira `null`.
+
+## Filtro de Datas no Header
+
+Use `dateFilterColumns` para exibir uma secao de datas no topo do popup de filtros.
+
+```tsx
+const dateFilterColumns: DataTableDateColumn[] = [
+    { value: 'created_at', label: 'Data de Criacao' },
+    { value: 'updated_at', label: 'Ultima Atualizacao' },
+]
+
+<DataTable
+    dateFilterColumns={dateFilterColumns}
+/>
+```
+
+A UI permite:
+
+- escolher a coluna de data;
+- usar presets como Hoje, Ontem, Esta Semana, Este Mes;
+- preencher intervalo customizado;
+- limpar o filtro de data.
+
+O filtro enviado para API usa `between`:
+
+```txt
+filter[created_at][operator]=between
+filter[created_at][value][from]=2026-05-01 00:00:00
+filter[created_at][value][to]=2026-05-31 23:59:59
+```
+
+## Actions
+
+Por padrao, as actions aparecem no menu de tres pontos.
+
+```tsx
+const actions: DataTableAction<User>[] = [
+    {
+        label: 'View',
+        icon: <Eye className="size-4" />,
+        href: (user) => show.url(user.uuid),
+    },
+]
+```
+
+Para botoes inline:
+
+```tsx
+<DataTable
+    actions={actions}
+    actionsConfig={{
+        display: 'inline',
+        label: 'Acoes',
+        buttonSize: 'sm',
+    }}
+/>
+```
+
+### Actions So Com Icone
+
+Controle por action, nao apenas global:
+
+```tsx
+const actions: DataTableAction<User>[] = [
+    {
+        label: 'View',
+        icon: <Eye className="size-4" />,
+        href: (user) => show.url(user.uuid),
+        showLabel: false,
+        tooltip: 'Visualizar',
+    },
+    {
+        label: 'Edit',
+        icon: <Edit className="size-4" />,
+        href: (user) => edit.url(user.uuid),
+        showLabel: true,
+    },
+]
+```
+
+Regras:
+
+- `action.showLabel` decide por botao.
+- `actionsConfig.showLabels` e apenas o default global.
+- `action.tooltip` pode ser `true`, `false` ou uma string.
+- se `showLabel: false`, tooltip aparece por padrao, exceto se `tooltip: false`.
+
+## Selecao e Bulk Actions
+
+Ative `features.selection` e defina `bulkActions` para habilitar selecao multipla com barra de acoes em massa.
+
+A barra aparece automaticamente no rodape da tela (fixed, bottom-center) quando ha linhas selecionadas. Ela some com transicao CSS quando a selecao e limpa — sem re-mount, sem reflow.
+
+### Bulk Actions
+
+```tsx
+import type { DataTableBulkAction } from '@/components/data-table'
+
+const bulkActions: DataTableBulkAction<User>[] = [
+    {
+        id: 'bulk-delete',
+        label: 'Excluir',
+        icon: <Trash2 className="size-4" />,
+        variant: 'destructive',
+        onClick: (rows, clearSelection) => {
+            // rows: TData[] dos selecionados que ja foram carregados
+            // clearSelection(): limpa selecao e localStorage
+            handleBulkDelete(rows, clearSelection)
+        },
+    },
+    {
+        id: 'bulk-verify',
+        label: 'Marcar verificado',
+        icon: <ShieldCheck className="size-4" />,
+        disabled: (rows) => rows.every((u) => u.email_verified_at !== null),
+        onClick: (_rows, clearSelection) => {
+            // chamar endpoint e entao:
+            clearSelection()
+        },
+    },
+]
+
+<DataTable
+    features={{ selection: true }}
+    bulkActions={bulkActions}
+    ...
+/>
+```
+
+`variant` segue os mesmos valores de `DataTableAction`: `default`, `outline`, `secondary`, `ghost`, `link`, `destructive`.
+
+`disabled` e chamado com as linhas selecionadas disponiveis no cache. Retorne `true` para desabilitar o botao.
+
+### Bulk Aggregates
+
+Use `bulkAggregates` para exibir valores calculados sobre as linhas selecionadas diretamente na barra. Util para somar valores, contar subconjuntos, etc.
+
+```tsx
+import type { DataTableBulkAggregate } from '@/components/data-table'
+
+const bulkAggregates: DataTableBulkAggregate<Order>[] = [
+    {
+        id: 'total',
+        label: 'Total',
+        fn: (rows) => rows.reduce((sum, o) => sum + o.amount, 0),
+        format: (value) => `R$ ${Number(value).toFixed(2)}`,
+    },
+    {
+        id: 'verified-count',
+        label: 'Verificados',
+        fn: (rows) => rows.filter((u) => u.email_verified_at !== null).length,
+        format: (value) => String(value),
+    },
+]
+
+<DataTable
+    bulkAggregates={bulkAggregates}
+    ...
+/>
+```
+
+`fn` recebe as linhas selecionadas e retorna `string | number`.
+`format` e opcional — transforma o valor bruto para exibicao.
+
+### Persistencia da Selecao
+
+A selecao e persistida automaticamente no `localStorage` com a chave `datatable-selection:{queryKey}`.
+
+Comportamento:
+
+- **Filtros e busca**: selecionar 4 linhas, aplicar filtro e selecionar mais 1 resulta em 5 selecionados. As linhas fora da query atual permanecem selecionadas pelo ID; seus dados ficam no cache interno enquanto os checkboxes da query atual refletem o estado correto.
+- **Infinite scroll**: ao carregar mais paginas, as selecoes das paginas anteriores sao mantidas. Os dados de todas as paginas ficam acumulados em `query.rows`.
+- **Recarregamento de pagina**: os IDs selecionados sao restaurados do `localStorage`. Os checkboxes ficam marcados assim que as linhas correspondentes carregarem.
+- **Limpar selecao**: o X na barra ou `clearSelection()` dentro de um handler remove tudo do estado e do `localStorage`.
+
+> **Nota**: `onClick` recebe apenas as linhas cujos dados estao no cache (linhas que foram visiveis enquanto selecionadas). Se o usuario selecionar por restauracao do localStorage antes de rolar ate a linha, o dado nao estara disponivel ate a linha ser carregada.
+
+## Infinite Scroll
+
+```tsx
+<DataTable
+    mode="infinite-scroll"
+    infiniteScrollConfig={{
+        height: '60vh',
+        loadMoreThreshold: '200px',
+    }}
+/>
+```
+
+No infinite scroll, a tabela usa `useInfiniteQuery` e carrega a proxima pagina quando o sentinel entra na area visivel.
+
+### Altura Responsiva
+
+Use `fitViewport` para a tabela calcular automaticamente o espaco disponivel na tela. Assim o scroll fica dentro da tabela e a pagina evita criar um segundo scroll vertical.
+
+```tsx
+<DataTable
+    mode="infinite-scroll"
+    infiniteScrollConfig={{
+        fitViewport: true,
+        viewportBottomOffset: 96,
+        minHeight: 320,
+        loadMoreThreshold: '150px',
+    }}
+/>
+```
+
+- `fitViewport`: calcula a altura pelo viewport atual.
+- `viewportBottomOffset`: reserva espaco para resumo, rodape e respiro inferior.
+- `minHeight`: impede que a tabela fique pequena demais em telas baixas.
+- `height`: continua disponivel para alturas fixas como `60vh`.
+
+O rodape mostra:
+
+```txt
+30 carregados de 120 registros
+```
+
+## Paginacao
+
+```tsx
+<DataTable mode="paginated" />
+```
+
+No modo paginado, a tabela envia:
+
+```txt
+page
+per_page
+search
+sort
+direction
+filter[...]
+```
+
+O rodape mostra:
+
+```txt
+Mostrando 1 a 15 de 120 registros
+```
+
+## Backend Esperado
+
+O model precisa usar `Searchable` e definir colunas permitidas:
+
+```php
+protected array $searchable = ['name', 'email'];
+
+protected array $filterable = [
+    'uuid',
+    'name',
+    'email',
+    'created_at',
+    'updated_at',
+    'email_verified_at',
+];
+
+protected array $sortable = [
+    'id',
+    'uuid',
+    'name',
+    'email',
+    'created_at',
+    'updated_at',
+];
+```
+
+O controller de API deve retornar resource paginado:
+
+```php
+public function index(PaginationRequest $request): AnonymousResourceCollection
+{
+    return ApiDisplay::for(User::class)->paginate($request);
+}
+```
+
+## Boas Praticas
+
+- Defina `id` em todas as colunas.
+- Use `keyExtractor` com identificador estavel, como UUID.
+- Mantenha `queryKey` unico por recurso.
+- Use quick filters para filtros usados com frequencia.
+- Use filtros avancados para filtros menos frequentes ou com mais configuracao.
+- Use `dateFilterColumns` para filtros de periodo comuns.
+- Use `meta.label` nas colunas para nomes humanos no menu de colunas.
+- Prefira Wayfinder para actions que navegam para rotas Laravel.
+- Garanta que `filter.id` bate com uma coluna permitida em `$filterable`.
+- Garanta que `accessorKey`/`id` de sort bate com uma coluna permitida em `$sortable`.
+
+### Performance
+
+Defina `columns`, `filters`, `quickFilters`, `dateFilterColumns`, `bulkAggregates` e qualquer array estatico **fora do componente**. Eles nao dependem de estado ou props e nao precisam ser recriados a cada render.
+
+```tsx
+// Fora do componente — criado uma unica vez
+const columns: ColumnDef<User>[] = [ ... ]
+const filters: DataTableFilterConfig[] = [ ... ]
+const bulkAggregates: DataTableBulkAggregate<User>[] = [ ... ]
+
+export default function Index() {
+    // Dentro do componente — apenas o que depende de estado/props ou JSX
+    const actions = useMemo<DataTableAction<User>[]>(() => [ ... ], [])
+    const bulkActions = useMemo<DataTableBulkAction<User>[]>(() => [ ... ], [])
+}
+```
+
+Use `useMemo` apenas quando o array contiver JSX inline (como `<Icon />`) ou referenciar callbacks locais. Para arrays de configuracao pura, `const` fora do componente e suficiente.
+
+Use `useCallback` para handlers de delete/bulk que sao passados como `onClick` e referenciam `queryClient` ou outros valores estaveis.
+
+Use `useRef` para armazenar referencias a funcoes (como `clearSelection`) em vez de `useState`, para evitar re-renders desnecessarios.
+
+## O Que Nao Fazer
+
+- Nao use colunas sem `id`.
+- Nao envie filtros que o backend nao permite em `$filterable`.
+- Nao coloque filtros frequentes escondidos apenas no popup.
+- Nao coloque filtros raros como quick filters.
+- Nao use hardcoded URLs em actions quando existe Wayfinder.
+- Nao coloque logica pesada dentro de `cell` se puder formatar antes ou criar helper.
+- Nao confie no frontend para seguranca de filtros; o backend deve continuar limitando colunas.
+- Nao misture `quickFilters` e `filters` com o mesmo `id`, a menos que eles representem exatamente o mesmo estado.
+- Nao use `showLabels: false` global se apenas uma action deve esconder label; use `action.showLabel`.
+- Nao armazene funcoes de callback (como `clearSelection`) em `useState`; use `useRef`.
+- Nao use `useMemo([], [])` para arrays de configuracao pura sem JSX; defina fora do componente.
+
+## Exemplo Completo
+
+```tsx
+import type { ColumnDef } from '@tanstack/react-table'
+import { Trash2, ShieldCheck, Eye, Edit } from 'lucide-react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { DataTable } from '@/components/data-table'
+import type {
+    DataTableAction,
+    DataTableBulkAction,
+    DataTableBulkAggregate,
+    DataTableFilterConfig,
+    DataTableQuickFilter,
+    DataTableDateColumn,
+} from '@/components/data-table'
+
+// Estaticos fora do componente
+const columns: ColumnDef<User>[] = [ ... ]
+const filters: DataTableFilterConfig[] = [ ... ]
+const quickFilters: DataTableQuickFilter[] = [ ... ]
+const dateFilterColumns: DataTableDateColumn[] = [ ... ]
+const bulkAggregates: DataTableBulkAggregate<User>[] = [ ... ]
+
+export default function UserIndex() {
+    const [bulkDeleteUsers, setBulkDeleteUsers] = useState<User[]>([])
+    const clearSelectionRef = useRef<(() => void) | null>(null)
+    const queryClient = useQueryClient()
+
+    const handleBulkDelete = useCallback((users: User[]) => {
+        // ... update cache + router.delete ...
+        setBulkDeleteUsers([])
+        clearSelectionRef.current?.()
+        clearSelectionRef.current = null
+    }, [queryClient])
+
+    const actions = useMemo<DataTableAction<User>[]>(() => [
+        { label: 'Edit', icon: <Edit className="size-4" />, href: (u) => edit.url(u.uuid), showLabel: false },
+        { label: 'Delete', icon: <Trash2 className="size-4" />, variant: 'destructive', showLabel: false, onClick: setUserToDelete },
+    ], [])
+
+    const bulkActions = useMemo<DataTableBulkAction<User>[]>(() => [
+        {
+            id: 'bulk-delete',
+            label: 'Excluir',
+            icon: <Trash2 className="size-4" />,
+            variant: 'destructive',
+            onClick: (rows, clearSelection) => {
+                clearSelectionRef.current = clearSelection
+                setBulkDeleteUsers(rows)
+            },
+        },
+    ], [])
+
+    return (
+        <DataTable<User>
+            queryKey="users"
+            endpoint={apiRoutes.users.index}
+            mode="infinite-scroll"
+            columns={columns}
+            keyExtractor={(user) => user.uuid}
+            features={{ search: true, filters: true, columnVisibility: true, refresh: true, selection: true }}
+            filters={filters}
+            quickFilters={quickFilters}
+            dateFilterColumns={dateFilterColumns}
+            actions={actions}
+            actionsConfig={{ display: 'inline', label: 'Acoes', buttonSize: 'icon', showTooltips: true }}
+            bulkActions={bulkActions}
+            bulkAggregates={bulkAggregates}
+            infiniteScrollConfig={{ fitViewport: true, viewportBottomOffset: 96, minHeight: 320 }}
+            appearance={{ size: 'md', gridLines: 'none', rowStyle: 'soft-striped' }}
+            searchPlaceholder="Buscar"
+        />
+    )
+}
+```

@@ -1,0 +1,426 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    /* ── Fonts — DESIGN.md: font.family.primary=Inter ───────────── */
+    --font-sans:
+        'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+    --font-mono:
+        'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
+    --font-brand: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    /* ── Radius — DESIGN.md: xs=8px, sm=10px, md=14px, lg=pill ─── */
+    --radius: 0.875rem; /* 14px  — base (inputs, buttons)   */
+    --radius-xs: 0.5rem; /* 8px   — badges, tags             */
+    --radius-sm: 0.625rem; /* 10px  — small elements           */
+    --radius-md: 0.875rem; /* 14px  — inputs, buttons, cards   */
+    --radius-lg: 1rem; /* 16px  — modals, large cards      */
+    --radius-xl: 1.25rem; /* 20px  — large surfaces           */
+    --radius-2xl: 1.5rem; /* pill  — DESIGN.md radius.lg      */
+
+    /* ── Color aliases → CSS custom properties ──────────────────── */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-light: var(--primary-light);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Brand tokens */
+    --color-brand-teal: var(--brand-teal);
+    --color-brand-blue: var(--brand-blue);
+    --color-runey-orange: var(--orange); /* legacy compat */
+
+    --container-8xl: 88rem; /* 1408px */
+    --container-9xl: 96rem; /* 1536px */
+    --container-10xl: 100rem; /* 1600px */
+
+    /* Header */
+    --spacing-header: 4rem;
+    --color-header-background: var(--header-background);
+    --color-header-foreground: var(--header-foreground);
+    --color-header-border: var(--header-border);
+
+    --color-table-background: var(--table-background);
+    --color-table-text: var(--table-text);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LIGHT THEME
+
+   Dashboard palette:
+   - Cool neutral surfaces for dashboard density.
+   - Teal primary for actions, focus, and brand moments.
+   - Dark sidebar in both themes to anchor the application shell.
+───────────────────────────────────────────────────────────────── */
+:root {
+    /* Surfaces */
+    color-scheme: light;
+    --background: oklch(0.972 0.006 248);
+    --foreground: oklch(0.24 0.035 252);
+    --card: oklch(0.995 0.002 248);
+    --card-foreground: var(--foreground);
+    --popover: oklch(1 0 0);
+    --popover-foreground: var(--foreground);
+
+    /* Primary — brand teal */
+    --primary: oklch(0.61 0.15 192);
+    --primary-light: oklch(0.74 0.12 190);
+    --primary-foreground: oklch(0.99 0.004 190);
+
+    /* Secondary / muted */
+    --secondary: oklch(0.935 0.012 248);
+    --secondary-foreground: oklch(0.28 0.035 252);
+    --muted: oklch(0.948 0.01 248);
+    --muted-foreground: oklch(0.49 0.035 252);
+    --accent: oklch(0.91 0.026 228);
+    --accent-foreground: oklch(0.24 0.04 252);
+
+    /* Semantic */
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.99 0.004 20);
+    --success: oklch(0.59 0.15 154);
+    --success-foreground: oklch(0.99 0.004 154);
+    --warning: oklch(0.769 0.188 70.08);
+    --warning-foreground: oklch(0.22 0.035 70);
+    --orange: oklch(0.66 0.18 42);
+
+    /* Structural */
+    --border: oklch(0.88 0.014 248);
+    --input: oklch(0.88 0.014 248);
+    --ring: oklch(0.61 0.15 192 / 45%);
+
+    /* Charts */
+    --chart-1: var(--primary);
+    --chart-2: oklch(0.58 0.13 238);
+    --chart-3: var(--orange);
+    --chart-4: var(--success);
+    --chart-5: var(--warning);
+
+    /* Brand */
+    --brand-teal: oklch(0.72 0.16 185);
+    --brand-blue: oklch(0.58 0.16 238);
+
+    /* Sidebar */
+    --sidebar: oklch(0.24 0.045 252);
+    --sidebar-foreground: oklch(0.93 0.01 248);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: oklch(0.99 0.004 190);
+    --sidebar-accent: oklch(0.31 0.048 252);
+    --sidebar-accent-foreground: oklch(0.98 0.004 248);
+    --sidebar-border: oklch(0.36 0.04 252);
+    --sidebar-ring: var(--ring);
+
+    /* Header */
+    --header-background: oklch(0.995 0.002 248 / 72%);
+    --header-foreground: var(--foreground);
+    --header-border: oklch(0.88 0.014 248);
+
+    /* Table */
+    --table-background: var(--card);
+    --table-text: var(--card-foreground);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   DARK THEME
+───────────────────────────────────────────────────────────────── */
+.dark {
+    /* Surfaces */
+    color-scheme: dark;
+    --background: oklch(0.16 0.018 252);
+    --foreground: oklch(0.94 0.008 248);
+    --card: oklch(0.205 0.022 252);
+    --card-foreground: var(--foreground);
+    --popover: oklch(0.22 0.024 252);
+    --popover-foreground: var(--foreground);
+
+    /* Primary — brighter teal on dark */
+    --primary: oklch(0.72 0.13 190);
+    --primary-light: oklch(0.81 0.11 188);
+    --primary-foreground: oklch(0.13 0.02 252);
+
+    /* Secondary / muted */
+    --secondary: oklch(0.255 0.024 252);
+    --secondary-foreground: oklch(0.92 0.008 248);
+    --muted: oklch(0.245 0.022 252);
+    --muted-foreground: oklch(0.68 0.02 248);
+    --accent: oklch(0.3 0.04 232);
+    --accent-foreground: oklch(0.94 0.008 248);
+
+    /* Semantic */
+    --destructive: oklch(0.68 0.2 25);
+    --destructive-foreground: oklch(0.98 0.004 25);
+    --success: oklch(0.72 0.14 154);
+    --success-foreground: oklch(0.13 0.02 154);
+    --warning: oklch(0.82 0.16 75);
+    --warning-foreground: oklch(0.16 0.025 75);
+    --orange: oklch(0.7 0.16 42);
+
+    /* Structural */
+    --border: oklch(0.31 0.026 252);
+    --input: oklch(0.31 0.026 252);
+    --ring: oklch(0.72 0.13 190 / 50%);
+
+    /* Charts */
+    --chart-1: var(--primary);
+    --chart-2: oklch(0.68 0.1 238);
+    --chart-3: var(--orange);
+    --chart-4: var(--success);
+    --chart-5: var(--warning);
+
+    /* Brand */
+    --brand-teal: oklch(0.76 0.13 185);
+    --brand-blue: oklch(0.68 0.13 238);
+
+    /* Sidebar */
+    --sidebar: oklch(0.13 0.022 252);
+    --sidebar-foreground: oklch(0.91 0.01 248);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: oklch(0.12 0.018 252);
+    --sidebar-accent: oklch(0.215 0.026 252);
+    --sidebar-accent-foreground: oklch(0.97 0.004 248);
+    --sidebar-border: oklch(0.25 0.024 252);
+    --sidebar-ring: var(--ring);
+
+    /* Header */
+    --header-background: oklch(0.18 0.02 252 / 72%);
+    --header-foreground: var(--foreground);
+    --header-border: oklch(0.27 0.022 252);
+
+    /* Table */
+    --table-background: var(--card);
+    --table-text: var(--card-foreground);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   BASE RESETS
+───────────────────────────────────────────────────────────────── */
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html {
+        font-size: 1rem; /* DESIGN.md: font.size.base=16px */
+        accent-color: var(--primary);
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+    }
+
+    button:not([disabled]) {
+        cursor: pointer;
+    }
+
+    /* ── Global scrollbar — clean & minimal ──────────────────────────
+       Firefox: thin native scrollbar with token-based thumb.
+       WebKit/Blink: overlay-style 8px track, pill thumb, hover reveal.
+       Per-surface overrides (.custom-scrollbar, .sidebar-scrollbar)
+       remain available for tighter contexts. */
+    html {
+        scrollbar-color: color-mix(in oklab, var(--muted-foreground) 30%, transparent)
+            transparent;
+        scrollbar-width: thin;
+    }
+
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: color-mix(in oklab, var(--muted-foreground) 28%, transparent);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        border-radius: 9999px;
+        transition: background 0.2s ease;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: color-mix(in oklab, var(--muted-foreground) 48%, transparent);
+        background-clip: padding-box;
+    }
+
+    *::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+}
+
+@layer components {
+    .page-wrapper,
+    .page-wrapper-full,
+    .page-wrapper-sm,
+    .page-wrapper-md,
+    .page-wrapper-lg,
+    .page-wrapper-xl {
+        @apply mb-3 w-full px-4 pt-5 md:px-6;
+    }
+
+    .page-wrapper {
+        @apply mx-auto max-w-10xl;
+    }
+
+    .page-wrapper-full {
+        @apply max-w-none;
+    }
+
+    .page-wrapper-sm {
+        @apply mx-auto max-w-3xl;
+    }
+
+    .page-wrapper-md {
+        @apply mx-auto max-w-5xl;
+    }
+
+    .page-wrapper-lg {
+        @apply mx-auto max-w-7xl;
+    }
+
+    .page-wrapper-xl {
+        @apply mx-auto max-w-10xl;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   UTILITIES — Neumorphic shadows
+───────────────────────────────────────────────────────────────── */
+.shadow-neumorphic {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.06),
+        0 1px 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.dark .shadow-neumorphic {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.1),
+        0 1px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+.shadow-neumorphic-hover {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.08),
+        0 4px 12px 0 rgba(0, 0, 0, 0.15);
+}
+
+.dark .shadow-neumorphic-hover {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.15),
+        0 4px 12px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   UTILITIES — Custom scrollbar (6px, subtle)
+───────────────────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+}
+
+.sidebar-scrollbar {
+    scrollbar-color: color-mix(
+            in oklab,
+            var(--sidebar-foreground) 24%,
+            transparent
+        )
+        transparent;
+    scrollbar-width: thin;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--sidebar-foreground) 18%, transparent);
+    border-radius: 9999px;
+}
+
+.sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--sidebar-foreground) 32%, transparent);
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--sidebar-foreground) 46%, transparent);
+}
+
+::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+}

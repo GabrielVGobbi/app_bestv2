@@ -1,0 +1,90 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Controllers\Controller;
+use {{ useRequest }};
+use {{ useResource }};
+use {{ namespacedModel }};
+use Inertia\Inertia;
+
+class {{ class }} extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        return Inertia::render('app/{{ variablePlural }}/index');
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return Inertia::render('app/{{ variablePlural }}/create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store({{ requestClass }} $request)
+    {
+        ${{ variable }} = {{ model }}::create($request->validated());
+
+        return redirect()
+            ->route('{{ variablePlural }}.index')
+            ->with('success', '{{ model }} criado com sucesso!');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show($id)
+    {
+        ${{ variable }} = {{ model }}::findOrFail($id);
+
+        return Inertia::render('app/{{ variablePlural }}/show', [
+            '{{ variable }}' => ${{ variable }}
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit($id)
+    {
+        ${{ variable }} = {{ model }}::findOrFail($id);
+
+        return Inertia::render('app/{{ variablePlural }}/edit', [
+            '{{ variable }}Data' => new {{ useResource }}(${{ variable }})
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update({{ requestClass }} $request, $id)
+    {
+        ${{ variable }} = {{ model }}::findOrFail($id);
+        ${{ variable }}->update($request->validated());
+
+        return redirect()
+            ->route('{{ variablePlural }}.show', ${{ variable }}->id)
+            ->with('success', '{{ model }} atualizado com sucesso!');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+        ${{ variable }} = {{ model }}::findOrFail($id);
+        ${{ variable }}->delete();
+
+        return redirect()
+            ->route('{{ variablePlural }}.index')
+            ->with('success', '{{ model }} removido com sucesso!');
+    }
+}

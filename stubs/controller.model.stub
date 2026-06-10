@@ -1,0 +1,90 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ rootNamespace }}Http\Controllers\Controller;
+use App\Http\Requests\StoreUpdate{{ namespacedModel }};
+use {{ namespacedModel }};
+use Illuminate\Http\Request;
+
+class {{ class }} extends Controller
+{
+    public function __construct() {}
+
+    /**
+     * list model Display a listing of the resource.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function index()
+    {
+        return view('admin.{{ variable }}.index', ['{{ variable }}' => $this->{{ variable }}->getAll()]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function create()
+    {
+        return view('admin.{{ variable }}.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param StoreUpdate{{ model }} $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(StoreUpdate{{ model }} $request)
+    {
+        ${{ variable }} = $this->{{ variable }}->create($request->validated());
+
+        return redirect()
+            ->route('admin.{{ variable }}.index')
+            ->with('success', '{{ model }} criado com sucesso!');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param {{ model }} ${{ variable }}
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function edit({{ model }} ${{ variable }})
+    {
+        return view('admin.{{ variable }}.edit', compact('{{ variable }}'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param StoreUpdate{{ model }} $request
+     * @param {{ model }} ${{ variable }}
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(StoreUpdate{{ model }} $request, {{ model }} ${{ variable }})
+    {
+        $this->{{ variable }}->update(${{ variable }}, $request->validated());
+
+        return redirect()
+            ->route('admin.{{ variable }}.index')
+            ->with('success', '{{ model }} atualizado com sucesso!');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param {{ model }} ${{ variable }}
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroy({{ model }} ${{ variable }})
+    {
+        $this->{{ variable }}->delete(${{ variable }});
+
+        return redirect()
+            ->route('admin.{{ variable }}.index')
+            ->with('success', '{{ model }} removido com sucesso!');
+    }
+}
