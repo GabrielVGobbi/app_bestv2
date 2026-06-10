@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Modules\Permissions\Database\Seeders\PermissionsSeeder;
+use App\Modules\Permissions\Database\Seeders\RolesSeeder;
 use App\Modules\Permissions\Models\Permission;
 use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,6 +13,77 @@ use Tests\TestCase;
 class PermissionsModuleTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_bestplay_roles_and_permissions_seeders_are_idempotent_and_match_initial_matrix(): void
+    {
+        $this->seed([RolesSeeder::class, PermissionsSeeder::class]);
+        $this->seed([RolesSeeder::class, PermissionsSeeder::class]);
+
+        $expectedRoles = [
+            'developer',
+            'super-admin',
+            'admin',
+            'user',
+            'finance',
+            'manager',
+            'commercial',
+            'seller',
+            'operation',
+        ];
+
+        $expectedPermissions = [
+            'access-panel',
+            'users.manage',
+            'roles.manage',
+            'permissions.manage',
+            'companies.view',
+            'companies.manage',
+            'clients.view',
+            'clients.manage',
+            'addresses.manage',
+            'services.manage',
+            'sales.create',
+            'sales.confirm',
+            'sales.cancel',
+            'playlists.manage',
+            'finance.view',
+            'finance.manage',
+        ];
+
+        $this->assertEqualsCanonicalizing($expectedRoles, Role::query()->pluck('slug')->all());
+        $this->assertEqualsCanonicalizing($expectedPermissions, Permission::query()->pluck('slug')->all());
+        $this->assertSame(count($expectedRoles), Role::query()->count());
+        $this->assertSame(count($expectedPermissions), Permission::query()->count());
+
+        $developerPermissionSlugs = Role::query()
+            ->where('slug', 'developer')
+            ->firstOrFail()
+            ->permissions()
+            ->pluck('slug')
+            ->all();
+
+        $financePermissionSlugs = Role::query()
+            ->where('slug', 'finance')
+            ->firstOrFail()
+            ->permissions()
+            ->pluck('slug')
+            ->all();
+
+        $sellerPermissionSlugs = Role::query()
+            ->where('slug', 'seller')
+            ->firstOrFail()
+            ->permissions()
+            ->pluck('slug')
+            ->all();
+
+        $this->assertEqualsCanonicalizing($expectedPermissions, $developerPermissionSlugs);
+        $this->assertContains('finance.manage', $financePermissionSlugs);
+        $this->assertNotContains('sales.create', $financePermissionSlugs);
+        $this->assertContains('sales.create', $sellerPermissionSlugs);
+        $this->assertContains('clients.manage', $sellerPermissionSlugs);
+        $this->assertNotContains('companies.manage', $sellerPermissionSlugs);
+        $this->assertNotContains('sales.confirm', $sellerPermissionSlugs);
+    }
 
     // -------------------------------------------------------------------------
     // Roles API - index
