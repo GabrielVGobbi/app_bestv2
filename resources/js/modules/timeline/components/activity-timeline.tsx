@@ -18,6 +18,7 @@ export interface ActivityTimelineProps {
     modelType: string;
     modelId: ModelId;
     title?: string | null;
+    showHeader?: boolean;
     readOnly?: boolean;
     allowAttachments?: boolean;
     className?: string;
@@ -28,6 +29,7 @@ export function ActivityTimeline({
     modelType,
     modelId,
     title = 'Timeline',
+    showHeader = true,
     readOnly = false,
     allowAttachments = true,
     className,
@@ -40,6 +42,8 @@ export function ActivityTimeline({
         () => groupTimelineItems(timeline.data?.data ?? []),
         [timeline.data?.data],
     );
+
+    const shouldShowHeader = showHeader && title !== null;
 
     const content = (() => {
         if (timeline.isLoading) {
@@ -107,7 +111,7 @@ export function ActivityTimeline({
                 className,
             )}
         >
-            {title !== null && (
+            {shouldShowHeader && (
                 <div className="border-b border-border/60 px-4 py-3">
                     <h2 className="text-sm font-semibold tracking-normal text-foreground">
                         {title}
@@ -119,7 +123,7 @@ export function ActivityTimeline({
                     )}
                 </div>
             )}
-            <div className="space-y-6 p-4">
+            <div className="space-y-6">
                 {!readOnly && (
                     <CommentComposer
                         label="Novo comentario"

@@ -7,51 +7,37 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Modules\Permissions\Models\Role;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Developer — acesso total
-        $developer = User::firstOrCreate(
-            ['email' => 'super@admin.com'],
-            [
-                'name' => 'Developer',
-                'password' => bcrypt('superadmin'),
-                'email_verified_at' => now(),
-            ],
-        );
+        foreach ($this->users() as $seedUser) {
+            $role = Role::query()->firstOrCreate(
+                ['slug' => $seedUser['role_slug']],
+                ['name' => $seedUser['role']],
+            );
 
-        $developer->roles()->syncWithoutDetaching([
-            Role::firstOrCreate(['slug' => 'developer'], ['name' => 'Developer'])->id,
-        ]);
+            $user = User::query()->updateOrCreate(
+                ['email' => $seedUser['email']],
+                [
+                    'name' => $seedUser['name'],
+                    'password' => Hash::make($seedUser['password']),
+                    'email_verified_at' => now(),
+                    'must_change_password' => false,
+                ],
+            );
 
-        // Admin — acesso ao painel
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@admin.com'],
-            [
-                'name' => 'Admin',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-            ],
-        );
+            $user->roles()->sync([$role->id]);
+        }
+    }
 
-        $admin->roles()->syncWithoutDetaching([
-            Role::firstOrCreate(['slug' => 'admin'], ['name' => 'Admin'])->id,
-        ]);
-
-        // User — sem acesso ao painel (para testar restrições)
-        $user = User::firstOrCreate(
-            ['email' => 'user@test.com'],
-            [
-                'name' => 'User',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-            ],
-        );
-
-        $user->roles()->syncWithoutDetaching([
-            Role::firstOrCreate(['slug' => 'user'], ['name' => 'User'])->id,
-        ]);
+    /**
+     * @return array<int, array{role: string, role_slug: string, name: string, email: string, password: string}>
+     */
+    private function users(): array
+    {
+        return config('local-login.users', []);
     }
 }

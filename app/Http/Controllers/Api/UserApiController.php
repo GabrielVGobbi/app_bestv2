@@ -7,6 +7,7 @@ use App\Http\Requests\PaginationRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Supports\Api\ApiDisplay;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -14,8 +15,8 @@ class UserApiController extends Controller
 {
     public function index(PaginationRequest $request): AnonymousResourceCollection
     {
-        return ApiDisplay::for(User::class)
-            ->usingQuery(User::query()->select([
+        $query = User::query()
+            ->select([
                 'id',
                 'uuid',
                 'name',
@@ -24,7 +25,14 @@ class UserApiController extends Controller
                 'must_change_password',
                 'created_at',
                 'updated_at',
-            ]))
+            ])
+            ->when(
+                $request->role(),
+                fn (Builder $query, string $role): Builder => $query->withRole($role),
+            );
+
+        return ApiDisplay::for(User::class)
+            ->usingQuery($query)
             ->paginate($request);
     }
 

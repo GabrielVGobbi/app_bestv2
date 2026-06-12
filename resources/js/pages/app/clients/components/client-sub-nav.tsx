@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Eye, Pencil } from 'lucide-react';
+import type { ComponentType } from 'react';
 
 import { edit, show } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { cn } from '@/lib/utils';
@@ -14,12 +15,12 @@ interface ClientSubNavProps {
 const navItems: {
     key: ClientPage;
     label: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: ComponentType<{ className?: string }>;
     getHref: (uuid: string) => string;
 }[] = [
     {
         key: 'show',
-        label: 'Visão Geral',
+        label: 'Visão geral',
         icon: Eye,
         getHref: (uuid) => show.url(uuid),
     },

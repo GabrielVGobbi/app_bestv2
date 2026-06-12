@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -35,7 +37,7 @@ export function TimelineActivityItem({ item }: TimelineActivityItemProps) {
                 <div className="absolute top-6 bottom-0 w-px bg-border/70" />
                 <div
                     className={cn(
-                        'relative z-10 mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border',
+                        'relative z-10  flex size-6 shrink-0 items-center justify-center rounded-full border',
                         severityClass[item.severity],
                     )}
                 >
@@ -43,12 +45,12 @@ export function TimelineActivityItem({ item }: TimelineActivityItemProps) {
                 </div>
             </div>
 
-            <div className="min-w-0 flex-1 py-1.5">
+            <div className="min-w-0 flex-1">
                 {hasChanges ? (
                     <ActivityDetailsDialog item={item} />
                 ) : (
                     <>
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <div className="flex flex-wrap items-baseline ">
                             {item.label && (
                                 <span className="text-xs font-medium text-foreground">
                                     {item.label}
@@ -58,7 +60,7 @@ export function TimelineActivityItem({ item }: TimelineActivityItemProps) {
                                 {formatDate(item.created_at)}
                             </time>
                         </div>
-                        <p className="mt-1 max-w-[72ch] text-sm leading-relaxed text-muted-foreground">
+                        <p className=" max-w-[72ch] text-sm leading-relaxed text-muted-foreground">
                             {item.description}
                         </p>
                     </>
@@ -69,8 +71,10 @@ export function TimelineActivityItem({ item }: TimelineActivityItemProps) {
 }
 
 function ActivityDetailsDialog({ item }: { item: TimelineActivityItemType }) {
+    const [detailsOpen, setDetailsOpen] = useState(false);
+
     return (
-        <Dialog>
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
             <DialogTrigger asChild>
                 <Button
                     type="button"
@@ -92,67 +96,69 @@ function ActivityDetailsDialog({ item }: { item: TimelineActivityItemType }) {
                     </span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="text-base">
-                        {item.label ?? 'Detalhes da atividade'}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {item.causer?.name ?? 'Sistema'} em{' '}
-                        {formatDate(item.created_at)}
-                    </DialogDescription>
-                </DialogHeader>
+            {detailsOpen && (
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-base">
+                            {item.label ?? 'Detalhes da atividade'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {item.causer?.name ?? 'Sistema'} em{' '}
+                            {formatDate(item.created_at)}
+                        </DialogDescription>
+                    </DialogHeader>
 
-                <div className="space-y-4">
-                    <div className="grid gap-2 rounded-lg border border-border/70 bg-muted/20 p-3 text-sm sm:grid-cols-3">
-                        <ActivityMeta label="Evento" value={item.event} />
-                        <ActivityMeta
-                            label="Origem"
-                            value={item.causer?.name ?? 'Sistema'}
-                        />
-                        <ActivityMeta
-                            label="Data"
-                            value={formatDate(item.created_at)}
-                        />
-                    </div>
+                    <div className="space-y-4">
+                        <div className="grid gap-2 rounded-lg border border-border/70 bg-muted/20 p-3 text-sm sm:grid-cols-3">
+                            <ActivityMeta label="Evento" value={item.event} />
+                            <ActivityMeta
+                                label="Origem"
+                                value={item.causer?.name ?? 'Sistema'}
+                            />
+                            <ActivityMeta
+                                label="Data"
+                                value={formatDate(item.created_at)}
+                            />
+                        </div>
 
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-foreground">
-                            Campos alterados
-                        </h3>
-                        <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
-                            {item.changes.map((change) => (
-                                <div
-                                    key={`${change.field}-${change.label}`}
-                                    className="rounded-lg border border-border/70 bg-background p-3"
-                                >
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <div>
-                                            <p className="text-sm font-medium text-foreground">
-                                                {change.label}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {change.field}
-                                            </p>
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-foreground">
+                                Campos alterados
+                            </h3>
+                            <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+                                {item.changes.map((change) => (
+                                    <div
+                                        key={`${change.field}-${change.label}`}
+                                        className="rounded-lg border border-border/70 bg-background p-3"
+                                    >
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div>
+                                                <p className="text-sm font-medium text-foreground">
+                                                    {change.label}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {change.field}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                            <ChangeValue
+                                                label="Antes"
+                                                value={change.old}
+                                            />
+                                            <ChangeValue
+                                                label="Depois"
+                                                value={change.new}
+                                            />
                                         </div>
                                     </div>
-
-                                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                        <ChangeValue
-                                            label="Antes"
-                                            value={change.old}
-                                        />
-                                        <ChangeValue
-                                            label="Depois"
-                                            value={change.new}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </DialogContent>
+                </DialogContent>
+            )}
         </Dialog>
     );
 }

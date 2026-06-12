@@ -6,6 +6,8 @@ namespace App\Modules\Clients\Models;
 
 use App\Concerns\Exportable;
 use App\Concerns\Searchable;
+use App\Models\User;
+use App\Modules\Addresses\Traits\HasAddresses;
 use App\Modules\Clients\Database\Factories\ClientFactory;
 use App\Modules\Timeline\Contracts\TimelineSubject;
 use App\Modules\Timeline\Traits\HasComments;
@@ -16,26 +18,86 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['uuid', 'name', 'email'])]
+#[Fillable([
+    'uuid',
+    'company_id',
+    'responsible_user_id',
+    'name',
+    'company_name',
+    'email',
+    'phone',
+    'document',
+    'musical_genre',
+    'is_agent',
+    'notes',
+    'classification',
+    'source_id',
+    'status',
+])]
 class Client extends Model implements TimelineSubject
 {
-    use Exportable, HasActivityLog, HasComments, HasFactory, HasTimeline, HasUuidIdentifier, Searchable;
+    use Exportable, HasActivityLog, HasAddresses, HasComments, HasFactory, HasTimeline, HasUuidIdentifier, Searchable;
+
+    public const array CLASSIFICATIONS = [
+        'Classe S',
+        'Classe A',
+        'Classe B',
+        'Classe C',
+        'Classe Iniciante',
+    ];
 
     /** @var array<string, string> */
     protected array $exportable = [
-        'name' => 'Name',
+        'name' => 'Nome',
         'email' => 'Email',
+        'phone' => 'Telefone',
+        'document' => 'Documento',
+        'status' => 'Status',
     ];
 
     /** @var array<int, string> */
-    protected array $searchable = ['name', 'email'];
+    protected array $searchable = ['name', 'company_name', 'email', 'phone', 'document', 'musical_genre', 'classification'];
 
     /** @var array<int, string> */
-    protected array $filterable = ['uuid', 'name', 'email', 'created_at', 'updated_at'];
+    protected array $filterable = [
+        'uuid',
+        'company_id',
+        'responsible_user_id',
+        'name',
+        'company_name',
+        'email',
+        'phone',
+        'document',
+        'musical_genre',
+        'is_agent',
+        'classification',
+        'source_id',
+        'status',
+        'created_at',
+        'updated_at',
+    ];
 
     /** @var array<int, string> */
-    protected array $sortable = ['id', 'uuid', 'name', 'email', 'created_at', 'updated_at'];
+    protected array $sortable = [
+        'id',
+        'uuid',
+        'company_id',
+        'responsible_user_id',
+        'name',
+        'company_name',
+        'email',
+        'phone',
+        'document',
+        'musical_genre',
+        'is_agent',
+        'classification',
+        'source_id',
+        'status',
+        'created_at',
+        'updated_at',
+    ];
 
     protected string $activityLogName = 'clients';
 
@@ -47,10 +109,35 @@ class Client extends Model implements TimelineSubject
      * }
      */
     protected array $timelineActivity = [
-        'fields' => ['name', 'email'],
+        'fields' => [
+            'company_id',
+            'responsible_user_id',
+            'name',
+            'company_name',
+            'email',
+            'phone',
+            'document',
+            'musical_genre',
+            'is_agent',
+            'notes',
+            'classification',
+            'source_id',
+            'status',
+        ],
         'labels' => [
+            'company_id' => 'Empresa',
+            'responsible_user_id' => 'Responsável',
             'name' => 'Nome',
+            'company_name' => 'Nome da empresa',
             'email' => 'Email',
+            'phone' => 'Telefone',
+            'document' => 'Documento',
+            'musical_genre' => 'Gênero musical',
+            'is_agent' => 'Agente',
+            'notes' => 'Observações',
+            'classification' => 'Classificação',
+            'source_id' => 'Origem',
+            'status' => 'Status',
         ],
         'hidden' => [],
     ];
@@ -59,12 +146,18 @@ class Client extends Model implements TimelineSubject
 
     protected string $defaultSortDirection = 'desc';
 
+    public function responsibleUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'responsible_user_id');
+    }
+
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'is_agent' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

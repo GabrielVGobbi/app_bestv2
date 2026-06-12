@@ -681,7 +681,7 @@ export default function ActivityLogIndex({
                         actions={actions}
                         actionsConfig={{
                             display: 'inline',
-                            label: 'Acoes',
+                            label: 'Ações',
                             buttonSize: 'icon',
                             showTooltips: true,
                         }}

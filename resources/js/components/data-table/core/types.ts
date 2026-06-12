@@ -106,12 +106,21 @@ export interface DataTableFilterConfig {
     clearable?: boolean;
 }
 
+export interface DataTableAsyncSelectConfig {
+    endpoint: string;
+    params?: Record<string, string | number | boolean | null | undefined>;
+    searchPlaceholder?: string;
+    emptyMessage?: string;
+}
+
 export interface DataTableQuickFilter {
     id: string;
     label: string;
+    type?: 'select' | 'async-select';
     placeholder?: string;
     icon?: ComponentType<{ className?: string }>;
-    options: DataTableFilterOption[];
+    options?: DataTableFilterOption[];
+    asyncSelect?: DataTableAsyncSelectConfig;
     multiple?: boolean;
     clearable?: boolean;
     operator?: DataTableFilterOperator;

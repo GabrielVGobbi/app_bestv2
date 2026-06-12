@@ -19,9 +19,19 @@ class ClientFactory extends Factory
     {
         return [
             'uuid' => (string) Str::uuid(),
+            'company_id' => null,
+            'responsible_user_id' => null,
             'name' => $this->faker->name(),
+            'company_name' => $this->faker->optional()->company(),
             'email' => $this->faker->unique()->safeEmail(),
+            'phone' => $this->faker->unique()->numerify('###########'),
+            'document' => $this->faker->unique()->numerify('###########'),
+            'musical_genre' => $this->faker->optional()->randomElement(['Pop', 'Rock', 'Sertanejo', 'Funk', 'Gospel']),
+            'is_agent' => false,
+            'notes' => null,
+            'classification' => $this->faker->optional()->randomElement(Client::CLASSIFICATIONS),
+            'source_id' => $this->faker->optional()->randomElement(['instagram', 'referral', 'site']),
+            'status' => 'active',
         ];
     }
 }
-

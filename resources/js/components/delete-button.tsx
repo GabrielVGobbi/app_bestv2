@@ -1,9 +1,9 @@
 import { router } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { httpDelete } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,6 +13,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { httpDelete } from '@/lib/http';
+
+type ButtonSize = ComponentProps<typeof Button>['size'];
 
 interface DeleteButtonProps {
     /** URL da rota de exclusão (ex: destroy.url(uuid)) */
@@ -25,7 +28,8 @@ interface DeleteButtonProps {
     redirectTo?: string;
     /** Callback alternativo ao redirectTo */
     onSuccess?: () => void;
-    size?: 'sm' | 'default';
+    size?: ButtonSize;
+    className?: string;
 }
 
 export default function DeleteButton({
@@ -35,16 +39,19 @@ export default function DeleteButton({
     redirectTo,
     onSuccess,
     size = 'sm',
+    className,
 }: DeleteButtonProps) {
     const [open, setOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
     const handleDelete = async () => {
         setDeleting(true);
+
         try {
             await httpDelete(url);
             toast.success(`${capitalize(resourceType)} removido com sucesso!`);
             setOpen(false);
+
             if (onSuccess) {
                 onSuccess();
             } else if (redirectTo) {
@@ -58,8 +65,13 @@ export default function DeleteButton({
 
     return (
         <>
-            <Button variant="destructive" size={size} onClick={() => setOpen(true)}>
-                <Trash2 className="mr-1.5 size-4" />
+            <Button
+                variant="destructive"
+                size={size}
+                className={className}
+                onClick={() => setOpen(true)}
+            >
+                <Trash2 className="" />
                 Excluir
             </Button>
 

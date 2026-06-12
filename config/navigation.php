@@ -90,6 +90,64 @@ return [
     'modules' => [
 
         /*
+        | Gestão — Módulo principal (Plataforma e Cadastros)
+        */
+        [
+            'slug' => 'gestao',
+            'label' => 'Gestão',
+            'icon' => 'LayoutGrid',
+            'default' => true,
+            'enabled' => true,
+            'route_prefixes' => [
+                '/dashboard',
+                '/clients',
+            ],
+            'default_href' => ['route' => 'app.dashboard'],
+            'items' => [
+                [
+                    'slug' => 'gestao_plataforma_section',
+                    'label' => 'Plataforma',
+                    'type' => 'section',
+                    'order' => 1,
+                    'enabled' => true,
+                    'visible' => true,
+                    'items' => [
+                        [
+                            'slug' => 'gestao_dashboard',
+                            'label' => 'Dashboard',
+                            'icon' => 'LayoutGrid',
+                            'type' => 'link',
+                            'href' => ['route' => 'app.dashboard'],
+                            'order' => 1,
+                            'enabled' => true,
+                            'visible' => true,
+                        ],
+                    ],
+                ],
+                [
+                    'slug' => 'gestao_cadastros_section',
+                    'label' => 'Cadastros',
+                    'type' => 'section',
+                    'order' => 10,
+                    'enabled' => true,
+                    'visible' => true,
+                    'items' => [
+                        [
+                            'slug' => 'gestao_clients',
+                            'label' => 'Clientes',
+                            'icon' => 'Contact',
+                            'type' => 'link',
+                            'href' => ['route' => 'clients.index'],
+                            'order' => 1,
+                            'enabled' => true,
+                            'visible' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ],
+
+        /*
         | Painel — Dashboard do painel
 
         [
@@ -115,12 +173,15 @@ return [
         ],
 */
         /*
-        | Gestão — Usuários, papéis, permissões e auditoria
+        | Admin — Administração da plataforma (ACL e Sistema)
+        |
+        | Estrutura derivada da matriz de roles/permissões em
+        | .docs/implementations/bestplay-foundation/01-roles-and-permissions.md
         */
         [
-            'slug' => 'gestao',
-            'label' => 'Gestão',
-            'icon' => 'Users',
+            'slug' => 'admin',
+            'label' => 'Admin',
+            'icon' => 'ShieldCheck',
             'default' => false,
             'enabled' => true,
             'route_prefixes' => [
@@ -128,36 +189,14 @@ return [
                 '/roles',
                 '/permissions',
                 '/activity-log',
-                '/clients',
                 '/exportacoes',
-                '/notifications',
-                '/admin/backups',
                 '/email-logs',
+                '/admin/backups',
             ],
             'default_href' => ['route' => 'users.index'],
             'items' => [
                 [
-                    'slug' => 'gestao_acl_section',
-                    'label' => 'Plataforma',
-                    'type' => 'section',
-                    'order' => 1,
-                    'enabled' => true,
-                    'visible' => true,
-                    'items' => [
-                        [
-                            'slug' => 'dashboard',
-                            'label' => 'Dashboard',
-                            'icon' => 'LayoutGrid',
-                            'type' => 'link',
-                            'href' => ['route' => 'app.dashboard'],
-                            'order' => 1,
-                            'enabled' => true,
-                            'visible' => true,
-                        ],
-                    ],
-                ],
-                [
-                    'slug' => 'gestao_acl_section',
+                    'slug' => 'admin_acl_section',
                     'label' => 'ACL',
                     'type' => 'section',
                     'order' => 1,
@@ -165,7 +204,7 @@ return [
                     'visible' => true,
                     'items' => [
                         [
-                            'slug' => 'usuarios',
+                            'slug' => 'admin_usuarios',
                             'label' => 'Usuários',
                             'icon' => 'Users',
                             'type' => 'link',
@@ -175,7 +214,7 @@ return [
                             'visible' => true,
                         ],
                         [
-                            'slug' => 'papeis',
+                            'slug' => 'admin_papeis',
                             'label' => 'Papéis',
                             'icon' => 'Shield',
                             'type' => 'link',
@@ -185,7 +224,7 @@ return [
                             'visible' => true,
                         ],
                         [
-                            'slug' => 'permissoes',
+                            'slug' => 'admin_permissoes',
                             'label' => 'Permissões',
                             'icon' => 'KeyRound',
                             'type' => 'link',
@@ -197,45 +236,15 @@ return [
                     ],
                 ],
                 [
-                    'slug' => 'gestao_cadastros_section',
-                    'label' => 'Cadastros',
+                    'slug' => 'admin_sistema_section',
+                    'label' => 'Sistema',
                     'type' => 'section',
                     'order' => 10,
                     'enabled' => true,
                     'visible' => true,
                     'items' => [
                         [
-                            'slug' => 'clients',
-                            'label' => 'Clientes',
-                            'icon' => 'TableProperties',
-                            'type' => 'link',
-                            'href' => ['route' => 'clients.index'],
-                            'order' => 1,
-                            'enabled' => true,
-                            'visible' => true,
-                        ],
-                        [
-                            'slug' => 'email_logs',
-                            'label' => 'E-mails',
-                            'icon' => 'Mail',
-                            'type' => 'link',
-                            'href' => ['route' => 'email-logs.index'],
-                            'order' => 2,
-                            'enabled' => true,
-                            'visible' => true,
-                        ],
-                    ],
-                ],
-                [
-                    'slug' => 'gestao_sistema_section',
-                    'label' => 'Sistema',
-                    'type' => 'section',
-                    'order' => 20,
-                    'enabled' => true,
-                    'visible' => true,
-                    'items' => [
-                        [
-                            'slug' => 'activity_log',
+                            'slug' => 'admin_activity_log',
                             'label' => 'Activity Log',
                             'icon' => 'History',
                             'type' => 'link',
@@ -245,16 +254,35 @@ return [
                             'visible' => true,
                         ],
                         [
-                            'slug' => 'exportacoes',
-                            'label' => 'Exportações',
-                            'icon' => 'Download',
+                            'slug' => 'admin_email_logs',
+                            'label' => 'E-mails',
+                            'icon' => 'Mail',
                             'type' => 'link',
-                            'href' => ['route' => 'exports.index'],
+                            'href' => ['route' => 'email-logs.index'],
                             'order' => 2,
                             'enabled' => true,
                             'visible' => true,
                         ],
-
+                        [
+                            'slug' => 'admin_exportacoes',
+                            'label' => 'Exportações',
+                            'icon' => 'Download',
+                            'type' => 'link',
+                            'href' => ['route' => 'exports.index'],
+                            'order' => 3,
+                            'enabled' => true,
+                            'visible' => true,
+                        ],
+                        [
+                            'slug' => 'admin_backups',
+                            'label' => 'Backups',
+                            'icon' => 'Archive',
+                            'type' => 'link',
+                            'href' => ['route' => 'admin.dev.backups.index'],
+                            'order' => 4,
+                            'enabled' => true,
+                            'visible' => true,
+                        ],
                     ],
                 ],
             ],

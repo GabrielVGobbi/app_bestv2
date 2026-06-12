@@ -336,7 +336,7 @@ Para botoes inline:
     actions={actions}
     actionsConfig={{
         display: 'inline',
-        label: 'Acoes',
+        label: 'Ações',
         buttonSize: 'sm',
     }}
 />
@@ -675,7 +675,7 @@ export default function UserIndex() {
             quickFilters={quickFilters}
             dateFilterColumns={dateFilterColumns}
             actions={actions}
-            actionsConfig={{ display: 'inline', label: 'Acoes', buttonSize: 'icon', showTooltips: true }}
+            actionsConfig={{ display: 'inline', label: 'Ações', buttonSize: 'icon', showTooltips: true }}
             bulkActions={bulkActions}
             bulkAggregates={bulkAggregates}
             infiniteScrollConfig={{ fitViewport: true, viewportBottomOffset: 96, minHeight: 320 }}

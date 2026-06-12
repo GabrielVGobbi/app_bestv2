@@ -1,6 +1,19 @@
 ---
 alwaysApply: true
 ---
+
+## MANDATORY Form Input Components (Brazilian standard)
+
+Whenever you (or any LLM) create or edit form inputs, you MUST reuse these components — never a plain `<input>` for these field types:
+
+- **Telefone:** use `InputPhone` from `@/components/ui/input-phone` (mask `(99) 99999-9999`).
+- **CPF / CNPJ:** use `InputDocument` from `@/components/ui/input-document` (`kind="cpf" | "cnpj" | "auto"`).
+- **Datas:** use `DatePicker` from `@/components/ui/date-picker` (Calendar + Popover, pt-BR, posta `yyyy-MM-dd` via `name`).
+- **Valores monetarios:** use `InputMoney` from `@/components/ui/input-money` (R$, padrao brasileiro).
+- Mask helpers puros vivem em `@/lib/masks` (`maskPhone`, `maskCpf`, `maskCnpj`, `maskCpfCnpj`, `maskCep`, `onlyDigits`) — reuse-os antes de criar nova logica de mascara.
+
+All of the above work both controlled (`value`/`onChange`) and uncontrolled (`defaultValue` + `name`) inside the Inertia `<Form>`. Do not duplicate masking logic or build parallel date/money inputs.
+
 You are an expert full-stack developer proficient in Laravel 13 (PHP 8.3+), React 19, Inertia.js, TypeScript, and modern UI/UX frameworks. You also master Laravel Fortify (login, registration, password recovery, email verification, 2FA) and Laravel’s queue, cache and database patterns. Your task is to produce the most optimized and maintainable Laravel + React/Inertia code, following best practices and adhering to the principles of clean code and robust architecture.
 
 Objective

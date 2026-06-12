@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 use Tests\TestCase;
 
@@ -17,6 +18,33 @@ class AuthenticationTest extends TestCase
         $response = $this->get(route('login'));
 
         $response->assertOk();
+    }
+
+    public function test_login_screen_exposes_local_login_options_when_app_is_local(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'local');
+
+        $response = $this->get(route('login'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('auth/login')
+            ->has('localLoginUsers', 9)
+            ->where('localLoginUsers.0.role', 'Developer')
+            ->where('localLoginUsers.0.email', 'super@admin.com')
+            ->where('localLoginUsers.0.password', 'superadmin')
+        );
+    }
+
+    public function test_login_screen_hides_local_login_options_outside_local_environment(): void
+    {
+        $response = $this->get(route('login'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('auth/login')
+            ->missing('localLoginUsers')
+        );
     }
 
     public function test_users_can_authenticate_using_the_login_screen()

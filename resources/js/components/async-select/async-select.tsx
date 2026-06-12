@@ -202,6 +202,7 @@ export function AsyncSelect(props: AsyncSelectProps) {
             url.searchParams.set('search', debouncedSearch);
             url.searchParams.set('page', String(nextPage));
             url.searchParams.set('limit', String(pageSize));
+            url.searchParams.set('per_page', String(pageSize));
 
             for (const [key, value] of Object.entries(params ?? {})) {
                 if (value !== null && value !== undefined && value !== '') {

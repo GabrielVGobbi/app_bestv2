@@ -167,7 +167,7 @@ function renderMenuActions<TData>(
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label="Acoes"
+                    aria-label="Ações"
                 >
                     <MoreHorizontal />
                 </Button>
@@ -382,7 +382,7 @@ export function DataTable<TData>({
                         : renderMenuActions(row.original, actions),
                 meta: {
                     align: 'right',
-                    label: actionsConfig?.label ?? 'Acoes',
+                    label: actionsConfig?.label ?? 'Ações',
                     type: 'actions',
                     sticky: actionsConfig?.sticky ? 'right' : undefined,
                 },

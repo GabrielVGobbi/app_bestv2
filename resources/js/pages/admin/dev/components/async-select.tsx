@@ -118,7 +118,7 @@ const [assigneeId, setAssigneeId] = useState<string | null>(null)
             endpoint={asyncSelectUsers.url()}
             value={assigneeId}
             onChange={setAssigneeId}
-            placeholder="Selecione um responsavel"
+            placeholder="Selecione um Responsável"
             clearable
         />
 

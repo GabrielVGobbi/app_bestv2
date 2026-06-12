@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Addresses\Providers\AddressesServiceProvider;
 use App\Modules\Backup\Providers\BackupServiceProvider;
 use App\Modules\Clients\Providers\ClientsServiceProvider;
 use App\Modules\CrudGenerator\Providers\CrudGeneratorServiceProvider;
@@ -28,4 +29,5 @@ return [
     AppServiceProvider::class,
     FortifyServiceProvider::class,
     TelescopeServiceProvider::class,
+    AddressesServiceProvider::class,
 ];

@@ -48,43 +48,6 @@ function ModuleItemsView({
 
     return (
         <div className="space-y-3">
-            {/* Cabeçalho do módulo — atualiza in-place sem remount */}
-            {!isCollapsed && (
-                <div className="mb-8 relative overflow-hidden rounded-lg border border-sidebar-border/70 bg-sidebar-accent/35 px-2.5 py-2 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] transition-colors hover:bg-sidebar-accent/55">
-                    <div className="pointer-events-none absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-sidebar-foreground/35" />
-                    <div className="flex min-w-0 items-center gap-2">
-                        <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sidebar text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border/80">
-                            {activeModule.icon && (
-                                <activeModule.icon
-                                    size={15}
-                                    className="shrink-0"
-                                />
-                            )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[9px] leading-none font-bold tracking-widest text-sidebar-foreground/50 uppercase">
-                                Módulo ativo
-                            </p>
-                            <p className="mt-1 truncate text-[13px] leading-none font-semibold text-sidebar-foreground">
-                                {activeModule.label}
-                            </p>
-                        </div>
-
-                        {showBack && (
-                            <button
-                                type="button"
-                                onClick={showModuleList}
-                                className="flex size-7 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar hover:text-sidebar-foreground"
-                                title="Voltar aos módulos"
-                            >
-                                <ArrowLeft size={14} />
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* Itens do módulo — key isola o re-mount por módulo sem arrastar o header */}
             <div key={activeModule.slug} className="animate-in duration-100 fade-in">
                 <NavModuleItems variant="sidebar" />

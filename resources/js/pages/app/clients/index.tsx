@@ -1,26 +1,96 @@
-import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Eye, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Columns2, Eye, Plus, Table2, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { create, destroy, index, show } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
+import {
+    create,
+    destroy,
+    index,
+    show,
+    split as splitView,
+} from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { DataTable } from '@/components/data-table';
-import { apiRoutes } from '@/lib/api/api-routes';
 import type { DataTableAction } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { apiRoutes } from '@/lib/api/api-routes';
 import type { Client } from '@/types/app/client';
 
-import { columns, dateFilterColumns, exportConfig, filters } from './config';
+import {
+    buildQuickFilters,
+    columns,
+    dateFilterColumns,
+    exportConfig,
+    filters,
+} from './config';
+import type { ClientQuickFilterOptions } from './config';
 import { ClientDeleteDialog } from './partials/client-delete-dialog';
 
-export default function ClientIndex() {
+type ClientIndexViewMode = 'table' | 'split';
+
+interface ClientIndexProps {
+    quickFilterOptions: ClientQuickFilterOptions;
+}
+
+const CLIENT_VIEW_STORAGE_PREFIX = 'bestplay:clients:view-mode';
+
+function clientViewStorageKey(userId: number): string {
+    return `${CLIENT_VIEW_STORAGE_PREFIX}:${userId}`;
+}
+
+function readStoredViewMode(storageKey: string): ClientIndexViewMode {
+    if (typeof window === 'undefined') {
+        return 'table';
+    }
+
+    try {
+        return window.localStorage.getItem(storageKey) === 'split'
+            ? 'split'
+            : 'table';
+    } catch {
+        return 'table';
+    }
+}
+
+function writeStoredViewMode(
+    storageKey: string,
+    viewMode: ClientIndexViewMode,
+): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(storageKey, viewMode);
+    } catch {
+        // localStorage is only a preference cache; ignore privacy/quota failures.
+    }
+}
+
+export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Clients', href: index.url() }],
+        breadcrumbs: [{ title: 'Clientes', href: index.url() }],
     });
 
+    const { auth } = usePage().props;
+    const viewStorageKey = clientViewStorageKey(auth.user.id);
     const queryClient = useQueryClient();
     const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+    const quickFilters = useMemo(
+        () => buildQuickFilters(quickFilterOptions),
+        [quickFilterOptions],
+    );
+
+    useEffect(() => {
+        if (readStoredViewMode(viewStorageKey) === 'split') {
+            router.visit(splitView.url(), {
+                replace: true,
+                preserveScroll: true,
+            });
+        }
+    }, [viewStorageKey]);
 
     const actions = useMemo<DataTableAction<Client>[]>(
         () => [
@@ -32,7 +102,6 @@ export default function ClientIndex() {
                 showLabel: false,
                 tooltip: 'Visualizar',
             },
-
             {
                 label: 'Excluir',
                 icon: <Trash2 className="size-4" />,
@@ -44,6 +113,14 @@ export default function ClientIndex() {
         ],
         [],
     );
+
+    function selectSplitView(): void {
+        writeStoredViewMode(viewStorageKey, 'split');
+
+        router.visit(splitView.url(), {
+            preserveScroll: true,
+        });
+    }
 
     function deleteClient(): void {
         if (!clientToDelete) {
@@ -61,18 +138,56 @@ export default function ClientIndex() {
 
     return (
         <>
-            <Head title="Clients" />
+            <Head title="Clientes" />
 
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                        <Heading title="Clients" description="Gerencie os registros de clients" />
-                        <Button asChild>
-                            <Link href={create.url()}>
-                                <Plus className="size-4" />
-                                Novo Client
-                            </Link>
-                        </Button>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <Heading
+                            title="Clientes"
+                            description="Gerencie contatos comerciais e contratantes"
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                            <ToggleGroup
+                                type="single"
+                                variant="outline"
+                                size="sm"
+                                value="table"
+                                onValueChange={(value) => {
+                                    if (value === 'split') {
+                                        selectSplitView();
+                                    }
+                                }}
+                                aria-label="Visualizacao de clientes"
+                                className="rounded-lg"
+                            >
+                                <ToggleGroupItem
+                                    value="table"
+                                    aria-label="Visualizacao em tabela"
+                                    className="gap-2 px-3"
+                                >
+                                    <Table2 className="size-4" />
+                                    <span>Tabela</span>
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                    value="split"
+                                    aria-label="Visualizacao em duas colunas"
+                                    className="gap-2 px-3"
+                                >
+                                    <Columns2 className="size-4" />
+                                    <span className="text-muted-foreground">
+                                        Duas colunas
+                                    </span>
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+
+                            <Button asChild>
+                                <Link href={create.url()}>
+                                    <Plus className="size-4" />
+                                    Novo cliente
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
 
                     <ClientDeleteDialog
@@ -96,12 +211,27 @@ export default function ClientIndex() {
                         }}
                         exportConfig={exportConfig}
                         filters={filters}
+                        quickFilters={quickFilters}
                         dateFilterColumns={dateFilterColumns}
                         actions={actions}
-                        actionsConfig={{ display: 'inline', label: 'Ações', buttonSize: 'icon', showTooltips: true, sticky: true }}
-                        infiniteScrollConfig={{ fitViewport: true, viewportBottomOffset: 96, minHeight: 320 }}
-                        appearance={{ size: 'md', gridLines: 'none', rowStyle: 'soft-striped' }}
-                        searchPlaceholder="Buscar clients..."
+                        actionsConfig={{
+                            display: 'inline',
+                            label: 'Ações',
+                            buttonSize: 'icon',
+                            showTooltips: true,
+                            sticky: true,
+                        }}
+                        infiniteScrollConfig={{
+                            fitViewport: true,
+                            viewportBottomOffset: 96,
+                            minHeight: 320,
+                        }}
+                        appearance={{
+                            size: 'md',
+                            gridLines: 'none',
+                            rowStyle: 'soft-striped',
+                        }}
+                        searchPlaceholder="Buscar clientes..."
                     />
                 </div>
             </div>

@@ -16,9 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/ping', [AppController::class, 'ping']);
 
 // Email delivery webhooks — public, no auth (signature verified per-provider)
-Route::post('email/webhook/{provider}', [EmailWebhookController::class, 'handle'])
-    ->name('email.webhook')
-    ->withoutMiddleware(['auth', 'auth:sanctum']);
+Route::post('email/webhook/{provider}', [EmailWebhookController::class, 'handle'])->name('email.webhook')->withoutMiddleware(['auth', 'auth:sanctum']);
 
 Route::prefix('v1')->as('api.')->group(function () {
     Route::post('auth/login', [AuthenticatedTokenController::class, 'store'])->middleware('throttle:5,1')->name('auth.login');
@@ -40,8 +38,7 @@ Route::prefix('v1')->as('api.')->group(function () {
         Route::apiResource('users', UserApiController::class)->only('index');
         Route::put('users/{user}/sync-roles-permissions', [UserApiController::class, 'syncRolesPermissions'])->name('users.sync-roles-permissions');
 
-        Route::apiResource('clients', ClientApiController::class)
-            ->parameters(['clients' => 'client']);
+        Route::apiResource('clients', ClientApiController::class)->parameters(['clients' => 'client']);
 
         Route::apiResource('roles', RoleApiController::class)->except('show');
         Route::put('roles/{role}/sync-permissions', [RoleApiController::class, 'syncPermissions'])->name('roles.sync-permissions');

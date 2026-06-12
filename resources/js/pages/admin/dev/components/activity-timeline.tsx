@@ -74,6 +74,12 @@ const CODE_FRONTEND = `import { ActivityTimeline } from '@/modules/timeline'
   modelType="client"
   modelId={client.uuid}
   allowAttachments
+/>
+
+<ActivityTimeline
+  modelType="client"
+  modelId={client.uuid}
+  showHeader={false}
 />`;
 
 const CODE_UPLOADS = `<FileAttachments
@@ -123,6 +129,7 @@ export default function ActivityTimelineDevReference({
         defaultSubject?.type ?? 'client',
     );
     const [modelId, setModelId] = useState(String(defaultSubject?.id ?? 1));
+    const [showHeader, setShowHeader] = useState(true);
     const [readOnly, setReadOnly] = useState(false);
     const [allowAttachments, setAllowAttachments] = useState(true);
     const [pageSize, setPageSize] = useState('50');
@@ -281,6 +288,21 @@ export default function ActivityTimelineDevReference({
 
                                         <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
                                             <div>
+                                                <Label>showHeader</Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Alterna entre header
+                                                    completo ou apenas a
+                                                    estrutura da timeline.
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={showHeader}
+                                                onCheckedChange={setShowHeader}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+                                            <div>
                                                 <Label>readOnly</Label>
                                                 <p className="text-xs text-muted-foreground">
                                                     Mantem leitura e oculta
@@ -312,9 +334,10 @@ export default function ActivityTimelineDevReference({
                                 </Card>
 
                                 <ActivityTimeline
-                                    key={`${modelType}-${modelIdValue}-${readOnly}-${allowAttachments}-${pageSize}`}
+                                    key={`${modelType}-${modelIdValue}-${showHeader}-${readOnly}-${allowAttachments}-${pageSize}`}
                                     modelType={modelType}
                                     modelId={modelIdValue}
+                                    showHeader={showHeader}
                                     readOnly={readOnly}
                                     allowAttachments={allowAttachments}
                                     pageSize={Number(pageSize)}

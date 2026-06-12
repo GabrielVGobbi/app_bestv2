@@ -51,6 +51,7 @@ class FortifyServiceProvider extends ServiceProvider
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'canRegister' => Features::enabled(Features::registration()),
             'status' => $request->session()->get('status'),
+            ...($this->app->isLocal() ? ['localLoginUsers' => $this->localLoginUsers()] : []),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
@@ -87,5 +88,20 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+    }
+
+    /**
+     * @return array<int, array{role: string, email: string, password: string}>
+     */
+    private function localLoginUsers(): array
+    {
+        return collect(config('local-login.users', []))
+            ->map(fn (array $user): array => [
+                'role' => $user['role'],
+                'email' => $user['email'],
+                'password' => $user['password'],
+            ])
+            ->values()
+            ->all();
     }
 }

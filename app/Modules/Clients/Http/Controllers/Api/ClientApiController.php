@@ -25,19 +25,19 @@ class ClientApiController extends Controller
     {
         $client = Client::create($request->validated());
 
-        return new ClientResource($client);
+        return new ClientResource($client->load(['responsibleUser', 'addresses']));
     }
 
     public function show(Client $client): ClientResource
     {
-        return new ClientResource($client);
+        return new ClientResource($client->load(['responsibleUser', 'addresses']));
     }
 
     public function update(UpdateClientRequest $request, Client $client): ClientResource
     {
         $client->update($request->validated());
 
-        return new ClientResource($client);
+        return new ClientResource($client->load(['responsibleUser', 'addresses']));
     }
 
     public function destroy(Client $client): JsonResponse

@@ -145,7 +145,7 @@ export default function ActivityActionsPlayground({
 
                     <Card className="rounded-lg">
                         <CardHeader>
-                            <CardTitle>Acoes configuradas</CardTitle>
+                            <CardTitle>Açõesconfiguradas</CardTitle>
                             <CardDescription>
                                 Clique para emitir um log de teste com o seu usuario como causador.
                             </CardDescription>

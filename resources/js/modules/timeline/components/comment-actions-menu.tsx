@@ -36,7 +36,7 @@ export function CommentActionsMenu({
                     size="icon"
                     className="size-8"
                     disabled={disabled}
-                    aria-label="Acoes do comentario"
+                    aria-label="Açõesdo comentario"
                 >
                     <MoreHorizontal className="size-4" />
                 </Button>

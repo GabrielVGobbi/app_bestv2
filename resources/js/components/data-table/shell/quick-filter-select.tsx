@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 
+import { AsyncSelect } from '@/components/async-select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,13 +15,15 @@ interface QuickFilterSelectProps {
 }
 
 function selectedLabels(filter: DataTableQuickFilter, value: DataTableFilterValue): string {
+    const options = filter.options ?? [];
+
     if (Array.isArray(value)) {
         if (value.length === 0) {
             return filter.placeholder ?? filter.label;
         }
 
         if (value.length === 1) {
-            return filter.options.find((option) => String(option.value) === String(value[0]))?.label ?? String(value[0]);
+            return options.find((option) => String(option.value) === String(value[0]))?.label ?? String(value[0]);
         }
 
         return `${value.length} selecionados`;
@@ -30,7 +33,7 @@ function selectedLabels(filter: DataTableQuickFilter, value: DataTableFilterValu
         return filter.placeholder ?? filter.label;
     }
 
-    return filter.options.find((option) => String(option.value) === String(value))?.label ?? String(value);
+    return options.find((option) => String(option.value) === String(value))?.label ?? String(value);
 }
 
 function optionColor(color?: string) {
@@ -45,6 +48,29 @@ export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelect
     const Icon = filter.icon;
     const selectedValues = Array.isArray(value) ? value.map(String) : value === undefined || value === null ? [] : [String(value)];
     const hasValue = selectedValues.length > 0;
+
+    if (filter.type === 'async-select' && filter.asyncSelect) {
+        const asyncValue =
+            value === undefined || value === null || Array.isArray(value) || typeof value === 'object'
+                ? null
+                : String(value);
+
+        return (
+            <div className="min-w-52 md:w-56">
+                <AsyncSelect
+                    value={asyncValue}
+                    endpoint={filter.asyncSelect.endpoint}
+                    params={filter.asyncSelect.params}
+                    placeholder={filter.placeholder ?? filter.label}
+                    searchPlaceholder={filter.asyncSelect.searchPlaceholder}
+                    emptyMessage={filter.asyncSelect.emptyMessage}
+                    clearable={filter.clearable !== false}
+                    className={cn('min-h-9 py-1.5 text-sm', hasValue && 'border-primary/50 bg-primary/5')}
+                    onChange={(nextValue) => onChange(nextValue ?? undefined)}
+                />
+            </div>
+        );
+    }
 
     function toggleMultiple(optionValue: DataTableFilterPrimitive, checked: boolean): void {
         const stringValue = String(optionValue);
@@ -91,22 +117,33 @@ export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelect
             <PopoverContent align="start" className="w-56 p-1">
                 <div className="px-2 py-1.5 text-sm font-medium border-b border-border mb-3">{filter.label}</div>
                 <div className="max-h-64 overflow-auto">
-                    {filter.options.map((option) => {
+                    {(filter.options ?? []).map((option) => {
                         const checked = selectedValues.includes(String(option.value));
 
                         if (filter.multiple) {
                             return (
-                                <label
+                                <div
                                     key={String(option.value)}
-                                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+                                    role="menuitemcheckbox"
+                                    aria-checked={checked}
+                                    tabIndex={0}
+                                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus-visible:bg-accent"
+                                    onClick={() => toggleMultiple(option.value, !checked)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            toggleMultiple(option.value, !checked);
+                                        }
+                                    }}
                                 >
                                     <Checkbox
                                         checked={checked}
+                                        onClick={(event) => event.stopPropagation()}
                                         onCheckedChange={(nextChecked) => toggleMultiple(option.value, Boolean(nextChecked))}
                                     />
                                     {optionColor(option.color)}
                                     <span className="flex-1">{option.label}</span>
-                                </label>
+                                </div>
                             );
                         }
 

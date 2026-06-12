@@ -7,7 +7,9 @@ use App\Modules\Permissions\Database\Seeders\PermissionsSeeder;
 use App\Modules\Permissions\Database\Seeders\RolesSeeder;
 use App\Modules\Permissions\Models\Permission;
 use App\Modules\Permissions\Models\Role;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class PermissionsModuleTest extends TestCase
@@ -83,6 +85,37 @@ class PermissionsModuleTest extends TestCase
         $this->assertContains('clients.manage', $sellerPermissionSlugs);
         $this->assertNotContains('companies.manage', $sellerPermissionSlugs);
         $this->assertNotContains('sales.confirm', $sellerPermissionSlugs);
+    }
+
+    public function test_user_seeder_creates_one_login_user_for_each_bestplay_role(): void
+    {
+        $this->seed([RolesSeeder::class, UserSeeder::class]);
+        $this->seed([RolesSeeder::class, UserSeeder::class]);
+
+        $expectedUsers = [
+            'developer' => ['email' => 'super@admin.com', 'password' => 'superadmin'],
+            'super-admin' => ['email' => 'super-admin@bestplay.local', 'password' => 'password'],
+            'admin' => ['email' => 'admin@admin.com', 'password' => 'password'],
+            'user' => ['email' => 'user@test.com', 'password' => 'password'],
+            'finance' => ['email' => 'finance@bestplay.local', 'password' => 'password'],
+            'manager' => ['email' => 'manager@bestplay.local', 'password' => 'password'],
+            'commercial' => ['email' => 'commercial@bestplay.local', 'password' => 'password'],
+            'seller' => ['email' => 'seller@bestplay.local', 'password' => 'password'],
+            'operation' => ['email' => 'operation@bestplay.local', 'password' => 'password'],
+        ];
+
+        $this->assertSame(count($expectedUsers), User::query()->count());
+
+        foreach ($expectedUsers as $roleSlug => $credentials) {
+            $user = User::query()
+                ->where('email', $credentials['email'])
+                ->with('roles')
+                ->firstOrFail();
+
+            $this->assertEqualsCanonicalizing([$roleSlug], $user->roles->pluck('slug')->all());
+            $this->assertTrue(Hash::check($credentials['password'], $user->password));
+            $this->assertNotNull($user->email_verified_at);
+        }
     }
 
     // -------------------------------------------------------------------------

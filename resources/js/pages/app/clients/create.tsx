@@ -11,14 +11,14 @@ import ClientFormFields from '@/pages/app/clients/partials/client-form-fields';
 export default function CreateClient() {
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Clients', href: index.url() },
-            { title: 'Novo Client', href: create.url() },
+            { title: 'Clientes', href: index.url() },
+            { title: 'Novo cliente', href: create.url() },
         ],
     });
 
     return (
         <>
-            <Head title="Novo Client" />
+            <Head title="Novo cliente" />
 
             <Header>
                 <div className="flex items-center gap-3">
@@ -28,8 +28,8 @@ export default function CreateClient() {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">Novo Client</h1>
-                        <p className="text-sm text-muted-foreground">Cadastrar novo client</p>
+                        <h1 className="text-xl font-semibold">Novo cliente</h1>
+                        <p className="text-sm text-muted-foreground">Cadastrar contato comercial</p>
                     </div>
                 </div>
             </Header>
@@ -45,10 +45,10 @@ export default function CreateClient() {
                     {({ errors, processing }) => (
                         <>
                             <div className="space-y-4">
-                                <div className="flex flex-1 flex-col gap-6 ">
+                                <div className="flex flex-1 flex-col gap-6">
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle>Informações de Client</CardTitle>
+                                            <CardTitle>Dados do Cliente</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <ClientFormFields errors={errors} />
@@ -59,7 +59,7 @@ export default function CreateClient() {
                                 <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
                                     <div className="flex items-center justify-between gap-3 py-3">
                                         <p className="text-xs text-muted-foreground">
-                                            Campos marcados com <span className="text-destructive">*</span> são obrigatórios
+                                            Campos marcados com <span className="text-destructive">*</span> são obrigatórios.
                                         </p>
                                         <div className="flex items-center gap-2">
                                             <Button type="button" variant="ghost" size="sm" asChild disabled={processing}>

@@ -41,6 +41,13 @@ export const apiRoutes = {
         update: (id: number | string) => `/api/v1/clients/${id}`,
         destroy: (id: number | string) => `/api/v1/clients/${id}`,
     },
+    addresses: {
+        index: '/api/v1/addresses',
+        store: '/api/v1/addresses',
+        update: (uuid: string) => `/api/v1/addresses/${uuid}`,
+        destroy: (uuid: string) => `/api/v1/addresses/${uuid}`,
+        setDefault: (uuid: string) => `/api/v1/addresses/${uuid}/default`,
+    },
     exports: {
         index: '/api/v1/exports',
         store: '/api/v1/exports',

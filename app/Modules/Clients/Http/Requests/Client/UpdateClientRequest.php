@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Clients\Http\Requests\Client;
 
+use App\Models\User;
+use App\Modules\Clients\Models\Client;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateClientRequest extends FormRequest
 {
@@ -20,8 +23,44 @@ class UpdateClientRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'company_id' => ['nullable', 'integer'],
+            'responsible_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'string', 'max:255', Rule::unique('clients', 'email')->ignore($this->route('client'))],
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('clients', 'email')->ignore($this->route('client'))],
+            'phone' => ['nullable', 'string', 'max:255', Rule::unique('clients', 'phone')->ignore($this->route('client'))],
+            'document' => ['nullable', 'string', 'max:255', Rule::unique('clients', 'document')->ignore($this->route('client'))],
+            'musical_genre' => ['nullable', 'string', 'max:255'],
+            'is_agent' => ['sometimes', 'boolean'],
+            'notes' => ['nullable', 'string'],
+            'classification' => ['nullable', 'string', Rule::in(Client::CLASSIFICATIONS)],
+            'source_id' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', Rule::in(['active', 'inactive', 'archived'])],
+        ];
+    }
+
+    /**
+     * @return array<int, callable>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $responsibleUserId = $this->integer('responsible_user_id');
+
+                if ($responsibleUserId === 0 || $validator->errors()->has('responsible_user_id')) {
+                    return;
+                }
+
+                $isCommercialUser = User::query()
+                    ->whereKey($responsibleUserId)
+                    ->withRole('commercial')
+                    ->exists();
+
+                if (! $isCommercialUser) {
+                    $validator->errors()->add('responsible_user_id', 'O responsável interno deve ter a role Comercial.');
+                }
+            },
         ];
     }
 }

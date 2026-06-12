@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
+use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -73,6 +74,26 @@ class UserTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.name', 'Jane Smith');
+    }
+
+    public function test_users_can_be_filtered_by_role(): void
+    {
+        $actor = User::factory()->create();
+        $commercialRole = Role::factory()->create(['slug' => 'commercial']);
+        $financeRole = Role::factory()->create(['slug' => 'finance']);
+        $commercialUser = User::factory()->create(['name' => 'Commercial User']);
+        $financeUser = User::factory()->create(['name' => 'Finance User']);
+
+        $commercialUser->roles()->attach($commercialRole);
+        $financeUser->roles()->attach($financeRole);
+
+        $response = $this
+            ->actingAs($actor)
+            ->getJson(route('api.users.index', ['role' => 'commercial']));
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.name', 'Commercial User');
     }
 
     public function test_users_can_be_filtered_by_allowed_columns(): void
