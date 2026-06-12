@@ -5,22 +5,22 @@ namespace App\Modules\Permissions\Http\Middleware;
 use App\Modules\Permissions\Models\Permission;
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role, ?string $permission = null)
+    public function handle(Request $request, Closure $next, string $roles, ?string $permission = null): Response
     {
-        // Verifica autenticação
         if (! $request->user()) {
             return redirect()->route('login');
         }
 
-        // Verifica role
-        if (! $request->user()->hasRole($role)) {
+        $acceptedRoles = preg_split('/[|,]/', $roles, flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (! $request->user()->hasRole(...$acceptedRoles)) {
             abort(403, 'Acesso negado');
         }
 
-        // Verifica permission (se fornecida)
         if ($permission !== null) {
             $perm = Permission::where('slug', $permission)->first();
 

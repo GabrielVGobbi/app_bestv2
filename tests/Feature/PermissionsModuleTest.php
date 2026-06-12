@@ -597,7 +597,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_roles_index_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
 
         $response = $this->actingAs($user)->get(route('roles.index'));
 
@@ -607,7 +607,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_role_show_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
         $role = Role::factory()->create();
 
         $response = $this->actingAs($user)->get(route('roles.show', $role));
@@ -620,7 +620,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_role_edit_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
         $role = Role::factory()->create();
 
         $response = $this->actingAs($user)->get(route('roles.edit', $role));
@@ -633,7 +633,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_role_permissions_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
         $role = Role::factory()->create();
 
         $response = $this->actingAs($user)->get(route('roles.permissions', $role));
@@ -651,7 +651,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_permissions_index_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
 
         $response = $this->actingAs($user)->get(route('permissions.index'));
 
@@ -661,7 +661,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_permission_show_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
         $permission = Permission::factory()->create();
 
         $response = $this->actingAs($user)->get(route('permissions.show', $permission));
@@ -674,7 +674,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_permission_edit_page_renders(): void
     {
-        $user = User::factory()->create();
+        $user = $this->userWithRole('admin');
         $permission = Permission::factory()->create();
 
         $response = $this->actingAs($user)->get(route('permissions.edit', $permission));
@@ -691,13 +691,14 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_show_page_includes_roles_and_permissions(): void
     {
+        $actor = $this->userWithRole('admin');
         $user = User::factory()->create();
         $role = Role::factory()->create();
         $perm = Permission::factory()->create();
         $user->roles()->attach($role);
         $user->permissions()->attach($perm);
 
-        $response = $this->actingAs($user)->get(route('users.show', $user->uuid));
+        $response = $this->actingAs($actor)->get(route('users.show', $user->uuid));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
@@ -708,7 +709,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_roles_page_renders(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
 
         $response = $this->actingAs($actor)->get(route('users.roles', $target->uuid));
@@ -722,7 +723,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_permissions_page_renders(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
 
         $response = $this->actingAs($actor)->get(route('users.permissions', $target->uuid));
@@ -732,5 +733,19 @@ class PermissionsModuleTest extends TestCase
             ->component('app/users/permissions')
             ->has('userData.data')
             ->has('allPermissions'));
+    }
+
+    private function userWithRole(string $roleSlug): User
+    {
+        $role = Role::query()->firstOrCreate(
+            ['slug' => $roleSlug],
+            ['name' => str($roleSlug)->replace('-', ' ')->title()->toString()],
+        );
+
+        $user = User::factory()->create();
+        $user->roles()->attach($role);
+        $user->load('roles');
+
+        return $user;
     }
 }

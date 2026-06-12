@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 | Backup — Web Routes (admin + downloads diretos do browser)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['web', 'auth', 'verified'])->name('admin.dev.backups.')->group(function (): void {
+Route::middleware(['web', 'auth', 'verified', 'role:developer'])->name('admin.dev.backups.')->group(function (): void {
 
     Route::prefix('admin/dev/backups')->group(function (): void {
         Route::get('/', [BackupController::class, 'index'])->name('index');

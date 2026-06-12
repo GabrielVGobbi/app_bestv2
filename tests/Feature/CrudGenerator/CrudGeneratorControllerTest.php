@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\CrudGenerator;
 
 use App\Models\User;
+use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,7 +15,7 @@ class CrudGeneratorControllerTest extends TestCase
 
     public function test_authenticated_user_can_preview_crud_from_admin_screen(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $this->actingAs($user)
             ->postJson('/admin/dev/crud-generator/preview', [
@@ -51,5 +52,19 @@ class CrudGeneratorControllerTest extends TestCase
             ]);
 
         $this->assertFileDoesNotExist(app_path('Modules/ScreenClients/Models/ScreenClient.php'));
+    }
+
+    private function developer(): User
+    {
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'developer'],
+            ['name' => 'Developer'],
+        );
+
+        $user = User::factory()->create();
+        $user->roles()->attach($role);
+        $user->load('roles');
+
+        return $user;
     }
 }

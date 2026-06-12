@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Models\User;
+use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,7 +19,7 @@ class DevToolsTest extends TestCase
 
     public function test_dev_tools_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->get(route('admin.dev.dev-tools.index'));
 
@@ -39,7 +40,7 @@ class DevToolsTest extends TestCase
 
     public function test_components_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->get(route('admin.dev.components.index'));
 
@@ -51,7 +52,7 @@ class DevToolsTest extends TestCase
 
     public function test_inline_cell_edit_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->get(route('admin.dev.components.inline-cell-edit'));
 
@@ -63,7 +64,7 @@ class DevToolsTest extends TestCase
 
     public function test_inline_cell_edit_demo_can_update_user_name(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->developer();
         $user = User::factory()->create();
 
         $response = $this->actingAs($admin)->patch(route('admin.dev.components.inline-cell-edit.users.update', $user), [
@@ -77,7 +78,7 @@ class DevToolsTest extends TestCase
 
     public function test_inline_cell_edit_demo_can_update_verification_status(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->developer();
         $user = User::factory()->create(['email_verified_at' => null]);
 
         $response = $this->actingAs($admin)->patch(route('admin.dev.components.inline-cell-edit.users.update', $user), [
@@ -91,7 +92,7 @@ class DevToolsTest extends TestCase
 
     public function test_async_select_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->get(route('admin.dev.components.async-select'));
 
@@ -103,7 +104,7 @@ class DevToolsTest extends TestCase
 
     public function test_toasts_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->get(route('admin.dev.components.toasts'));
 
@@ -115,7 +116,7 @@ class DevToolsTest extends TestCase
 
     public function test_async_select_users_endpoint_returns_options(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->developer();
         User::factory()->create([
             'name' => 'Maria Async',
             'email' => 'maria.async@example.com',
@@ -138,7 +139,7 @@ class DevToolsTest extends TestCase
 
     public function test_form_playground_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->get(route('admin.dev.components.form-playground'));
 
@@ -154,7 +155,7 @@ class DevToolsTest extends TestCase
 
     public function test_all_caches_can_be_cleared(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.cache.clear'));
 
@@ -167,7 +168,7 @@ class DevToolsTest extends TestCase
 
     public function test_specific_cache_can_be_cleared(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         foreach (['cache', 'config', 'route', 'view'] as $type) {
             $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.cache.clear-specific'), ['type' => $type]);
@@ -177,7 +178,7 @@ class DevToolsTest extends TestCase
 
     public function test_specific_cache_rejects_invalid_type(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.cache.clear-specific'), ['type' => 'invalid']);
 
@@ -190,7 +191,7 @@ class DevToolsTest extends TestCase
 
     public function test_application_can_be_optimized(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.optimize'));
 
@@ -203,7 +204,7 @@ class DevToolsTest extends TestCase
 
     public function test_env_variable_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.env.update'), [
             'key' => 'TEST_VAR',
@@ -215,7 +216,7 @@ class DevToolsTest extends TestCase
 
     public function test_env_update_rejects_invalid_key(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.env.update'), [
             'key' => 'invalid key!',
@@ -227,10 +228,24 @@ class DevToolsTest extends TestCase
 
     public function test_env_update_requires_both_fields(): void
     {
-        $user = User::factory()->create();
+        $user = $this->developer();
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.env.update'), []);
 
         $response->assertSessionHasErrors(['key', 'value']);
+    }
+
+    private function developer(): User
+    {
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'developer'],
+            ['name' => 'Developer'],
+        );
+
+        $user = User::factory()->create();
+        $user->roles()->attach($role);
+        $user->load('roles');
+
+        return $user;
     }
 }

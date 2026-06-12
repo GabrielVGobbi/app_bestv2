@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\AppController;
 use App\Modules\Clients\Http\Controllers\Api\ClientApiController;
+use App\Modules\Companies\Http\Controllers\Api\CompanyApiController;
 use App\Modules\Email\Http\Controllers\EmailWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,7 @@ Route::prefix('v1')->as('api.')->group(function () {
         Route::put('users/{user}/sync-roles-permissions', [UserApiController::class, 'syncRolesPermissions'])->name('users.sync-roles-permissions');
 
         Route::apiResource('clients', ClientApiController::class)->parameters(['clients' => 'client']);
+        Route::apiResource('companies', CompanyApiController::class)->parameters(['companies' => 'company']);
 
         Route::apiResource('roles', RoleApiController::class)->except('show');
         Route::put('roles/{role}/sync-permissions', [RoleApiController::class, 'syncPermissions'])->name('roles.sync-permissions');

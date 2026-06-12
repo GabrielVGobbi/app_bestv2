@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Companies\Models\Company;
 
 return [
     /*
@@ -10,6 +11,7 @@ return [
      */
     'allowed_models' => [
         User::class,
+        Company::class,
         Client::class,
     ],
 

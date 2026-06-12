@@ -79,6 +79,7 @@ class NavigationService
     {
         return collect($modules)
             ->filter(fn (array $m) => $m['enabled'] ?? true)
+            ->filter(fn (array $m) => $this->passesRoleFilter($m))
             ->map(fn (array $m) => [
                 'slug' => $m['slug'],
                 'label' => $m['label'],
@@ -103,10 +104,32 @@ class NavigationService
     {
         return collect($items)
             ->filter(fn (array $item) => $item['enabled'] ?? true)
+            ->filter(fn (array $item) => $this->passesRoleFilter($item))
             ->sortBy('order')
             ->map(fn (array $item) => $this->normalizeItem($item))
+            ->filter(fn (array $item) => ! in_array($item['type'], ['group', 'section'], true) || ! empty($item['items']))
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function passesRoleFilter(array $entry): bool
+    {
+        if (empty($entry['roles'])) {
+            return true;
+        }
+
+        $user = request()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        $roles = is_array($entry['roles']) ? $entry['roles'] : [$entry['roles']];
+
+        return $user->hasRole(...$roles);
     }
 
     /**

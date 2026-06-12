@@ -2,6 +2,7 @@ import {
     Activity,
     BellRing,
     BookOpen,
+    Building2,
     Clock,
     Contact,
     Download,
@@ -28,8 +29,7 @@ import {
     Archive,
     Mail,
     DatabaseZap,
-    Bell
-
+    Bell,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -41,6 +41,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Activity,
     BellRing,
     BookOpen,
+    Building2,
     Clock,
     Contact,
     Download,
@@ -67,7 +68,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Archive,
     Mail,
     DatabaseZap,
-    Bell
+    Bell,
 };
 
 export function resolveIcon(name?: string | null): LucideIcon | null {

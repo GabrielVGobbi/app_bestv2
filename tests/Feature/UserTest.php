@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Actions\Users\CreateUserWithTemporaryPassword;
 use App\Models\User;
+use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -18,7 +19,7 @@ class UserTest extends TestCase
 
     public function test_create_page_is_displayed(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
 
         $response = $this
             ->actingAs($admin)
@@ -39,7 +40,7 @@ class UserTest extends TestCase
 
     public function test_user_can_be_created_without_password(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
 
         $response = $this
             ->actingAs($admin)
@@ -61,7 +62,7 @@ class UserTest extends TestCase
 
     public function test_user_can_be_created_from_index_modal(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
 
         $response = $this
             ->actingAs($admin)
@@ -105,7 +106,7 @@ class UserTest extends TestCase
 
     public function test_store_requires_unique_email(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $existing = User::factory()->create();
 
         $response = $this
@@ -134,7 +135,7 @@ class UserTest extends TestCase
 
     public function test_edit_page_is_displayed(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $user = User::factory()->create();
 
         $response = $this
@@ -158,7 +159,7 @@ class UserTest extends TestCase
 
     public function test_user_can_be_updated(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $user = User::factory()->create();
 
         $response = $this
@@ -181,7 +182,7 @@ class UserTest extends TestCase
 
     public function test_email_verification_status_unchanged_when_email_unchanged(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $user = User::factory()->create();
 
         $this
@@ -196,7 +197,7 @@ class UserTest extends TestCase
 
     public function test_update_requires_valid_name(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $user = User::factory()->create();
 
         $response = $this
@@ -211,7 +212,7 @@ class UserTest extends TestCase
 
     public function test_update_requires_unique_email(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $existing = User::factory()->create();
         $user = User::factory()->create();
 
@@ -241,7 +242,7 @@ class UserTest extends TestCase
 
     public function test_user_can_be_deleted(): void
     {
-        $admin = User::factory()->create();
+        $admin = $this->admin();
         $user = User::factory()->create();
 
         $response = $this
@@ -260,5 +261,19 @@ class UserTest extends TestCase
         $this->delete(route('users.destroy', $user))->assertRedirect(route('login'));
 
         $this->assertModelExists($user);
+    }
+
+    private function admin(): User
+    {
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'admin'],
+            ['name' => 'Admin'],
+        );
+
+        $user = User::factory()->create();
+        $user->roles()->attach($role);
+        $user->load('roles');
+
+        return $user;
     }
 }

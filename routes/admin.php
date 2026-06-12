@@ -11,7 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Modules\Email\Http\Controllers\EmailLogController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(function () {
 
     Route::resource('users', UserController::class);
     Route::get('users/{user}/roles', [UserController::class, 'roles'])->name('users.roles');
@@ -36,13 +36,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::name('admin.slack.')->prefix('admin/slack')->middleware(['auth', 'verified'])->group(function () {
+Route::name('admin.slack.')->prefix('admin/slack')->middleware(['auth', 'verified', 'role:admin|super-admin'])->group(function () {
     Route::get('/', [SlackSettingsController::class, 'show'])->name('index');
     Route::put('/', [SlackSettingsController::class, 'update'])->name('update');
     Route::post('/test', [SlackSettingsController::class, 'test'])->name('test');
 });
 
-Route::name('admin.dev.')->prefix('admin/dev')->middleware(['auth'])->group(function () {
+Route::name('admin.dev.')->prefix('admin/dev')->middleware(['auth', 'verified', 'role:developer'])->group(function () {
     Route::get('/', [DevToolsController::class, 'index'])->name('dashboard');
 
     /*
