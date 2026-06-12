@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRoleRequest extends FormRequest
 {
@@ -21,7 +22,7 @@ class StoreRoleRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            #'slug' => ['required', 'string', 'max:255', 'unique:roles,slug'],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('roles', 'slug')],
             'description' => ['nullable', 'string', 'max:1000'],
         ];
     }

@@ -389,7 +389,7 @@ export function AddressFormDialog({
                                 className="sm:col-span-12"
                                 checked={form.is_default}
                                 onCheckedChange={(checked) => setField('is_default', checked)}
-                                title="Endereço padrao"
+                                title="Endereço Padrão"
                                 description="Usar este Endereço como principal nas proximas operacoes do cliente."
                                 icon={<Star className="size-4" />}
                             />

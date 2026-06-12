@@ -101,6 +101,7 @@ return [
             'route_prefixes' => [
                 '/dashboard',
                 '/clients',
+                '/services',
             ],
             'default_href' => ['route' => 'app.dashboard'],
             'items' => [
@@ -139,6 +140,16 @@ return [
                             'type' => 'link',
                             'href' => ['route' => 'clients.index'],
                             'order' => 1,
+                            'enabled' => true,
+                            'visible' => true,
+                        ],
+                        [
+                            'slug' => 'gestao_services',
+                            'label' => 'Serviços',
+                            'icon' => 'ShoppingBag',
+                            'type' => 'link',
+                            'href' => ['route' => 'services.index'],
+                            'order' => 2,
                             'enabled' => true,
                             'visible' => true,
                         ],

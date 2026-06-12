@@ -128,7 +128,7 @@ export function AddressManager({
         try {
             await httpPatch<ApiResponse<Address>, void>(apiRoutes.addresses.setDefault(address.uuid));
             await refreshAddresses();
-            toast.success('Endereço padrao atualizado.');
+            toast.success('Endereço Padrão atualizado.');
         } catch (error) {
             toast.error(getErrorMessage(isApiError(error) ? error : { type: 'server', status: 500, message: 'Erro inesperado.' }));
         } finally {
@@ -176,7 +176,7 @@ export function AddressManager({
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <p className="text-sm font-medium">{address.name || 'Endereço'}</p>
-                                            {address.is_default && <Badge variant="secondary">Padrao</Badge>}
+                                            {address.is_default && <Badge variant="secondary">Padrão</Badge>}
                                         </div>
                                         <p className="text-sm text-muted-foreground">{address.full_address}</p>
                                     </div>
@@ -190,8 +190,8 @@ export function AddressManager({
                                         className="size-8"
                                         onClick={() => setDefaultAddress(address)}
                                         disabled={processing || address.is_default}
-                                        title="Definir como padrao"
-                                        aria-label="Definir como Endereço padrao"
+                                        title="Definir como Padrão"
+                                        aria-label="Definir como Endereço Padrão"
                                     >
                                         <Star className="size-4" />
                                     </Button>
@@ -238,7 +238,7 @@ export function AddressManager({
                 onConfirm={() => void deleteAddress()}
                 isLoading={processing}
                 title="Remover Endereço"
-                description="Este Endereço sera removido do cadastro. Se ele for o padrao, o sistema promovera outro Endereço automaticamente."
+                description="Este Endereço sera removido do cadastro. Se ele for o Padrão, o sistema promovera outro Endereço automaticamente."
                 confirmLabel="Remover Endereço"
             />
         </Card>

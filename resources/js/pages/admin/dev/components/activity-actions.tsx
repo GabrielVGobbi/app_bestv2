@@ -112,7 +112,7 @@ export default function ActivityActionsPlayground({
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <History className="size-4" />
-                                    Catalogo central
+                                    Catálogo central
                                 </CardTitle>
                                 <CardDescription>
                                     Labels, eventos, canais, icones e severidade saem do backend.

@@ -30,6 +30,7 @@ import {
     Mail,
     DatabaseZap,
     Bell,
+    ShoppingBag
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -69,6 +70,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Mail,
     DatabaseZap,
     Bell,
+    ShoppingBag
 };
 
 export function resolveIcon(name?: string | null): LucideIcon | null {

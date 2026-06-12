@@ -120,7 +120,7 @@ class AppInitCommand extends Command
     private function privateConfigTemplate(): string
     {
         return <<<'CONFIG'
-# Configuracoes privadas do projeto
+# Configurações privadas do projeto
 #
 # Este arquivo e local e esta ignorado pelo Git.
 # Use para guardar anotacoes sensiveis, credenciais e comandos recorrentes.

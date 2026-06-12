@@ -55,6 +55,14 @@ export const apiRoutes = {
         update: (id: number | string) => `/api/v1/companies/${id}`,
         destroy: (id: number | string) => `/api/v1/companies/${id}`,
     },
+    services: {
+        index: '/api/v1/services',
+        show: (id: number | string) => `/api/v1/services/${id}`,
+        store: '/api/v1/services',
+        update: (id: number | string) => `/api/v1/services/${id}`,
+        destroy: (id: number | string) => `/api/v1/services/${id}`,
+        restore: (id: number | string) => `/api/v1/services/${id}/restore`,
+    },
     exports: {
         index: '/api/v1/exports',
         store: '/api/v1/exports',

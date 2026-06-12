@@ -10,6 +10,7 @@ use App\Modules\Email\Providers\EmailServiceProvider;
 use App\Modules\Notifications\Providers\NotificationsServiceProvider;
 use App\Modules\Permissions\Providers\PermissionsServiceProvider;
 use App\Modules\SeederGenerator\Providers\SeederGeneratorServiceProvider;
+use App\Modules\Services\Providers\ServicesServiceProvider;
 use App\Modules\Timeline\Providers\TimelineServiceProvider;
 use App\Modules\Uploads\Providers\UploadsServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -26,6 +27,7 @@ return [
     CompaniesServiceProvider::class,
     PermissionsServiceProvider::class,
     SeederGeneratorServiceProvider::class,
+    ServicesServiceProvider::class,
     TimelineServiceProvider::class,
     UploadsServiceProvider::class,
     AppServiceProvider::class,

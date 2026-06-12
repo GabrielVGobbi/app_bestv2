@@ -88,7 +88,7 @@ const componentItems = [
     {
         title: 'Activity Actions',
         description:
-            'Catalogo configuravel para auditar login, logout e acoes de dominio com playground de logs reais.',
+            'Catálogo configuravel para auditar login, logout e acoes de dominio com playground de logs reais.',
         href: activityActions.url(),
         status: 'Pronto',
         icon: History,
@@ -132,7 +132,7 @@ export default function ComponentsIndex() {
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
                     <Heading
                         title="Components"
-                        description="Catalogo interno para organizar componentes, exemplos e decisoes de uso."
+                        description="Catálogo interno para organizar componentes, exemplos e decisoes de uso."
                     />
 
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

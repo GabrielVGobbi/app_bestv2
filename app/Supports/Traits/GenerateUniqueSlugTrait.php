@@ -75,7 +75,11 @@ trait GenerateUniqueSlugTrait
     {
         $slugColumn = $this->getSlugColumn();
 
-        $baseSlug = Str::slug($value, '-');
+        $baseSlug = str($value)
+            ->explode('.')
+            ->map(fn (string $segment): string => Str::slug($segment, '-'))
+            ->filter()
+            ->implode('.');
 
         if (blank($baseSlug)) {
             $baseSlug = Str::lower(Str::random(8));
@@ -85,11 +89,11 @@ trait GenerateUniqueSlugTrait
             ->where(function (Builder $query) use ($slugColumn, $baseSlug): void {
                 $query
                     ->where($slugColumn, $baseSlug)
-                    ->orWhere($slugColumn, 'LIKE', $baseSlug . '-%');
+                    ->orWhere($slugColumn, 'LIKE', $baseSlug.'-%');
             })
             ->when(
                 $this->exists && filled($this->getKey()),
-                fn(Builder $query) => $query->whereKeyNot($this->getKey())
+                fn (Builder $query) => $query->whereKeyNot($this->getKey())
             )
             ->pluck($slugColumn)
             ->all();
@@ -100,7 +104,7 @@ trait GenerateUniqueSlugTrait
 
         $highestNumber = collect($existingSlugs)
             ->map(function (string $existingSlug) use ($baseSlug): ?int {
-                $pattern = '/^' . preg_quote($baseSlug, '/') . '-(\d+)$/';
+                $pattern = '/^'.preg_quote($baseSlug, '/').'-(\d+)$/';
 
                 if (preg_match($pattern, $existingSlug, $matches)) {
                     return (int) $matches[1];
@@ -108,10 +112,10 @@ trait GenerateUniqueSlugTrait
 
                 return null;
             })
-            ->filter(fn(?int $number): bool => $number !== null)
+            ->filter(fn (?int $number): bool => $number !== null)
             ->max();
 
-        return $baseSlug . '-' . (($highestNumber ?? 0) + 1);
+        return $baseSlug.'-'.(($highestNumber ?? 0) + 1);
     }
 
     protected function getSlugColumn(): string

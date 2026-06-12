@@ -161,7 +161,7 @@ export default function Toasts() {
                                     <div>
                                         <CardTitle>Disparos rapidos</CardTitle>
                                         <CardDescription>
-                                            Teste variantes padrao, loading,
+                                            Teste variantes Padrão, loading,
                                             promise e acao.
                                         </CardDescription>
                                     </div>
@@ -285,7 +285,7 @@ export default function Toasts() {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="toast-description">
-                                        Descricao
+                                        Descrição
                                     </Label>
                                     <Input
                                         id="toast-description"

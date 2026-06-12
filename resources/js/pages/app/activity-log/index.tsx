@@ -524,13 +524,13 @@ function buildColumns(
         {
             id: 'description',
             accessorKey: 'description',
-            header: 'Descricao',
+            header: 'Descrição',
             cell: ({ row }) => (
                 <span className="text-sm">
                     {row.original.description || '-'}
                 </span>
             ),
-            meta: { label: 'Descricao' },
+            meta: { label: 'Descrição' },
         },
         {
             id: 'created_at',
@@ -691,7 +691,7 @@ export default function ActivityLogIndex({
                             minHeight: 320,
                             loadMoreThreshold: '150px',
                         }}
-                        searchPlaceholder="Buscar por descricao ou evento..."
+                        searchPlaceholder="Buscar por Descrição ou evento..."
                         appearance={{
                             size: 'md',
                             gridLines: 'none',

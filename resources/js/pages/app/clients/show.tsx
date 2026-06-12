@@ -166,7 +166,7 @@ function DefaultAddress({ address }: { address?: Address }) {
                     variant="secondary"
                     className="h-5 rounded-sm px-1.5 text-[10px]"
                 >
-                    Padrao
+                    Padrão
                 </Badge>
             </div>
             <p className="text-sm leading-6 text-muted-foreground">
@@ -470,7 +470,7 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                     <Panel title="Observações">
                                         <div className="min-h-40 text-sm leading-6 whitespace-pre-wrap text-muted-foreground">
                                             {client.notes ||
-                                                'Nenhuma observacao cadastrada.'}
+                                                'Nenhuma Observação cadastrada.'}
                                         </div>
                                     </Panel>
 

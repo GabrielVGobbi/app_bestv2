@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePermissionRequest extends FormRequest
 {
@@ -21,7 +22,7 @@ class StorePermissionRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            #'slug' => ['required', 'string', 'max:255', 'unique:permissions,slug'],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('permissions', 'slug')],
             'group' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
         ];

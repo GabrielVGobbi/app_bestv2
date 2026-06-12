@@ -43,7 +43,11 @@ class PermissionsModuleTest extends TestCase
             'clients.view',
             'clients.manage',
             'addresses.manage',
-            'services.manage',
+            'services.view',
+            'services.create',
+            'services.update',
+            'services.delete',
+            'services.restore',
             'sales.create',
             'sales.confirm',
             'sales.cancel',
@@ -81,6 +85,8 @@ class PermissionsModuleTest extends TestCase
         $this->assertEqualsCanonicalizing($expectedPermissions, $developerPermissionSlugs);
         $this->assertContains('finance.manage', $financePermissionSlugs);
         $this->assertNotContains('sales.create', $financePermissionSlugs);
+        $this->assertContains('services.view', $sellerPermissionSlugs);
+        $this->assertNotContains('services.create', $sellerPermissionSlugs);
         $this->assertContains('sales.create', $sellerPermissionSlugs);
         $this->assertContains('clients.manage', $sellerPermissionSlugs);
         $this->assertNotContains('companies.manage', $sellerPermissionSlugs);

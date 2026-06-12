@@ -59,7 +59,7 @@ class CompanySeeder extends Seeder
                         'ddd' => '48',
                         'numero' => '988241320',
                     ],
-                    'description' => 'Servico de marketing digital realizado durante o mes de ? (sem especializacao tecnica).|Pago em ?|BEST PLAY MARKETING DIRETO|CNPJ: 36.569.969/0001-25 (CHAVE PIX)|Banco: 336 - Banco C6 S.A.|Ag.: 0001CC: 2602517-5',
+                    'description' => 'Serviço de marketing digital realizado durante o mes de ? (sem especializacao tecnica).|Pago em ?|BEST PLAY MARKETING DIRETO|CNPJ: 36.569.969/0001-25 (CHAVE PIX)|Banco: 336 - Banco C6 S.A.|Ag.: 0001CC: 2602517-5',
                 ],
             ],
             [
@@ -81,7 +81,7 @@ class CompanySeeder extends Seeder
                         'ddd' => '48',
                         'numero' => '988241320',
                     ],
-                    'description' => 'Servico de marketing digital realizado durante o mes de ? (sem especializacao tecnica).|Pago em ?|BEST BRANCH MARKETING DIRETO|CNPJ: 43.358.044/0001-09|Banco: 336 - Banco C6 S.A.|Ag.: 0001CC: 10782242-3',
+                    'description' => 'Serviço de marketing digital realizado durante o mes de ? (sem especializacao tecnica).|Pago em ?|BEST BRANCH MARKETING DIRETO|CNPJ: 43.358.044/0001-09|Banco: 336 - Banco C6 S.A.|Ag.: 0001CC: 10782242-3',
                 ],
             ],
             [
@@ -103,7 +103,7 @@ class CompanySeeder extends Seeder
                         'ddd' => '11',
                         'numero' => '996964644',
                     ],
-                    'description' => 'Servico de marketing digital realizado durante o mes de ? (sem especializacao tecnica).|Pago em ?|BEAN MUSIC PROMOTION MARKETING DIRETO|CNPJ: 48.120.660/0001-32|Banco: 336 - Banco C6 S.A.|Ag.: 0001CC: 21872558-2',
+                    'description' => 'Serviço de marketing digital realizado durante o mes de ? (sem especializacao tecnica).|Pago em ?|BEAN MUSIC PROMOTION MARKETING DIRETO|CNPJ: 48.120.660/0001-32|Banco: 336 - Banco C6 S.A.|Ag.: 0001CC: 21872558-2',
                 ],
             ],
         ];

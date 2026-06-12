@@ -26,7 +26,8 @@ export default function ForcePasswordChange() {
                 </Alert>
 
                 <Form
-                    {...update.form.put()}
+                    action={update.url()}
+                    method="put"
                     resetOnError={[
                         'current_password',
                         'password',
