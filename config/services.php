@@ -36,4 +36,13 @@ return [
         ],
     ],
 
+    'spotify' => [
+        'client_id' => env('SPOTIFY_CLIENT_ID'),
+        'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
+        'base_url' => env('SPOTIFY_BASE_URL', 'https://api.spotify.com/v1'),
+        'auth_url' => env('SPOTIFY_AUTH_URL', 'https://accounts.spotify.com'),
+        'timeout' => env('SPOTIFY_TIMEOUT', 10),
+        'connect_timeout' => env('SPOTIFY_CONNECT_TIMEOUT', 5),
+    ],
+
 ];

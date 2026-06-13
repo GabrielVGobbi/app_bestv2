@@ -63,6 +63,14 @@ export const apiRoutes = {
         destroy: (id: number | string) => `/api/v1/services/${id}`,
         restore: (id: number | string) => `/api/v1/services/${id}/restore`,
     },
+    playlists: {
+        index: '/api/v1/playlists',
+        show: (id: number | string) => `/api/v1/playlists/${id}`,
+        store: '/api/v1/playlists',
+        update: (id: number | string) => `/api/v1/playlists/${id}`,
+        destroy: (id: number | string) => `/api/v1/playlists/${id}`,
+        restore: (id: number | string) => `/api/v1/playlists/${id}/restore`,
+    },
     exports: {
         index: '/api/v1/exports',
         store: '/api/v1/exports',

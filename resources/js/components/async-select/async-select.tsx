@@ -469,7 +469,7 @@ export function AsyncSelect(props: AsyncSelectProps) {
                             type="button"
                             disabled={option.disabled}
                             className={cn(
-                                'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm outline-none hover:bg-accent disabled:pointer-events-none disabled:opacity-50',
+                                'flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm outline-none hover:bg-accent disabled:pointer-events-none disabled:opacity-50',
                                 isSelected(option) && 'bg-accent',
                             )}
                             onClick={() => selectOption(option)}

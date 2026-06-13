@@ -379,12 +379,23 @@
     width: 6px;
 }
 
+.custom-scrollbar {
+    --scrollbar-thumb: color-mix(
+        in oklab,
+        var(--muted-foreground) 24%,
+        transparent
+    );
+    --scrollbar-track: transparent;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+}
+
 .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
 }
 

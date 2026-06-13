@@ -1,0 +1,614 @@
+import { usePage } from '@inertiajs/react';
+import { ChevronDown, Settings2, Youtube } from 'lucide-react';
+import { useState } from 'react';
+
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import FormField from '@/components/ui/forms/form-field';
+import FormSection from '@/components/ui/forms/form-section';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { MusicCatalogPicker } from '@/pages/app/playlists/components/music-catalog-picker';
+import type { Playlist, PlaylistFormOptions } from '@/types/app/playlist';
+
+interface Props {
+    playlist?: Partial<Playlist>;
+    options: PlaylistFormOptions;
+    errors: Record<string, string>;
+}
+
+function numberValue(value: number | null | undefined): string {
+    return value === null || value === undefined ? '' : String(value);
+}
+
+const spotifyPlaylistBaseUrl = 'https://open.spotify.com/playlist/';
+const youtubeBaseUrl = 'https://www.youtube.com/';
+
+function extractSpotifyPlaylistId(value: string): string {
+    const input = value.trim();
+
+    if (!input) {
+        return '';
+    }
+
+    const uriMatch = input.match(/^spotify:playlist:([A-Za-z0-9]+)$/i);
+
+    if (uriMatch?.[1]) {
+        return uriMatch[1];
+    }
+
+    const typedSuffix = input.split(/[?#]/)[0].replace(/^\/+|\/+$/g, '');
+
+    if (/^[A-Za-z0-9]*$/.test(typedSuffix)) {
+        return typedSuffix;
+    }
+
+    try {
+        const url = new URL(input);
+        const playlistIndex = url.pathname
+            .split('/')
+            .filter(Boolean)
+            .findIndex((segment) => segment === 'playlist');
+
+        if (playlistIndex === -1) {
+            return '';
+        }
+
+        return url.pathname.split('/').filter(Boolean)[playlistIndex + 1] ?? '';
+    } catch {
+        return '';
+    }
+}
+
+function extractYoutubePath(value: string): string {
+    const input = value.trim().replace(/^\/+/, '');
+
+    if (!input) {
+        return '';
+    }
+
+    try {
+        const url = new URL(input);
+        const segments = url.pathname.split('/').filter(Boolean);
+
+        if (url.hostname.includes('youtu.be')) {
+            return segments[0] ? `watch?v=${segments[0]}` : '';
+        }
+
+        if (url.hostname.includes('youtube.com')) {
+            const videoId = url.searchParams.get('v');
+            const playlistId = url.searchParams.get('list');
+
+            if (videoId) {
+                return `watch?v=${videoId}`;
+            }
+
+            if (segments[0] === 'playlist' && playlistId) {
+                return `playlist?list=${playlistId}`;
+            }
+
+            return `${segments.join('/')}${url.search}`.replace(/^\/+/, '');
+        }
+    } catch {
+        // Typed suffixes are normalized below.
+    }
+
+    return input
+        .replace(/^https?:\/\//i, '')
+        .replace(/^www\./i, '')
+        .replace(/^youtube\.com\/?/i, '')
+        .replace(/^youtu\.be\/?/i, 'watch?v=')
+        .replace(/^\/+/, '');
+}
+
+function canonicalSpotifyUrl(playlistId: string): string {
+    return playlistId ? `${spotifyPlaylistBaseUrl}${playlistId}` : '';
+}
+
+function canonicalYoutubeUrl(path: string): string {
+    return path ? `${youtubeBaseUrl}${path.replace(/^\/+/, '')}` : '';
+}
+
+function SpotifyIcon({ className }: { className?: string }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className={className}
+            fill="currentColor"
+        >
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm4.59 14.42a.63.63 0 0 1-.86.2c-2.36-1.45-5.33-1.78-8.82-.97a.63.63 0 1 1-.28-1.23c3.82-.87 7.1-.5 9.76 1.13.3.18.39.57.2.87Zm1.22-2.72a.78.78 0 0 1-1.07.25c-2.7-1.66-6.82-2.14-10.02-1.17a.78.78 0 1 1-.45-1.5c3.65-1.11 8.19-.58 11.28 1.32.37.23.48.72.26 1.1Zm.1-2.84C14.67 8.94 9.32 8.76 6.23 9.7a.94.94 0 0 1-.55-1.79c3.55-1.08 9.45-.87 13.18 1.34.44.27.59.84.32 1.29a.94.94 0 0 1-1.28.32Z" />
+        </svg>
+    );
+}
+
+type LinkBrand = 'spotify' | 'youtube';
+
+interface LockedSuffixLinkInputProps {
+    id: string;
+    value: string;
+    brand: LinkBrand;
+    prefix: string;
+    placeholder: string;
+    disabled?: boolean;
+    invalid?: boolean;
+    normalize: (value: string) => string;
+    onChange?: (value: string) => void;
+}
+
+function LockedSuffixLinkInput({
+    id,
+    value,
+    brand,
+    prefix,
+    placeholder,
+    disabled = false,
+    invalid = false,
+    normalize,
+    onChange,
+}: LockedSuffixLinkInputProps) {
+    const isSpotify = brand === 'spotify';
+
+    return (
+        <div
+            className={cn(
+                'flex h-10 items-center gap-2 rounded-md border border-input bg-background/70 px-2 shadow-xs transition-[border-color,box-shadow,color]',
+                'focus-within:border-ring focus-within:ring-[2px] focus-within:ring-ring/15',
+                invalid &&
+                    'border-destructive ring-destructive/20 dark:ring-destructive/40',
+                disabled && 'opacity-75',
+            )}
+        >
+            <span
+                className={cn(
+                    'flex size-7 shrink-0 items-center justify-center rounded-md border bg-background',
+                    isSpotify
+                        ? 'border-emerald-200 text-emerald-600 dark:border-emerald-900/70 dark:text-emerald-400'
+                        : 'border-red-200 text-red-600 dark:border-red-900/70 dark:text-red-400',
+                )}
+            >
+                {isSpotify ? (
+                    <SpotifyIcon className="size-4" />
+                ) : (
+                    <Youtube className="size-4" />
+                )}
+            </span>
+            <span className="max-w-[13rem] shrink-0 truncate text-xs font-medium text-muted-foreground">
+                {prefix}
+            </span>
+            <Input
+                id={id}
+                type="text"
+                value={value}
+                readOnly={disabled}
+                disabled={disabled}
+                placeholder={placeholder}
+                autoComplete="off"
+                aria-invalid={invalid}
+                className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0 disabled:pointer-events-auto"
+                onChange={(event) => onChange?.(normalize(event.target.value))}
+            />
+        </div>
+    );
+}
+
+function hasLegacyMetadata(
+    metadata: Playlist['external_metadata'] | undefined,
+): boolean {
+    return Boolean(
+        metadata?.legacy_spotify_id ||
+        metadata?.legacy_spotify_key ||
+        metadata?.source,
+    );
+}
+
+function hasLegacyErrors(errors: Record<string, string>): boolean {
+    return Object.keys(errors).some((key) =>
+        key.startsWith('external_metadata.'),
+    );
+}
+
+function getRoleIdentifier(role: unknown): string {
+    if (typeof role === 'string') {
+        return role;
+    }
+
+    if (!role || typeof role !== 'object') {
+        return '';
+    }
+
+    const candidate = role as { slug?: unknown; name?: unknown };
+
+    return String(candidate.slug ?? candidate.name ?? '');
+}
+
+function isDeveloperRole(role: unknown): boolean {
+    const roleIdentifier = getRoleIdentifier(role).trim().toLowerCase();
+
+    return roleIdentifier === 'developer' || roleIdentifier === 'desenvolvedor';
+}
+
+function canSeeLegacyData(user: unknown): boolean {
+    if (!user || typeof user !== 'object') {
+        return false;
+    }
+
+    const roles = (user as { roles?: unknown }).roles;
+
+    return Array.isArray(roles) && roles.some(isDeveloperRole);
+}
+
+export default function PlaylistFormFields({
+    playlist,
+    options,
+    errors,
+}: Props) {
+    const { auth } = usePage().props;
+    const [genreId, setGenreId] = useState(
+        playlist?.music_genre_id ? String(playlist.music_genre_id) : '',
+    );
+    const [selectedSubgenreIds, setSelectedSubgenreIds] = useState<number[]>(
+        playlist?.subgenres?.map((subgenre) => subgenre.id) ?? [],
+    );
+    const [genres, setGenres] = useState(options.genres);
+    const [subgenres, setSubgenres] = useState(options.subgenres);
+    const [spotifyPlaylistId, setSpotifyPlaylistId] = useState(
+        extractSpotifyPlaylistId(
+            playlist?.spotify_url ?? playlist?.spotify_playlist_id ?? '',
+        ),
+    );
+    const [youtubePath, setYoutubePath] = useState(
+        extractYoutubePath(playlist?.youtube_url ?? ''),
+    );
+    const [isLegacyOpen, setIsLegacyOpen] = useState(
+        hasLegacyMetadata(playlist?.external_metadata) ||
+            hasLegacyErrors(errors),
+    );
+    const showLegacyData = canSeeLegacyData(auth.user);
+    const spotifyUrl = canonicalSpotifyUrl(spotifyPlaylistId);
+    const youtubeUrl = canonicalYoutubeUrl(youtubePath);
+
+    function changeGenre(value: string): void {
+        setGenreId(value);
+        const nextGenre = genres.find((genre) => String(genre.id) === value);
+        const allowedIds = new Set(
+            (nextGenre?.subgenres ?? []).map((subgenre) => subgenre.id),
+        );
+
+        setSelectedSubgenreIds((current) =>
+            current.filter((id) => allowedIds.has(id)),
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            <FormSection
+                title="Dados da playlist"
+                description="Cadastro comercial da playlist, separado de vendas, TOPs e vagas."
+            >
+                <input type="hidden" name="music_genre_id" value={genreId} />
+                <input
+                    type="hidden"
+                    name="spotify_snapshot_id"
+                    value={playlist?.spotify_snapshot_id ?? ''}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_owner_id"
+                    value={playlist?.spotify_owner_id ?? ''}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_owner_name"
+                    value={playlist?.spotify_owner_name ?? ''}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_tracks_total"
+                    value={numberValue(playlist?.spotify_tracks_total)}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_last_synced_at"
+                    value={playlist?.spotify_last_synced_at ?? ''}
+                />
+                {!showLegacyData && playlist?.external_metadata ? (
+                    <input
+                        type="hidden"
+                        name="external_metadata"
+                        value={JSON.stringify(playlist.external_metadata)}
+                    />
+                ) : null}
+                {selectedSubgenreIds.map((id) => (
+                    <input
+                        key={id}
+                        type="hidden"
+                        name="subgenre_ids[]"
+                        value={id}
+                    />
+                ))}
+
+                <div className="max-w-2xl">
+                    <FormField
+                        id="field-name"
+                        label="Nome"
+                        variant="stacked"
+                        required
+                        error={errors.name}
+                    >
+                        <Input
+                            id="field-name"
+                            name="name"
+                            type="text"
+                            defaultValue={playlist?.name ?? ''}
+                            required
+                            minLength={3}
+                            autoComplete="off"
+                            aria-invalid={!!errors.name}
+                        />
+                    </FormField>
+                </div>
+            </FormSection>
+
+            <FormSection
+                title="Gênero e subgêneros"
+                description="Organize a playlist pela árvore musical e crie novas tags sem sair do formulário."
+            >
+                <MusicCatalogPicker
+                    genres={genres}
+                    subgenres={subgenres}
+                    selectedGenreId={genreId}
+                    selectedSubgenreIds={selectedSubgenreIds}
+                    errors={errors}
+                    canCreate={options.can_create_music_catalog}
+                    onGenresChange={setGenres}
+                    onSubgenresChange={setSubgenres}
+                    onGenreChange={changeGenre}
+                    onSubgenreIdsChange={setSelectedSubgenreIds}
+                />
+            </FormSection>
+
+            <FormSection
+                title="Links e métricas"
+                description="Referências públicas e números comerciais usados na triagem."
+            >
+                <div className="space-y-3 rounded-md border bg-muted/20 p-3 sm:p-4">
+                    <FormField
+                        id="field-spotify-url"
+                        label="Link Spotify"
+                        variant="inline"
+                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        error={errors.spotify_url}
+                    >
+                        <input
+                            type="hidden"
+                            name="spotify_url"
+                            value={spotifyUrl}
+                        />
+                        <LockedSuffixLinkInput
+                            id="field-spotify-url"
+                            brand="spotify"
+                            prefix="open.spotify.com/playlist/"
+                            value={spotifyPlaylistId}
+                            placeholder="5bNqE1YOKGpbylAsxAiNtC"
+                            invalid={!!errors.spotify_url}
+                            normalize={extractSpotifyPlaylistId}
+                            onChange={setSpotifyPlaylistId}
+                        />
+                    </FormField>
+
+                    <input
+                        type="hidden"
+                        name="spotify_playlist_id"
+                        value={spotifyPlaylistId}
+                    />
+
+                    <FormField
+                        id="field-spotify-playlist-id"
+                        label="ID público Spotify"
+                        variant="inline"
+                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        error={errors.spotify_playlist_id}
+                    >
+                        <LockedSuffixLinkInput
+                            id="field-spotify-playlist-id"
+                            brand="spotify"
+                            prefix="ID"
+                            value={spotifyPlaylistId}
+                            placeholder="Gerado automaticamente pelo link"
+                            disabled
+                            invalid={!!errors.spotify_playlist_id}
+                            normalize={extractSpotifyPlaylistId}
+                        />
+                    </FormField>
+
+                    <FormField
+                        id="field-youtube-url"
+                        label="Link YouTube"
+                        variant="inline"
+                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        error={errors.youtube_url}
+                    >
+                        <input
+                            type="hidden"
+                            name="youtube_url"
+                            value={youtubeUrl}
+                        />
+                        <LockedSuffixLinkInput
+                            id="field-youtube-url"
+                            brand="youtube"
+                            prefix="youtube.com/"
+                            value={youtubePath}
+                            placeholder="@canal, watch?v=... ou playlist?list=..."
+                            invalid={!!errors.youtube_url}
+                            normalize={extractYoutubePath}
+                            onChange={setYoutubePath}
+                        />
+                    </FormField>
+
+                    <FormField
+                        id="field-followers"
+                        label="Seguidores"
+                        variant="inline"
+                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        error={errors.followers_count}
+                    >
+                        <Input
+                            id="field-followers"
+                            name="followers_count"
+                            type="number"
+                            min={0}
+                            defaultValue={numberValue(
+                                playlist?.followers_count,
+                            )}
+                            aria-invalid={!!errors.followers_count}
+                        />
+                    </FormField>
+
+                    <FormField
+                        id="field-estimated-reach"
+                        label="Alcance estimado"
+                        variant="inline"
+                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        error={errors.estimated_reach}
+                    >
+                        <Input
+                            id="field-estimated-reach"
+                            name="estimated_reach"
+                            type="number"
+                            min={0}
+                            defaultValue={numberValue(
+                                playlist?.estimated_reach,
+                            )}
+                            aria-invalid={!!errors.estimated_reach}
+                        />
+                    </FormField>
+                </div>
+            </FormSection>
+
+            <FormField
+                id="field-notes"
+                label="Observações"
+                variant="stacked"
+                error={errors.notes}
+            >
+                <Textarea
+                    id="field-notes"
+                    name="notes"
+                    defaultValue={playlist?.notes ?? ''}
+                    rows={3}
+                    autoResize
+                    aria-invalid={!!errors.notes}
+                />
+            </FormField>
+
+            {showLegacyData ? (
+                <Collapsible open={isLegacyOpen} onOpenChange={setIsLegacyOpen}>
+                    <section className="rounded-md border bg-muted/20">
+                        <CollapsibleTrigger asChild>
+                            <button
+                                type="button"
+                                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                            >
+                                <span className="flex min-w-0 items-center gap-3">
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
+                                        <Settings2 className="size-4" />
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span className="block text-sm font-semibold">
+                                            Dados legados
+                                        </span>
+                                        <span className="block truncate text-xs text-muted-foreground">
+                                            Campos técnicos mantidos para
+                                            migração e rastreabilidade
+                                        </span>
+                                    </span>
+                                </span>
+                                <ChevronDown
+                                    className={cn(
+                                        'size-4 shrink-0 text-muted-foreground transition-transform',
+                                        isLegacyOpen && 'rotate-180',
+                                    )}
+                                />
+                            </button>
+                        </CollapsibleTrigger>
+
+                        <CollapsibleContent>
+                            <div className="border-t bg-background px-4 py-4">
+                                <div className="grid gap-4 sm:grid-cols-3">
+                                    <FormField
+                                        id="field-legacy-id"
+                                        label="Spotify ID legado"
+                                        variant="stacked"
+                                        error={
+                                            errors[
+                                                'external_metadata.legacy_spotify_id'
+                                            ]
+                                        }
+                                    >
+                                        <Input
+                                            id="field-legacy-id"
+                                            name="external_metadata[legacy_spotify_id]"
+                                            type="text"
+                                            defaultValue={
+                                                playlist?.external_metadata
+                                                    ?.legacy_spotify_id ?? ''
+                                            }
+                                            autoComplete="off"
+                                        />
+                                    </FormField>
+
+                                    <FormField
+                                        id="field-legacy-key"
+                                        label="Spotify Key legado"
+                                        variant="stacked"
+                                        error={
+                                            errors[
+                                                'external_metadata.legacy_spotify_key'
+                                            ]
+                                        }
+                                    >
+                                        <Input
+                                            id="field-legacy-key"
+                                            name="external_metadata[legacy_spotify_key]"
+                                            type="text"
+                                            defaultValue={
+                                                playlist?.external_metadata
+                                                    ?.legacy_spotify_key ?? ''
+                                            }
+                                            autoComplete="off"
+                                        />
+                                    </FormField>
+
+                                    <FormField
+                                        id="field-source"
+                                        label="Origem"
+                                        variant="stacked"
+                                        error={
+                                            errors['external_metadata.source']
+                                        }
+                                    >
+                                        <Input
+                                            id="field-source"
+                                            name="external_metadata[source]"
+                                            type="text"
+                                            defaultValue={
+                                                playlist?.external_metadata
+                                                    ?.source ?? ''
+                                            }
+                                            autoComplete="off"
+                                        />
+                                    </FormField>
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </section>
+                </Collapsible>
+            ) : null}
+        </div>
+    );
+}

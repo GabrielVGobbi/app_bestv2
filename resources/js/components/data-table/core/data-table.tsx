@@ -112,6 +112,10 @@ function renderInlineActions<TData>(
                 const showLabel = shouldShowLabel(action);
                 const actionSize = actionButtonSize(showLabel);
 
+                if (action.render) {
+                    return <div key={action.label}>{action.render(row)}</div>;
+                }
+
                 if (action.href && !disabled) {
                     return renderWithTooltip(
                         action,
@@ -181,6 +185,12 @@ function renderMenuActions<TData>(
                             {action.label}
                         </>
                     );
+
+                    if (action.render) {
+                        return (
+                            <div key={action.label}>{action.render(row)}</div>
+                        );
+                    }
 
                     if (action.href && !disabled) {
                         return (

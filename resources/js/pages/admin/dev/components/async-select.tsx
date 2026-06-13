@@ -191,7 +191,7 @@ public function asyncSelectUsers(Request $request): JsonResponse
 
 function CodeBlock({ code }: { code: string }) {
     return (
-        <pre className="overflow-x-auto rounded-lg border bg-muted/50 p-4 text-xs leading-relaxed">
+        <pre className="overflow-x-auto rounded-md border bg-muted/50 p-4 text-xs leading-relaxed">
             <code>{code}</code>
         </pre>
     );
@@ -207,7 +207,7 @@ function FeatureCard({
     description: string;
 }) {
     return (
-        <Card className="rounded-lg">
+        <Card className="rounded-md">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                     <Icon className="size-4" />
@@ -311,7 +311,7 @@ export default function AsyncSelectPage() {
                         />
                     </div>
 
-                    <Card className="rounded-lg">
+                    <Card className="rounded-md">
                         <CardHeader>
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
@@ -428,7 +428,7 @@ export default function AsyncSelectPage() {
                                     />
                                 )}
 
-                                <div className="rounded-lg border bg-muted/30 p-3">
+                                <div className="rounded-md border bg-muted/30 p-3">
                                     <div className="text-xs font-medium text-muted-foreground">
                                         Valor atual
                                     </div>
@@ -440,7 +440,7 @@ export default function AsyncSelectPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="rounded-lg">
+                    <Card className="rounded-md">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Layers className="size-5" />
@@ -453,7 +453,7 @@ export default function AsyncSelectPage() {
                         </CardHeader>
                         <CardContent className="grid gap-5 xl:grid-cols-2">
                             <div className="space-y-4">
-                                <div className="rounded-lg border bg-muted/20 p-4">
+                                <div className="rounded-md border bg-muted/20 p-4">
                                     <div className="mb-3">
                                         <div className="font-medium">
                                             Seleção única
@@ -475,7 +475,7 @@ export default function AsyncSelectPage() {
                             </div>
 
                             <div className="space-y-4">
-                                <div className="rounded-lg border bg-muted/20 p-4">
+                                <div className="rounded-md border bg-muted/20 p-4">
                                     <div className="mb-3">
                                         <div className="font-medium">
                                             Seleção múltipla
@@ -594,7 +594,7 @@ export default function AsyncSelectPage() {
                     </Dialog>
 
                     <div className="grid gap-6 xl:grid-cols-2">
-                        <Card className="rounded-lg">
+                        <Card className="rounded-md">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Search className="size-5" />
@@ -668,7 +668,7 @@ export default function AsyncSelectPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-lg">
+                        <Card className="rounded-md">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Code2 className="size-5" />
@@ -688,7 +688,7 @@ export default function AsyncSelectPage() {
                     </div>
 
                     <div className="grid gap-6 xl:grid-cols-2">
-                        <Card className="rounded-lg">
+                        <Card className="rounded-md">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Zap className="size-5" />
@@ -746,7 +746,7 @@ export default function AsyncSelectPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-lg">
+                        <Card className="rounded-md">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <BookOpen className="size-5" />

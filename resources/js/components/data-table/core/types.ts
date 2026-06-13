@@ -163,6 +163,7 @@ export interface DataTableExportConfig {
 
 export interface DataTableAction<TData> {
     label: string;
+    render?: (row: TData) => ReactNode;
     href?: (row: TData) => string;
     onClick?: (row: TData) => void;
     icon?: ReactNode;
