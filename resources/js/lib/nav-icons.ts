@@ -1,6 +1,7 @@
 import {
     Activity,
     BellRing,
+    BadgePercent,
     BookOpen,
     Building2,
     Clock,
@@ -31,7 +32,7 @@ import {
     DatabaseZap,
     Bell,
     Music2,
-    ShoppingBag
+    ShoppingBag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -42,6 +43,7 @@ import type { LucideIcon } from 'lucide-react';
 const NAV_ICONS: Record<string, LucideIcon> = {
     Activity,
     BellRing,
+    BadgePercent,
     BookOpen,
     Building2,
     Clock,
@@ -72,7 +74,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     DatabaseZap,
     Bell,
     Music2,
-    ShoppingBag
+    ShoppingBag,
 };
 
 export function resolveIcon(name?: string | null): LucideIcon | null {

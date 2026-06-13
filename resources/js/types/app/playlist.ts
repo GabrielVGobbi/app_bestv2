@@ -24,6 +24,47 @@ export interface PlaylistExternalMetadata {
     source?: string | null;
 }
 
+export interface Top {
+    id: number;
+    uuid: string;
+    name: string;
+    slug: string;
+    default_slots_quantity: number;
+    description: string | null;
+    sort_order: number;
+    is_active: boolean;
+    playlist_tops_count?: number;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
+
+export interface PlaylistTopMetrics {
+    estimated_streams?: number | null;
+    estimated_reach?: number | null;
+    average_retention_days?: number | null;
+    commercial_score?: number | null;
+}
+
+export interface PlaylistTop {
+    id: number;
+    uuid: string;
+    playlist_id: number;
+    top_id: number;
+    top: Top | null;
+    slots_quantity: number;
+    occupied_slots_count: number;
+    available_slots_count: number;
+    price: number;
+    currency: 'BRL';
+    metrics: PlaylistTopMetrics | null;
+    notes: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
+
 export interface Playlist {
     id: number;
     uuid: string;
@@ -60,6 +101,14 @@ export interface PlaylistCollectionResource {
     data: Playlist[];
     links?: unknown;
     meta?: unknown;
+}
+
+export interface PlaylistTopCollectionResource {
+    data: PlaylistTop[];
+}
+
+export interface TopCollectionResource {
+    data: Top[];
 }
 
 export interface PlaylistStatusOption {

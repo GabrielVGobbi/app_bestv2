@@ -1,37 +1,79 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     CalendarDays,
     ExternalLink,
     ListMusic,
+    Pencil,
+    Plus,
     Radio,
     Trash2,
     Users,
 } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
 import {
     destroy,
-    edit,
     index,
     show,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
+import {
+    destroy as detachPlaylistTop,
+    store as attachPlaylistTop,
+    update as configurePlaylistTop,
+} from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistTopController';
 import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { InputMoney } from '@/components/ui/input-money';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDate } from '@/lib/utils';
-import type { PlaylistResource, PlaylistStatus } from '@/types/app/playlist';
+import { Textarea } from '@/components/ui/textarea';
+import { formatDate, formatMoney } from '@/lib/utils';
+import type {
+    PlaylistResource,
+    PlaylistStatus,
+    PlaylistTop,
+    PlaylistTopCollectionResource,
+    Top,
+    TopCollectionResource,
+} from '@/types/app/playlist';
 
-import { PlaylistSubNav } from './components/playlist-sub-nav';
 import { PlaylistStatusMenu } from './components/playlist-status-menu';
+import { PlaylistSubNav } from './components/playlist-sub-nav';
 
 interface Props {
     playlistData: PlaylistResource;
+    playlistTops: PlaylistTopCollectionResource;
+    topOptions: TopCollectionResource;
     permissions: {
         can_update: boolean;
         can_delete: boolean;
+    };
+    playlistTopPermissions: {
+        can_attach: boolean;
+        can_configure: boolean;
+        can_detach: boolean;
     };
 }
 
@@ -65,6 +107,17 @@ function InfoField({ label, value }: { label: string; value: string }) {
     );
 }
 
+function CompactTopField({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="min-w-0 lg:text-right">
+            <p className="text-xs font-medium text-muted-foreground lg:hidden">
+                {label}
+            </p>
+            <p className="mt-0.5 text-sm break-words tabular-nums">{value}</p>
+        </div>
+    );
+}
+
 function metadataSummary(
     metadata: PlaylistResource['data']['external_metadata'],
 ): string {
@@ -75,7 +128,594 @@ function metadataSummary(
     return JSON.stringify(metadata, null, 2);
 }
 
-export default function ShowPlaylist({ playlistData, permissions }: Props) {
+function centsToDecimal(value: number | undefined): string {
+    return ((value ?? 0) / 100).toFixed(2);
+}
+
+function topLabel(top: Top): string {
+    return `${top.name} (${top.default_slots_quantity} vagas padrão)`;
+}
+
+interface PlaylistTopFormData {
+    top_id: string;
+    slots_quantity: string;
+    price: string;
+    metrics: {
+        estimated_streams: string;
+        estimated_reach: string;
+        average_retention_days: string;
+        commercial_score: string;
+    };
+    notes: string;
+    is_active: boolean;
+}
+
+function emptyPlaylistTopForm(top?: Top): PlaylistTopFormData {
+    return {
+        top_id: top ? String(top.id) : '',
+        slots_quantity: top ? String(top.default_slots_quantity) : '',
+        price: '0.00',
+        metrics: {
+            estimated_streams: '',
+            estimated_reach: '',
+            average_retention_days: '',
+            commercial_score: '',
+        },
+        notes: '',
+        is_active: true,
+    };
+}
+
+function formFromPlaylistTop(playlistTop: PlaylistTop): PlaylistTopFormData {
+    return {
+        top_id: String(playlistTop.top_id),
+        slots_quantity: String(playlistTop.slots_quantity),
+        price: centsToDecimal(playlistTop.price),
+        metrics: {
+            estimated_streams:
+                playlistTop.metrics?.estimated_streams?.toString() ?? '',
+            estimated_reach:
+                playlistTop.metrics?.estimated_reach?.toString() ?? '',
+            average_retention_days:
+                playlistTop.metrics?.average_retention_days?.toString() ?? '',
+            commercial_score:
+                playlistTop.metrics?.commercial_score?.toString() ?? '',
+        },
+        notes: playlistTop.notes ?? '',
+        is_active: playlistTop.is_active,
+    };
+}
+
+function PlaylistTopsPanel({
+    playlist,
+    playlistTops,
+    topOptions,
+    permissions,
+}: {
+    playlist: PlaylistResource['data'];
+    playlistTops: PlaylistTop[];
+    topOptions: Top[];
+    permissions: Props['playlistTopPermissions'];
+}) {
+    const [isAttachOpen, setIsAttachOpen] = useState(false);
+    const [editingPlaylistTop, setEditingPlaylistTop] =
+        useState<PlaylistTop | null>(null);
+    const [playlistTopToDelete, setPlaylistTopToDelete] =
+        useState<PlaylistTop | null>(null);
+    const attachForm = useForm<PlaylistTopFormData>(
+        emptyPlaylistTopForm(topOptions[0]),
+    );
+    const configureForm = useForm<PlaylistTopFormData>(emptyPlaylistTopForm());
+
+    function openAttachDialog(): void {
+        attachForm.setDefaults(emptyPlaylistTopForm(topOptions[0]));
+        attachForm.reset();
+        setIsAttachOpen(true);
+    }
+
+    function openConfigureDialog(playlistTop: PlaylistTop): void {
+        const payload = formFromPlaylistTop(playlistTop);
+
+        configureForm.setDefaults(payload);
+        configureForm.setData(payload);
+        setEditingPlaylistTop(playlistTop);
+    }
+
+    function submitAttach(event: FormEvent<HTMLFormElement>): void {
+        event.preventDefault();
+
+        attachForm.post(attachPlaylistTop.url(playlist.uuid), {
+            preserveScroll: true,
+            onSuccess: () => setIsAttachOpen(false),
+        });
+    }
+
+    function submitConfigure(event: FormEvent<HTMLFormElement>): void {
+        event.preventDefault();
+
+        if (!editingPlaylistTop) {
+            return;
+        }
+
+        configureForm.patch(
+            configurePlaylistTop.url([playlist.uuid, editingPlaylistTop.uuid]),
+            {
+                preserveScroll: true,
+                onSuccess: () => setEditingPlaylistTop(null),
+            },
+        );
+    }
+
+    function detachTop(): void {
+        if (!playlistTopToDelete) {
+            return;
+        }
+
+        router.delete(
+            detachPlaylistTop.url([playlist.uuid, playlistTopToDelete.uuid]),
+            {
+                preserveScroll: true,
+                onSuccess: () => setPlaylistTopToDelete(null),
+            },
+        );
+    }
+
+    function updateSelectedTop(topId: string): void {
+        const selectedTop = topOptions.find((top) => String(top.id) === topId);
+
+        attachForm.setData((data) => ({
+            ...data,
+            top_id: topId,
+            slots_quantity: selectedTop
+                ? String(selectedTop.default_slots_quantity)
+                : data.slots_quantity,
+        }));
+    }
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <CardTitle>TOPs comercializáveis</CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Capacidade, preço sugerido, métricas e ocupação por TOP.
+                    </p>
+                </div>
+                {permissions.can_attach ? (
+                    <Button
+                        size="icon"
+                        className="size-8"
+                        onClick={openAttachDialog}
+                        aria-label="Adicionar TOP"
+                        title="Adicionar TOP"
+                    >
+                        <Plus className="size-4" />
+                    </Button>
+                ) : null}
+            </CardHeader>
+            <CardContent>
+                {playlistTops.length === 0 ? (
+                    <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+                        Nenhum TOP vinculado a esta playlist.
+                    </div>
+                ) : (
+                    <div className="overflow-hidden rounded-md border">
+                        <div className="hidden grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem] gap-3 border-b bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground lg:grid">
+                            <span>TOP</span>
+                            <span className="text-right">Capacidade</span>
+                            <span className="text-right">Ocupadas</span>
+                            <span className="text-right">Disponíveis</span>
+                            <span className="text-right">Valor</span>
+                            <span className="text-right">Score</span>
+                            <span className="sr-only">Ações</span>
+                        </div>
+                        <ul className="divide-y">
+                            {playlistTops.map((playlistTop) => {
+                                const topName =
+                                    playlistTop.top?.name ?? 'TOP removido';
+
+                                return (
+                                    <li
+                                        key={playlistTop.uuid}
+                                        className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem] lg:items-center"
+                                    >
+                                        <div className="min-w-0">
+                                            <h3 className="truncate text-sm font-semibold">
+                                                {playlistTop.top?.name ??
+                                                    'TOP removido'}
+                                            </h3>
+                                            {playlistTop.notes ? (
+                                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                                    {playlistTop.notes}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <CompactTopField
+                                            label="Capacidade"
+                                            value={String(
+                                                playlistTop.slots_quantity,
+                                            )}
+                                        />
+                                        <CompactTopField
+                                            label="Ocupadas"
+                                            value={String(
+                                                playlistTop.occupied_slots_count,
+                                            )}
+                                        />
+                                        <CompactTopField
+                                            label="Disponíveis"
+                                            value={String(
+                                                playlistTop.available_slots_count,
+                                            )}
+                                        />
+                                        <CompactTopField
+                                            label="Valor"
+                                            value={formatMoney(
+                                                playlistTop.price,
+                                                {
+                                                    fromCents: true,
+                                                },
+                                            )}
+                                        />
+                                        <CompactTopField
+                                            label="Score"
+                                            value={cleanValue(
+                                                playlistTop.metrics
+                                                    ?.commercial_score,
+                                            )}
+                                        />
+                                        <div className="flex items-center gap-1 lg:justify-end">
+                                            {permissions.can_configure ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-8"
+                                                    onClick={() =>
+                                                        openConfigureDialog(
+                                                            playlistTop,
+                                                        )
+                                                    }
+                                                    aria-label={`Configurar ${topName}`}
+                                                    title="Configurar"
+                                                >
+                                                    <Pencil className="size-4" />
+                                                </Button>
+                                            ) : null}
+                                            {permissions.can_detach ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-8 text-destructive hover:text-destructive"
+                                                    onClick={() =>
+                                                        setPlaylistTopToDelete(
+                                                            playlistTop,
+                                                        )
+                                                    }
+                                                    aria-label={`Remover ${topName}`}
+                                                    title="Remover"
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                )}
+            </CardContent>
+
+            <Dialog open={isAttachOpen} onOpenChange={setIsAttachOpen}>
+                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Adicionar TOP à playlist</DialogTitle>
+                        <DialogDescription>
+                            O vínculo recebe a capacidade padrão do catálogo,
+                            mas pode ser ajustado para esta playlist.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={submitAttach} className="space-y-4">
+                        <TopConfigurationFields
+                            form={attachForm}
+                            topOptions={topOptions}
+                            onTopChange={updateSelectedTop}
+                            includeTopSelector
+                        />
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsAttachOpen(false)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={attachForm.processing}
+                            >
+                                {attachForm.processing
+                                    ? 'Salvando...'
+                                    : 'Vincular TOP'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={editingPlaylistTop !== null}
+                onOpenChange={(open) => !open && setEditingPlaylistTop(null)}
+            >
+                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Configurar TOP da playlist</DialogTitle>
+                        <DialogDescription>
+                            Ocupação atual é somente leitura nesta fase.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={submitConfigure} className="space-y-4">
+                        <TopConfigurationFields
+                            form={configureForm}
+                            topOptions={topOptions}
+                        />
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setEditingPlaylistTop(null)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={configureForm.processing}
+                            >
+                                {configureForm.processing
+                                    ? 'Salvando...'
+                                    : 'Salvar configuração'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={playlistTopToDelete !== null}
+                onOpenChange={(open) => !open && setPlaylistTopToDelete(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remover TOP da playlist</DialogTitle>
+                        <DialogDescription>
+                            O vínculo será arquivado e deixará de ser ofertado
+                            para novas operações.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setPlaylistTopToDelete(null)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button variant="destructive" onClick={detachTop}>
+                            Remover
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </Card>
+    );
+}
+
+function TopConfigurationFields({
+    form,
+    topOptions,
+    includeTopSelector = false,
+    onTopChange,
+}: {
+    form: ReturnType<typeof useForm<PlaylistTopFormData>>;
+    topOptions: Top[];
+    includeTopSelector?: boolean;
+    onTopChange?: (topId: string) => void;
+}) {
+    const errors = form.errors as Record<string, string>;
+
+    return (
+        <div className="space-y-4">
+            {includeTopSelector ? (
+                <div className="space-y-2">
+                    <Label htmlFor="field-top-id">TOP</Label>
+                    <Select
+                        value={form.data.top_id}
+                        onValueChange={(value) =>
+                            onTopChange
+                                ? onTopChange(value)
+                                : form.setData('top_id', value)
+                        }
+                    >
+                        <SelectTrigger id="field-top-id" className="w-full">
+                            <SelectValue placeholder="Selecione um TOP" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {topOptions.map((top) => (
+                                <SelectItem key={top.id} value={String(top.id)}>
+                                    {topLabel(top)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {errors.top_id ? (
+                        <p className="text-sm text-destructive">
+                            {errors.top_id}
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                    <Label htmlFor="field-slots-quantity">
+                        Quantidade de vagas
+                    </Label>
+                    <Input
+                        id="field-slots-quantity"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={form.data.slots_quantity}
+                        onChange={(event) =>
+                            form.setData('slots_quantity', event.target.value)
+                        }
+                        inputMode="numeric"
+                        aria-invalid={!!errors.slots_quantity}
+                    />
+                    {errors.slots_quantity ? (
+                        <p className="text-sm text-destructive">
+                            {errors.slots_quantity}
+                        </p>
+                    ) : null}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="field-price">Valor sugerido</Label>
+                    <InputMoney
+                        id="field-price"
+                        value={form.data.price}
+                        onChange={(value) => form.setData('price', value)}
+                        aria-invalid={!!errors.price}
+                    />
+                    {errors.price ? (
+                        <p className="text-sm text-destructive">
+                            {errors.price}
+                        </p>
+                    ) : null}
+                </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <MetricInput
+                    label="Streams estimados"
+                    value={form.data.metrics.estimated_streams}
+                    error={errors['metrics.estimated_streams']}
+                    onChange={(value) =>
+                        form.setData('metrics', {
+                            ...form.data.metrics,
+                            estimated_streams: value,
+                        })
+                    }
+                />
+                <MetricInput
+                    label="Alcance estimado"
+                    value={form.data.metrics.estimated_reach}
+                    error={errors['metrics.estimated_reach']}
+                    onChange={(value) =>
+                        form.setData('metrics', {
+                            ...form.data.metrics,
+                            estimated_reach: value,
+                        })
+                    }
+                />
+                <MetricInput
+                    label="Retenção média em dias"
+                    value={form.data.metrics.average_retention_days}
+                    error={errors['metrics.average_retention_days']}
+                    onChange={(value) =>
+                        form.setData('metrics', {
+                            ...form.data.metrics,
+                            average_retention_days: value,
+                        })
+                    }
+                />
+                <MetricInput
+                    label="Score comercial"
+                    value={form.data.metrics.commercial_score}
+                    error={errors['metrics.commercial_score']}
+                    onChange={(value) =>
+                        form.setData('metrics', {
+                            ...form.data.metrics,
+                            commercial_score: value,
+                        })
+                    }
+                />
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="field-playlist-top-notes">Observações</Label>
+                <Textarea
+                    id="field-playlist-top-notes"
+                    value={form.data.notes}
+                    onChange={(event) =>
+                        form.setData('notes', event.target.value)
+                    }
+                    rows={3}
+                    aria-invalid={!!errors.notes}
+                />
+                {errors.notes ? (
+                    <p className="text-sm text-destructive">{errors.notes}</p>
+                ) : null}
+            </div>
+
+            <div className="flex min-h-16 items-center justify-between gap-4 rounded-md border px-4 py-3">
+                <div className="space-y-1">
+                    <Label htmlFor="field-playlist-top-active">Ativo</Label>
+                    <p className="text-xs text-muted-foreground">
+                        Disponível para novas vendas e reservas futuras.
+                    </p>
+                </div>
+                <Switch
+                    id="field-playlist-top-active"
+                    checked={form.data.is_active}
+                    onCheckedChange={(value) =>
+                        form.setData('is_active', value)
+                    }
+                />
+            </div>
+        </div>
+    );
+}
+
+function MetricInput({
+    label,
+    value,
+    error,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    error?: string;
+    onChange: (value: string) => void;
+}) {
+    const id = `metric-${label.toLowerCase().replaceAll(' ', '-')}`;
+
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={id}>{label}</Label>
+            <Input
+                id={id}
+                type="number"
+                min={0}
+                step={1}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                inputMode="numeric"
+                aria-invalid={!!error}
+            />
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+    );
+}
+
+export default function ShowPlaylist({
+    playlistData,
+    playlistTops,
+    topOptions,
+    permissions,
+    playlistTopPermissions,
+}: Props) {
     const playlist = playlistData.data;
 
     setLayoutProps({
@@ -218,6 +858,7 @@ export default function ShowPlaylist({ playlistData, permissions }: Props) {
                                     Resumo
                                 </TabsTrigger>
                                 <TabsTrigger value="links">Links</TabsTrigger>
+                                <TabsTrigger value="tops">TOPs</TabsTrigger>
                                 <TabsTrigger value="metadata">
                                     Metadata
                                 </TabsTrigger>
@@ -343,6 +984,15 @@ export default function ShowPlaylist({ playlistData, permissions }: Props) {
                                         </div>
                                     </CardContent>
                                 </Card>
+                            </TabsContent>
+
+                            <TabsContent value="tops">
+                                <PlaylistTopsPanel
+                                    playlist={playlist}
+                                    playlistTops={playlistTops.data}
+                                    topOptions={topOptions.data}
+                                    permissions={playlistTopPermissions}
+                                />
                             </TabsContent>
 
                             <TabsContent value="metadata">

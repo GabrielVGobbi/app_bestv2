@@ -11,9 +11,13 @@ use App\Modules\Playlists\Http\Requests\Playlist\UpdatePlaylistRequest;
 use App\Modules\Playlists\Http\Resources\MusicGenreResource;
 use App\Modules\Playlists\Http\Resources\MusicSubgenreResource;
 use App\Modules\Playlists\Http\Resources\PlaylistResource;
+use App\Modules\Playlists\Http\Resources\PlaylistTopResource;
+use App\Modules\Playlists\Http\Resources\TopResource;
 use App\Modules\Playlists\Models\MusicGenre;
 use App\Modules\Playlists\Models\MusicSubgenre;
 use App\Modules\Playlists\Models\Playlist;
+use App\Modules\Playlists\Models\PlaylistTop;
+use App\Modules\Playlists\Models\Top;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -58,7 +62,21 @@ class PlaylistController extends Controller
 
         return Inertia::render('app/playlists/show', [
             'playlistData' => new PlaylistResource($playlist->load(['genre', 'subgenres'])),
+            'playlistTops' => PlaylistTopResource::collection(
+                $playlist->playlistTops()
+                    ->with('top')
+                    ->orderBy('id')
+                    ->get()
+            ),
+            'topOptions' => TopResource::collection(
+                Top::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get()
+            ),
             'permissions' => $this->permissions($playlist),
+            'playlistTopPermissions' => $this->playlistTopPermissions(),
         ]);
     }
 
@@ -137,6 +155,16 @@ class PlaylistController extends Controller
             'can_update' => auth()->user()?->can('update', $playlistModel) ?? false,
             'can_delete' => auth()->user()?->can('delete', $playlistModel) ?? false,
             'can_restore' => auth()->user()?->can('restore', $playlistModel) ?? false,
+        ];
+    }
+
+    /** @return array<string, bool> */
+    private function playlistTopPermissions(): array
+    {
+        return [
+            'can_attach' => auth()->user()?->can('attach', PlaylistTop::class) ?? false,
+            'can_configure' => auth()->user()?->can('configure', new PlaylistTop) ?? false,
+            'can_detach' => auth()->user()?->can('detach', new PlaylistTop) ?? false,
         ];
     }
 

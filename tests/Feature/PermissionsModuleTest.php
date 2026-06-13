@@ -51,7 +51,21 @@ class PermissionsModuleTest extends TestCase
             'sales.create',
             'sales.confirm',
             'sales.cancel',
-            'playlists.manage',
+            'playlists.view',
+            'playlists.create',
+            'playlists.update',
+            'playlists.delete',
+            'playlists.restore',
+            'playlists.genres.manage',
+            'playlists.availability.view',
+            'playlist-tops.view',
+            'playlist-tops.create',
+            'playlist-tops.update',
+            'playlist-tops.delete',
+            'playlist-tops.restore',
+            'playlist-tops.attach',
+            'playlist-tops.configure',
+            'playlist-tops.detach',
             'finance.view',
             'finance.manage',
         ];
@@ -86,6 +100,7 @@ class PermissionsModuleTest extends TestCase
         $this->assertContains('finance.manage', $financePermissionSlugs);
         $this->assertNotContains('sales.create', $financePermissionSlugs);
         $this->assertContains('services.view', $sellerPermissionSlugs);
+        $this->assertContains('playlist-tops.view', $sellerPermissionSlugs);
         $this->assertNotContains('services.create', $sellerPermissionSlugs);
         $this->assertContains('sales.create', $sellerPermissionSlugs);
         $this->assertContains('clients.manage', $sellerPermissionSlugs);

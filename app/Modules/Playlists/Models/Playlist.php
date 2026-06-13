@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -110,6 +111,11 @@ class Playlist extends Model
     public function subgenres(): BelongsToMany
     {
         return $this->belongsToMany(MusicSubgenre::class, 'playlist_music_subgenre');
+    }
+
+    public function playlistTops(): HasMany
+    {
+        return $this->hasMany(PlaylistTop::class);
     }
 
     public function scopeWithCatalog(Builder $query): Builder

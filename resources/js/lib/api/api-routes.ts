@@ -71,6 +71,14 @@ export const apiRoutes = {
         destroy: (id: number | string) => `/api/v1/playlists/${id}`,
         restore: (id: number | string) => `/api/v1/playlists/${id}/restore`,
     },
+    playlistTops: {
+        index: '/api/v1/playlist-tops',
+        show: (id: number | string) => `/api/v1/playlist-tops/${id}`,
+        store: '/api/v1/playlist-tops',
+        update: (id: number | string) => `/api/v1/playlist-tops/${id}`,
+        destroy: (id: number | string) => `/api/v1/playlist-tops/${id}`,
+        restore: (id: number | string) => `/api/v1/playlist-tops/${id}/restore`,
+    },
     exports: {
         index: '/api/v1/exports',
         store: '/api/v1/exports',
