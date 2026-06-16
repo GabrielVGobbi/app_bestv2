@@ -6,6 +6,7 @@ use App\Modules\Playlists\Http\Controllers\MusicCatalogController;
 use App\Modules\Playlists\Http\Controllers\MusicGenreController;
 use App\Modules\Playlists\Http\Controllers\MusicSubgenreController;
 use App\Modules\Playlists\Http\Controllers\PlaylistController;
+use App\Modules\Playlists\Http\Controllers\PlaylistMetricsController;
 use App\Modules\Playlists\Http\Controllers\PlaylistTopController;
 use App\Modules\Playlists\Http\Controllers\SpotifyPlaylistPreviewController;
 use App\Modules\Playlists\Http\Controllers\SpotifyPlaylistSyncController;
@@ -23,6 +24,7 @@ Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
     Route::delete('playlists/music-genres/{musicGenre}/subgenres/{musicSubgenre}', [MusicGenreController::class, 'destroySubgenre'])->name('playlists.music-genres.subgenres.destroy');
     Route::patch('playlists/music-subgenres/{musicSubgenre}', [MusicSubgenreController::class, 'update'])->name('playlists.music-subgenres.update');
     Route::patch('playlists/music-subgenres/{musicSubgenre}/status', [MusicSubgenreController::class, 'updateStatus'])->name('playlists.music-subgenres.status');
+    Route::get('playlists/metrics', PlaylistMetricsController::class)->name('playlists.metrics.index');
     Route::post('playlists/spotify/preview', SpotifyPlaylistPreviewController::class)->name('playlists.spotify.preview');
     Route::patch('playlists/{playlist}/spotify/sync', SpotifyPlaylistSyncController::class)->name('playlists.spotify.sync');
     Route::post('playlists/{playlist}/tops', [PlaylistTopController::class, 'store'])->name('playlists.tops.store');

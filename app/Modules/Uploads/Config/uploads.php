@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Clients\Models\Client;
+use App\Modules\Playlists\Models\Playlist;
 use App\Modules\Timeline\Models\TimelineComment;
 
 return [
@@ -25,6 +26,7 @@ return [
 
     'aliases' => [
         'client' => Client::class,
+        'playlist' => Playlist::class,
         'timeline-comment' => TimelineComment::class,
     ],
 ];

@@ -210,7 +210,7 @@ class PlaylistSpotifyPreviewTest extends TestCase
             ->assertJsonPath('message', 'Vincule um ID público do Spotify antes de sincronizar.');
     }
 
-    public function test_sync_updates_spotify_metadata_and_playlist_name(): void
+    public function test_sync_updates_spotify_metadata_without_overwriting_local_playlist_name(): void
     {
         config([
             'services.spotify.client_id' => 'client-id',
@@ -260,7 +260,8 @@ class PlaylistSpotifyPreviewTest extends TestCase
             ->patchJson(route('playlists.spotify.sync', $playlist))
             ->assertOk()
             ->assertJsonPath('message', 'Dados do Spotify sincronizados.')
-            ->assertJsonPath('data.name', 'Nome vindo do Spotify')
+            ->assertJsonPath('data.name', 'Nome comercial local')
+            ->assertJsonPath('data.spotify_name', 'Nome vindo do Spotify')
             ->assertJsonPath('data.spotify_url', 'https://open.spotify.com/playlist/37i9dQZF1DX0FOF1IUWK1W')
             ->assertJsonPath('data.followers_count', 2222)
             ->assertJsonPath('data.spotify_owner_name', 'BestPlay Curadoria')
@@ -269,7 +270,8 @@ class PlaylistSpotifyPreviewTest extends TestCase
 
         $playlist->refresh();
 
-        $this->assertSame('Nome vindo do Spotify', $playlist->name);
+        $this->assertSame('Nome comercial local', $playlist->name);
+        $this->assertSame('Nome vindo do Spotify', $playlist->spotify_name);
         $this->assertNotNull($playlist->spotify_last_synced_at);
     }
 

@@ -37,11 +37,21 @@ class StorePlaylistRequest extends FormRequest
                 $this->spotifyPlaylistUniqueRule(),
             ],
             'spotify_url' => ['nullable', 'url', 'max:255'],
+            'spotify_name' => ['nullable', 'string', 'max:255'],
+            'spotify_description' => ['nullable', 'string'],
+            'spotify_public' => ['nullable', 'boolean'],
+            'spotify_image_url' => ['nullable', 'url', 'max:255'],
+            'spotify_cover_upload_id' => ['nullable', 'integer', Rule::exists('uploadeds', 'id')],
             'spotify_snapshot_id' => ['nullable', 'string', 'max:255'],
             'spotify_owner_id' => ['nullable', 'string', 'max:255'],
             'spotify_owner_name' => ['nullable', 'string', 'max:255'],
             'spotify_tracks_total' => ['nullable', 'integer', 'min:0'],
             'spotify_last_synced_at' => ['nullable', 'date'],
+            'spotify_sync_priority' => ['nullable', 'string', Rule::in(['high', 'normal', 'low', 'paused'])],
+            'spotify_sync_interval_hours' => ['nullable', 'integer', 'min:1', 'max:720'],
+            'next_spotify_sync_at' => ['nullable', 'date'],
+            'spotify_sync_failures_count' => ['nullable', 'integer', 'min:0'],
+            'spotify_sync_paused_at' => ['nullable', 'date'],
             'youtube_url' => ['nullable', 'url', 'max:255'],
             'followers_count' => ['nullable', 'integer', 'min:0'],
             'estimated_reach' => ['nullable', 'integer', 'min:0'],
@@ -102,6 +112,11 @@ class StorePlaylistRequest extends FormRequest
             'partner_name' => 'parceiro',
             'spotify_playlist_id' => 'ID público do Spotify',
             'spotify_url' => 'link do Spotify',
+            'spotify_name' => 'nome no Spotify',
+            'spotify_description' => 'descrição no Spotify',
+            'spotify_public' => 'visibilidade no Spotify',
+            'spotify_image_url' => 'imagem no Spotify',
+            'spotify_cover_upload_id' => 'capa do Spotify',
             'spotify_snapshot_id' => 'snapshot do Spotify',
             'spotify_owner_id' => 'ID do proprietário no Spotify',
             'spotify_owner_name' => 'proprietário no Spotify',
@@ -149,7 +164,11 @@ class StorePlaylistRequest extends FormRequest
             'status' => $status ?: PlaylistStatus::Active->value,
             'subgenre_ids' => $this->normalizeSubgenres($this->input('subgenre_ids', [])),
             'spotify_playlist_id' => $spotifyPlaylistId ?: null,
+            'spotify_public' => $this->normalizeNullableBoolean($this->input('spotify_public')),
             'spotify_tracks_total' => $this->normalizeNullableInteger($this->input('spotify_tracks_total')),
+            'spotify_sync_priority' => $this->normalizeSyncPriority($this->input('spotify_sync_priority')),
+            'spotify_sync_interval_hours' => $this->normalizeSyncIntervalHours($this->input('spotify_sync_interval_hours')),
+            'spotify_sync_failures_count' => $this->normalizeNullableInteger($this->input('spotify_sync_failures_count')) ?? 0,
             'followers_count' => $this->normalizeNullableInteger($this->input('followers_count')),
             'estimated_reach' => $this->normalizeNullableInteger($this->input('estimated_reach')),
             'external_metadata' => $this->normalizeMetadata($this->input('external_metadata')),
@@ -186,6 +205,37 @@ class StorePlaylistRequest extends FormRequest
         }
 
         return (int) $value;
+    }
+
+    private function normalizeNullableBoolean(mixed $value): ?bool
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    private function normalizeSyncPriority(mixed $value): string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return 'normal';
+        }
+
+        return trim($value);
+    }
+
+    private function normalizeSyncIntervalHours(mixed $value): int
+    {
+        if ($value !== null && $value !== '') {
+            return (int) $value;
+        }
+
+        return match ($this->normalizeSyncPriority($this->input('spotify_sync_priority'))) {
+            'high' => 6,
+            'low' => 168,
+            default => 24,
+        };
     }
 
     private function spotifyPlaylistUniqueRule(): Unique

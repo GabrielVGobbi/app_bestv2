@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Playlists\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncPlaylistFromSpotifyJob;
 use App\Modules\Playlists\Enums\PlaylistStatus;
 use App\Modules\Playlists\Http\Requests\Playlist\StorePlaylistRequest;
 use App\Modules\Playlists\Http\Requests\Playlist\UpdatePlaylistRequest;
@@ -50,6 +51,7 @@ class PlaylistController extends Controller
     {
         $playlist = Playlist::create($request->playlistPayload());
         $playlist->subgenres()->sync($request->subgenreIds());
+        $this->dispatchSpotifySync($playlist, 'created');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Playlist criada.')]);
 
@@ -61,7 +63,7 @@ class PlaylistController extends Controller
         Gate::authorize('view', $playlist);
 
         return Inertia::render('app/playlists/show', [
-            'playlistData' => new PlaylistResource($playlist->load(['genre', 'subgenres'])),
+            'playlistData' => new PlaylistResource($playlist->load(['genre', 'subgenres', 'spotifyCoverUpload', 'latestSpotifySnapshot', 'latestSpotifySyncRun'])),
             'playlistTops' => PlaylistTopResource::collection(
                 $playlist->playlistTops()
                     ->with('top')
@@ -85,7 +87,7 @@ class PlaylistController extends Controller
         Gate::authorize('update', $playlist);
 
         return Inertia::render('app/playlists/edit', [
-            'playlistData' => new PlaylistResource($playlist->load(['genre', 'subgenres'])),
+            'playlistData' => new PlaylistResource($playlist->load(['genre', 'subgenres', 'spotifyCoverUpload', 'latestSpotifySnapshot', 'latestSpotifySyncRun'])),
             'permissions' => $this->permissions($playlist),
             'formOptions' => $this->formOptions(),
         ]);
@@ -95,6 +97,7 @@ class PlaylistController extends Controller
     {
         $playlist->update($request->playlistPayload());
         $playlist->subgenres()->sync($request->subgenreIds());
+        $this->dispatchSpotifySync($playlist, 'updated');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Playlist atualizada.')]);
 
@@ -166,6 +169,19 @@ class PlaylistController extends Controller
             'can_configure' => auth()->user()?->can('configure', new PlaylistTop) ?? false,
             'can_detach' => auth()->user()?->can('detach', new PlaylistTop) ?? false,
         ];
+    }
+
+    private function dispatchSpotifySync(Playlist $playlist, string $trigger): void
+    {
+        if (! is_string($playlist->spotify_playlist_id) || $playlist->spotify_playlist_id === '') {
+            return;
+        }
+
+        if ($playlist->spotify_last_synced_at !== null) {
+            return;
+        }
+
+        SyncPlaylistFromSpotifyJob::dispatch($playlist->id, $trigger)->afterCommit();
     }
 
     /** @return array<string, mixed> */

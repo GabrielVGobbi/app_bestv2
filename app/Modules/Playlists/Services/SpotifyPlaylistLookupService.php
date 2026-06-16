@@ -25,7 +25,7 @@ class SpotifyPlaylistLookupService
                 ->timeout((int) config('services.spotify.timeout', 10))
                 ->connectTimeout((int) config('services.spotify.connect_timeout', 5))
                 ->get($this->baseUrl().'/playlists/'.$spotifyPlaylistId, [
-                    'fields' => 'id,name,external_urls,followers(total),owner(id,display_name),tracks(total),snapshot_id,public',
+                    'fields' => 'id,name,description,external_urls,followers(total),owner(id,display_name),tracks(total),snapshot_id,public,images(url,width,height)',
                 ]);
         } catch (ConnectionException) {
             throw new SpotifyPlaylistLookupException('Não foi possível consultar o Spotify agora. Tente novamente em instantes.');
@@ -42,6 +42,14 @@ class SpotifyPlaylistLookupService
         }
 
         if (! $response->successful()) {
+            if ($response->status() === 429) {
+                throw new SpotifyPlaylistLookupException(
+                    'O Spotify limitou temporariamente as consultas. A sincronização será tentada novamente depois.',
+                    429,
+                    $this->retryAfterSeconds($response->header('Retry-After')),
+                );
+            }
+
             throw new SpotifyPlaylistLookupException('Não foi possível consultar o Spotify agora. Tente novamente em instantes.');
         }
 
@@ -55,12 +63,15 @@ class SpotifyPlaylistLookupService
             'spotify_playlist_id' => $payload['id'],
             'spotify_url' => $payload['external_urls']['spotify'] ?? 'https://open.spotify.com/playlist/'.$payload['id'],
             'name' => $payload['name'] ?? null,
+            'description' => $payload['description'] ?? null,
             'followers_count' => $payload['followers']['total'] ?? null,
             'spotify_owner_id' => $payload['owner']['id'] ?? null,
             'spotify_owner_name' => $payload['owner']['display_name'] ?? null,
             'spotify_tracks_total' => $payload['tracks']['total'] ?? null,
             'spotify_snapshot_id' => $payload['snapshot_id'] ?? null,
             'public' => $payload['public'] ?? null,
+            'images' => $payload['images'] ?? [],
+            'image_url' => is_array($payload['images'] ?? null) ? ($payload['images'][0]['url'] ?? null) : null,
             'source' => 'web_api',
             'is_partial' => false,
         ];
@@ -110,5 +121,14 @@ class SpotifyPlaylistLookupService
     private function authUrl(): string
     {
         return rtrim((string) config('services.spotify.auth_url', 'https://accounts.spotify.com'), '/');
+    }
+
+    private function retryAfterSeconds(mixed $value): ?int
+    {
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        return max(1, (int) $value);
     }
 }

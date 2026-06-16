@@ -1,6 +1,7 @@
 import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
+    BarChart3,
     CalendarDays,
     ExternalLink,
     ListMusic,
@@ -756,6 +757,12 @@ export default function ShowPlaylist({
                         currentPage="show"
                         canUpdate={permissions.can_update}
                     />
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href={`/playlists/metrics?search=${encodeURIComponent(playlist.name)}`}>
+                            <BarChart3 className="size-4" />
+                            Métricas
+                        </Link>
+                    </Button>
                     {permissions.can_delete ? (
                         <>
                             <Separator
@@ -781,9 +788,19 @@ export default function ShowPlaylist({
                     <aside className="lg:sticky lg:top-4 lg:self-start">
                         <div className="rounded-lg border bg-card">
                             <div className="p-5">
-                                <div className="flex h-28 items-center justify-center rounded-lg bg-secondary text-primary">
-                                    <ListMusic className="size-12" />
-                                </div>
+                                {playlist.cover_image?.url ? (
+                                    <img
+                                        src={playlist.cover_image.url}
+                                        alt=""
+                                        className="h-28 w-full rounded-lg object-cover"
+                                        width={240}
+                                        height={112}
+                                    />
+                                ) : (
+                                    <div className="flex h-28 items-center justify-center rounded-lg bg-secondary text-primary">
+                                        <ListMusic className="size-12" />
+                                    </div>
+                                )}
 
                                 <div className="mt-4 space-y-2">
                                     <div className="flex items-center justify-between gap-3">

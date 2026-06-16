@@ -24,3 +24,4 @@ Schedule::command('exports:prune')->daily();
 Schedule::command('rich-text:prune-uploads --hours=24')->daily();
 Schedule::command('backup:run')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 Schedule::command('database-exports:prune')->daily();
+Schedule::command('playlists:sync-spotify --limit=100 --stale-hours=24')->dailyAt('03:20')->withoutOverlapping()->onOneServer();

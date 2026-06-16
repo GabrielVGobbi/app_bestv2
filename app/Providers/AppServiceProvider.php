@@ -11,10 +11,12 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -42,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerListeners();
 
+        $this->registerRateLimiters();
+
     }
 
     private function registerObservers(): void {}
@@ -50,6 +54,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(Login::class, LogUserLogin::class);
         Event::listen(Logout::class, LogUserLogout::class);
+    }
+
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('spotify-playlist-sync', fn (): Limit => Limit::perMinute(20)->by('spotify-playlist-sync'));
     }
 
     /**

@@ -2,3 +2,6 @@
 command = "php"
 args = ["artisan", "boost:mcp"]
 cwd = "D:\\laragon\\www\\Projetos\\.a____LARAVEL\\start_kit\\start_kit"
+
+[mcp_servers.laravel-boost.tools.search-docs]
+approval_mode = "approve"
