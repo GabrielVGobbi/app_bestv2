@@ -13,6 +13,7 @@ use App\Modules\Clients\Models\Client;
 use App\Supports\ActivityActions\ActivityActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -65,6 +66,8 @@ class ClientController extends Controller
 
     public function edit(Client $client): Response
     {
+        Gate::authorize('update', $client);
+
         return Inertia::render('app/clients/edit', [
             'clientData' => new ClientResource($client->load(['responsibleUser', 'addresses'])),
         ]);
@@ -72,6 +75,8 @@ class ClientController extends Controller
 
     public function update(UpdateClientRequest $request, Client $client): RedirectResponse
     {
+        Gate::authorize('update', $client);
+
         $client->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Client updated.')]);
@@ -81,6 +86,8 @@ class ClientController extends Controller
 
     public function quickUpdate(QuickUpdateClientRequest $request, Client $client): RedirectResponse
     {
+        Gate::authorize('update', $client);
+
         $client->update($request->updatePayload());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Client updated.')]);
@@ -90,6 +97,8 @@ class ClientController extends Controller
 
     public function updateStatus(Request $request, Client $client): RedirectResponse
     {
+        Gate::authorize('update', $client);
+
         $validated = $request->validate([
             'status' => ['required', Rule::in(['active', 'inactive', 'archived'])],
         ]);

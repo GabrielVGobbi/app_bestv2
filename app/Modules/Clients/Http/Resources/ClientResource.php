@@ -33,6 +33,9 @@ class ClientResource extends JsonResource
             'classification' => $this->classification,
             'source_id' => $this->source_id,
             'status' => $this->status,
+            'permissions' => [
+                'can_update' => $request->user()?->can('update', $this->resource) ?? false,
+            ],
             'addresses' => AddressResource::collection($this->whenLoaded('addresses')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

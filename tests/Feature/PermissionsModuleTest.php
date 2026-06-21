@@ -48,9 +48,22 @@ class PermissionsModuleTest extends TestCase
             'services.update',
             'services.delete',
             'services.restore',
+            'sales.view',
+            'sales.view-own',
             'sales.create',
+            'sales.update',
+            'sales.quote',
             'sales.confirm',
+            'sales.finish',
             'sales.cancel',
+            'sales.delete',
+            'sales.amounts.view',
+            'sales.items.create',
+            'sales.items.update',
+            'sales.items.delete',
+            'sales.items.playlist-slot.create',
+            'sales.items.spotify-track.lookup',
+            'sales.items.discount',
             'playlists.view',
             'playlists.create',
             'playlists.update',
@@ -66,6 +79,12 @@ class PermissionsModuleTest extends TestCase
             'playlist-tops.attach',
             'playlist-tops.configure',
             'playlist-tops.detach',
+            'playlist-slots.availability.view',
+            'playlist-slots.reserve',
+            'playlist-slots.activate',
+            'playlist-slots.schedule',
+            'playlist-slots.cancel',
+            'playlist-slots.view',
             'finance.view',
             'finance.manage',
         ];
@@ -103,6 +122,8 @@ class PermissionsModuleTest extends TestCase
         $this->assertContains('playlist-tops.view', $sellerPermissionSlugs);
         $this->assertNotContains('services.create', $sellerPermissionSlugs);
         $this->assertContains('sales.create', $sellerPermissionSlugs);
+        $this->assertContains('sales.update', $sellerPermissionSlugs);
+        $this->assertContains('sales.quote', $sellerPermissionSlugs);
         $this->assertContains('clients.manage', $sellerPermissionSlugs);
         $this->assertNotContains('companies.manage', $sellerPermissionSlugs);
         $this->assertNotContains('sales.confirm', $sellerPermissionSlugs);

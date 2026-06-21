@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Novas opções - Venda show</title>
+  <style>
+    :root {
+      --bg: #f6f6f4;
+      --paper: #fff;
+      --ink: #171717;
+      --muted: #6f716f;
+      --line: #dfddd8;
+      --soft: #f0efec;
+      --rose: #f82763;
+      --green: #047857;
+      --green-bg: #def7ec;
+      --blue: #0f5ea8;
+      --blue-bg: #e8f2ff;
+      --amber: #8a5b00;
+      --amber-bg: #fff4d1;
+      --shadow: 0 18px 45px rgba(33, 31, 28, .08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    .wrap { max-width: 1500px; margin: 0 auto; padding: 26px 28px 56px; }
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 22px;
+      align-items: start;
+      margin-bottom: 22px;
+    }
+    h1 { margin: 4px 0 0; font-size: 31px; line-height: 1.08; }
+    .kicker { color: var(--rose); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .lead { max-width: 880px; margin: 10px 0 0; color: var(--muted); line-height: 1.55; font-size: 15px; }
+    .selection {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 15px;
+      box-shadow: var(--shadow);
+    }
+    .selection b { display: block; font-size: 13px; }
+    .selection span { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+    .why {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .why div {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .why strong { display: block; margin-bottom: 5px; font-size: 13px; }
+    .why p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    .stack { display: grid; gap: 26px; }
+    .option {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .option.selected { outline: 4px solid rgba(248, 39, 99, .22); border-color: rgba(248, 39, 99, .65); }
+    .option-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .option h2 { margin: 0; font-size: 18px; }
+    .option .desc { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+    .chip {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 3px 9px;
+      color: #31312f;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .chip.good { color: var(--green); border-color: #9ee9c7; background: var(--green-bg); }
+    .chip.blue { color: var(--blue); border-color: #bfdbfe; background: var(--blue-bg); }
+    .chip.warn { color: var(--amber); border-color: #f3d36d; background: var(--amber-bg); }
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-weight: 750;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button.primary { color: #fff; background: var(--rose); border-color: var(--rose); }
+    button.danger { color: #fff; background: #e11d48; border-color: #e11d48; }
+    button.flat { background: transparent; }
+    .mock { padding: 18px 20px 22px; background: #fbfaf8; }
+
+    .appbar {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      padding: 0 18px;
+    }
+    .title-line { display: flex; align-items: center; min-width: 0; gap: 11px; }
+    .back { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .title-line h3 { margin: 0; font-size: 18px; }
+    .title-line small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .metric span { color: var(--muted); font-size: 12px; }
+    .metric b { display: block; margin-top: 5px; font-size: 20px; }
+    .muted { color: var(--muted); }
+    .money { font-size: 24px; font-weight: 850; white-space: nowrap; }
+    .cover {
+      width: 58px;
+      height: 58px;
+      border-radius: 13px;
+      flex: none;
+      background:
+        radial-gradient(circle at 38% 26%, #9eff63 0 19%, transparent 20%),
+        radial-gradient(circle at 48% 58%, #0e2d18 0 31%, transparent 32%),
+        linear-gradient(135deg, #76c043, #1d531c);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+    }
+    .song { display: flex; align-items: center; min-width: 0; gap: 13px; }
+    .song h4 { margin: 0; font-size: 15px; }
+    .song p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .mini {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 11px;
+      padding: 10px;
+      min-width: 0;
+    }
+    .mini span { color: var(--muted); font-size: 12px; }
+    .mini b { display: block; margin-top: 3px; font-size: 13px; }
+
+    /* E */
+    .layout-e .body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+      padding-top: 16px;
+    }
+    .layout-e .main-panel, .layout-e aside {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .layout-e .main-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .layout-e .proof-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+    }
+    .layout-e .proof-row > div { background: #fff; padding: 14px; min-height: 74px; }
+    .layout-e aside { padding: 14px; display: grid; gap: 10px; align-content: start; }
+
+    /* F */
+    .layout-f .ledger {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      margin-top: 16px;
+    }
+    .layout-f .ledger-row {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1.25fr) minmax(210px, .7fr) 170px;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .layout-f .ledger-row:last-child { border-bottom: 0; }
+    .index-dot { width: 28px; height: 28px; border-radius: 9px; background: var(--soft); display: grid; place-items: center; font-weight: 800; color: #57534e; }
+    .status-pack { display: grid; gap: 7px; }
+    .inline-meta { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+    /* G */
+    .layout-g .stage {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .playlist-poster {
+      min-height: 320px;
+      border-radius: 18px;
+      padding: 18px;
+      color: #fff;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.7)),
+        radial-gradient(circle at 20% 20%, #a3ff6a, transparent 28%),
+        linear-gradient(135deg, #2e7d32, #16291e);
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      box-shadow: var(--shadow);
+    }
+    .playlist-poster h3 { margin: 0; font-size: 24px; line-height: 1.05; }
+    .layout-g .rail { display: grid; gap: 12px; }
+    .rail-card { border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 16px; }
+    .rail-card.important { border-color: #b7e6d0; background: #f1fcf6; }
+
+    /* H */
+    .layout-h .matrix {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .layout-h .box {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .layout-h .box.wide { grid-column: 1 / -1; }
+    .layout-h .box-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 13px; }
+    .progress {
+      height: 9px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--soft);
+      margin-top: 12px;
+    }
+    .progress div { height: 100%; width: 100%; background: var(--green); }
+
+    /* I */
+    .layout-i .dense {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .layout-i .dense-main { padding: 16px; }
+    .layout-i .dense-side {
+      border-left: 1px solid var(--line);
+      background: #fbfbfa;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .pill-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .wide-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px 150px 150px;
+      gap: 12px;
+      align-items: center;
+      padding-top: 16px;
+      margin-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 1000px) {
+      .intro, .why, .layout-e .body, .layout-g .stage, .layout-h .matrix, .layout-i .dense { grid-template-columns: 1fr; }
+      .layout-e .proof-row, .layout-f .ledger-row, .wide-line { grid-template-columns: 1fr; }
+      .layout-e .main-head, .option-head { grid-template-columns: 1fr; }
+      .layout-i .dense-side { border-left: 0; border-top: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="intro">
+      <div>
+        <div class="kicker">Rodada 2 · menos bagunça</div>
+        <h1>Novas opções, mais controladas e menos “tabela espremida”</h1>
+        <p class="lead">A opção A antiga tinha um caminho, mas ainda carregava botão, status, finanças e música no mesmo peso. Aqui separei melhor o que é identidade da venda, o que é entregável musical, o que é prova Spotify e o que é financeiro.</p>
+      </div>
+      <aside class="selection">
+        <b>Seleção atual</b>
+        <span id="selectedText">Clique em uma opção. Eu implemento a direção escolhida no `show.tsx` depois.</span>
+      </aside>
+    </section>
+
+    <section class="why">
+      <div><strong>Critério visual</strong><p>O olho deve entender em 3 segundos: cliente, música, playlist, presença no Spotify e valor.</p></div>
+      <div><strong>Critério operacional</strong><p>Sincronizar e revalidar precisam existir sem dominar a tela.</p></div>
+      <div><strong>Critério de escala</strong><p>A tela deve ficar boa com 1 item e ainda sobreviver com vários itens.</p></div>
+    </section>
+
+    <div class="stack">
+      <section class="option layout-e" data-name="E - Command center limpo">
+        <header class="option-head">
+          <div>
+            <h2>E. Command center limpo</h2>
+            <p class="desc">O item vira o centro da tela; financeiro e ações ficam numa lateral discreta. É a opção mais organizada para show de venda.</p>
+            <div class="chips"><span class="chip good">Minha recomendação nova</span><span class="chip blue">Foco operacional</span><span class="chip">Boa com poucos itens</span></div>
+          </div>
+          <button class="primary" onclick="pick(this)">Escolher E</button>
+        </header>
+        <div class="mock">
+          <div class="appbar">
+            <div class="title-line"><div class="back">←</div><div><h3>VEN-078092 <span class="chip">Rascunho</span></h3><small>Audie Feest · Best Branch</small></div></div>
+            <div class="actions"><button>Editar</button><button>Orçar</button><button class="danger">Cancelar</button></div>
+          </div>
+          <div class="body">
+            <section class="main-panel">
+              <div class="main-head">
+                <div class="song"><div class="cover"></div><div><h4>Friends - MEDUZA</h4><p>Playlist Corrida - para bater os 10km · Destaque</p><div class="chips"><span class="chip">Vaga de playlist</span><span class="chip good">Na playlist</span></div></div></div>
+                <div class="money">R$ 799,00</div>
+              </div>
+              <div class="proof-row">
+                <div><span class="muted">Spotify</span><b>Posição #1</b><p class="muted">Match por ID Spotify</p></div>
+                <div><span class="muted">Duração</span><b>2:38</b><p class="muted">MEDUZA</p></div>
+                <div><span class="muted">ISRC</span><b>US39N2303532</b><p class="muted">Identificação musical</p></div>
+                <div><span class="muted">Entrega</span><b>Sem período</b><p class="muted">Slot não vinculado</p></div>
+              </div>
+            </section>
+            <aside>
+              <div class="metric"><span>Total fechado</span><b>R$ 799,00</b></div>
+              <div class="metric"><span>Itens</span><b>1 playlist</b></div>
+              <button>Sincronizar Spotify</button>
+              <button>Editar composição</button>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="option layout-f" data-name="F - Ledger musical">
+        <header class="option-head">
+          <div>
+            <h2>F. Ledger musical</h2>
+            <p class="desc">Uma lista tipo extrato, mas musical. Menos bonita que E, porém excelente se a venda puder ter vários itens.</p>
+            <div class="chips"><span class="chip good">Escala melhor</span><span class="chip">Denso sem virar planilha</span><span class="chip warn">Menos “showcase”</span></div>
+          </div>
+          <button class="primary" onclick="pick(this)">Escolher F</button>
+        </header>
+        <div class="mock layout-f">
+          <div class="appbar">
+            <div class="title-line"><div class="back">←</div><div><h3>VEN-078092</h3><small>Audie Feest · Rascunho</small></div></div>
+            <div class="actions"><button>Sincronizar Spotify</button><button>Editar</button></div>
+          </div>
+          <div class="ledger">
+            <div class="ledger-row">
+              <div class="index-dot">1</div>
+              <div class="song"><div class="cover"></div><div><h4>Playlist Corrida - Destaque</h4><p>Friends - MEDUZA</p><div class="inline-meta"><span>2:38</span><span>US39N2303532</span><span>TOP #10</span></div></div></div>
+              <div class="status-pack"><span class="chip good">Na playlist</span><span class="muted">Posição #1 · ID Spotify</span><button>Revalidar</button></div>
+              <div style="text-align:right"><div class="money">R$ 799,00</div><div class="muted">Qtd. 1 · sem desconto</div></div>
+            </div>
+            <div class="ledger-row" style="background:#fbfbfa">
+              <div></div><div class="muted">Subtotal</div><div class="muted">Desconto R$ 0,00</div><div style="text-align:right"><b>R$ 799,00</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="option layout-g" data-name="G - Music first">
+        <header class="option-head">
+          <div>
+            <h2>G. Music first</h2>
+            <p class="desc">Mais visual e comercial: a playlist/música vira capa da tela, e os dados ficam em cards à direita. Fica bonito, mas menos padrão SaaS.</p>
+            <div class="chips"><span class="chip good">Mais memorável</span><span class="chip warn">Pode parecer editorial demais</span><span class="chip">Bom para apresentação</span></div>
+          </div>
+          <button class="primary" onclick="pick(this)">Escolher G</button>
+        </header>
+        <div class="mock layout-g">
+          <div class="appbar">
+            <div class="title-line"><div class="back">←</div><div><h3>VEN-078092</h3><small>Venda de playlist · Audie Feest</small></div></div>
+            <div class="actions"><button>Editar</button><button class="danger">Cancelar</button></div>
+          </div>
+          <div class="stage">
+            <div class="playlist-poster"><span class="chip good">Na playlist</span><h3>Corrida 10km</h3><p>Friends - MEDUZA · Destaque</p></div>
+            <div class="rail">
+              <div class="rail-card important"><h4>Verificação Spotify</h4><p>Encontrada na posição #1 por ID Spotify.</p><button>Revalidar</button></div>
+              <div class="rail-card"><h4>Dados da faixa</h4><p>2:38 · ISRC US39N2303532 · 4kwbbhuemSkRWvtN5dkWmb</p></div>
+              <div class="rail-card"><h4>Financeiro</h4><div class="money">R$ 799,00</div><p>Qtd. 1 · sem desconto</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="option layout-h" data-name="H - Matriz de decisão">
+        <header class="option-head">
+          <div>
+            <h2>H. Matriz de decisão</h2>
+            <p class="desc">Organiza a venda em quatro áreas fixas: Comercial, Música, Spotify e Financeiro. É bem claro e menos visualmente espalhado.</p>
+            <div class="chips"><span class="chip good">Muito organizado</span><span class="chip blue">Boa hierarquia</span><span class="chip warn">Ocupa mais altura</span></div>
+          </div>
+          <button class="primary" onclick="pick(this)">Escolher H</button>
+        </header>
+        <div class="mock layout-h">
+          <div class="appbar">
+            <div class="title-line"><div class="back">←</div><div><h3>VEN-078092 <span class="chip">Rascunho</span></h3><small>Audie Feest</small></div></div>
+            <div class="actions"><button>Orçar</button><button>Editar</button></div>
+          </div>
+          <div class="matrix">
+            <div class="box"><div class="box-head"><h4>Comercial</h4><span class="chip">Vaga de playlist</span></div><p><b>Playlist Corrida - para bater os 10km</b></p><p class="muted">Destaque · TOP #10 · sem período definido</p></div>
+            <div class="box"><div class="box-head"><h4>Música</h4><span class="chip blue">Spotify track</span></div><div class="song"><div class="cover"></div><div><b>Friends - MEDUZA</b><p>2:38 · US39N2303532</p></div></div></div>
+            <div class="box"><div class="box-head"><h4>Spotify na playlist</h4><span class="chip good">Na playlist</span></div><p>Posição #1 encontrada por ID Spotify.</p><div class="progress"><div></div></div><button style="margin-top:12px">Revalidar</button></div>
+            <div class="box"><div class="box-head"><h4>Financeiro</h4><span class="chip">BRL</span></div><div class="money">R$ 799,00</div><p class="muted">Qtd. 1 · unitário R$ 799,00 · desconto R$ 0,00</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="option layout-i" data-name="I - Minimal dense">
+        <header class="option-head">
+          <div>
+            <h2>I. Minimal dense</h2>
+            <p class="desc">A versão mais contida: quase sem decoração, poucos blocos e máxima leitura. Boa se você quer algo muito sério e administrativo.</p>
+            <div class="chips"><span class="chip">Mais sóbria</span><span class="chip good">Pouco ruído</span><span class="chip warn">Menos impacto visual</span></div>
+          </div>
+          <button class="primary" onclick="pick(this)">Escolher I</button>
+        </header>
+        <div class="mock layout-i">
+          <div class="appbar">
+            <div class="title-line"><div class="back">←</div><div><h3>VEN-078092</h3><small>Rascunho · Audie Feest · Best Branch</small></div></div>
+            <div class="actions"><button>Editar</button><button>Orçar</button><button class="danger">Cancelar</button></div>
+          </div>
+          <div class="dense">
+            <div class="dense-main">
+              <div class="song"><div class="cover"></div><div><h4>Friends - MEDUZA</h4><p>Playlist Corrida - para bater os 10km · Destaque</p></div></div>
+              <div class="pill-grid"><span class="chip good">Na playlist</span><span class="chip">Posição #1</span><span class="chip">ID Spotify</span><span class="chip">ISRC US39N2303532</span><span class="chip">Sem período</span></div>
+              <div class="wide-line">
+                <div class="muted">Entrega operacional ainda não vinculada</div>
+                <button>Revalidar</button>
+                <button>Editar composição</button>
+                <div style="text-align:right"><b>R$ 799,00</b></div>
+              </div>
+            </div>
+            <aside class="dense-side">
+              <div><span class="muted">Subtotal</span><br><b>R$ 799,00</b></div>
+              <div><span class="muted">Desconto</span><br><b>R$ 0,00</b></div>
+              <div><span class="muted">Total</span><br><div class="money">R$ 799,00</div></div>
+              <button>Sincronizar Spotify</button>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function pick(button) {
+      document.querySelectorAll('.option').forEach((node) => node.classList.remove('selected'));
+      const option = button.closest('.option');
+      option.classList.add('selected');
+      document.getElementById('selectedText').textContent = option.dataset.name + ' selecionada. Me diga a letra no chat.';
+      option.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ namespace App\Modules\Services\Models;
 
 use App\Concerns\Exportable;
 use App\Concerns\Searchable;
+use App\Modules\Sales\Models\SaleItem;
 use App\Modules\Services\Database\Factories\ServiceFactory;
 use App\Supports\Traits\GenerateUniqueSlugTrait;
 use App\Supports\Traits\HasActivityLog;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Schema;
 
@@ -62,7 +64,12 @@ class Service extends Model
             return false;
         }
 
-        return false;
+        return $this->saleItems()->exists();
+    }
+
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
     }
 
     /**

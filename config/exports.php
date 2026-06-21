@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
+use App\Modules\Sales\Models\Sale;
 
 return [
     /*
@@ -13,6 +14,7 @@ return [
         User::class,
         Company::class,
         Client::class,
+        Sale::class,
     ],
 
     /*

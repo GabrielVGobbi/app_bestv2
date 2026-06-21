@@ -7,6 +7,7 @@ import {
     ExternalLink,
     Eye,
     Loader2,
+    Music2,
     Pencil,
     Plus,
     RefreshCw,
@@ -33,7 +34,7 @@ import type {
     DataTableFilterConfig,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -58,7 +59,6 @@ import type {
     MusicSubgenre,
     Playlist,
     PlaylistFormOptions,
-    PlaylistStatus,
 } from '@/types/app/playlist';
 
 interface Props {
@@ -79,15 +79,6 @@ const dateFilterColumns: DataTableDateColumn[] = [
 const exportConfig: DataTableExportConfig = {
     modelClass: 'App\\Modules\\Playlists\\Models\\Playlist',
     columnsEndpoint: apiRoutes.exports.columns,
-};
-
-const statusVariant: Record<
-    PlaylistStatus,
-    'default' | 'outline' | 'secondary'
-> = {
-    active: 'default',
-    inactive: 'outline',
-    archived: 'secondary',
 };
 
 function openExternal(url: string | null): void {
@@ -121,6 +112,10 @@ function spotifyUrl(playlist: Playlist): string | null {
     }
 
     return null;
+}
+
+function playlistCoverUrl(playlist: Playlist): string | null {
+    return playlist.cover_image?.url ?? playlist.spotify_image_url ?? null;
 }
 
 async function copyToClipboard(value: string): Promise<void> {
@@ -289,18 +284,38 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                 id: 'name',
                 accessorKey: 'name',
                 header: 'Nome',
-                size: 280,
-                cell: ({ row }) => (
-                    <div className="min-w-0">
-                        <p className="truncate font-medium">
-                            {row.original.name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                            {row.original.spotify_playlist_id ??
-                                row.original.slug}
-                        </p>
-                    </div>
-                ),
+                size: 340,
+                cell: ({ row }) => {
+                    const coverUrl = playlistCoverUrl(row.original);
+
+                    return (
+                        <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted text-muted-foreground">
+                                {coverUrl ? (
+                                    <img
+                                        src={coverUrl}
+                                        alt={`Capa da playlist ${row.original.name}`}
+                                        width={48}
+                                        height={48}
+                                        loading="lazy"
+                                        className="size-full object-cover"
+                                    />
+                                ) : (
+                                    <Music2 className="size-5" />
+                                )}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="truncate font-medium">
+                                    {row.original.name}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                    {row.original.spotify_playlist_id ??
+                                        row.original.slug}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                },
                 meta: { label: 'Nome' },
             },
             {
@@ -331,9 +346,7 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                 accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => (
-                    <Badge variant={statusVariant[row.original.status]}>
-                        {row.original.status_label}
-                    </Badge>
+                    <StatusBadge presenter={row.original.status_presenter} />
                 ),
                 meta: { label: 'Status' },
             },

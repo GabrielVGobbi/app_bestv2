@@ -10,7 +10,6 @@ import {
     UserRound,
 } from 'lucide-react';
 
-
 import {
     destroy,
     edit,
@@ -181,6 +180,7 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
     const responsibleUser = client.responsible_user;
     const addresses = client.addresses ?? [];
     const defaultAddress = addresses.find((address) => address.is_default);
+    const canUpdate = client.permissions.can_update;
 
     setLayoutProps({
         breadcrumbs: [
@@ -233,18 +233,21 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="action"
-                        asChild
-                    >
-                        <Link href={edit.url(client.uuid)}>
-                            <SquarePen className="size-4" />
-                            Editar
-                        </Link>
-                    </Button>
+                    {canUpdate ? (
+                        <>
+                            <Button variant="outline" size="action" asChild>
+                                <Link href={edit.url(client.uuid)}>
+                                    <SquarePen className="size-4" />
+                                    Editar
+                                </Link>
+                            </Button>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
+                        </>
+                    ) : null}
 
                     <DeleteButton
                         url={destroy.url(client.uuid)}
@@ -276,12 +279,25 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                             </div>
 
                             <div className="mt-4">
-                                <ClientStatusMenu
-                                    uuid={client.uuid}
-                                    status={client.status}
-                                    size="sm"
-                                    className="w-full justify-between"
-                                />
+                                {canUpdate ? (
+                                    <ClientStatusMenu
+                                        uuid={client.uuid}
+                                        status={client.status}
+                                        size="sm"
+                                        className="w-full justify-between"
+                                    />
+                                ) : (
+                                    <Badge
+                                        variant="secondary"
+                                        className="w-full justify-center"
+                                    >
+                                        {client.status === 'active'
+                                            ? 'Ativo'
+                                            : client.status === 'inactive'
+                                              ? 'Inativo'
+                                              : 'Arquivado'}
+                                    </Badge>
+                                )}
                             </div>
 
                             <div className="mt-5 space-y-1">
@@ -368,12 +384,18 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                 <div className="space-y-5">
                                     <Panel title="Dados do Cliente">
                                         <div className="space-y-5">
-                                            <ClientQuickUpdatePanel
-                                                key={`${client.uuid}:${client.updated_at}`}
-                                                client={client}
-                                                columns={quickUpdateColumns}
-                                            />
-                                            <Separator />
+                                            {canUpdate ? (
+                                                <>
+                                                    <ClientQuickUpdatePanel
+                                                        key={`${client.uuid}:${client.updated_at}`}
+                                                        client={client}
+                                                        columns={
+                                                            quickUpdateColumns
+                                                        }
+                                                    />
+                                                    <Separator />
+                                                </>
+                                            ) : null}
                                             <FieldGrid items={profileItems} />
                                         </div>
                                     </Panel>
@@ -410,7 +432,7 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                         modelId={timelineSubject.id}
                                         title=""
                                         allowAttachments
-                                        className="p-0 m-0 border-0 bg-transparent shadow-none"
+                                        className="m-0 border-0 bg-transparent p-0 shadow-none"
                                     />
                                 </div>
                             </TabsContent>
@@ -490,16 +512,16 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                                     label: 'Empresa ID',
                                                     value: client.company_id
                                                         ? String(
-                                                            client.company_id,
-                                                        )
+                                                              client.company_id,
+                                                          )
                                                         : null,
                                                 },
                                                 {
                                                     label: 'Responsável ID',
                                                     value: client.responsible_user_id
                                                         ? String(
-                                                            client.responsible_user_id,
-                                                        )
+                                                              client.responsible_user_id,
+                                                          )
                                                         : null,
                                                 },
                                             ]}
@@ -511,15 +533,9 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                             <TabsContent
                                 value="timeline"
                                 className="max-h-[70vh] overflow-y-auto p-5 outline-none"
-                            >
-
-                            </TabsContent>
+                            ></TabsContent>
                         </Tabs>
-
-
                     </main>
-
-
                 </div>
             </div>
         </>

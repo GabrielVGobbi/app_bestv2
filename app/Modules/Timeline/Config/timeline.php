@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Clients\Models\Client;
+use App\Modules\Sales\Models\Sale;
 
 return [
     'route_prefix' => env('TIMELINE_ROUTE_PREFIX', 'api/v1/timeline'),
@@ -14,6 +15,7 @@ return [
 
     'aliases' => [
         'client' => Client::class,
+        'sale' => Sale::class,
     ],
 
     'comments' => [

@@ -24,6 +24,9 @@ export interface Client {
     classification: string | null;
     source_id: string | null;
     status: 'active' | 'inactive' | 'archived';
+    permissions: {
+        can_update: boolean;
+    };
     addresses?: Address[];
     created_at: string;
     updated_at: string;

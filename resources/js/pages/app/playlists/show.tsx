@@ -25,7 +25,7 @@ import {
     update as configurePlaylistTop,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistTopController';
 import Header from '@/components/dashboard/header';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -53,7 +53,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatMoney } from '@/lib/utils';
 import type {
     PlaylistResource,
-    PlaylistStatus,
     PlaylistTop,
     PlaylistTopCollectionResource,
     Top,
@@ -77,15 +76,6 @@ interface Props {
         can_detach: boolean;
     };
 }
-
-const statusVariant: Record<
-    PlaylistStatus,
-    'default' | 'outline' | 'secondary'
-> = {
-    active: 'default',
-    inactive: 'outline',
-    archived: 'secondary',
-};
 
 function cleanValue(value: unknown): string {
     if (typeof value === 'string' && value.trim() !== '') {
@@ -815,15 +805,11 @@ export default function ShowPlaylist({
                                                 align="end"
                                             />
                                         ) : (
-                                            <Badge
-                                                variant={
-                                                    statusVariant[
-                                                        playlist.status
-                                                    ]
+                                            <StatusBadge
+                                                presenter={
+                                                    playlist.status_presenter
                                                 }
-                                            >
-                                                {playlist.status_label}
-                                            </Badge>
+                                            />
                                         )}
                                     </div>
                                     <p className="truncate text-sm text-muted-foreground">

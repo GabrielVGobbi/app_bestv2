@@ -84,6 +84,28 @@ class ClientCrudTest extends TestCase
             ->assertJsonCount(2, 'data');
     }
 
+    public function test_api_can_create_client_from_quick_create_payload(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/clients', [
+                'name' => 'Cliente Novo',
+                'phone' => '11999990000',
+                'email' => null,
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.name', 'Cliente Novo')
+            ->assertJsonPath('data.phone', '11999990000')
+            ->assertJsonPath('data.email', null);
+
+        $this->assertDatabaseHas('clients', [
+            'name' => 'Cliente Novo',
+            'phone' => '11999990000',
+            'email' => null,
+        ]);
+    }
+
     public function test_api_filters_clients_by_multiple_classifications_and_genres(): void
     {
         $user = User::factory()->create();
@@ -179,6 +201,51 @@ class ClientCrudTest extends TestCase
                 ->where('timelineSubject.type', Client::timelineType())
                 ->where('timelineSubject.id', $client->uuid)
             );
+    }
+
+    public function test_checkout_originated_client_cannot_be_edited_internally(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create([
+            'name' => 'Cliente Checkout',
+            'source_id' => 'checkout',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('clients.show', $client))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('app/clients/show')
+                ->where('clientData.data.permissions.can_update', false));
+
+        $this->actingAs($user)
+            ->get(route('clients.edit', $client))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->put(route('clients.update', $client), [
+                'name' => 'Nome alterado',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->patch(route('clients.quick-update', $client), [
+                'field' => 'name',
+                'value' => 'Nome alterado',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->patch(route('clients.status', $client), [
+                'status' => 'archived',
+            ])
+            ->assertForbidden();
+
+        $client->refresh();
+
+        $this->assertSame('Cliente Checkout', $client->name);
+        $this->assertSame('active', $client->status);
     }
 
     public function test_authenticated_user_can_create_client_with_commercial_fields(): void

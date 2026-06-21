@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Sales\Models\Sale;
 
 return [
     'actions' => [
@@ -54,6 +55,16 @@ return [
             'severity' => 'muted',
             'subject_type' => Client::class,
             'enabled' => false,
+        ],
+        'sales.item.updated' => [
+            'label' => 'Alterou item da venda',
+            'log_name' => 'sales',
+            'event' => 'item_updated',
+            'description' => ':causer alterou um item da venda :subject.',
+            'icon' => 'Pencil',
+            'severity' => 'warning',
+            'subject_type' => Sale::class,
+            'enabled' => true,
         ],
     ],
 ];

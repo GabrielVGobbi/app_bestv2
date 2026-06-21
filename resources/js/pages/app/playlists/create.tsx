@@ -8,7 +8,7 @@ import {
     Search,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -20,13 +20,7 @@ import previewSpotifyPlaylist from '@/actions/App/Modules/Playlists/Http/Control
 import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -48,6 +42,12 @@ import type {
 
 interface Props {
     formOptions: PlaylistFormOptions;
+}
+
+interface CreateFormSectionProps {
+    title: string;
+    description: string;
+    children: ReactNode;
 }
 
 interface SpotifyPreviewIssue {
@@ -72,6 +72,24 @@ async function refreshCsrfCookie(): Promise<void> {
     if (!response.ok) {
         throw new Error('CSRF cookie request failed.');
     }
+}
+
+function CreateFormSection({
+    title,
+    description,
+    children,
+}: CreateFormSectionProps) {
+    return (
+        <section className="grid grid-cols-1 gap-x-8 gap-y-4 py-6 md:grid-cols-[minmax(0,240px)_minmax(0,1fr)] lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+            <div className="px-1 md:px-0">
+                <h2 className="text-sm leading-6 font-semibold">{title}</h2>
+                <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+                    {description}
+                </p>
+            </div>
+            <div className="min-w-0">{children}</div>
+        </section>
+    );
 }
 
 export default function CreatePlaylist({ formOptions }: Props) {
@@ -129,6 +147,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                         message:
                             'O Spotify não retornou dados para esta playlist.',
                     });
+
                     return;
                 }
 
@@ -336,108 +355,105 @@ export default function CreatePlaylist({ formOptions }: Props) {
                 </DialogContent>
             </Dialog>
 
-            <div className="page-wrapper-sm">
-                <Card className="mb-4">
-                    <CardHeader className="gap-1">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            Buscar pelo Spotify
-                        </CardTitle>
-                        <CardDescription>
-                            Cole o link público ou o ID da playlist para
-                            preencher os dados principais.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <form
-                            className="grid gap-3 sm:grid-cols-[1fr_auto]"
-                            onSubmit={submitSpotifyPreview}
-                        >
-                            <div className="space-y-2">
-                                <Label htmlFor="spotify-preview-input">
-                                    Link ou ID da playlist
-                                </Label>
-                                <Input
-                                    id="spotify-preview-input"
-                                    name="spotify_input"
-                                    value={spotifyInput}
-                                    onChange={(event) => {
-                                        setSpotifyInput(event.target.value);
-                                        setSpotifyPreviewData(
-                                            'spotify_input',
-                                            event.target.value,
-                                        );
-                                    }}
-                                    placeholder="https://open.spotify.com/playlist/... ou 37i9dQZF..."
-                                    autoComplete="off"
-                                    required
-                                />
-                            </div>
-                            <div className="flex items-end">
-                                <Button
-                                    type="submit"
-                                    className="w-full sm:w-auto"
-                                    disabled={previewProcessing}
-                                >
-                                    {previewProcessing ? (
-                                        <Loader2 className="animate-spin" />
-                                    ) : (
-                                        <Search />
-                                    )}
-                                    Buscar dados
-                                </Button>
-                            </div>
-                        </form>
+            <div className="page-wrapper-lg p-4 sm:p-6">
+                <CreateFormSection
+                    title="Buscar pelo Spotify"
+                    description="Cole o link público ou o ID da playlist para preencher os dados principais."
+                >
+                    <Card className="overflow-hidden py-0 shadow-xs">
+                        <CardContent className="space-y-4 p-4 sm:p-6">
+                            <form
+                                className="grid gap-3 sm:grid-cols-[1fr_auto]"
+                                onSubmit={submitSpotifyPreview}
+                            >
+                                <div className="space-y-2">
+                                    <Label htmlFor="spotify-preview-input">
+                                        Link ou ID da playlist
+                                    </Label>
+                                    <Input
+                                        id="spotify-preview-input"
+                                        name="spotify_input"
+                                        value={spotifyInput}
+                                        onChange={(event) => {
+                                            setSpotifyInput(event.target.value);
+                                            setSpotifyPreviewData(
+                                                'spotify_input',
+                                                event.target.value,
+                                            );
+                                        }}
+                                        placeholder="https://open.spotify.com/playlist/... ou 37i9dQZF..."
+                                        autoComplete="off"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex items-end">
+                                    <Button
+                                        type="submit"
+                                        className="w-full sm:w-auto"
+                                        disabled={previewProcessing}
+                                    >
+                                        {previewProcessing ? (
+                                            <Loader2 className="animate-spin" />
+                                        ) : (
+                                            <Search />
+                                        )}
+                                        Buscar dados
+                                    </Button>
+                                </div>
+                            </form>
 
-                        {spotifyPreview ? (
-                            <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="space-y-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <CheckCircle2 className="size-4 text-emerald-600" />
-                                        <p className="font-medium">
-                                            {spotifyPreview.name ??
-                                                'Playlist Spotify'}
+                            {spotifyPreview ? (
+                                <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <CheckCircle2 className="size-4 text-emerald-600" />
+                                            <p className="font-medium">
+                                                {spotifyPreview.name ??
+                                                    'Playlist Spotify'}
+                                            </p>
+                                            {spotifyPreview.is_partial ? (
+                                                <Badge variant="outline">
+                                                    Dados básicos
+                                                </Badge>
+                                            ) : null}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                            {spotifyPreview.spotify_owner_name ??
+                                                'Dono não informado'}
+                                            {' · '}
+                                            {spotifyPreview.followers_count?.toLocaleString(
+                                                'pt-BR',
+                                            ) ?? 'Não disponível'}{' '}
+                                            seguidores
+                                            {' · '}
+                                            {spotifyPreview.spotify_tracks_total?.toLocaleString(
+                                                'pt-BR',
+                                            ) ?? 'Não disponível'}{' '}
+                                            faixas
                                         </p>
                                         {spotifyPreview.is_partial ? (
-                                            <Badge variant="outline">
-                                                Dados bÃ¡sicos
-                                            </Badge>
+                                            <p className="text-xs text-muted-foreground">
+                                                O Spotify liberou apenas os
+                                                dados básicos pelo embed
+                                                oficial.
+                                            </p>
                                         ) : null}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        {spotifyPreview.spotify_owner_name ??
-                                            'Dono nÃ£o informado'}
-                                        {' Â· '}
-                                        {spotifyPreview.followers_count?.toLocaleString(
-                                            'pt-BR',
-                                        ) ?? 'NÃ£o disponÃ­vel'}{' '}
-                                        seguidores
-                                        {' Â· '}
-                                        {spotifyPreview.spotify_tracks_total?.toLocaleString(
-                                            'pt-BR',
-                                        ) ?? 'NÃ£o disponÃ­vel'}{' '}
-                                        faixas
-                                    </p>
-                                    {spotifyPreview.is_partial ? (
-                                        <p className="text-xs text-muted-foreground">
-                                            O Spotify liberou apenas os dados
-                                            bÃ¡sicos pelo embed oficial.
+                                        <p className="font-mono text-xs text-muted-foreground">
+                                            {spotifyPreview.spotify_playlist_id}
                                         </p>
-                                    ) : null}
-                                    <p className="font-mono text-xs text-muted-foreground">
-                                        {spotifyPreview.spotify_playlist_id}
-                                    </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={applySpotifyPreview}
+                                    >
+                                        Aplicar ao formulário
+                                    </Button>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={applySpotifyPreview}
-                                >
-                                    Aplicar ao formulÃ¡rio
-                                </Button>
-                            </div>
-                        ) : null}
-                    </CardContent>
-                </Card>
+                            ) : null}
+                        </CardContent>
+                    </Card>
+                </CreateFormSection>
 
                 <Form
                     action={store.url()}
@@ -449,30 +465,25 @@ export default function CreatePlaylist({ formOptions }: Props) {
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
-                        <div className="space-y-4">
-                            <div className="flex flex-1 flex-col gap-6">
-                                <Card>
-                                    <CardContent>
-                                        <PlaylistFormFields
-                                            key={formKey}
-                                            playlist={playlistDraft}
-                                            options={formOptions}
-                                            errors={errors}
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </div>
+                        <div>
+                            <PlaylistFormFields
+                                key={formKey}
+                                playlist={playlistDraft}
+                                options={formOptions}
+                                errors={errors}
+                                layout="section-cards"
+                            />
 
-                            <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-                                <div className="flex items-center justify-between gap-3 py-3">
+                            <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                                <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-xs text-muted-foreground">
                                         Campos marcados com{' '}
                                         <span className="text-destructive">
                                             *
                                         </span>{' '}
-                                        sÃ£o obrigatórios.
+                                        são obrigatórios.
                                     </p>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-end gap-2">
                                         <Button
                                             type="button"
                                             variant="ghost"

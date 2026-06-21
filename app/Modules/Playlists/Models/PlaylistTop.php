@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Playlists\Models;
 
 use App\Modules\Playlists\Database\Factories\PlaylistTopFactory;
+use App\Modules\Sales\Models\SaleItem;
 use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Schema;
 
@@ -43,6 +45,16 @@ class PlaylistTop extends Model
         return $this->belongsTo(Top::class);
     }
 
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    public function playlistSlots(): HasMany
+    {
+        return $this->hasMany(PlaylistSlot::class);
+    }
+
     public function availableSlotsCount(): int
     {
         return max(0, $this->slots_quantity - $this->occupied_slots_count);
@@ -54,7 +66,7 @@ class PlaylistTop extends Model
             return false;
         }
 
-        return false;
+        return $this->playlistSlots()->exists() || $this->saleItems()->exists();
     }
 
     /** @return array<string, string> */

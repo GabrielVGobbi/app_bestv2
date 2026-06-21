@@ -22,6 +22,7 @@ class PlaylistResource extends JsonResource
             'slug' => $this->slug,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
+            'status_presenter' => $this->status->toPresenterArray(),
             'partner_name' => $this->partner_name,
             'spotify_playlist_id' => $this->spotify_playlist_id,
             'spotify_url' => $this->spotify_url,

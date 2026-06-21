@@ -26,7 +26,7 @@ class ClientPolicy
 
     public function update(User $user, Client $client): bool
     {
-        return true;
+        return $client->canBeEditedInternally();
     }
 
     public function delete(User $user, Client $client): bool

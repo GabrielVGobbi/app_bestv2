@@ -11,6 +11,9 @@ use App\Modules\Playlists\Enums\PlaylistStatus;
 use App\Modules\Playlists\Models\MusicGenre;
 use App\Modules\Playlists\Models\MusicSubgenre;
 use App\Modules\Playlists\Models\Playlist;
+use App\Modules\Playlists\Models\PlaylistTop;
+use App\Modules\Playlists\Models\Top;
+use App\Modules\Uploads\Models\Uploaded;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -30,7 +33,9 @@ class PlaylistCrudTest extends TestCase
 
         $this->assertSame(12, MusicGenre::query()->count());
         $this->assertGreaterThanOrEqual(60, MusicSubgenre::query()->count());
-        $this->assertSame(1, Playlist::query()->count());
+        $this->assertSame(2, Playlist::query()->count());
+        $this->assertSame(5, Top::query()->count());
+        $this->assertSame(10, PlaylistTop::query()->count());
         $this->assertDatabaseHas('music_genres', ['slug' => 'pop']);
         $this->assertDatabaseHas('music_genres', ['slug' => 'rock']);
         $this->assertDatabaseHas('music_subgenres', ['slug' => 'indie-pop']);
@@ -41,7 +46,7 @@ class PlaylistCrudTest extends TestCase
         $this->assertTrue($subgenre->is_active);
 
         $playlist = Playlist::query()
-            ->with(['genre', 'subgenres'])
+            ->with(['genre', 'subgenres', 'playlistTops.top'])
             ->where('slug', 'mpb-antigas-bestplay')
             ->firstOrFail();
 
@@ -55,11 +60,67 @@ class PlaylistCrudTest extends TestCase
         $this->assertSame(0, $playlist->estimated_reach);
         $this->assertSame('old_bestplay', $playlist->external_metadata['source']);
         $this->assertTrue($playlist->subgenres->contains($subgenre));
+
+        $playlistTops = $playlist->playlistTops->keyBy(fn (PlaylistTop $playlistTop): string => $playlistTop->top->slug);
+
+        $this->assertCount(5, $playlistTops);
+        $this->assertSame(1, $playlistTops->get('top-1')->slots_quantity);
+        $this->assertSame(249900, $playlistTops->get('top-1')->price);
+        $this->assertSame(5, $playlistTops->get('top-5')->slots_quantity);
+        $this->assertSame(159900, $playlistTops->get('top-5')->price);
+        $this->assertSame(10, $playlistTops->get('top-10')->slots_quantity);
+        $this->assertSame(99900, $playlistTops->get('top-10')->price);
+        $this->assertSame(20, $playlistTops->get('top-20')->slots_quantity);
+        $this->assertSame(59900, $playlistTops->get('top-20')->price);
+        $this->assertSame(1, $playlistTops->get('destaque')->slots_quantity);
+        $this->assertSame(79900, $playlistTops->get('destaque')->price);
+        $this->assertSame('BRL', $playlistTops->get('top-10')->currency);
+        $this->assertSame(0, $playlistTops->get('top-10')->occupied_slots_count);
+        $this->assertTrue($playlistTops->get('top-10')->is_active);
+
+        $runningPlaylist = Playlist::query()
+            ->with(['genre', 'subgenres', 'playlistTops.top', 'spotifyCoverUpload'])
+            ->where('slug', 'playlist-corida-para-bater-os-10km')
+            ->firstOrFail();
+
+        $this->assertSame('Playlist Corida - para bater os 10km', $runningPlaylist->name);
+        $this->assertSame(PlaylistStatus::Active, $runningPlaylist->status);
+        $this->assertSame('Eletrônica', $runningPlaylist->genre->name);
+        $this->assertSame(['Deep House'], $runningPlaylist->subgenres->pluck('name')->all());
+        $this->assertSame('5bNqE1YOKGpbylAsxAiNtC', $runningPlaylist->spotify_playlist_id);
+        $this->assertSame('https://open.spotify.com/playlist/5bNqE1YOKGpbylAsxAiNtC', $runningPlaylist->spotify_url);
+        $this->assertSame('Playlist Corida - para bater os 10km', $runningPlaylist->spotify_name);
+        $this->assertSame('hehe', $runningPlaylist->spotify_description);
+        $this->assertTrue($runningPlaylist->spotify_public);
+        $this->assertSame('https://image-cdn-fa.spotifycdn.com/image/ab67706c0000da847d39801ed0f93a931e8523eb', $runningPlaylist->spotify_image_url);
+        $this->assertSame('AAAAI9b/qonsfbvAQJtcwLKxj7vv1C0Q', $runningPlaylist->spotify_snapshot_id);
+        $this->assertSame('gabrielvgobbi', $runningPlaylist->spotify_owner_id);
+        $this->assertSame('gabrielvgobbi', $runningPlaylist->spotify_owner_name);
+        $this->assertSame(67, $runningPlaylist->spotify_tracks_total);
+        $this->assertSame(1, $runningPlaylist->followers_count);
+        $this->assertNull($runningPlaylist->estimated_reach);
+
+        $cover = $runningPlaylist->spotifyCoverUpload;
+
+        $this->assertInstanceOf(Uploaded::class, $cover);
+        $this->assertSame('Capa Spotify', $cover->name);
+        $this->assertSame('spotify-cover', $cover->tag);
+        $this->assertSame('images', $cover->collection);
+        $this->assertSame('spotify', $cover->source);
+        $this->assertSame('local', $cover->disk);
+        $this->assertSame('uploads/playlist/43ffa979-0734-451b-abbf-3a9533a2321a/spotify-covers/2026/06/5c57529f-86e5-4233-bc1f-e9f701027a29.jpg', $cover->path);
+        $this->assertSame('477e3e14ca237096ccfd41686a11dffa1f64f5f6b0b40f741c4c886813ee325b', $cover->file_hash);
+        $this->assertTrue($cover->is_cover);
+
+        $runningPlaylistTops = $runningPlaylist->playlistTops->keyBy(fn (PlaylistTop $playlistTop): string => $playlistTop->top->slug);
+
+        $this->assertCount(5, $runningPlaylistTops);
+        $this->assertSame(249900, $runningPlaylistTops->get('top-1')->price);
     }
 
     public function test_authorized_user_can_view_playlist_pages(): void
     {
-        $user = $this->userWithPermissions(['playlists.view']);
+        $user = $this->userWithPermissions(['playlists.view', 'playlists.create']);
         $genre = MusicGenre::factory()->create(['name' => 'MPB', 'slug' => 'mpb']);
         $subgenre = MusicSubgenre::factory()->create([
             'name' => 'MPB Antigas',
@@ -78,10 +139,21 @@ class PlaylistCrudTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('app/playlists/index')
-                ->where('permissions.can_create', false)
+                ->where('permissions.can_create', true)
                 ->has('filters.genres', 1)
                 ->has('filters.genres.0.subgenres', 1)
                 ->where('filters.genres.0.subgenres.0.name', 'MPB Antigas')
+            );
+
+        $this->actingAs($user)
+            ->get(route('playlists.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('app/playlists/create')
+                ->has('formOptions.genres', 1)
+                ->where('formOptions.genres.0.name', 'MPB')
+                ->has('formOptions.subgenres', 1)
+                ->where('formOptions.subgenres.0.name', 'MPB Antigas')
             );
 
         $this->actingAs($user)
@@ -91,6 +163,8 @@ class PlaylistCrudTest extends TestCase
                 ->component('app/playlists/show')
                 ->where('playlistData.data.uuid', $playlist->uuid)
                 ->where('playlistData.data.genre.name', 'MPB')
+                ->where('playlistData.data.status_presenter.label', 'Ativa')
+                ->where('playlistData.data.status_presenter.color', 'emerald')
                 ->where('playlistData.data.subgenres.0.name', 'MPB Antigas')
             );
     }
@@ -360,6 +434,24 @@ class PlaylistCrudTest extends TestCase
             'status' => PlaylistStatus::Active,
         ]);
         $playlist->subgenres()->attach($subgenre);
+        $cover = Uploaded::query()->create([
+            'parentable_type' => Playlist::class,
+            'parentable_id' => $playlist->id,
+            'name' => 'Capa Spotify',
+            'file_name' => 'spotify-cover.jpg',
+            'original_name' => 'spotify-cover.jpg',
+            'mime_type' => 'image/jpeg',
+            'path' => 'uploads/playlists/brasil-acustico/spotify-cover.jpg',
+            'extension' => 'jpg',
+            'disk' => 'local',
+            'file_hash' => 'playlist-cover-hash',
+            'size' => 1024,
+            'tag' => 'spotify-cover',
+            'collection' => 'images',
+            'is_cover' => true,
+            'source' => 'spotify',
+        ]);
+        $playlist->forceFill(['spotify_cover_upload_id' => $cover->id])->save();
 
         Playlist::factory()->for($rock, 'genre')->create([
             'name' => 'Rock Pausado',
@@ -397,6 +489,9 @@ class PlaylistCrudTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.name', 'Brasil Acústico')
+            ->assertJsonPath('data.0.cover_image.url', route('uploads.preview', ['upload' => $cover->id]))
+            ->assertJsonPath('data.0.status_presenter.label', 'Ativa')
+            ->assertJsonPath('data.0.status_presenter.color', 'emerald')
             ->assertJsonPath('data.0.genre.name', 'MPB')
             ->assertJsonPath('data.0.subgenres.0.name', 'MPB Antigas');
     }

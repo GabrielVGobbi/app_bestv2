@@ -5,14 +5,16 @@ export const apiRoutes = {
         store: '/api/v1/users',
         update: (id: number | string) => `/api/v1/users/${id}`,
         destroy: (id: number | string) => `/api/v1/users/${id}`,
-        syncRolesPermissions: (id: number | string) => `/api/v1/users/${id}/sync-roles-permissions`,
+        syncRolesPermissions: (id: number | string) =>
+            `/api/v1/users/${id}/sync-roles-permissions`,
     },
     roles: {
         index: '/api/v1/roles',
         store: '/api/v1/roles',
         update: (id: number | string) => `/api/v1/roles/${id}`,
         destroy: (id: number | string) => `/api/v1/roles/${id}`,
-        syncPermissions: (id: number | string) => `/api/v1/roles/${id}/sync-permissions`,
+        syncPermissions: (id: number | string) =>
+            `/api/v1/roles/${id}/sync-permissions`,
     },
     activityLog: {
         index: '/api/v1/activity-log',
@@ -70,6 +72,11 @@ export const apiRoutes = {
         update: (id: number | string) => `/api/v1/playlists/${id}`,
         destroy: (id: number | string) => `/api/v1/playlists/${id}`,
         restore: (id: number | string) => `/api/v1/playlists/${id}/restore`,
+    },
+    sales: {
+        index: '/api/v1/sales',
+        show: (id: number | string) => `/api/v1/sales/${id}`,
+        destroy: (id: number | string) => `/api/v1/sales/${id}`,
     },
     playlistTops: {
         index: '/api/v1/playlist-tops',

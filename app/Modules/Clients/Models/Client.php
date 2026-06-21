@@ -40,6 +40,8 @@ class Client extends Model implements TimelineSubject
 {
     use Exportable, HasActivityLog, HasAddresses, HasComments, HasFactory, HasTimeline, HasUuidIdentifier, Searchable;
 
+    public const string SOURCE_CHECKOUT = 'checkout';
+
     public const array CLASSIFICATIONS = [
         'Classe S',
         'Classe A',
@@ -149,6 +151,16 @@ class Client extends Model implements TimelineSubject
     public function responsibleUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'responsible_user_id');
+    }
+
+    public function isCheckoutOriginated(): bool
+    {
+        return $this->source_id === self::SOURCE_CHECKOUT;
+    }
+
+    public function canBeEditedInternally(): bool
+    {
+        return ! $this->isCheckoutOriginated();
     }
 
     /**

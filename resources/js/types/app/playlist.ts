@@ -1,3 +1,5 @@
+import type { StatusPresenter } from '@/types/status';
+
 export type PlaylistStatus = 'active' | 'inactive' | 'archived';
 export type PlaylistSpotifySyncPriority = 'high' | 'normal' | 'low' | 'paused';
 
@@ -80,6 +82,7 @@ export interface Playlist {
     slug: string;
     status: PlaylistStatus;
     status_label: string;
+    status_presenter: StatusPresenter;
     partner_name: string | null;
     spotify_playlist_id: string | null;
     spotify_url: string | null;

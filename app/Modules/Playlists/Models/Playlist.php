@@ -167,7 +167,7 @@ class Playlist extends Model
 
     public function scopeWithCatalog(Builder $query): Builder
     {
-        return $query->with(['genre', 'subgenres']);
+        return $query->with(['genre', 'subgenres', 'spotifyCoverUpload']);
     }
 
     protected function applyApiFilterOperator(Builder $query, string $column, string $operator, mixed $value): void
