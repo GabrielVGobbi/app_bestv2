@@ -71,6 +71,9 @@ class PermissionsSeeder extends Seeder
             ['name' => 'Agendar vaga de playlist', 'slug' => 'playlist-slots.schedule', 'group' => 'playlist-slots', 'description' => 'Permite agendar vagas pendentes de playlist'],
             ['name' => 'Cancelar vaga de playlist', 'slug' => 'playlist-slots.cancel', 'group' => 'playlist-slots', 'description' => 'Permite cancelar vagas de playlist'],
             ['name' => 'Visualizar vagas de playlist', 'slug' => 'playlist-slots.view', 'group' => 'playlist-slots', 'description' => 'Permite visualizar ocupações de playlist'],
+            ['name' => 'Visualizar fila de playlists', 'slug' => 'playlist-delivery-tasks.view', 'group' => 'playlist-delivery-tasks', 'description' => 'Permite visualizar tarefas operacionais de playlists'],
+            ['name' => 'Concluir checklist de playlist', 'slug' => 'playlist-delivery-tasks.complete', 'group' => 'playlist-delivery-tasks', 'description' => 'Permite marcar tarefas operacionais de playlists como concluídas'],
+            ['name' => 'Trocar música de vaga iniciada', 'slug' => 'playlist-delivery-tasks.change-track', 'group' => 'playlist-delivery-tasks', 'description' => 'Permite trocar a música de uma entrega de playlist em campanha iniciada'],
 
             ['name' => 'Visualizar financeiro', 'slug' => 'finance.view', 'group' => 'finance', 'description' => 'Permite visualizar dados financeiros'],
             ['name' => 'Gerenciar financeiro', 'slug' => 'finance.manage', 'group' => 'finance', 'description' => 'Permite gerenciar recebimentos, pagamentos, baixas e bancos'],
@@ -153,6 +156,9 @@ class PermissionsSeeder extends Seeder
                 'playlist-slots.schedule',
                 'playlist-slots.cancel',
                 'playlist-slots.view',
+                'playlist-delivery-tasks.view',
+                'playlist-delivery-tasks.complete',
+                'playlist-delivery-tasks.change-track',
                 'finance.view',
                 'finance.manage',
             ],
@@ -217,6 +223,9 @@ class PermissionsSeeder extends Seeder
                 'playlist-slots.schedule',
                 'playlist-slots.cancel',
                 'playlist-slots.view',
+                'playlist-delivery-tasks.view',
+                'playlist-delivery-tasks.complete',
+                'playlist-delivery-tasks.change-track',
                 'finance.view',
             ],
             'commercial' => [
@@ -290,6 +299,9 @@ class PermissionsSeeder extends Seeder
                 'playlist-slots.schedule',
                 'playlist-slots.cancel',
                 'playlist-slots.view',
+                'playlist-delivery-tasks.view',
+                'playlist-delivery-tasks.complete',
+                'playlist-delivery-tasks.change-track',
             ],
         ];
 

@@ -6,6 +6,8 @@ namespace App\Modules\Sales\Actions\Status;
 
 use App\Models\User;
 use App\Modules\Playlists\Actions\CreatePlaylistSlotFromSaleItem;
+use App\Modules\Playlists\Actions\DeliveryTasks\CreatePlaylistDeliveryTask;
+use App\Modules\Playlists\Enums\PlaylistDeliveryTaskType;
 use App\Modules\Sales\Actions\Items\RecalculateSaleItemTotals;
 use App\Modules\Sales\Actions\Items\SyncSaleTotals;
 use App\Modules\Sales\Enums\SaleItemType;
@@ -22,6 +24,7 @@ class ConfirmSale
     public function __construct(
         private readonly StatusTransitionService $statusTransitionService,
         private readonly CreatePlaylistSlotFromSaleItem $createPlaylistSlotFromSaleItem,
+        private readonly CreatePlaylistDeliveryTask $createPlaylistDeliveryTask,
         private readonly RecalculateSaleItemTotals $recalculateSaleItemTotals,
         private readonly SyncSaleTotals $syncSaleTotals,
     ) {}
@@ -59,7 +62,9 @@ class ConfirmSale
                 $this->recalculateSaleItemTotals->handle($saleItem)->save();
 
                 if ($saleItem->type === SaleItemType::PlaylistSlot && $saleItem->sellable_id === null) {
-                    $this->createPlaylistSlotFromSaleItem->handle($saleItem, $user);
+                    $slot = $this->createPlaylistSlotFromSaleItem->handle($saleItem, $user);
+
+                    $this->createPlaylistDeliveryTask->handle($slot, PlaylistDeliveryTaskType::AddTrack);
                 }
             }
 

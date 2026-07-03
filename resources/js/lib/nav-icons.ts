@@ -32,7 +32,8 @@ import {
     DatabaseZap,
     Bell,
     Music2,
-    ShoppingBag,ReceiptText
+    ShoppingBag,ReceiptText,
+    ListChecks
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -75,7 +76,8 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Bell,
     Music2,
     ShoppingBag,
-    ReceiptText
+    ReceiptText,
+    ListChecks
 };
 
 export function resolveIcon(name?: string | null): LucideIcon | null {

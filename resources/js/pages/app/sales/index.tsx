@@ -247,7 +247,7 @@ export default function SaleIndex({ permissions, filters }: Props) {
         <>
             <Head title="Vendas" />
 
-            <div className="page-wrapper-lg">
+            <div className="page-wrapper-xl">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <Heading

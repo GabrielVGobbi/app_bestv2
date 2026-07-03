@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             TopSeeder::class,
             PlaylistSeeder::class,
+            // PlaylistDeliveryTaskDemoSeeder::class,
         ]);
     }
 }

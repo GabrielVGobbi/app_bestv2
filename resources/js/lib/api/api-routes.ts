@@ -73,6 +73,9 @@ export const apiRoutes = {
         destroy: (id: number | string) => `/api/v1/playlists/${id}`,
         restore: (id: number | string) => `/api/v1/playlists/${id}/restore`,
     },
+    playlistDeliveryTasks: {
+        index: '/api/v1/playlist-delivery-tasks',
+    },
     sales: {
         index: '/api/v1/sales',
         show: (id: number | string) => `/api/v1/sales/${id}`,
