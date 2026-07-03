@@ -8,6 +8,7 @@ use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
 use App\Modules\Finance\Enums\FinancialAmountOperation;
+use App\Modules\Finance\Enums\FinancialCategoryType;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Models\FinancialCategory;
@@ -31,7 +32,7 @@ class CreateManualFinancialEntry
         $direction = $this->resolveDirection($payload['direction'] ?? null);
         $this->validateOriginablePair($payload);
         $counterparty = $this->resolveCounterparty($payload, $company);
-        $category = $this->resolveCategory($payload['category_id'] ?? null, $company);
+        $category = $this->resolveCategory($payload['category_id'] ?? null, $company, $direction);
 
         $components = $this->normalizeComponents($payload['components'] ?? null);
         $grossAmount = $components
@@ -147,7 +148,7 @@ class CreateManualFinancialEntry
         ]);
     }
 
-    private function resolveCategory(mixed $value, Company $company): ?FinancialCategory
+    private function resolveCategory(mixed $value, Company $company, FinancialDirection $direction): ?FinancialCategory
     {
         if (blank($value)) {
             return null;
@@ -176,6 +177,17 @@ class CreateManualFinancialEntry
         if ($category->hasChildren()) {
             throw ValidationException::withMessages([
                 'category_id' => __('Selecione uma categoria financeira folha para o lancamento.'),
+            ]);
+        }
+
+        $expectedType = match ($direction) {
+            FinancialDirection::Receivable => FinancialCategoryType::Income,
+            FinancialDirection::Payable => FinancialCategoryType::Expense,
+        };
+
+        if ($category->type !== $expectedType) {
+            throw ValidationException::withMessages([
+                'category_id' => __('Categoria financeira incompativel com a direcao do lancamento.'),
             ]);
         }
 

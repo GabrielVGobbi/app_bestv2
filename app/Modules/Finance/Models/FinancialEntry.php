@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Models;
 
+use App\Concerns\Exportable;
+use App\Concerns\Searchable;
 use App\Models\User;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialEntryFactory;
@@ -47,9 +49,63 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class FinancialEntry extends Model implements TimelineSubject
 {
-    use HasActivityLog, HasFactory, HasUuidIdentifier, SoftDeletes;
+    use Exportable, HasActivityLog, HasFactory, HasUuidIdentifier, Searchable, SoftDeletes;
 
     protected string $activityLogName = 'finance.entries';
+
+    /** @var array<string, string> */
+    protected array $exportable = [
+        'description' => 'Descricao',
+        'direction' => 'Direcao',
+        'status' => 'Status',
+        'gross_amount' => 'Valor bruto',
+        'net_amount' => 'Valor liquido',
+        'balance_amount' => 'Saldo',
+        'due_date' => 'Vencimento',
+        'created_at' => 'Criado em',
+    ];
+
+    /** @var array<int, string> */
+    protected array $searchable = ['uuid', 'description', 'origin_reference'];
+
+    /** @var array<int, string> */
+    protected array $filterable = [
+        'uuid',
+        'company_id',
+        'direction',
+        'status',
+        'category_id',
+        'counterparty_type',
+        'originable_type',
+        'due_date',
+        'issue_date',
+        'competence_date',
+        'created_at',
+        'updated_at',
+    ];
+
+    /** @var array<int, string> */
+    protected array $sortable = [
+        'id',
+        'description',
+        'direction',
+        'status',
+        'due_date',
+        'issue_date',
+        'competence_date',
+        'gross_amount',
+        'net_amount',
+        'balance_amount',
+        'created_at',
+        'updated_at',
+    ];
+
+    /** @var array<int, string> */
+    protected array $apiIncludes = ['category', 'counterparty', 'amountComponents', 'installments'];
+
+    protected string $defaultSortColumn = 'id';
+
+    protected string $defaultSortDirection = 'desc';
 
     /** @var array<string, mixed> */
     protected $attributes = [

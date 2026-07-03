@@ -221,21 +221,44 @@ return [
             'enabled' => true,
             'permissions' => [
                 'finance.view',
+                'finance.entries.view',
                 'finance.settings.manage',
                 'finance.categories.view',
                 'finance.payment-methods.view',
             ],
             'route_prefixes' => [
+                '/financial-entries',
                 '/financial-categories',
                 '/payment-methods',
             ],
-            'default_href' => ['route' => 'financial-categories.index'],
+            'default_href' => ['route' => 'financial-entries.index'],
             'items' => [
+                [
+                    'slug' => 'financeiro_operacoes_section',
+                    'label' => 'Operacoes',
+                    'type' => 'section',
+                    'order' => 1,
+                    'enabled' => true,
+                    'visible' => true,
+                    'items' => [
+                        [
+                            'slug' => 'financeiro_financial_entries',
+                            'label' => 'Lançamentos financeiros',
+                            'icon' => 'ReceiptText',
+                            'type' => 'link',
+                            'href' => ['route' => 'financial-entries.index'],
+                            'permissions' => ['finance.entries.view'],
+                            'order' => 1,
+                            'enabled' => true,
+                            'visible' => true,
+                        ],
+                    ],
+                ],
                 [
                     'slug' => 'financeiro_configuracoes_section',
                     'label' => 'Configuracoes',
                     'type' => 'section',
-                    'order' => 1,
+                    'order' => 10,
                     'enabled' => true,
                     'visible' => true,
                     'items' => [

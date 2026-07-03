@@ -209,6 +209,30 @@ class CreateManualFinancialEntryTest extends TestCase
         ]);
     }
 
+    public function test_rejects_category_type_incompatible_with_direction(): void
+    {
+        $company = Company::factory()->create();
+        $incomeCategory = FinancialCategory::factory()->income()->create([
+            'company_id' => $company->id,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Payable,
+            'category_id' => $incomeCategory->id,
+            'description' => 'Despesa com categoria de receita',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 50000,
+                ],
+            ],
+        ]);
+    }
+
     public function test_rejects_client_counterparty_from_another_company(): void
     {
         $company = Company::factory()->create();

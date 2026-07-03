@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Finance;
 
+use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Seeders\FinancialCategorySeeder;
 use App\Modules\Finance\Enums\FinancialCategoryType;
 use App\Modules\Finance\Models\FinancialCategory;
@@ -47,8 +48,14 @@ class FinancialCategoryTest extends TestCase
 
     public function test_blocks_cycles_in_category_tree(): void
     {
-        $parent = FinancialCategory::factory()->expense()->create(['name' => 'Despesas', 'slug' => 'despesas']);
+        $company = Company::factory()->create();
+        $parent = FinancialCategory::factory()->expense()->create([
+            'company_id' => $company->id,
+            'name' => 'Despesas',
+            'slug' => 'despesas',
+        ]);
         $child = FinancialCategory::factory()->expense()->create([
+            'company_id' => $company->id,
             'parent_id' => $parent->id,
             'name' => 'Marketing',
             'slug' => 'marketing',
@@ -61,8 +68,14 @@ class FinancialCategoryTest extends TestCase
 
     public function test_reports_deletion_blockers_for_children(): void
     {
-        $parent = FinancialCategory::factory()->expense()->create(['name' => 'Despesas', 'slug' => 'despesas']);
+        $company = Company::factory()->create();
+        $parent = FinancialCategory::factory()->expense()->create([
+            'company_id' => $company->id,
+            'name' => 'Despesas',
+            'slug' => 'despesas',
+        ]);
         FinancialCategory::factory()->expense()->create([
+            'company_id' => $company->id,
             'parent_id' => $parent->id,
             'name' => 'Marketing',
             'slug' => 'marketing',

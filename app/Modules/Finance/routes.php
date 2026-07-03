@@ -3,12 +3,18 @@
 declare(strict_types=1);
 
 use App\Modules\Finance\Http\Controllers\Api\FinancialCategoryApiController;
+use App\Modules\Finance\Http\Controllers\Api\FinancialEntryApiController;
 use App\Modules\Finance\Http\Controllers\Api\PaymentMethodApiController;
 use App\Modules\Finance\Http\Controllers\FinancialCategoryController;
+use App\Modules\Finance\Http\Controllers\FinancialEntryController;
 use App\Modules\Finance\Http\Controllers\PaymentMethodController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
+    Route::resource('financial-entries', FinancialEntryController::class)
+        ->only(['index', 'create', 'store', 'show'])
+        ->parameters(['financial-entries' => 'financial_entry']);
+
     Route::patch('financial-categories/{financial_category}/status', [FinancialCategoryController::class, 'updateStatus'])
         ->name('financial-categories.status');
 
@@ -28,6 +34,10 @@ Route::prefix('api/v1')
     ->group(function (): void {
         Route::get('financial-category-tree', [FinancialCategoryApiController::class, 'tree'])
             ->name('financial-categories.tree');
+
+        Route::apiResource('financial-entries', FinancialEntryApiController::class)
+            ->only(['index', 'store', 'show'])
+            ->parameters(['financial-entries' => 'financial_entry']);
 
         Route::apiResource('financial-categories', FinancialCategoryApiController::class)
             ->parameters(['financial-categories' => 'financial_category']);

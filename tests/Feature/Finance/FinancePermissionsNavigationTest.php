@@ -17,17 +17,20 @@ class FinancePermissionsNavigationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_finance_v1_does_not_seed_deferred_operation_permissions(): void
+    public function test_finance_v2_seeds_entries_but_not_deferred_settlement_permissions(): void
     {
         $this->seed([RolesSeeder::class, PermissionsSeeder::class]);
 
-        $this->assertFalse(Permission::query()->where('slug', 'finance.entries.create')->exists());
+        $this->assertTrue(Permission::query()->where('slug', 'finance.entries.view')->exists());
+        $this->assertTrue(Permission::query()->where('slug', 'finance.entries.create')->exists());
+        $this->assertTrue(Permission::query()->where('slug', 'finance.entries.update')->exists());
+        $this->assertTrue(Permission::query()->where('slug', 'finance.entries.cancel')->exists());
         $this->assertFalse(Permission::query()->where('slug', 'finance.settlements.reverse')->exists());
         $this->assertFalse(Permission::query()->where('slug', 'finance.reconciliation.manage')->exists());
         $this->assertFalse(Permission::query()->where('slug', 'finance.reports.view')->exists());
     }
 
-    public function test_finance_user_sees_only_v1_finance_navigation(): void
+    public function test_finance_user_sees_v2_entries_and_foundation_navigation(): void
     {
         $financeUser = $this->userWithRole('finance');
 
@@ -37,18 +40,23 @@ class FinancePermissionsNavigationTest extends TestCase
         $financeModule = collect($modules)->firstWhere('label', 'Financeiro');
 
         $this->assertIsArray($financeModule);
-        $this->assertSame('/financial-categories', $financeModule['defaultHref']);
+        $this->assertSame('/financial-entries', $financeModule['defaultHref']);
 
-        $section = collect($financeModule['items'])->firstWhere('title', 'Configuracoes');
+        $operations = collect($financeModule['items'])->firstWhere('title', 'Operacoes');
+        $settings = collect($financeModule['items'])->firstWhere('title', 'Configuracoes');
 
-        $this->assertIsArray($section);
+        $this->assertIsArray($operations);
+        $this->assertIsArray($settings);
+        $this->assertEqualsCanonicalizing(
+            ['Lançamentos financeiros'],
+            collect($operations['items'])->pluck('title')->all(),
+        );
         $this->assertEqualsCanonicalizing(
             ['Categorias financeiras', 'Metodos de pagamento'],
-            collect($section['items'])->pluck('title')->all(),
+            collect($settings['items'])->pluck('title')->all(),
         );
 
-        $this->assertNotContains('Lancamentos financeiros', collect($section['items'])->pluck('title')->all());
-        $this->assertNotContains('Conciliacao', collect($section['items'])->pluck('title')->all());
+        $this->assertNotContains('Conciliacao', collect($operations['items'])->pluck('title')->all());
     }
 
     public function test_navigation_hides_finance_module_and_supplier_item_without_permissions(): void
