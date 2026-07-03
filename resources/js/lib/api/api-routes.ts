@@ -43,6 +43,30 @@ export const apiRoutes = {
         update: (id: number | string) => `/api/v1/clients/${id}`,
         destroy: (id: number | string) => `/api/v1/clients/${id}`,
     },
+    suppliers: {
+        index: '/api/v1/suppliers',
+        show: (id: number | string) => `/api/v1/suppliers/${id}`,
+        store: '/api/v1/suppliers',
+        update: (id: number | string) => `/api/v1/suppliers/${id}`,
+        destroy: (id: number | string) => `/api/v1/suppliers/${id}`,
+    },
+    financialCategories: {
+        index: '/api/v1/financial-categories',
+        tree: '/api/v1/financial-category-tree',
+        show: (id: number | string) => `/api/v1/financial-categories/${id}`,
+        store: '/api/v1/financial-categories',
+        update: (id: number | string) => `/api/v1/financial-categories/${id}`,
+        destroy: (id: number | string) =>
+            `/api/v1/financial-categories/${id}`,
+    },
+    paymentMethods: {
+        index: '/api/v1/payment-methods',
+        options: '/api/v1/payment-method-options',
+        show: (id: number | string) => `/api/v1/payment-methods/${id}`,
+        store: '/api/v1/payment-methods',
+        update: (id: number | string) => `/api/v1/payment-methods/${id}`,
+        destroy: (id: number | string) => `/api/v1/payment-methods/${id}`,
+    },
     addresses: {
         index: '/api/v1/addresses',
         store: '/api/v1/addresses',

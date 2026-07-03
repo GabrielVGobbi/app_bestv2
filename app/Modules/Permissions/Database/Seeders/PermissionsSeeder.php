@@ -11,6 +11,7 @@ class PermissionsSeeder extends Seeder
     public function run(): void
     {
         $this->normalizeLegacyPanelPermission();
+        $this->removeDeferredFinancePermissions();
 
         $permissions = [
             ['name' => 'Acessar painel', 'slug' => 'access-panel', 'group' => 'painel', 'description' => 'Permite acessar o painel administrativo'],
@@ -23,6 +24,11 @@ class PermissionsSeeder extends Seeder
 
             ['name' => 'Visualizar clientes', 'slug' => 'clients.view', 'group' => 'clients', 'description' => 'Permite visualizar clientes'],
             ['name' => 'Gerenciar clientes', 'slug' => 'clients.manage', 'group' => 'clients', 'description' => 'Permite criar, editar e excluir clientes'],
+
+            ['name' => 'Visualizar fornecedores', 'slug' => 'suppliers.view', 'group' => 'suppliers', 'description' => 'Permite visualizar fornecedores'],
+            ['name' => 'Criar fornecedores', 'slug' => 'suppliers.create', 'group' => 'suppliers', 'description' => 'Permite criar fornecedores'],
+            ['name' => 'Editar fornecedores', 'slug' => 'suppliers.update', 'group' => 'suppliers', 'description' => 'Permite editar fornecedores'],
+            ['name' => 'Excluir fornecedores', 'slug' => 'suppliers.delete', 'group' => 'suppliers', 'description' => 'Permite excluir ou arquivar fornecedores'],
 
             ['name' => 'Gerenciar enderecos', 'slug' => 'addresses.manage', 'group' => 'addresses', 'description' => 'Permite gerenciar enderecos'],
 
@@ -77,6 +83,15 @@ class PermissionsSeeder extends Seeder
 
             ['name' => 'Visualizar financeiro', 'slug' => 'finance.view', 'group' => 'finance', 'description' => 'Permite visualizar dados financeiros'],
             ['name' => 'Gerenciar financeiro', 'slug' => 'finance.manage', 'group' => 'finance', 'description' => 'Permite gerenciar recebimentos, pagamentos, baixas e bancos'],
+            ['name' => 'Gerenciar configuracoes financeiras', 'slug' => 'finance.settings.manage', 'group' => 'finance', 'description' => 'Permite gerenciar configuracoes do financeiro'],
+            ['name' => 'Visualizar categorias financeiras', 'slug' => 'finance.categories.view', 'group' => 'finance', 'description' => 'Permite visualizar categorias financeiras'],
+            ['name' => 'Criar categorias financeiras', 'slug' => 'finance.categories.create', 'group' => 'finance', 'description' => 'Permite criar categorias financeiras'],
+            ['name' => 'Editar categorias financeiras', 'slug' => 'finance.categories.update', 'group' => 'finance', 'description' => 'Permite editar categorias financeiras'],
+            ['name' => 'Excluir categorias financeiras', 'slug' => 'finance.categories.delete', 'group' => 'finance', 'description' => 'Permite excluir categorias financeiras sem vinculos'],
+            ['name' => 'Visualizar metodos de pagamento', 'slug' => 'finance.payment-methods.view', 'group' => 'finance', 'description' => 'Permite visualizar metodos de pagamento'],
+            ['name' => 'Criar metodos de pagamento', 'slug' => 'finance.payment-methods.create', 'group' => 'finance', 'description' => 'Permite criar metodos de pagamento'],
+            ['name' => 'Editar metodos de pagamento', 'slug' => 'finance.payment-methods.update', 'group' => 'finance', 'description' => 'Permite editar metodos de pagamento'],
+            ['name' => 'Excluir metodos de pagamento', 'slug' => 'finance.payment-methods.delete', 'group' => 'finance', 'description' => 'Permite excluir metodos de pagamento'],
         ];
 
         foreach ($permissions as $permission) {
@@ -112,6 +127,10 @@ class PermissionsSeeder extends Seeder
                 'companies.manage',
                 'clients.view',
                 'clients.manage',
+                'suppliers.view',
+                'suppliers.create',
+                'suppliers.update',
+                'suppliers.delete',
                 'addresses.manage',
                 'services.view',
                 'services.create',
@@ -161,6 +180,15 @@ class PermissionsSeeder extends Seeder
                 'playlist-delivery-tasks.change-track',
                 'finance.view',
                 'finance.manage',
+                'finance.settings.manage',
+                'finance.categories.view',
+                'finance.categories.create',
+                'finance.categories.update',
+                'finance.categories.delete',
+                'finance.payment-methods.view',
+                'finance.payment-methods.create',
+                'finance.payment-methods.update',
+                'finance.payment-methods.delete',
             ],
             'user' => [
                 'access-panel',
@@ -169,9 +197,22 @@ class PermissionsSeeder extends Seeder
                 'access-panel',
                 'companies.view',
                 'clients.view',
+                'suppliers.view',
+                'suppliers.create',
+                'suppliers.update',
+                'suppliers.delete',
                 'addresses.manage',
                 'finance.view',
                 'finance.manage',
+                'finance.settings.manage',
+                'finance.categories.view',
+                'finance.categories.create',
+                'finance.categories.update',
+                'finance.categories.delete',
+                'finance.payment-methods.view',
+                'finance.payment-methods.create',
+                'finance.payment-methods.update',
+                'finance.payment-methods.delete',
             ],
             'manager' => [
                 'access-panel',
@@ -227,6 +268,8 @@ class PermissionsSeeder extends Seeder
                 'playlist-delivery-tasks.complete',
                 'playlist-delivery-tasks.change-track',
                 'finance.view',
+                'finance.categories.view',
+                'finance.payment-methods.view',
             ],
             'commercial' => [
                 'access-panel',
@@ -333,6 +376,24 @@ class PermissionsSeeder extends Seeder
                 'description' => 'Permite acessar o painel administrativo',
             ]);
         });
+    }
+
+    private function removeDeferredFinancePermissions(): void
+    {
+        Permission::query()
+            ->whereIn('slug', [
+                'finance.entries.view',
+                'finance.entries.create',
+                'finance.entries.update',
+                'finance.entries.cancel',
+                'finance.entries.renegotiate',
+                'finance.amounts.view',
+                'finance.settlements.create',
+                'finance.settlements.reverse',
+                'finance.reports.view',
+                'finance.reconciliation.manage',
+            ])
+            ->delete();
     }
 
     private function normalizeGeneratedSlug(string $slug): void

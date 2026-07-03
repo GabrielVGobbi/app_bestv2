@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use App\Modules\Permissions\Models\Permission;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -49,10 +51,10 @@ class NavigationService
         Cache::forget(self::CACHE_KEY);
     }
 
-    /** @return array{modules: array<int, mixed>, footer: array<int, mixed>} */
+    /** @return array{global: array<int, mixed>, modules: array<int, mixed>, footer: array<int, mixed>} */
     private function resolved(): array
     {
-        if (app()->isLocal()) {
+        if (app()->isLocal() || $this->currentUser()) {
             return $this->build();
         }
 
@@ -80,6 +82,7 @@ class NavigationService
         return collect($modules)
             ->filter(fn (array $m) => $m['enabled'] ?? true)
             ->filter(fn (array $m) => $this->passesRoleFilter($m))
+            ->filter(fn (array $m) => $this->passesPermissionFilter($m))
             ->map(fn (array $m) => [
                 'slug' => $m['slug'],
                 'label' => $m['label'],
@@ -105,6 +108,7 @@ class NavigationService
         return collect($items)
             ->filter(fn (array $item) => $item['enabled'] ?? true)
             ->filter(fn (array $item) => $this->passesRoleFilter($item))
+            ->filter(fn (array $item) => $this->passesPermissionFilter($item))
             ->sortBy('order')
             ->map(fn (array $item) => $this->normalizeItem($item))
             ->filter(fn (array $item) => ! in_array($item['type'], ['group', 'section'], true) || ! empty($item['items']))
@@ -121,7 +125,7 @@ class NavigationService
             return true;
         }
 
-        $user = request()->user();
+        $user = $this->currentUser();
 
         if (! $user) {
             return false;
@@ -130,6 +134,51 @@ class NavigationService
         $roles = is_array($entry['roles']) ? $entry['roles'] : [$entry['roles']];
 
         return $user->hasRole(...$roles);
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function passesPermissionFilter(array $entry): bool
+    {
+        if (empty($entry['permissions'])) {
+            return true;
+        }
+
+        $user = $this->currentUser();
+
+        if (! $user) {
+            return false;
+        }
+
+        $permissions = is_array($entry['permissions']) ? $entry['permissions'] : [$entry['permissions']];
+        $superRole = config('permissions.super_role', 'developer');
+
+        if ($user->roles()->where('slug', $superRole)->exists()) {
+            return true;
+        }
+
+        if ($user->permissions()->whereIn('slug', $permissions)->exists()) {
+            return true;
+        }
+
+        return Permission::query()
+            ->whereIn('slug', $permissions)
+            ->whereHas('roles', fn ($roles) => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
+            ->exists();
+    }
+
+    private function currentUser(): ?User
+    {
+        $requestUser = request()->user();
+
+        if ($requestUser instanceof User) {
+            return $requestUser;
+        }
+
+        $authUser = auth()->user();
+
+        return $authUser instanceof User ? $authUser : null;
     }
 
     /**

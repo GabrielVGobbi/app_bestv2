@@ -42,6 +42,10 @@ class PermissionsModuleTest extends TestCase
             'companies.manage',
             'clients.view',
             'clients.manage',
+            'suppliers.view',
+            'suppliers.create',
+            'suppliers.update',
+            'suppliers.delete',
             'addresses.manage',
             'services.view',
             'services.create',
@@ -63,6 +67,7 @@ class PermissionsModuleTest extends TestCase
             'sales.items.delete',
             'sales.items.playlist-slot.create',
             'sales.items.spotify-track.lookup',
+            'sales.items.spotify-playlist.verify',
             'sales.items.discount',
             'playlists.view',
             'playlists.create',
@@ -85,8 +90,20 @@ class PermissionsModuleTest extends TestCase
             'playlist-slots.schedule',
             'playlist-slots.cancel',
             'playlist-slots.view',
+            'playlist-delivery-tasks.view',
+            'playlist-delivery-tasks.complete',
+            'playlist-delivery-tasks.change-track',
             'finance.view',
             'finance.manage',
+            'finance.settings.manage',
+            'finance.categories.view',
+            'finance.categories.create',
+            'finance.categories.update',
+            'finance.categories.delete',
+            'finance.payment-methods.view',
+            'finance.payment-methods.create',
+            'finance.payment-methods.update',
+            'finance.payment-methods.delete',
         ];
 
         $this->assertEqualsCanonicalizing($expectedRoles, Role::query()->pluck('slug')->all());
@@ -117,6 +134,13 @@ class PermissionsModuleTest extends TestCase
 
         $this->assertEqualsCanonicalizing($expectedPermissions, $developerPermissionSlugs);
         $this->assertContains('finance.manage', $financePermissionSlugs);
+        $this->assertContains('suppliers.view', $financePermissionSlugs);
+        $this->assertContains('finance.categories.view', $financePermissionSlugs);
+        $this->assertContains('finance.payment-methods.view', $financePermissionSlugs);
+        $this->assertNotContains('finance.origins.manage', $financePermissionSlugs);
+        $this->assertNotContains('finance.entries.create', $financePermissionSlugs);
+        $this->assertNotContains('finance.settlements.reverse', $financePermissionSlugs);
+        $this->assertNotContains('finance.reconciliation.manage', $financePermissionSlugs);
         $this->assertNotContains('sales.create', $financePermissionSlugs);
         $this->assertContains('services.view', $sellerPermissionSlugs);
         $this->assertContains('playlist-tops.view', $sellerPermissionSlugs);

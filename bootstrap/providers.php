@@ -6,12 +6,14 @@ use App\Modules\Clients\Providers\ClientsServiceProvider;
 use App\Modules\Companies\Providers\CompaniesServiceProvider;
 use App\Modules\CrudGenerator\Providers\CrudGeneratorServiceProvider;
 use App\Modules\Email\Providers\EmailServiceProvider;
+use App\Modules\Finance\Providers\FinanceServiceProvider;
 use App\Modules\Notifications\Providers\NotificationsServiceProvider;
 use App\Modules\Permissions\Providers\PermissionsServiceProvider;
 use App\Modules\Playlists\Providers\PlaylistsServiceProvider;
 use App\Modules\Sales\Providers\SalesServiceProvider;
 use App\Modules\SeederGenerator\Providers\SeederGeneratorServiceProvider;
 use App\Modules\Services\Providers\ServicesServiceProvider;
+use App\Modules\Suppliers\Providers\SuppliersServiceProvider;
 use App\Modules\Timeline\Providers\TimelineServiceProvider;
 use App\Modules\Uploads\Providers\UploadsServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -25,12 +27,14 @@ return [
     CompaniesServiceProvider::class,
     CrudGeneratorServiceProvider::class,
     EmailServiceProvider::class,
+    FinanceServiceProvider::class,
     NotificationsServiceProvider::class,
     PermissionsServiceProvider::class,
     PlaylistsServiceProvider::class,
     SalesServiceProvider::class,
     SeederGeneratorServiceProvider::class,
     ServicesServiceProvider::class,
+    SuppliersServiceProvider::class,
     TimelineServiceProvider::class,
     UploadsServiceProvider::class,
     AppServiceProvider::class,
