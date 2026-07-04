@@ -81,13 +81,15 @@ export default function EditCompany({ companyData, permissions }: Props) {
             <div className="page-wrapper-sm">
                 <Form
                     action={update.url(company.uuid)}
-                    method="put"
+                    method="post"
                     options={{ preserveScroll: true }}
                     onError={() => toast.error('Verifique os campos obrigatorios.')}
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
                         <div className="space-y-4">
+                            <input type="hidden" name="_method" value="put" />
+
                             <div className="flex flex-1 flex-col gap-6">
                                 <Card>
                                     <CardHeader>

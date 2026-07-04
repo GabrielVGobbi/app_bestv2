@@ -30,6 +30,8 @@ class StoreCompanyRequest extends FormRequest
                 Rule::unique('companies', 'cnpj')->whereNull('deleted_at'),
             ],
             'fiscal_metadata' => ['nullable', 'array'],
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
         ];
     }
 

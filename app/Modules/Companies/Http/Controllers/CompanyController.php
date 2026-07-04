@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Companies\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Companies\Actions\SyncCompanyLogo;
 use App\Modules\Companies\Http\Requests\Company\StoreCompanyRequest;
 use App\Modules\Companies\Http\Requests\Company\UpdateCompanyRequest;
 use App\Modules\Companies\Http\Resources\CompanyResource;
 use App\Modules\Companies\Models\Company;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,9 +36,12 @@ class CompanyController extends Controller
         return Inertia::render('app/companies/create');
     }
 
-    public function store(StoreCompanyRequest $request): RedirectResponse
+    public function store(StoreCompanyRequest $request, SyncCompanyLogo $syncCompanyLogo): RedirectResponse
     {
-        $company = Company::create($request->validated());
+        $validated = $request->validated();
+        $company = Company::create(Arr::except($validated, ['logo', 'remove_logo']));
+
+        $syncCompanyLogo->handle($company, $request->file('logo'), $request->boolean('remove_logo'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Company created.')]);
 
@@ -67,9 +72,12 @@ class CompanyController extends Controller
         ]);
     }
 
-    public function update(UpdateCompanyRequest $request, Company $company): RedirectResponse
+    public function update(UpdateCompanyRequest $request, Company $company, SyncCompanyLogo $syncCompanyLogo): RedirectResponse
     {
-        $company->update($request->validated());
+        $validated = $request->validated();
+
+        $company->update(Arr::except($validated, ['logo', 'remove_logo']));
+        $syncCompanyLogo->handle($company, $request->file('logo'), $request->boolean('remove_logo'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Company updated.')]);
 

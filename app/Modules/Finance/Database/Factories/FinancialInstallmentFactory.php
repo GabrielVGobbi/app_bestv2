@@ -23,10 +23,12 @@ class FinancialInstallmentFactory extends Factory
             'status' => FinancialEntryStatus::Open,
             'installment_number' => 1,
             'due_date' => now()->addDays(7)->toDateString(),
+            'competence_date' => now()->toDateString(),
             'original_amount' => 10000,
             'settled_amount' => 0,
             'balance_amount' => 10000,
             'currency' => 'BRL',
+            'settled_at' => null,
             'metadata' => null,
         ];
     }

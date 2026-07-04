@@ -31,7 +31,7 @@ class CreateManualFinancialEntry
         $company = $this->resolveCompany($payload['company_id'] ?? null);
         $direction = $this->resolveDirection($payload['direction'] ?? null);
         $this->validateOriginablePair($payload);
-        $counterparty = $this->resolveCounterparty($payload, $company);
+        $counterparty = $this->resolveCounterparty($payload, $company, $direction);
         $category = $this->resolveCategory($payload['category_id'] ?? null, $company, $direction);
 
         $components = $this->normalizeComponents($payload['components'] ?? null);
@@ -50,6 +50,20 @@ class CreateManualFinancialEntry
         }
 
         $description = trim((string) ($payload['description'] ?? ''));
+        $issueDate = $this->dateOrNull($payload['issue_date'] ?? null) ?? now()->toDateString();
+        $competenceDate = $this->dateOrNull($payload['competence_date'] ?? null) ?? $issueDate;
+        $dueDate = $this->dateOrNull($payload['due_date'] ?? null);
+        $installments = $this->normalizeInstallments(
+            $payload['installments'] ?? null,
+            $netAmount,
+            $dueDate,
+            $competenceDate,
+        );
+        $entryDueDate = $dueDate ?? $installments
+            ->pluck('due_date')
+            ->filter()
+            ->sort()
+            ->first();
 
         if ($description === '') {
             throw ValidationException::withMessages([
@@ -57,11 +71,7 @@ class CreateManualFinancialEntry
             ]);
         }
 
-        return DB::transaction(function () use ($payload, $company, $direction, $counterparty, $category, $components, $grossAmount, $netAmount, $description): FinancialEntry {
-            $issueDate = $this->dateOrNull($payload['issue_date'] ?? null) ?? now()->toDateString();
-            $competenceDate = $this->dateOrNull($payload['competence_date'] ?? null) ?? $issueDate;
-            $dueDate = $this->dateOrNull($payload['due_date'] ?? null);
-
+        return DB::transaction(function () use ($payload, $company, $direction, $counterparty, $category, $components, $grossAmount, $netAmount, $description, $issueDate, $competenceDate, $entryDueDate, $installments): FinancialEntry {
             $entry = FinancialEntry::query()->create([
                 'company_id' => $company->id,
                 'created_by_id' => auth()->id(),
@@ -71,12 +81,11 @@ class CreateManualFinancialEntry
                 'counterparty_id' => $counterparty?->getKey(),
                 'originable_type' => $payload['originable_type'] ?? null,
                 'originable_id' => $payload['originable_id'] ?? null,
-                'origin_reference' => blank($payload['origin_reference'] ?? null) ? null : (string) $payload['origin_reference'],
                 'category_id' => $category?->id,
                 'description' => $description,
                 'issue_date' => $issueDate,
                 'competence_date' => $competenceDate,
-                'due_date' => $dueDate,
+                'due_date' => $entryDueDate,
                 'gross_amount' => $grossAmount,
                 'net_amount' => $netAmount,
                 'settled_amount' => 0,
@@ -99,19 +108,25 @@ class CreateManualFinancialEntry
                     ->all()
             );
 
-            $entry->installments()->create([
-                'company_id' => $company->id,
-                'status' => FinancialEntryStatus::Open,
-                'installment_number' => 1,
-                'due_date' => $dueDate,
-                'original_amount' => $netAmount,
-                'settled_amount' => 0,
-                'balance_amount' => $netAmount,
-                'currency' => $entry->currency,
-                'metadata' => null,
-            ]);
+            $entry->installments()->createMany(
+                $installments
+                    ->map(fn (array $installment): array => [
+                        'company_id' => $company->id,
+                        'status' => FinancialEntryStatus::Open,
+                        'installment_number' => $installment['installment_number'],
+                        'due_date' => $installment['due_date'],
+                        'competence_date' => $installment['competence_date'],
+                        'original_amount' => $installment['amount'],
+                        'settled_amount' => 0,
+                        'balance_amount' => $installment['amount'],
+                        'currency' => $entry->currency,
+                        'settled_at' => null,
+                        'metadata' => $installment['metadata'],
+                    ])
+                    ->all()
+            );
 
-            return $entry->load(['amountComponents', 'installments', 'counterparty']);
+            return app(RecalculateFinancialEntryStatus::class)->handle($entry);
         }, attempts: 3);
     }
 
@@ -218,18 +233,15 @@ class CreateManualFinancialEntry
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function resolveCounterparty(array $payload, Company $company): ?Model
+    private function resolveCounterparty(array $payload, Company $company, FinancialDirection $direction): Model
     {
         $counterpartyType = $payload['counterparty_type'] ?? null;
         $counterpartyId = $payload['counterparty_id'] ?? null;
 
-        if (blank($counterpartyType) && blank($counterpartyId)) {
-            return null;
-        }
-
         if (blank($counterpartyType) || blank($counterpartyId)) {
             throw ValidationException::withMessages([
-                'counterparty' => __('Informe tipo e identificador da contraparte, ou deixe ambos vazios.'),
+                'counterparty_type' => __('Informe a contraparte do lancamento financeiro.'),
+                'counterparty_id' => __('Informe a contraparte do lancamento financeiro.'),
             ]);
         }
 
@@ -241,6 +253,20 @@ class CreateManualFinancialEntry
         ) {
             throw ValidationException::withMessages([
                 'counterparty_type' => __('Tipo de contraparte invalido.'),
+            ]);
+        }
+
+        $expectedCounterpartyType = match ($direction) {
+            FinancialDirection::Receivable => Client::class,
+            FinancialDirection::Payable => Supplier::class,
+        };
+
+        if ($counterpartyType !== $expectedCounterpartyType) {
+            throw ValidationException::withMessages([
+                'counterparty_type' => match ($direction) {
+                    FinancialDirection::Receivable => __('Lancamento a receber deve usar cliente como contraparte.'),
+                    FinancialDirection::Payable => __('Lancamento a pagar deve usar fornecedor como contraparte.'),
+                },
             ]);
         }
 
@@ -306,6 +332,65 @@ class CreateManualFinancialEntry
                     'metadata' => is_array($component['metadata'] ?? null) ? $component['metadata'] : null,
                 ];
             });
+    }
+
+    /**
+     * @return Collection<int, array{installment_number: int, due_date: ?string, competence_date: ?string, amount: int, metadata: ?array}>
+     */
+    private function normalizeInstallments(mixed $installments, int $netAmount, ?string $fallbackDueDate, ?string $fallbackCompetenceDate): Collection
+    {
+        if (! is_array($installments) || $installments === []) {
+            return collect([
+                [
+                    'installment_number' => 1,
+                    'due_date' => $fallbackDueDate,
+                    'competence_date' => $fallbackCompetenceDate,
+                    'amount' => $netAmount,
+                    'metadata' => null,
+                ],
+            ]);
+        }
+
+        $normalized = collect($installments)
+            ->values()
+            ->map(function (mixed $installment, int $index) use ($fallbackDueDate, $fallbackCompetenceDate): array {
+                if (! is_array($installment)) {
+                    throw ValidationException::withMessages([
+                        "installments.{$index}" => __('Parcela invalida.'),
+                    ]);
+                }
+
+                return [
+                    'installment_number' => blank($installment['installment_number'] ?? null)
+                        ? $index + 1
+                        : $this->positiveInteger($installment['installment_number'], "installments.{$index}.installment_number"),
+                    'due_date' => $this->dateOrNull($installment['due_date'] ?? null) ?? $fallbackDueDate,
+                    'competence_date' => $this->dateOrNull($installment['competence_date'] ?? null) ?? $fallbackCompetenceDate,
+                    'amount' => $this->positiveInteger($installment['amount'] ?? null, "installments.{$index}.amount"),
+                    'metadata' => is_array($installment['metadata'] ?? null) ? $installment['metadata'] : null,
+                ];
+            });
+
+        $duplicateNumber = $normalized
+            ->pluck('installment_number')
+            ->duplicates()
+            ->first();
+
+        if ($duplicateNumber !== null) {
+            throw ValidationException::withMessages([
+                'installments' => __('Numeracao de parcelas duplicada.'),
+            ]);
+        }
+
+        if ($normalized->sum('amount') !== $netAmount) {
+            throw ValidationException::withMessages([
+                'installments' => __('A soma das parcelas deve fechar com o valor liquido do lancamento.'),
+            ]);
+        }
+
+        return $normalized
+            ->sortBy('installment_number')
+            ->values();
     }
 
     private function resolveComponentCode(mixed $value, int $index): FinancialAmountComponentCode

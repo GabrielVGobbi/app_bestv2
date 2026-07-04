@@ -31,7 +31,6 @@ class FinancialEntryResource extends JsonResource
             'counterparty_label' => $this->counterpartyLabel(),
             'originable_type' => $this->originable_type,
             'originable_id' => $this->originable_id,
-            'origin_reference' => $this->origin_reference,
             'origin_kind' => $this->originKind(),
             'origin_label' => $this->originLabel(),
             'origin_display_name' => $this->originDisplayName(),

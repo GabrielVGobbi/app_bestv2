@@ -39,6 +39,10 @@ class FinancialEntryController extends Controller
             'componentCodeOptions' => $this->componentCodeOptions(),
             'componentOperationOptions' => $this->componentOperationOptions(),
             'counterpartyTypeOptions' => $this->counterpartyTypeOptions(),
+            'counterpartyTypeByDirection' => [
+                FinancialDirection::Receivable->value => Client::class,
+                FinancialDirection::Payable->value => Supplier::class,
+            ],
         ]);
     }
 

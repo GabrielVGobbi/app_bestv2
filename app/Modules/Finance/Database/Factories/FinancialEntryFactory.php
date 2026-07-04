@@ -26,7 +26,6 @@ class FinancialEntryFactory extends Factory
             'counterparty_id' => null,
             'originable_type' => null,
             'originable_id' => null,
-            'origin_reference' => null,
             'category_id' => null,
             'description' => $this->faker->sentence(4),
             'issue_date' => now()->toDateString(),

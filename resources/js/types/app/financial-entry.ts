@@ -1,5 +1,5 @@
-import type { FinancialCategory } from './financial-category';
 import type { StatusPresenter } from '../status';
+import type { FinancialCategory } from './financial-category';
 
 export type FinancialDirection = 'receivable' | 'payable';
 export type FinancialEntryStatus =
@@ -47,10 +47,13 @@ export interface FinancialInstallment {
     status_presenter: StatusPresenter;
     installment_number: number;
     due_date: string | null;
+    competence_date: string | null;
     original_amount: number;
     settled_amount: number;
     balance_amount: number;
     currency: string;
+    settled_at: string | null;
+    is_overdue: boolean;
     metadata: Record<string, unknown> | null;
     created_at: string;
     updated_at: string;
@@ -70,13 +73,12 @@ export interface FinancialEntry {
     counterparty_label: string | null;
     originable_type: string | null;
     originable_id: number | null;
-    origin_reference: string | null;
     origin_kind: string;
     origin_label: string;
     origin_display_name: string;
     origin_url: string | null;
     category_id: number | null;
-    category?: { data: FinancialCategory } | null;
+    category?: { data?: FinancialCategory | null } | null;
     description: string;
     issue_date: string | null;
     competence_date: string | null;
@@ -111,3 +113,5 @@ export interface FinancialEntryOption {
     label: string;
     value: string;
 }
+
+export type CounterpartyTypeByDirection = Record<FinancialDirection, string>;

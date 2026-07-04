@@ -21,7 +21,12 @@ class SupplierFoundationTest extends TestCase
         $this->seed(SupplierSeeder::class);
         $this->seed(SupplierSeeder::class);
 
-        $this->assertDatabaseCount('suppliers', 0);
+        $this->assertDatabaseCount('suppliers', 18);
+        $this->assertDatabaseHas('suppliers', [
+            'name' => 'Meta Ads',
+            'document' => 'BP-SUP-META-ADS',
+            'status' => 'active',
+        ]);
 
         $supplier = Supplier::factory()->create([
             'name' => 'Fornecedor Manual',
@@ -30,7 +35,7 @@ class SupplierFoundationTest extends TestCase
         $this->assertSame('Fornecedor Manual', $supplier->name);
         $this->assertSame('supplier', Supplier::timelineType());
         $this->assertTrue($supplier->isActive());
-        $this->assertDatabaseCount('suppliers', 1);
+        $this->assertDatabaseCount('suppliers', 19);
     }
 
     public function test_finance_role_receives_supplier_permissions(): void

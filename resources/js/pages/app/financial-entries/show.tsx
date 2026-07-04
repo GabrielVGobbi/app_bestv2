@@ -1,5 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays, CircleDollarSign, FileText } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CircleDollarSign } from 'lucide-react';
 
 import {
     index,
@@ -84,7 +84,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 <Info label="Vencimento" value={entry.due_date} />
                                 <Info
                                     label="Categoria"
-                                    value={entry.category?.data.full_path ?? null}
+                                    value={entry.category?.data?.full_path ?? null}
                                 />
                                 <Info label="Empresa" value={`#${entry.company_id}`} />
                             </CardContent>
@@ -124,15 +124,25 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 {installments.map((installment) => (
                                     <div
                                         key={installment.uuid}
-                                        className="grid gap-3 rounded-md border p-3 sm:grid-cols-4"
+                                        className="grid gap-3 rounded-md border p-3 sm:grid-cols-2 xl:grid-cols-6"
                                     >
                                         <Info
                                             label="Parcela"
                                             value={String(installment.installment_number)}
                                         />
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                                Status
+                                            </p>
+                                            <StatusBadge presenter={installment.status_presenter} />
+                                        </div>
                                         <Info
                                             label="Vencimento"
                                             value={installment.due_date}
+                                        />
+                                        <Info
+                                            label="Competencia"
+                                            value={installment.competence_date}
                                         />
                                         <Info
                                             label="Original"
@@ -198,10 +208,6 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 <CardTitle>Contexto</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3 text-sm">
-                                <div className="flex items-start gap-3">
-                                    <FileText className="mt-0.5 size-4 text-muted-foreground" />
-                                    <span>{entry.origin_reference ?? 'Sem referencia manual'}</span>
-                                </div>
                                 <div className="flex items-start gap-3">
                                     <CalendarDays className="mt-0.5 size-4 text-muted-foreground" />
                                     <span>

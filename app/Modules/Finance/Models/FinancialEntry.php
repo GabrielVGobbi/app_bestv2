@@ -34,7 +34,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'counterparty_id',
     'originable_type',
     'originable_id',
-    'origin_reference',
     'category_id',
     'description',
     'issue_date',
@@ -66,7 +65,7 @@ class FinancialEntry extends Model implements TimelineSubject
     ];
 
     /** @var array<int, string> */
-    protected array $searchable = ['uuid', 'description', 'origin_reference'];
+    protected array $searchable = ['uuid', 'description'];
 
     /** @var array<int, string> */
     protected array $filterable = [
@@ -197,13 +196,13 @@ class FinancialEntry extends Model implements TimelineSubject
     public function originDisplayName(): string
     {
         if ($this->isManualOrigin()) {
-            return $this->origin_reference ?: 'Lancamento manual';
+            return 'Lancamento manual';
         }
 
         $origin = $this->originable;
 
         if ($origin === null) {
-            return $this->origin_reference ?: $this->originLabel();
+            return $this->originLabel();
         }
 
         foreach (['document_number', 'number', 'code', 'name', 'title', 'uuid'] as $attribute) {
@@ -212,7 +211,7 @@ class FinancialEntry extends Model implements TimelineSubject
             }
         }
 
-        return $this->origin_reference ?: $this->originLabel();
+        return $this->originLabel();
     }
 
     public function originUrl(): ?string
