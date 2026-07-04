@@ -27,8 +27,10 @@ export interface FinancialAmountComponent {
     uuid: string;
     company_id: number;
     code: FinancialAmountComponentCode;
+    code_label: string;
     label: string | null;
     operation: FinancialAmountOperation;
+    operation_label: string;
     amount: number;
     position: number;
     metadata: Record<string, unknown> | null;

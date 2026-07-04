@@ -42,6 +42,8 @@ class FinancialEntryOperationTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('app/financial-entries/create')
                 ->has('directionOptions')
+                ->has('componentCodeOptions')
+                ->has('componentOperationOptions')
                 ->has('counterpartyTypeOptions'));
 
         $this->actingAs($user)

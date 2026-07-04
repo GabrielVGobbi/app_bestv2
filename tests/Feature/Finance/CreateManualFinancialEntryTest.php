@@ -107,6 +107,124 @@ class CreateManualFinancialEntryTest extends TestCase
         $this->assertSame($client->id, $entry->counterparty_id);
     }
 
+    public function test_calculates_net_amount_with_tax_adding_to_total(): void
+    {
+        $company = Company::factory()->create();
+
+        $entry = app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'description' => 'Recebivel com imposto somando',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 100000,
+                    'position' => 0,
+                ],
+                [
+                    'code' => FinancialAmountComponentCode::Tax,
+                    'label' => 'Imposto repassado',
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 12000,
+                    'position' => 1,
+                ],
+            ],
+        ]);
+
+        $this->assertSame(112000, $entry->gross_amount);
+        $this->assertSame(112000, $entry->net_amount);
+        $this->assertSame(112000, $entry->balance_amount);
+        $this->assertSame(112000, $entry->installments->sole()->original_amount);
+    }
+
+    public function test_rejects_zero_or_negative_net_amount(): void
+    {
+        $company = Company::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'description' => 'Recebivel zerado por desconto',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 10000,
+                ],
+                [
+                    'code' => FinancialAmountComponentCode::Discount,
+                    'operation' => FinancialAmountOperation::Subtract,
+                    'amount' => 10000,
+                ],
+            ],
+        ]);
+    }
+
+    public function test_rejects_negative_component_amount(): void
+    {
+        $company = Company::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Payable,
+            'description' => 'Despesa com componente negativo',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => -10000,
+                ],
+            ],
+        ]);
+    }
+
+    public function test_preserves_component_order_by_position(): void
+    {
+        $company = Company::factory()->create();
+
+        $entry = app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Payable,
+            'description' => 'Despesa com componentes ordenados',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Fee,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 1000,
+                    'position' => 2,
+                ],
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 10000,
+                    'position' => 0,
+                ],
+                [
+                    'code' => FinancialAmountComponentCode::Withholding,
+                    'operation' => FinancialAmountOperation::Subtract,
+                    'amount' => 500,
+                    'position' => 1,
+                ],
+            ],
+        ]);
+
+        $codes = $entry
+            ->refresh()
+            ->amountComponents()
+            ->get()
+            ->pluck('code.value')
+            ->all();
+
+        $this->assertSame(['principal', 'withholding', 'fee'], $codes);
+        $this->assertSame(11000, $entry->gross_amount);
+        $this->assertSame(10500, $entry->net_amount);
+    }
+
     public function test_rejects_unapproved_counterparty_model_type(): void
     {
         $company = Company::factory()->create();

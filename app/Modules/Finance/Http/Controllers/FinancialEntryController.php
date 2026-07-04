@@ -87,7 +87,7 @@ class FinancialEntryController extends Controller
                     FinancialAmountComponentCode::Interest => 'Juros',
                     FinancialAmountComponentCode::Penalty => 'Multa',
                     FinancialAmountComponentCode::Fee => 'Taxa',
-                    FinancialAmountComponentCode::Withholding => 'Retencao',
+                    FinancialAmountComponentCode::Withholding => 'Retenção',
                     FinancialAmountComponentCode::Adjustment => 'Ajuste',
                     FinancialAmountComponentCode::Other => 'Outro',
                 },

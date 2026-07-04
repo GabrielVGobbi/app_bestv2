@@ -43,6 +43,7 @@ class StoreFinancialEntryRequest extends FormRequest
             'currency' => ['nullable', 'string', 'size:3'],
             'metadata' => ['nullable', 'array'],
             'components' => ['required', 'array', 'min:1'],
+            'components.*' => ['required', 'array:code,label,operation,amount,position,metadata'],
             'components.*.code' => ['required', Rule::enum(FinancialAmountComponentCode::class)],
             'components.*.label' => ['nullable', 'string', 'max:255'],
             'components.*.operation' => ['required', Rule::enum(FinancialAmountOperation::class)],

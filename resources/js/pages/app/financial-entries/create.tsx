@@ -1,5 +1,5 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type {
+    FinancialAmountComponentCode,
+    FinancialAmountOperation,
     FinancialDirection,
     FinancialEntryOption,
 } from '@/types/app/financial-entry';
@@ -38,7 +40,18 @@ interface Props {
 }
 
 function cents(value: string): number {
-    const normalized = value.replace(/\./g, '').replace(',', '.');
+    const trimmed = value.trim();
+
+    if (trimmed === '') {
+        return 0;
+    }
+
+    const normalized = trimmed.includes(',')
+        ? trimmed
+              .replace(/[^\d,.-]/g, '')
+              .replace(/\./g, '')
+              .replace(',', '.')
+        : trimmed.replace(/[^\d.-]/g, '');
     const parsed = Number.parseFloat(normalized || '0');
 
     if (!Number.isFinite(parsed)) {
@@ -48,8 +61,32 @@ function cents(value: string): number {
     return Math.round(parsed * 100);
 }
 
+interface AmountComponentDraft {
+    key: string;
+    code: FinancialAmountComponentCode;
+    label: string;
+    operation: FinancialAmountOperation;
+    amount: string;
+}
+
+function makeComponent(
+    code: FinancialAmountComponentCode,
+    operation: FinancialAmountOperation,
+    label = '',
+): AmountComponentDraft {
+    return {
+        key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        code,
+        label,
+        operation,
+        amount: '0.00',
+    };
+}
+
 export default function CreateFinancialEntry({
     directionOptions,
+    componentCodeOptions,
+    componentOperationOptions,
     counterpartyTypeOptions,
 }: Props) {
     setLayoutProps({
@@ -68,38 +105,73 @@ export default function CreateFinancialEntry({
     const [description, setDescription] = useState('');
     const [originReference, setOriginReference] = useState('');
     const [dueDate, setDueDate] = useState<Date | undefined>();
-    const [principal, setPrincipal] = useState('0.00');
-    const [discount, setDiscount] = useState('0.00');
+    const [components, setComponents] = useState<AmountComponentDraft[]>([
+        makeComponent('principal', 'add', 'Principal'),
+    ]);
 
     const categoryType = direction === 'receivable' ? 'income' : 'expense';
-    const netAmount = useMemo(
-        () => Math.max(cents(principal) - cents(discount), 0),
-        [discount, principal],
-    );
+    const totals = useMemo(() => {
+        return components.reduce(
+            (carry, component) => {
+                const amount = cents(component.amount);
+
+                if (component.operation === 'add') {
+                    return {
+                        ...carry,
+                        grossAmount: carry.grossAmount + amount,
+                        netAmount: carry.netAmount + amount,
+                    };
+                }
+
+                return {
+                    ...carry,
+                    subtractAmount: carry.subtractAmount + amount,
+                    netAmount: carry.netAmount - amount,
+                };
+            },
+            { grossAmount: 0, subtractAmount: 0, netAmount: 0 },
+        );
+    }, [components]);
+
+    function updateComponent(
+        key: string,
+        patch: Partial<Omit<AmountComponentDraft, 'key'>>,
+    ): void {
+        setComponents((current) =>
+            current.map((component) =>
+                component.key === key ? { ...component, ...patch } : component,
+            ),
+        );
+    }
+
+    function addComponent(): void {
+        setComponents((current) => [
+            ...current,
+            makeComponent('other', 'add', 'Outro componente'),
+        ]);
+    }
+
+    function removeComponent(key: string): void {
+        setComponents((current) =>
+            current.length === 1
+                ? current
+                : current.filter((component) => component.key !== key),
+        );
+    }
 
     function submit(event: FormEvent<HTMLFormElement>): void {
         event.preventDefault();
         setProcessing(true);
 
-        const components = [
-            {
-                code: 'principal',
-                label: direction === 'receivable' ? 'Receita principal' : 'Despesa principal',
-                operation: 'add',
-                amount: cents(principal),
-                position: 0,
-            },
-        ];
-
-        if (cents(discount) > 0) {
-            components.push({
-                code: 'discount',
-                label: 'Desconto',
-                operation: 'subtract',
-                amount: cents(discount),
-                position: 1,
-            });
-        }
+        const submittedComponents = components
+            .map((component) => ({
+                code: component.code,
+                label: component.label || null,
+                operation: component.operation,
+                amount: cents(component.amount),
+            }))
+            .filter((component) => component.amount > 0)
+            .map((component, position) => ({ ...component, position }));
 
         router.post(
             store.url(),
@@ -113,7 +185,7 @@ export default function CreateFinancialEntry({
                 description,
                 due_date: dueDate?.toISOString().slice(0, 10) ?? null,
                 currency: 'BRL',
-                components,
+                components: submittedComponents,
             },
             {
                 preserveScroll: true,
@@ -262,24 +334,151 @@ export default function CreateFinancialEntry({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Valores</CardTitle>
+                            <div className="flex items-center justify-between gap-3">
+                                <CardTitle>Componentes de valor</CardTitle>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addComponent}
+                                >
+                                    <Plus className="size-4" />
+                                    Adicionar
+                                </Button>
+                            </div>
                         </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-3">
-                            <div className="space-y-2">
-                                <Label>Valor principal *</Label>
-                                <InputMoney value={principal} onChange={setPrincipal} />
+                        <CardContent className="space-y-4">
+                            <div className="space-y-3">
+                                {components.map((component, index) => (
+                                    <div
+                                        key={component.key}
+                                        className="grid gap-3 rounded-md border p-3 sm:grid-cols-[1.1fr_1fr_1fr_1fr_auto]"
+                                    >
+                                        <div className="space-y-2">
+                                            <Label>Tipo</Label>
+                                            <Select
+                                                value={component.code}
+                                                onValueChange={(value) =>
+                                                    updateComponent(component.key, {
+                                                        code: value as FinancialAmountComponentCode,
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {componentCodeOptions.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Operação</Label>
+                                            <Select
+                                                value={component.operation}
+                                                onValueChange={(value) =>
+                                                    updateComponent(component.key, {
+                                                        operation:
+                                                            value as FinancialAmountOperation,
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {componentOperationOptions.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Rótulo</Label>
+                                            <Input
+                                                value={component.label}
+                                                onChange={(event) =>
+                                                    updateComponent(component.key, {
+                                                        label: event.target.value,
+                                                    })
+                                                }
+                                                placeholder={`Componente ${index + 1}`}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Valor *</Label>
+                                            <InputMoney
+                                                value={component.amount}
+                                                onChange={(value) =>
+                                                    updateComponent(component.key, {
+                                                        amount: value,
+                                                    })
+                                                }
+                                            />
+                                        </div>
+
+                                        <div className="flex items-end">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                disabled={components.length === 1}
+                                                onClick={() => removeComponent(component.key)}
+                                                title="Remover componente"
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="space-y-2">
-                                <Label>Desconto</Label>
-                                <InputMoney value={discount} onChange={setDiscount} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Liquido calculado</Label>
-                                <div className="flex h-10 items-center rounded-md border px-3 text-sm font-medium">
-                                    {new Intl.NumberFormat('pt-BR', {
-                                        style: 'currency',
-                                        currency: 'BRL',
-                                    }).format(netAmount / 100)}
+
+                            <div className="grid gap-3 rounded-md bg-muted p-3 sm:grid-cols-3">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Bruto</p>
+                                    <p className="text-sm font-semibold">
+                                        {new Intl.NumberFormat('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                        }).format(totals.grossAmount / 100)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Subtrações
+                                    </p>
+                                    <p className="text-sm font-semibold">
+                                        {new Intl.NumberFormat('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                        }).format(totals.subtractAmount / 100)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Líquido calculado
+                                    </p>
+                                    <p className="text-sm font-semibold">
+                                        {new Intl.NumberFormat('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                        }).format(totals.netAmount / 100)}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>

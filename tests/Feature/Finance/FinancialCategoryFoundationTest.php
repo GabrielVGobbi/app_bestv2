@@ -116,7 +116,9 @@ class FinancialCategoryFoundationTest extends TestCase
         $this->actingAs($user)
             ->get(route('financial-categories.index'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('app/financial-categories/index'));
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('app/financial-categories/index')
+                ->has('typeOptions'));
 
         $this->actingAs($user)
             ->get(route('financial-categories.create'))

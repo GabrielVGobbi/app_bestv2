@@ -102,12 +102,10 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     >
                                         <div>
                                             <p className="text-sm font-medium">
-                                                {component.label ?? component.code}
+                                                {component.label ?? component.code_label}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {component.operation === 'add'
-                                                    ? 'Soma'
-                                                    : 'Subtrai'}
+                                                {component.operation_label}
                                             </p>
                                         </div>
                                         <span className="text-sm font-semibold">
