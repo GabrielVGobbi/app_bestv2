@@ -37,6 +37,8 @@ class UpdateCompanyRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'fiscal_metadata' => ['nullable', 'array'],
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
         ];
     }
 

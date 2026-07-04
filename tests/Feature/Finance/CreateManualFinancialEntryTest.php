@@ -15,6 +15,7 @@ use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -25,10 +26,13 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_creates_manual_receivable_with_amount_components_and_net_amount(): void
     {
         $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
 
         $entry = app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
             'description' => 'Venda manual com desconto',
             'due_date' => '2026-07-15',
             'currency' => 'BRL',
@@ -80,6 +84,128 @@ class CreateManualFinancialEntryTest extends TestCase
         $this->assertSame('2026-07-15', $installment->due_date->toDateString());
     }
 
+    public function test_creates_manual_entry_with_multiple_installments_matching_net_amount(): void
+    {
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+
+        $entry = app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
+            'description' => 'Recebivel manual parcelado',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 100000,
+                ],
+                [
+                    'code' => FinancialAmountComponentCode::Discount,
+                    'operation' => FinancialAmountOperation::Subtract,
+                    'amount' => 10000,
+                ],
+            ],
+            'installments' => [
+                [
+                    'installment_number' => 1,
+                    'due_date' => '2026-07-15',
+                    'amount' => 40000,
+                ],
+                [
+                    'installment_number' => 2,
+                    'due_date' => '2026-08-15',
+                    'amount' => 50000,
+                ],
+            ],
+        ]);
+
+        $entry->refresh()->load('installments');
+
+        $this->assertSame('2026-07-15', $entry->due_date->toDateString());
+        $this->assertSame(FinancialEntryStatus::Open, $entry->status);
+        $this->assertCount(2, $entry->installments);
+        $this->assertSame([1, 2], $entry->installments->pluck('installment_number')->all());
+        $this->assertSame([40000, 50000], $entry->installments->pluck('original_amount')->all());
+        $this->assertSame([40000, 50000], $entry->installments->pluck('balance_amount')->all());
+    }
+
+    public function test_rejects_installments_when_sum_does_not_match_net_amount(): void
+    {
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+
+        $this->expectException(ValidationException::class);
+
+        app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
+            'description' => 'Recebivel com soma incorreta',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal,
+                    'operation' => FinancialAmountOperation::Add,
+                    'amount' => 100000,
+                ],
+            ],
+            'installments' => [
+                [
+                    'installment_number' => 1,
+                    'due_date' => '2026-07-15',
+                    'amount' => 40000,
+                ],
+                [
+                    'installment_number' => 2,
+                    'due_date' => '2026-08-15',
+                    'amount' => 50000,
+                ],
+            ],
+        ]);
+    }
+
+    public function test_marks_past_due_open_installments_and_entry_as_overdue(): void
+    {
+        Carbon::setTestNow('2026-07-04 10:00:00');
+
+        try {
+            $company = Company::factory()->create();
+            $client = Client::factory()->create(['company_id' => $company->id]);
+
+            $entry = app(CreateManualFinancialEntry::class)->handle([
+                'company_id' => $company->id,
+                'direction' => FinancialDirection::Receivable,
+                'counterparty_type' => Client::class,
+                'counterparty_id' => $client->id,
+                'description' => 'Recebivel vencido',
+                'components' => [
+                    [
+                        'code' => FinancialAmountComponentCode::Principal,
+                        'operation' => FinancialAmountOperation::Add,
+                        'amount' => 100000,
+                    ],
+                ],
+                'installments' => [
+                    [
+                        'installment_number' => 1,
+                        'due_date' => '2026-07-03',
+                        'amount' => 100000,
+                    ],
+                ],
+            ]);
+
+            $entry->refresh()->load('installments');
+
+            $this->assertSame(FinancialEntryStatus::Overdue, $entry->status);
+            $this->assertSame(FinancialEntryStatus::Overdue, $entry->installments->sole()->status);
+            $this->assertTrue($entry->installments->sole()->isOverdue());
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_creates_manual_receivable_with_client_counterparty(): void
     {
         $company = Company::factory()->create();
@@ -110,10 +236,13 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_calculates_net_amount_with_tax_adding_to_total(): void
     {
         $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
 
         $entry = app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
             'description' => 'Recebivel com imposto somando',
             'components' => [
                 [
@@ -141,12 +270,15 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_rejects_zero_or_negative_net_amount(): void
     {
         $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
 
         $this->expectException(ValidationException::class);
 
         app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
             'description' => 'Recebivel zerado por desconto',
             'components' => [
                 [
@@ -166,12 +298,15 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_rejects_negative_component_amount(): void
     {
         $company = Company::factory()->create();
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
 
         $this->expectException(ValidationException::class);
 
         app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Payable,
+            'counterparty_type' => Supplier::class,
+            'counterparty_id' => $supplier->id,
             'description' => 'Despesa com componente negativo',
             'components' => [
                 [
@@ -186,10 +321,13 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_preserves_component_order_by_position(): void
     {
         $company = Company::factory()->create();
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
 
         $entry = app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Payable,
+            'counterparty_type' => Supplier::class,
+            'counterparty_id' => $supplier->id,
             'description' => 'Despesa com componentes ordenados',
             'components' => [
                 [
@@ -278,6 +416,7 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_creates_manual_entry_with_active_leaf_category(): void
     {
         $company = Company::factory()->create();
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
         $category = FinancialCategory::factory()->expense()->create([
             'company_id' => $company->id,
         ]);
@@ -285,6 +424,8 @@ class CreateManualFinancialEntryTest extends TestCase
         $entry = app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Payable,
+            'counterparty_type' => Supplier::class,
+            'counterparty_id' => $supplier->id,
             'category_id' => $category->id,
             'description' => 'Despesa categorizada',
             'components' => [
@@ -302,6 +443,7 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_rejects_parent_category_for_manual_entry(): void
     {
         $company = Company::factory()->create();
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
         $category = FinancialCategory::factory()->expense()->create([
             'company_id' => $company->id,
         ]);
@@ -315,6 +457,8 @@ class CreateManualFinancialEntryTest extends TestCase
         app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Payable,
+            'counterparty_type' => Supplier::class,
+            'counterparty_id' => $supplier->id,
             'category_id' => $category->id,
             'description' => 'Despesa com categoria pai',
             'components' => [
@@ -330,6 +474,7 @@ class CreateManualFinancialEntryTest extends TestCase
     public function test_rejects_category_type_incompatible_with_direction(): void
     {
         $company = Company::factory()->create();
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
         $incomeCategory = FinancialCategory::factory()->income()->create([
             'company_id' => $company->id,
         ]);
@@ -339,6 +484,8 @@ class CreateManualFinancialEntryTest extends TestCase
         app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Payable,
+            'counterparty_type' => Supplier::class,
+            'counterparty_id' => $supplier->id,
             'category_id' => $incomeCategory->id,
             'description' => 'Despesa com categoria de receita',
             'components' => [
@@ -374,15 +521,18 @@ class CreateManualFinancialEntryTest extends TestCase
         ]);
     }
 
-    public function test_rejects_incomplete_external_origin_reference(): void
+    public function test_rejects_incomplete_external_origin_pair(): void
     {
         $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
 
         $this->expectException(ValidationException::class);
 
         app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
             'description' => 'Origem externa incompleta',
             'originable_id' => 123,
             'components' => [

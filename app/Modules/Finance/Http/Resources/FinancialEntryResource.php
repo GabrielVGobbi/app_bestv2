@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Http\Resources;
 
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Models\FinancialSettlement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\MissingValue;
@@ -31,7 +32,6 @@ class FinancialEntryResource extends JsonResource
             'counterparty_label' => $this->counterpartyLabel(),
             'originable_type' => $this->originable_type,
             'originable_id' => $this->originable_id,
-            'origin_reference' => $this->origin_reference,
             'origin_kind' => $this->originKind(),
             'origin_label' => $this->originLabel(),
             'origin_display_name' => $this->originDisplayName(),
@@ -50,9 +50,12 @@ class FinancialEntryResource extends JsonResource
             'metadata' => $this->metadata,
             'amount_components' => FinancialAmountComponentResource::collection($this->whenLoaded('amountComponents')),
             'installments' => FinancialInstallmentResource::collection($this->whenLoaded('installments')),
+            'settlements' => FinancialSettlementResource::collection($this->whenLoaded('settlements')),
             'permissions' => [
                 'can_update' => $request->user()?->can('update', $this->resource) ?? false,
                 'can_cancel' => $request->user()?->can('cancel', $this->resource) ?? false,
+                'can_settle' => ($request->user()?->can('create', FinancialSettlement::class) ?? false)
+                    && (int) $this->balance_amount > 0,
             ],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

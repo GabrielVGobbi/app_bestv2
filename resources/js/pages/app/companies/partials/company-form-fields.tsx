@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { InputDocument } from '@/components/ui/input-document';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import CompanyLogoDropzone from '@/pages/app/companies/partials/company-logo-dropzone';
 import type { Company } from '@/types/app/company';
 
 interface Props {
@@ -204,60 +205,64 @@ export default function CompanyFormFields({ company, errors }: Props) {
         <div className="space-y-8">
             <FormSection
                 title="Identificação"
-                description="Empresas internas do grupo usadas como prestadoras e referencia fiscal."
+                description="Empresas internas do grupo usadas como prestadoras e referência fiscal."
             >
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField
-                        id="field-name"
-                        label="Nome"
-                        variant="stacked"
-                        required
-                        error={errors.name}
-                    >
-                        <Input
+                <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
+                    <CompanyLogoDropzone company={record} error={errors.logo} />
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
                             id="field-name"
-                            name="name"
-                            type="text"
-                            defaultValue={record?.name ?? ''}
+                            label="Nome"
+                            variant="stacked"
                             required
-                            autoComplete="organization"
-                            aria-invalid={!!errors.name}
-                        />
-                    </FormField>
+                            error={errors.name}
+                        >
+                            <Input
+                                id="field-name"
+                                name="name"
+                                type="text"
+                                defaultValue={record?.name ?? ''}
+                                required
+                                autoComplete="organization"
+                                aria-invalid={!!errors.name}
+                            />
+                        </FormField>
 
-                    <FormField
-                        id="field-nickname"
-                        label="Apelido"
-                        variant="stacked"
-                        required
-                        error={errors.nickname}
-                    >
-                        <Input
+                        <FormField
                             id="field-nickname"
-                            name="nickname"
-                            type="text"
-                            defaultValue={record?.nickname ?? ''}
+                            label="Apelido"
+                            variant="stacked"
                             required
-                            aria-invalid={!!errors.nickname}
-                        />
-                    </FormField>
+                            error={errors.nickname}
+                        >
+                            <Input
+                                id="field-nickname"
+                                name="nickname"
+                                type="text"
+                                defaultValue={record?.nickname ?? ''}
+                                required
+                                aria-invalid={!!errors.nickname}
+                            />
+                        </FormField>
 
-                    <FormField
-                        id="field-cnpj"
-                        label="CNPJ"
-                        variant="stacked"
-                        required
-                        error={errors.cnpj}
-                    >
-                        <InputDocument
+                        <FormField
                             id="field-cnpj"
-                            name="cnpj"
-                            kind="cnpj"
-                            defaultValue={record?.cnpj ?? ''}
+                            label="CNPJ"
+                            variant="stacked"
                             required
-                            aria-invalid={!!errors.cnpj}
-                        />
-                    </FormField>
+                            error={errors.cnpj}
+                        >
+                            <InputDocument
+                                id="field-cnpj"
+                                name="cnpj"
+                                kind="cnpj"
+                                defaultValue={record?.cnpj ?? ''}
+                                required
+                                aria-invalid={!!errors.cnpj}
+                            />
+                        </FormField>
+                    </div>
                 </div>
             </FormSection>
 

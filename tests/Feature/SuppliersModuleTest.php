@@ -112,6 +112,34 @@ class SuppliersModuleTest extends TestCase
             ->assertJsonPath('data.document', '99887766000155');
     }
 
+    public function test_supplier_can_be_created_from_api_for_quick_select(): void
+    {
+        $user = $this->userWithRole('developer');
+        $company = Company::factory()->create();
+
+        $this->actingAs($user)->postJson(route('api.suppliers.store'), [
+            'company_id' => $company->id,
+            'name' => 'Fornecedor Criado no Lancamento',
+            'company_name' => 'Fornecedor Criado no Lancamento LTDA',
+            'document' => '55666777000188',
+            'email' => 'financeiro@fornecedor-rapido.test',
+            'phone' => '11999990000',
+            'status' => 'active',
+        ])->assertCreated()
+            ->assertJsonPath('data.company_id', $company->id)
+            ->assertJsonPath('data.name', 'Fornecedor Criado no Lancamento')
+            ->assertJsonPath('data.company_name', 'Fornecedor Criado no Lancamento LTDA')
+            ->assertJsonPath('data.document', '55666777000188')
+            ->assertJsonPath('data.status', 'active');
+
+        $supplier = Supplier::query()
+            ->where('document', '55666777000188')
+            ->firstOrFail();
+
+        $this->assertSame($company->id, $supplier->company_id);
+        $this->assertTrue($supplier->isActive());
+    }
+
     public function test_supplier_document_is_unique_within_company(): void
     {
         $user = $this->userWithRole('developer');

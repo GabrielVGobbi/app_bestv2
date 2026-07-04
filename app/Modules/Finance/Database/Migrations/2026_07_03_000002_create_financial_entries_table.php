@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('status', 32)->default('open')->index();
             $table->nullableMorphs('counterparty');
             $table->nullableMorphs('originable');
-            $table->string('origin_reference')->nullable()->index();
             $table->foreignId('category_id')->nullable()->constrained('financial_categories')->nullOnDelete();
             $table->string('description');
             $table->date('issue_date')->nullable()->index();

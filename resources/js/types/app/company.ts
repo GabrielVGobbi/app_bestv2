@@ -5,6 +5,12 @@ export interface Company {
     nickname: string;
     cnpj: string;
     fiscal_metadata: Record<string, unknown> | null;
+    logo_disk: string | null;
+    logo_path: string | null;
+    logo_url: string | null;
+    logo_initials: string;
+    logo_color: string;
+    logo_updated_at: string | null;
     created_at: string;
     updated_at: string;
     deleted_at: string | null;

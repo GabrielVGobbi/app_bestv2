@@ -36,6 +36,14 @@ class FinancialEntryApiController extends Controller
     {
         Gate::authorize('view', $financialEntry);
 
-        return new FinancialEntryResource($financialEntry->load(['category', 'counterparty', 'amountComponents', 'installments']));
+        return new FinancialEntryResource($financialEntry->load([
+            'category',
+            'counterparty',
+            'amountComponents',
+            'installments.settlementAllocations',
+            'settlements.allocations',
+            'settlements.movements',
+            'settlements.paymentMethod',
+        ]));
     }
 }

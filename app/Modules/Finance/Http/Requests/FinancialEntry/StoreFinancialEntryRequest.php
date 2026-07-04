@@ -30,11 +30,10 @@ class StoreFinancialEntryRequest extends FormRequest
         return [
             'company_id' => ['required', 'integer', Rule::exists(Company::class, 'id')],
             'direction' => ['required', Rule::enum(FinancialDirection::class)],
-            'counterparty_type' => ['nullable', 'string', Rule::in([Client::class, Supplier::class])],
-            'counterparty_id' => ['nullable', 'integer'],
+            'counterparty_type' => ['required', 'string', Rule::in([Client::class, Supplier::class])],
+            'counterparty_id' => ['required', 'integer'],
             'originable_type' => ['nullable', 'string', 'max:255'],
             'originable_id' => ['nullable', 'integer'],
-            'origin_reference' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', Rule::exists(FinancialCategory::class, 'id')],
             'description' => ['required', 'string', 'max:255'],
             'issue_date' => ['nullable', 'date'],
@@ -50,6 +49,13 @@ class StoreFinancialEntryRequest extends FormRequest
             'components.*.amount' => ['required', 'integer', 'min:1'],
             'components.*.position' => ['nullable', 'integer', 'min:0'],
             'components.*.metadata' => ['nullable', 'array'],
+            'installments' => ['nullable', 'array', 'min:1'],
+            'installments.*' => ['required', 'array:installment_number,due_date,competence_date,amount,metadata'],
+            'installments.*.installment_number' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'installments.*.due_date' => ['nullable', 'date'],
+            'installments.*.competence_date' => ['nullable', 'date'],
+            'installments.*.amount' => ['required', 'integer', 'min:1'],
+            'installments.*.metadata' => ['nullable', 'array'],
         ];
     }
 }
