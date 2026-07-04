@@ -21,6 +21,8 @@ export type FinancialAmountComponentCode =
     | 'adjustment'
     | 'other';
 export type FinancialAmountOperation = 'add' | 'subtract';
+export type FinancialSettlementStatus = 'posted' | 'reversed';
+export type FinancialMovementDirection = 'inflow' | 'outflow';
 
 export interface FinancialAmountComponent {
     id: number;
@@ -55,6 +57,65 @@ export interface FinancialInstallment {
     settled_at: string | null;
     is_overdue: boolean;
     metadata: Record<string, unknown> | null;
+    settlement_allocations?: { data: FinancialSettlementAllocation[] };
+    created_at: string;
+    updated_at: string;
+}
+
+export interface FinancialSettlementAllocation {
+    id: number;
+    settlement_id: number;
+    installment_id: number;
+    amount: number;
+    balance_before: number;
+    balance_after: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface FinancialMovement {
+    id: number;
+    uuid: string;
+    company_id: number;
+    financial_account_id: number | null;
+    direction: FinancialMovementDirection;
+    amount: number;
+    occurred_at: string;
+    source_type: string | null;
+    source_id: number | null;
+    reconciled_at: string | null;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface FinancialSettlement {
+    id: number;
+    uuid: string;
+    company_id: number;
+    financial_entry_id: number;
+    direction: FinancialDirection;
+    settled_at: string;
+    financial_account_id: number | null;
+    payment_method_id: number | null;
+    gross_amount: number;
+    discount_amount: number;
+    interest_amount: number;
+    penalty_amount: number;
+    net_amount: number;
+    origin: string;
+    status: FinancialSettlementStatus;
+    status_presenter: StatusPresenter;
+    created_by_id: number | null;
+    reversed_at: string | null;
+    reversed_by_id: number | null;
+    reverse_reason: string | null;
+    metadata: Record<string, unknown> | null;
+    allocations?: { data: FinancialSettlementAllocation[] };
+    movements?: { data: FinancialMovement[] };
+    permissions: {
+        can_reverse: boolean;
+    };
     created_at: string;
     updated_at: string;
 }
@@ -91,9 +152,11 @@ export interface FinancialEntry {
     metadata: Record<string, unknown> | null;
     amount_components?: { data: FinancialAmountComponent[] };
     installments?: { data: FinancialInstallment[] };
+    settlements?: { data: FinancialSettlement[] };
     permissions: {
         can_update: boolean;
         can_cancel: boolean;
+        can_settle: boolean;
     };
     created_at: string;
     updated_at: string;

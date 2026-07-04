@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -52,6 +53,11 @@ class FinancialInstallment extends Model
     public function financialEntry(): BelongsTo
     {
         return $this->belongsTo(FinancialEntry::class);
+    }
+
+    public function settlementAllocations(): HasMany
+    {
+        return $this->hasMany(FinancialSettlementAllocation::class, 'installment_id');
     }
 
     public function calculatedStatus(): FinancialEntryStatus

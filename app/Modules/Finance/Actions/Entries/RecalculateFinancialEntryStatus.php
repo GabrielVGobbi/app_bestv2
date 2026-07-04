@@ -28,10 +28,14 @@ class RecalculateFinancialEntryStatus
         $entry->load('installments');
 
         $entryStatus = $this->aggregateInstallmentStatus($entry->installments);
+        $settledAmount = (int) $entry->installments->sum('settled_amount');
+        $balanceAmount = (int) $entry->installments->sum('balance_amount');
 
-        if ($entry->status !== $entryStatus) {
+        if ($entry->status !== $entryStatus || (int) $entry->settled_amount !== $settledAmount || (int) $entry->balance_amount !== $balanceAmount) {
             $entry->forceFill([
                 'status' => $entryStatus,
+                'settled_amount' => $settledAmount,
+                'balance_amount' => $balanceAmount,
             ])->save();
         }
 

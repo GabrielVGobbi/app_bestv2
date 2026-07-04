@@ -100,6 +100,8 @@ class PermissionsModuleTest extends TestCase
             'finance.entries.create',
             'finance.entries.update',
             'finance.entries.cancel',
+            'finance.settlements.create',
+            'finance.settlements.reverse',
             'finance.categories.view',
             'finance.categories.create',
             'finance.categories.update',
@@ -141,10 +143,11 @@ class PermissionsModuleTest extends TestCase
         $this->assertContains('suppliers.view', $financePermissionSlugs);
         $this->assertContains('finance.entries.view', $financePermissionSlugs);
         $this->assertContains('finance.entries.create', $financePermissionSlugs);
+        $this->assertContains('finance.settlements.create', $financePermissionSlugs);
+        $this->assertContains('finance.settlements.reverse', $financePermissionSlugs);
         $this->assertContains('finance.categories.view', $financePermissionSlugs);
         $this->assertContains('finance.payment-methods.view', $financePermissionSlugs);
         $this->assertNotContains('finance.origins.manage', $financePermissionSlugs);
-        $this->assertNotContains('finance.settlements.reverse', $financePermissionSlugs);
         $this->assertNotContains('finance.reconciliation.manage', $financePermissionSlugs);
         $this->assertNotContains('sales.create', $financePermissionSlugs);
         $this->assertContains('services.view', $sellerPermissionSlugs);

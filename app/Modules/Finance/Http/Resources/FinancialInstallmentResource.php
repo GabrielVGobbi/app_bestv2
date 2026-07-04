@@ -35,6 +35,7 @@ class FinancialInstallmentResource extends JsonResource
             'settled_at' => $this->settled_at,
             'is_overdue' => $this->isOverdue(),
             'metadata' => $this->metadata,
+            'settlement_allocations' => FinancialSettlementAllocationResource::collection($this->whenLoaded('settlementAllocations')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

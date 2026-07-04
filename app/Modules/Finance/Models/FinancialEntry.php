@@ -158,6 +158,11 @@ class FinancialEntry extends Model implements TimelineSubject
         return $this->hasMany(FinancialInstallment::class);
     }
 
+    public function settlements(): HasMany
+    {
+        return $this->hasMany(FinancialSettlement::class);
+    }
+
     public function statusEnumClass(): string
     {
         return FinancialEntryStatus::class;

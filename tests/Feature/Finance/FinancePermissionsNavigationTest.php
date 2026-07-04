@@ -17,7 +17,7 @@ class FinancePermissionsNavigationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_finance_v2_seeds_entries_but_not_deferred_settlement_permissions(): void
+    public function test_finance_v2_seeds_entry_and_settlement_permissions(): void
     {
         $this->seed([RolesSeeder::class, PermissionsSeeder::class]);
 
@@ -25,7 +25,8 @@ class FinancePermissionsNavigationTest extends TestCase
         $this->assertTrue(Permission::query()->where('slug', 'finance.entries.create')->exists());
         $this->assertTrue(Permission::query()->where('slug', 'finance.entries.update')->exists());
         $this->assertTrue(Permission::query()->where('slug', 'finance.entries.cancel')->exists());
-        $this->assertFalse(Permission::query()->where('slug', 'finance.settlements.reverse')->exists());
+        $this->assertTrue(Permission::query()->where('slug', 'finance.settlements.create')->exists());
+        $this->assertTrue(Permission::query()->where('slug', 'finance.settlements.reverse')->exists());
         $this->assertFalse(Permission::query()->where('slug', 'finance.reconciliation.manage')->exists());
         $this->assertFalse(Permission::query()->where('slug', 'finance.reports.view')->exists());
     }

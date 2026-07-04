@@ -6,9 +6,12 @@ namespace App\Modules\Finance\Providers;
 
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Models\FinancialSettlement;
 use App\Modules\Finance\Models\PaymentMethod;
 use App\Modules\Finance\Policies\FinancialCategoryPolicy;
 use App\Modules\Finance\Policies\FinancialEntryPolicy;
+use App\Modules\Finance\Policies\FinancialSettlementPolicy;
 use App\Modules\Finance\Policies\PaymentMethodPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +23,8 @@ class FinanceServiceProvider extends ServiceProvider
     {
         Route::model('financial_category', FinancialCategory::class);
         Route::model('financial_entry', FinancialEntry::class);
+        Route::model('financial_installment', FinancialInstallment::class);
+        Route::model('financial_settlement', FinancialSettlement::class);
         Route::model('payment_method', PaymentMethod::class);
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
@@ -27,6 +32,7 @@ class FinanceServiceProvider extends ServiceProvider
 
         Gate::policy(FinancialCategory::class, FinancialCategoryPolicy::class);
         Gate::policy(FinancialEntry::class, FinancialEntryPolicy::class);
+        Gate::policy(FinancialSettlement::class, FinancialSettlementPolicy::class);
         Gate::policy(PaymentMethod::class, PaymentMethodPolicy::class);
     }
 }
