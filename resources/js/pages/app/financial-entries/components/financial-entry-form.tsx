@@ -426,14 +426,6 @@ function FormValidationBadge({ messages }: { messages: string[] }) {
                 onOpenAutoFocus={(event) => event.preventDefault()}
                 className="w-72 overflow-hidden rounded-xl p-0"
             >
-                <div className="border-b bg-muted/30 px-3 py-2.5">
-                    <p className="text-sm font-medium">Para liberar o botão</p>
-                    <p className="text-xs text-muted-foreground">
-                        {messages.length === 1
-                            ? '1 ajuste pendente'
-                            : `${messages.length} ajustes pendentes`}
-                    </p>
-                </div>
                 <ul className="max-h-64 space-y-1 overflow-y-auto p-2">
                     {messages.map((message) => (
                         <li
@@ -1323,15 +1315,16 @@ export default function FinancialEntryForm({
                                     >
                                         <Link href={index.url()}>Cancelar</Link>
                                     </Button>
+
+                                    <Button type="submit" disabled={!canSubmit}>
+                                        <Save className="mr-2 size-4" />
+                                        {processing ? 'Salvando...' : 'Criar'}
+                                    </Button>
                                     {shouldShowValidationBadge ? (
                                         <FormValidationBadge
                                             messages={validationMessages}
                                         />
                                     ) : null}
-                                    <Button type="submit" disabled={!canSubmit}>
-                                        <Save className="mr-2 size-4" />
-                                        {processing ? 'Salvando...' : 'Criar'}
-                                    </Button>
                                 </div>
                             </div>
                         </div>

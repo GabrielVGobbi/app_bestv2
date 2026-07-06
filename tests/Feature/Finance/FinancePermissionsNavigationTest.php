@@ -49,7 +49,7 @@ class FinancePermissionsNavigationTest extends TestCase
         $this->assertIsArray($operations);
         $this->assertIsArray($settings);
         $this->assertEqualsCanonicalizing(
-            ['Lançamentos financeiros'],
+            ['Lançamentos Financeiros'],
             collect($operations['items'])->pluck('title')->all(),
         );
         $this->assertEqualsCanonicalizing(

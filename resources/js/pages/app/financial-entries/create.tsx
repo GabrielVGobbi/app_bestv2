@@ -28,7 +28,7 @@ export default function CreateFinancialEntry({
 }: Props) {
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Lançamentos financeiros', href: index.url() },
+            { title: 'Lançamentos Financeiros', href: index.url() },
             { title: 'Novo lançamento', href: create.url() },
         ],
     });

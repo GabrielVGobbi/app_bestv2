@@ -1,5 +1,6 @@
 import type { StatusPresenter } from '../status';
 import type { FinancialCategory } from './financial-category';
+import type { PaymentMethod } from './payment-method';
 
 export type FinancialDirection = 'receivable' | 'payable';
 export type FinancialEntryStatus =
@@ -57,7 +58,10 @@ export interface FinancialInstallment {
     settled_at: string | null;
     is_overdue: boolean;
     metadata: Record<string, unknown> | null;
-    settlement_allocations?: { data: FinancialSettlementAllocation[] };
+    settlement_allocations?: FinancialSettlementAllocation[];
+    permissions: {
+        can_settle: boolean;
+    };
     created_at: string;
     updated_at: string;
 }
@@ -111,8 +115,9 @@ export interface FinancialSettlement {
     reversed_by_id: number | null;
     reverse_reason: string | null;
     metadata: Record<string, unknown> | null;
-    allocations?: { data: FinancialSettlementAllocation[] };
-    movements?: { data: FinancialMovement[] };
+    allocations?: FinancialSettlementAllocation[];
+    movements?: FinancialMovement[];
+    payment_method?: PaymentMethod | null;
     permissions: {
         can_reverse: boolean;
     };
@@ -139,7 +144,7 @@ export interface FinancialEntry {
     origin_display_name: string;
     origin_url: string | null;
     category_id: number | null;
-    category?: { data?: FinancialCategory | null } | null;
+    category?: FinancialCategory | null;
     description: string;
     issue_date: string | null;
     competence_date: string | null;
@@ -150,9 +155,9 @@ export interface FinancialEntry {
     balance_amount: number;
     currency: string;
     metadata: Record<string, unknown> | null;
-    amount_components?: { data: FinancialAmountComponent[] };
-    installments?: { data: FinancialInstallment[] };
-    settlements?: { data: FinancialSettlement[] };
+    amount_components?: FinancialAmountComponent[];
+    installments?: FinancialInstallment[];
+    settlements?: FinancialSettlement[];
     permissions: {
         can_update: boolean;
         can_cancel: boolean;

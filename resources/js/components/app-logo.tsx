@@ -20,7 +20,7 @@ export default function AppLogo({
 
     return (
         <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-[#0d0d0d] text-[#ededed] shadow-sm ring-1 ring-border dark:bg-[#ededed]">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-[var(--brand-shadow-primary)] ring-1 ring-primary">
                 {useImage ? (
                     <AppLogoIcon
                         useImage

@@ -14,11 +14,17 @@ import { Button } from '@/components/ui/button';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { FinancialEntry } from '@/types/app/financial-entry';
 
-import { columns, dateFilterColumns, exportConfig, filters } from './config';
+import {
+    columns,
+    dateFilterColumns,
+    exportConfig,
+    filters,
+    quickFilters,
+} from './config';
 
 export default function FinancialEntriesIndex() {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Lançamentos financeiros', href: index.url() }],
+        breadcrumbs: [{ title: 'Lançamentos Financeiros', href: index.url() }],
     });
 
     const actions = useMemo<DataTableAction<FinancialEntry>[]>(
@@ -37,14 +43,13 @@ export default function FinancialEntriesIndex() {
 
     return (
         <>
-            <Head title="Lançamentos financeiros" />
+            <Head title="Lançamentos Financeiros" />
 
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <Heading
-                            title="Lançamentos financeiros"
-                            description="Controle manual de contas a pagar e a receber"
+                            title="Lançamentos Financeiros"
                         />
 
                         <Button asChild>
@@ -70,6 +75,7 @@ export default function FinancialEntriesIndex() {
                         }}
                         exportConfig={exportConfig}
                         filters={filters}
+                        quickFilters={quickFilters}
                         dateFilterColumns={dateFilterColumns}
                         actions={actions}
                         actionsConfig={{

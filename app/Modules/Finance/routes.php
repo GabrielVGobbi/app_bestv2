@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Finance\Http\Controllers\Api\FinancialCategoryApiController;
+use App\Modules\Finance\Http\Controllers\Api\FinancialCounterpartyApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialEntryApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialSettlementApiController;
 use App\Modules\Finance\Http\Controllers\Api\PaymentMethodApiController;
@@ -42,6 +43,9 @@ Route::prefix('api/v1')
     ->group(function (): void {
         Route::get('financial-category-tree', [FinancialCategoryApiController::class, 'tree'])
             ->name('financial-categories.tree');
+
+        Route::get('financial-counterparty-options', [FinancialCounterpartyApiController::class, 'options'])
+            ->name('financial-counterparties.options');
 
         Route::apiResource('financial-entries', FinancialEntryApiController::class)
             ->only(['index', 'store', 'show'])

@@ -1,5 +1,16 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays, CircleDollarSign } from 'lucide-react';
+import {
+    ArrowLeft,
+    CalendarDays,
+    CircleDollarSign,
+    Filter,
+    ReceiptText,
+    RotateCcw,
+    Table2,
+    WalletCards,
+    X,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import {
     index,
@@ -10,7 +21,15 @@ import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { FinancialEntryResource } from '@/types/app/financial-entry';
+import type {
+    FinancialEntryResource,
+    FinancialInstallment,
+    FinancialMovement,
+    FinancialSettlement,
+} from '@/types/app/financial-entry';
+
+import { SettlementDialog } from './components/settlement-dialog';
+import { SettlementReversalDialog } from './components/settlement-reversal-dialog';
 
 interface Props {
     entryData: FinancialEntryResource;
@@ -23,10 +42,25 @@ function money(value: number, currency = 'BRL'): string {
     }).format(value / 100);
 }
 
+function formatDateTime(value: string | null): string {
+    if (!value) {
+        return '-';
+    }
+
+    return new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    }).format(new Date(value));
+}
+
+function movementLabel(movement: FinancialMovement): string {
+    return movement.direction === 'inflow' ? 'Entrada' : 'Saída';
+}
+
 function Info({ label, value }: { label: string; value: string | null }) {
     return (
         <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </p>
             <p className="text-sm">{value || '-'}</p>
@@ -34,14 +68,173 @@ function Info({ label, value }: { label: string; value: string | null }) {
     );
 }
 
+type InstallmentStatusFilter =
+    | 'all'
+    | 'settleable'
+    | 'open'
+    | 'overdue'
+    | 'partially_paid'
+    | 'paid';
+
+type InstallmentDateFilter =
+    | 'all'
+    | 'overdue'
+    | 'today'
+    | 'next7'
+    | 'next30'
+    | 'without_due_date';
+
+const installmentStatusFilters: Array<{
+    label: string;
+    value: InstallmentStatusFilter;
+}> = [
+    { label: 'Todas', value: 'all' },
+    { label: 'A baixar', value: 'settleable' },
+    { label: 'Em aberto', value: 'open' },
+    { label: 'Vencidas', value: 'overdue' },
+    { label: 'Parciais', value: 'partially_paid' },
+    { label: 'Pagas', value: 'paid' },
+];
+
+const installmentDateFilters: Array<{
+    label: string;
+    value: InstallmentDateFilter;
+}> = [
+    { label: 'Todas datas', value: 'all' },
+    { label: 'Vencidas', value: 'overdue' },
+    { label: 'Hoje', value: 'today' },
+    { label: '7 dias', value: 'next7' },
+    { label: '30 dias', value: 'next30' },
+    { label: 'Sem data', value: 'without_due_date' },
+];
+
+const EMPTY_INSTALLMENTS: FinancialInstallment[] = [];
+
+function parseLocalDate(value: string | null): Date | null {
+    if (!value) {
+        return null;
+    }
+
+    const [year, month, day] = value.split('-').map(Number);
+
+    if (!year || !month || !day) {
+        return null;
+    }
+
+    return new Date(year, month - 1, day);
+}
+
+function todayStart(): Date {
+    const now = new Date();
+
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function addDays(date: Date, days: number): Date {
+    const copy = new Date(date);
+    copy.setDate(copy.getDate() + days);
+
+    return copy;
+}
+
+function isSameDay(left: Date, right: Date): boolean {
+    return (
+        left.getFullYear() === right.getFullYear() &&
+        left.getMonth() === right.getMonth() &&
+        left.getDate() === right.getDate()
+    );
+}
+
+function matchesInstallmentStatusFilter(
+    installment: FinancialInstallment,
+    filter: InstallmentStatusFilter,
+): boolean {
+    if (filter === 'all') {
+        return true;
+    }
+
+    if (filter === 'settleable') {
+        return installment.permissions.can_settle;
+    }
+
+    return installment.status === filter;
+}
+
+function matchesInstallmentDateFilter(
+    installment: FinancialInstallment,
+    filter: InstallmentDateFilter,
+): boolean {
+    if (filter === 'all') {
+        return true;
+    }
+
+    const dueDate = parseLocalDate(installment.due_date);
+
+    if (filter === 'without_due_date') {
+        return dueDate === null;
+    }
+
+    if (!dueDate) {
+        return false;
+    }
+
+    const today = todayStart();
+
+    if (filter === 'overdue') {
+        return (
+            installment.is_overdue ||
+            (dueDate < today && installment.balance_amount > 0)
+        );
+    }
+
+    if (filter === 'today') {
+        return isSameDay(dueDate, today);
+    }
+
+    const limit = filter === 'next7' ? addDays(today, 7) : addDays(today, 30);
+
+    return dueDate >= today && dueDate <= limit;
+}
+
 export default function ShowFinancialEntry({ entryData }: Props) {
     const entry = entryData.data;
-    const components = entry.amount_components?.data ?? [];
-    const installments = entry.installments?.data ?? [];
+    const components = entry.amount_components ?? [];
+    const installments = entry.installments ?? EMPTY_INSTALLMENTS;
+    const settlements = entry.settlements ?? [];
+    const firstOpenInstallment = installments.find(
+        (installment) => installment.permissions.can_settle,
+    );
+    const [settlementInstallment, setSettlementInstallment] =
+        useState<FinancialInstallment | null>(null);
+    const [reversalSettlement, setReversalSettlement] =
+        useState<FinancialSettlement | null>(null);
+    const [installmentStatusFilter, setInstallmentStatusFilter] =
+        useState<InstallmentStatusFilter>('all');
+    const [installmentDateFilter, setInstallmentDateFilter] =
+        useState<InstallmentDateFilter>('all');
+
+    const filteredInstallments = useMemo(
+        () =>
+            installments.filter(
+                (installment) =>
+                    matchesInstallmentStatusFilter(
+                        installment,
+                        installmentStatusFilter,
+                    ) &&
+                    matchesInstallmentDateFilter(
+                        installment,
+                        installmentDateFilter,
+                    ),
+            ),
+        [installments, installmentDateFilter, installmentStatusFilter],
+    );
+
+    const hasInstallmentFilters =
+        installmentStatusFilter !== 'all' || installmentDateFilter !== 'all';
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Lançamentos financeiros', href: index.url() },
+            { title: 'Lançamentos Financeiros', href: index.url() },
             { title: entry.description, href: show.url(entry.uuid) },
         ],
     });
@@ -51,18 +244,39 @@ export default function ShowFinancialEntry({ entryData }: Props) {
             <Head title={entry.description} />
 
             <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">{entry.description}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {entry.direction_label} - {entry.origin_label}
-                        </p>
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            asChild
+                        >
+                            <Link href={index.url()}>
+                                <ArrowLeft className="size-4" />
+                            </Link>
+                        </Button>
+                        <div>
+                            <h1 className="text-xl font-semibold">
+                                {entry.description}
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {entry.direction_label} - {entry.origin_label}
+                            </p>
+                        </div>
                     </div>
+
+                    {entry.permissions.can_settle && firstOpenInstallment ? (
+                        <Button
+                            type="button"
+                            onClick={() =>
+                                setSettlementInstallment(firstOpenInstallment)
+                            }
+                        >
+                            <ReceiptText className="size-4" />
+                            Registrar baixa
+                        </Button>
+                    ) : null}
                 </div>
             </Header>
 
@@ -72,21 +286,38 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                         <Card>
                             <CardHeader className="flex-row items-center justify-between gap-3">
                                 <CardTitle>Resumo</CardTitle>
-                                <StatusBadge presenter={entry.status_presenter} />
+                                <StatusBadge
+                                    presenter={entry.status_presenter}
+                                />
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-3">
-                                <Info label="Direcao" value={entry.direction_label} />
+                                <Info
+                                    label="Direção"
+                                    value={entry.direction_label}
+                                />
                                 <Info
                                     label="Contraparte"
-                                    value={entry.counterparty_label ?? 'Sem contraparte'}
+                                    value={
+                                        entry.counterparty_label ??
+                                        'Sem contraparte'
+                                    }
                                 />
-                                <Info label="Origem" value={entry.origin_display_name} />
-                                <Info label="Vencimento" value={entry.due_date} />
+                                <Info
+                                    label="Origem"
+                                    value={entry.origin_display_name}
+                                />
+                                <Info
+                                    label="Vencimento"
+                                    value={entry.due_date}
+                                />
                                 <Info
                                     label="Categoria"
-                                    value={entry.category?.data?.full_path ?? null}
+                                    value={entry.category?.full_path ?? null}
                                 />
-                                <Info label="Empresa" value={`#${entry.company_id}`} />
+                                <Info
+                                    label="Empresa"
+                                    value={`#${entry.company_id}`}
+                                />
                             </CardContent>
                         </Card>
 
@@ -95,71 +326,409 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 <CardTitle>Componentes de valor</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                {components.map((component) => (
-                                    <div
-                                        key={component.uuid}
-                                        className="flex items-center justify-between rounded-md border p-3"
-                                    >
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {component.label ?? component.code_label}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {component.operation_label}
-                                            </p>
-                                        </div>
-                                        <span className="text-sm font-semibold">
-                                            {money(component.amount, entry.currency)}
-                                        </span>
+                                {components.length === 0 ? (
+                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                        Nenhum componente registrado.
                                     </div>
-                                ))}
+                                ) : (
+                                    components.map((component) => (
+                                        <div
+                                            key={component.uuid}
+                                            className="flex items-center justify-between rounded-md border p-3"
+                                        >
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    {component.label ??
+                                                        component.code_label}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {component.operation_label}
+                                                </p>
+                                            </div>
+                                            <span className="text-sm font-semibold">
+                                                {money(
+                                                    component.amount,
+                                                    entry.currency,
+                                                )}
+                                            </span>
+                                        </div>
+                                    ))
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="gap-4">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Table2 className="size-4 text-muted-foreground" />
+                                        <CardTitle>Parcelas</CardTitle>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge variant="outline">
+                                            {filteredInstallments.length} de{' '}
+                                            {installments.length}
+                                        </Badge>
+                                        {hasInstallmentFilters ? (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setInstallmentStatusFilter(
+                                                        'all',
+                                                    );
+                                                    setInstallmentDateFilter(
+                                                        'all',
+                                                    );
+                                                }}
+                                            >
+                                                <X className="size-4" />
+                                                Limpar
+                                            </Button>
+                                        ) : null}
+                                    </div>
+                                </div>
+
+                                {installments.length > 0 ? (
+                                    <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                                <Filter className="size-3.5" />
+                                                Status
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {installmentStatusFilters.map(
+                                                    (filter) => (
+                                                        <Button
+                                                            key={filter.value}
+                                                            type="button"
+                                                            size="sm"
+                                                            variant={
+                                                                installmentStatusFilter ===
+                                                                filter.value
+                                                                    ? 'secondary'
+                                                                    : 'outline'
+                                                            }
+                                                            aria-pressed={
+                                                                installmentStatusFilter ===
+                                                                filter.value
+                                                            }
+                                                            onClick={() =>
+                                                                setInstallmentStatusFilter(
+                                                                    filter.value,
+                                                                )
+                                                            }
+                                                        >
+                                                            {filter.label}
+                                                        </Button>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                                <CalendarDays className="size-3.5" />
+                                                Datas rápidas
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {installmentDateFilters.map(
+                                                    (filter) => (
+                                                        <Button
+                                                            key={filter.value}
+                                                            type="button"
+                                                            size="sm"
+                                                            variant={
+                                                                installmentDateFilter ===
+                                                                filter.value
+                                                                    ? 'secondary'
+                                                                    : 'outline'
+                                                            }
+                                                            aria-pressed={
+                                                                installmentDateFilter ===
+                                                                filter.value
+                                                            }
+                                                            onClick={() =>
+                                                                setInstallmentDateFilter(
+                                                                    filter.value,
+                                                                )
+                                                            }
+                                                        >
+                                                            {filter.label}
+                                                        </Button>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </CardHeader>
+                            <CardContent>
+                                {installments.length === 0 ? (
+                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                        Nenhuma parcela registrada.
+                                    </div>
+                                ) : filteredInstallments.length === 0 ? (
+                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                        Nenhuma parcela encontrada para os
+                                        filtros selecionados.
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto rounded-md border">
+                                        <table className="w-full min-w-[860px] text-sm">
+                                            <thead className="bg-muted/50 text-left text-xs tracking-wide text-muted-foreground uppercase">
+                                                <tr>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Parcela
+                                                    </th>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Status
+                                                    </th>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Vencimento
+                                                    </th>
+                                                    <th className="px-3 py-2 font-medium">
+                                                        Competência
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right font-medium">
+                                                        Original
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right font-medium">
+                                                        Liquidado
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right font-medium">
+                                                        Saldo
+                                                    </th>
+                                                    <th className="px-3 py-2 text-right font-medium">
+                                                        Ações
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {filteredInstallments.map(
+                                                    (installment) => (
+                                                        <tr
+                                                            key={
+                                                                installment.uuid
+                                                            }
+                                                            className="bg-card odd:bg-muted/20"
+                                                        >
+                                                            <td className="px-3 py-3 font-medium">
+                                                                #
+                                                                {
+                                                                    installment.installment_number
+                                                                }
+                                                            </td>
+                                                            <td className="px-3 py-3">
+                                                                <StatusBadge
+                                                                    presenter={
+                                                                        installment.status_presenter
+                                                                    }
+                                                                />
+                                                            </td>
+                                                            <td className="px-3 py-3">
+                                                                {installment.due_date ??
+                                                                    '-'}
+                                                            </td>
+                                                            <td className="px-3 py-3">
+                                                                {installment.competence_date ??
+                                                                    '-'}
+                                                            </td>
+                                                            <td className="px-3 py-3 text-right font-medium">
+                                                                {money(
+                                                                    installment.original_amount,
+                                                                    installment.currency,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-3 text-right text-muted-foreground">
+                                                                {money(
+                                                                    installment.settled_amount,
+                                                                    installment.currency,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-3 text-right font-semibold">
+                                                                {money(
+                                                                    installment.balance_amount,
+                                                                    installment.currency,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-3">
+                                                                <div className="flex justify-end">
+                                                                    {installment
+                                                                        .permissions
+                                                                        .can_settle ? (
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() =>
+                                                                                setSettlementInstallment(
+                                                                                    installment,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <ReceiptText className="size-4" />
+                                                                            Baixar
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            -
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Parcelas</CardTitle>
+                                <CardTitle>Baixas</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-2">
-                                {installments.map((installment) => (
-                                    <div
-                                        key={installment.uuid}
-                                        className="grid gap-3 rounded-md border p-3 sm:grid-cols-2 xl:grid-cols-6"
-                                    >
-                                        <Info
-                                            label="Parcela"
-                                            value={String(installment.installment_number)}
-                                        />
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                                Status
-                                            </p>
-                                            <StatusBadge presenter={installment.status_presenter} />
-                                        </div>
-                                        <Info
-                                            label="Vencimento"
-                                            value={installment.due_date}
-                                        />
-                                        <Info
-                                            label="Competencia"
-                                            value={installment.competence_date}
-                                        />
-                                        <Info
-                                            label="Original"
-                                            value={money(
-                                                installment.original_amount,
-                                                installment.currency,
-                                            )}
-                                        />
-                                        <Info
-                                            label="Saldo"
-                                            value={money(
-                                                installment.balance_amount,
-                                                installment.currency,
-                                            )}
-                                        />
+                            <CardContent className="space-y-3">
+                                {settlements.length === 0 ? (
+                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                                        Nenhuma baixa registrada.
                                     </div>
-                                ))}
+                                ) : (
+                                    settlements.map((settlement) => {
+                                        const allocations =
+                                            settlement.allocations ?? [];
+                                        const movements =
+                                            settlement.movements ?? [];
+
+                                        return (
+                                            <div
+                                                key={settlement.uuid}
+                                                className="space-y-3 rounded-md border p-3"
+                                            >
+                                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                                    <div className="space-y-1">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <StatusBadge
+                                                                presenter={
+                                                                    settlement.status_presenter
+                                                                }
+                                                            />
+                                                            <span className="text-sm font-medium">
+                                                                {formatDateTime(
+                                                                    settlement.settled_at,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {settlement
+                                                                .payment_method
+                                                                ?.name ??
+                                                                'Sem método'}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="text-right">
+                                                            <p className="text-sm font-semibold">
+                                                                {money(
+                                                                    settlement.net_amount,
+                                                                    entry.currency,
+                                                                )}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Bruto{' '}
+                                                                {money(
+                                                                    settlement.gross_amount,
+                                                                    entry.currency,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        {settlement.permissions
+                                                            .can_reverse ? (
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    setReversalSettlement(
+                                                                        settlement,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <RotateCcw className="size-4" />
+                                                                Estornar
+                                                            </Button>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+
+                                                {allocations.length > 0 ? (
+                                                    <div className="grid gap-2 sm:grid-cols-2">
+                                                        {allocations.map(
+                                                            (allocation) => (
+                                                                <div
+                                                                    key={
+                                                                        allocation.id
+                                                                    }
+                                                                    className="rounded-md bg-muted/40 px-3 py-2 text-sm"
+                                                                >
+                                                                    <p className="font-medium">
+                                                                        Parcela
+                                                                        #
+                                                                        {
+                                                                            allocation.installment_id
+                                                                        }
+                                                                    </p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        Valor{' '}
+                                                                        {money(
+                                                                            allocation.amount,
+                                                                            entry.currency,
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : null}
+
+                                                {movements.length > 0 ? (
+                                                    <div className="space-y-2 border-t pt-3">
+                                                        {movements.map(
+                                                            (movement) => (
+                                                                <div
+                                                                    key={
+                                                                        movement.uuid
+                                                                    }
+                                                                    className="flex items-center justify-between gap-3 text-sm"
+                                                                >
+                                                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                                                        <WalletCards className="size-4" />
+                                                                        <span>
+                                                                            {movementLabel(
+                                                                                movement,
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="font-medium">
+                                                                        {money(
+                                                                            movement.amount,
+                                                                            entry.currency,
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -175,15 +744,21 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         Bruto
                                     </span>
                                     <span className="font-medium">
-                                        {money(entry.gross_amount, entry.currency)}
+                                        {money(
+                                            entry.gross_amount,
+                                            entry.currency,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="text-sm text-muted-foreground">
-                                        Liquido
+                                        Líquido
                                     </span>
                                     <span className="font-medium">
-                                        {money(entry.net_amount, entry.currency)}
+                                        {money(
+                                            entry.net_amount,
+                                            entry.currency,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
@@ -191,13 +766,21 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         Liquidado
                                     </span>
                                     <span className="font-medium">
-                                        {money(entry.settled_amount, entry.currency)}
+                                        {money(
+                                            entry.settled_amount,
+                                            entry.currency,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
-                                    <span className="text-sm font-medium">Saldo</span>
+                                    <span className="text-sm font-medium">
+                                        Saldo
+                                    </span>
                                     <span className="font-semibold">
-                                        {money(entry.balance_amount, entry.currency)}
+                                        {money(
+                                            entry.balance_amount,
+                                            entry.currency,
+                                        )}
                                     </span>
                                 </div>
                             </CardContent>
@@ -211,18 +794,40 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 <div className="flex items-start gap-3">
                                     <CalendarDays className="mt-0.5 size-4 text-muted-foreground" />
                                     <span>
-                                        Competencia: {entry.competence_date ?? '-'}
+                                        Competência:{' '}
+                                        {entry.competence_date ?? '-'}
                                     </span>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <CircleDollarSign className="mt-0.5 size-4 text-muted-foreground" />
-                                    <Badge variant="outline">{entry.currency}</Badge>
+                                    <Badge variant="outline">
+                                        {entry.currency}
+                                    </Badge>
                                 </div>
                             </CardContent>
                         </Card>
                     </aside>
                 </div>
             </div>
+
+            <SettlementDialog
+                entry={entry}
+                installment={settlementInstallment}
+                open={settlementInstallment !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setSettlementInstallment(null);
+                    }
+                }}
+            />
+            <SettlementReversalDialog
+                settlement={reversalSettlement}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setReversalSettlement(null);
+                    }
+                }}
+            />
         </>
     );
 }

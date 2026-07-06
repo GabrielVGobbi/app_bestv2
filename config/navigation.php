@@ -243,7 +243,7 @@ return [
                     'items' => [
                         [
                             'slug' => 'financeiro_financial_entries',
-                            'label' => 'Lançamentos financeiros',
+                            'label' => 'Lançamentos Financeiros',
                             'icon' => 'ReceiptText',
                             'type' => 'link',
                             'href' => ['route' => 'financial-entries.index'],

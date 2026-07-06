@@ -7,14 +7,17 @@ namespace App\Modules\Finance\Models;
 use App\Concerns\Exportable;
 use App\Concerns\Searchable;
 use App\Models\User;
+use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialEntryFactory;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
+use App\Modules\Suppliers\Models\Supplier;
 use App\Modules\Timeline\Contracts\TimelineSubject;
 use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,7 +51,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class FinancialEntry extends Model implements TimelineSubject
 {
-    use Exportable, HasActivityLog, HasFactory, HasUuidIdentifier, Searchable, SoftDeletes;
+    use Exportable, HasActivityLog, HasFactory, HasUuidIdentifier, SoftDeletes;
+    use Searchable {
+        applyApiFilterOperator as protected applyBaseApiFilterOperator;
+    }
 
     protected string $activityLogName = 'finance.entries';
 
@@ -74,7 +80,9 @@ class FinancialEntry extends Model implements TimelineSubject
         'direction',
         'status',
         'category_id',
+        'counterparty',
         'counterparty_type',
+        'counterparty_id',
         'originable_type',
         'due_date',
         'issue_date',
@@ -161,6 +169,34 @@ class FinancialEntry extends Model implements TimelineSubject
     public function settlements(): HasMany
     {
         return $this->hasMany(FinancialSettlement::class);
+    }
+
+    protected function applyApiFilterOperator(Builder $query, string $column, string $operator, mixed $value): void
+    {
+        if ($column === 'counterparty') {
+            $this->applyCounterpartyFilter($query, $value);
+
+            return;
+        }
+
+        $this->applyBaseApiFilterOperator($query, $column, $operator, $value);
+    }
+
+    private function applyCounterpartyFilter(Builder $query, mixed $value): void
+    {
+        if (! is_string($value) || ! str_contains($value, '|')) {
+            return;
+        }
+
+        [$type, $id] = explode('|', $value, 2);
+
+        if (! in_array($type, [Client::class, Supplier::class], true) || ! ctype_digit($id)) {
+            return;
+        }
+
+        $query
+            ->where('counterparty_type', $type)
+            ->where('counterparty_id', (int) $id);
     }
 
     public function statusEnumClass(): string

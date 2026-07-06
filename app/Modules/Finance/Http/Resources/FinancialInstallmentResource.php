@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Http\Resources;
 
 use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Models\FinancialSettlement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -36,6 +37,10 @@ class FinancialInstallmentResource extends JsonResource
             'is_overdue' => $this->isOverdue(),
             'metadata' => $this->metadata,
             'settlement_allocations' => FinancialSettlementAllocationResource::collection($this->whenLoaded('settlementAllocations')),
+            'permissions' => [
+                'can_settle' => ($request->user()?->can('create', FinancialSettlement::class) ?? false)
+                    && (int) $this->balance_amount > 0,
+            ],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

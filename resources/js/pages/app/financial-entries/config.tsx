@@ -4,6 +4,7 @@ import type {
     DataTableDateColumn,
     DataTableExportConfig,
     DataTableFilterConfig,
+    DataTableQuickFilter,
 } from '@/components/data-table';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
@@ -109,6 +110,31 @@ export const filters: DataTableFilterConfig[] = [
             { label: 'Estornado', value: 'reversed' },
             { label: 'Renegociado', value: 'renegotiated' },
         ],
+    },
+];
+
+export const quickFilters: DataTableQuickFilter[] = [
+    {
+        id: 'category_id',
+        label: 'Categoria',
+        type: 'async-select',
+        placeholder: 'Categoria',
+        asyncSelect: {
+            endpoint: apiRoutes.financialCategories.index,
+            searchPlaceholder: 'Buscar categoria...',
+            emptyMessage: 'Nenhuma categoria encontrada.',
+        },
+    },
+    {
+        id: 'counterparty',
+        label: 'Contraparte',
+        type: 'async-select',
+        placeholder: 'Contraparte',
+        asyncSelect: {
+            endpoint: apiRoutes.financialCounterparties.options,
+            searchPlaceholder: 'Buscar contraparte...',
+            emptyMessage: 'Nenhuma contraparte encontrada.',
+        },
     },
 ];
 

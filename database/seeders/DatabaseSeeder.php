@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Modules\Clients\Database\Seeders\ClientSeeder;
 use App\Modules\Companies\Database\Seeders\CompanySeeder;
 use App\Modules\Finance\Database\Seeders\FinancialCategorySeeder;
+use App\Modules\Finance\Database\Seeders\FinancialEntryDemoSeeder;
 use App\Modules\Finance\Database\Seeders\PaymentMethodSeeder;
 use App\Modules\Permissions\Database\Seeders\PermissionsSeeder;
 use App\Modules\Permissions\Database\Seeders\RolesSeeder;
@@ -37,6 +38,8 @@ class DatabaseSeeder extends Seeder
             TopSeeder::class,
             PlaylistSeeder::class,
             // PlaylistDeliveryTaskDemoSeeder::class,
+
+            FinancialEntryDemoSeeder::class,
         ]);
     }
 }

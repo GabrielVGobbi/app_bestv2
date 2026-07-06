@@ -7,6 +7,7 @@ namespace App\Modules\Finance\Models;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialMovementFactory;
 use App\Modules\Finance\Enums\FinancialMovementDirection;
+use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,7 +30,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 ])]
 class FinancialMovement extends Model
 {
-    use HasFactory, HasUuidIdentifier;
+    use HasActivityLog, HasFactory, HasUuidIdentifier;
+
+    protected string $activityLogName = 'finance.movements';
 
     /** @var array<string, mixed> */
     protected $attributes = [

@@ -9,6 +9,7 @@ use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialSettlementFactory;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialSettlementStatus;
+use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -41,7 +42,9 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 ])]
 class FinancialSettlement extends Model
 {
-    use HasFactory, HasUuidIdentifier;
+    use HasActivityLog, HasFactory, HasUuidIdentifier;
+
+    protected string $activityLogName = 'finance.settlements';
 
     /** @var array<string, mixed> */
     protected $attributes = [

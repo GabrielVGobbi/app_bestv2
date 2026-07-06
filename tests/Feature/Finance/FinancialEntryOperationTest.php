@@ -163,6 +163,69 @@ class FinancialEntryOperationTest extends TestCase
         $this->assertSame([40000, 50000], $entry->installments->pluck('original_amount')->all());
     }
 
+    public function test_financial_entry_show_exposes_installments_with_settlement_permission(): void
+    {
+        $this->withoutVite();
+
+        $user = $this->userWithRole('finance');
+        $company = Company::factory()->create();
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
+        $category = FinancialCategory::factory()->expense()->create([
+            'company_id' => $company->id,
+        ]);
+
+        $this->actingAs($user)->post(route('financial-entries.store'), [
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Payable->value,
+            'counterparty_type' => Supplier::class,
+            'counterparty_id' => $supplier->id,
+            'category_id' => $category->id,
+            'description' => 'Pagavel web parcelado para baixa',
+            'components' => [
+                [
+                    'code' => FinancialAmountComponentCode::Principal->value,
+                    'operation' => FinancialAmountOperation::Add->value,
+                    'amount' => 44444,
+                ],
+            ],
+            'installments' => [
+                [
+                    'installment_number' => 1,
+                    'due_date' => '2026-07-28',
+                    'amount' => 14814,
+                ],
+                [
+                    'installment_number' => 2,
+                    'due_date' => '2026-08-28',
+                    'amount' => 14814,
+                ],
+                [
+                    'installment_number' => 3,
+                    'due_date' => '2026-09-28',
+                    'amount' => 14816,
+                ],
+            ],
+        ])->assertRedirect();
+
+        $entry = FinancialEntry::query()->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('financial-entries.show', $entry))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('app/financial-entries/show')
+                ->has('entryData.data')
+                ->where('entryData.data.permissions.can_settle', true));
+
+        Sanctum::actingAs($user);
+
+        $this->getJson(route('api.financial-entries.show', $entry))
+            ->assertOk()
+            ->assertJsonCount(3, 'data.installments')
+            ->assertJsonPath('data.installments.0.balance_amount', 14814)
+            ->assertJsonPath('data.installments.0.permissions.can_settle', true);
+    }
+
     public function test_financial_entry_web_requires_counterparty_for_manual_entry(): void
     {
         $user = $this->userWithRole('finance');
@@ -308,6 +371,127 @@ class FinancialEntryOperationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.uuid', $entry->uuid)
             ->assertJsonPath('data.origin_kind', 'manual');
+    }
+
+    public function test_financial_entry_api_filters_by_category_and_counterparty(): void
+    {
+        $user = $this->userWithRole('finance');
+        Sanctum::actingAs($user);
+
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+        $otherClient = Client::factory()->create(['company_id' => $company->id]);
+        $category = FinancialCategory::factory()->income()->create([
+            'company_id' => $company->id,
+        ]);
+        $otherCategory = FinancialCategory::factory()->income()->create([
+            'company_id' => $company->id,
+        ]);
+
+        $matchingEntry = FinancialEntry::factory()->create([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => $client->getMorphClass(),
+            'counterparty_id' => $client->id,
+            'category_id' => $category->id,
+            'description' => 'Recebivel filtrado',
+        ]);
+
+        FinancialEntry::factory()->create([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => $otherClient->getMorphClass(),
+            'counterparty_id' => $otherClient->id,
+            'category_id' => $category->id,
+            'description' => 'Recebivel fora do filtro',
+        ]);
+
+        $this->getJson(route('api.financial-entries.index', [
+            'filter' => [
+                'category_id' => $category->id,
+                'counterparty_id' => $client->id,
+            ],
+        ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.uuid', $matchingEntry->uuid);
+    }
+
+    public function test_financial_entry_api_filters_by_morph_counterparty_option(): void
+    {
+        $user = $this->userWithRole('finance');
+        Sanctum::actingAs($user);
+
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
+
+        $matchingEntry = FinancialEntry::factory()->create([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => $client->getMorphClass(),
+            'counterparty_id' => $client->id,
+            'description' => 'Recebivel por cliente',
+        ]);
+
+        FinancialEntry::factory()->create([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Payable,
+            'counterparty_type' => $supplier->getMorphClass(),
+            'counterparty_id' => $supplier->id,
+            'description' => 'Pagavel por fornecedor',
+        ]);
+
+        $this->getJson(route('api.financial-entries.index', [
+            'filter' => [
+                'counterparty' => $client->getMorphClass().'|'.$client->id,
+            ],
+        ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.uuid', $matchingEntry->uuid);
+    }
+
+    public function test_financial_counterparty_options_return_morph_values_by_direction(): void
+    {
+        $user = $this->userWithRole('finance');
+        Sanctum::actingAs($user);
+
+        $company = Company::factory()->create();
+        $client = Client::factory()->create([
+            'company_id' => $company->id,
+            'name' => 'Ana Recebimentos',
+            'company_name' => 'Cliente Opcao',
+        ]);
+        $supplier = Supplier::factory()->create([
+            'company_id' => $company->id,
+            'name' => 'Beta Pagamentos',
+            'company_name' => 'Fornecedor Opcao',
+        ]);
+
+        $this->getJson(route('api.financial-counterparties.options', [
+            'company_id' => $company->id,
+        ]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment([
+                'value' => $client->getMorphClass().'|'.$client->id,
+                'label' => 'Ana Recebimentos',
+                'description' => 'Cliente - Cliente Opcao',
+            ])
+            ->assertJsonFragment([
+                'value' => $supplier->getMorphClass().'|'.$supplier->id,
+                'label' => 'Beta Pagamentos',
+                'description' => 'Fornecedor - Fornecedor Opcao',
+            ]);
+
+        $this->getJson(route('api.financial-counterparties.options', [
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable->value,
+        ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.value', $client->getMorphClass().'|'.$client->id);
     }
 
     public function test_user_without_entry_permission_cannot_access_financial_entries(): void

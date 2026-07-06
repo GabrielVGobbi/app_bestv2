@@ -67,6 +67,38 @@ class FinancialSettlementTest extends TestCase
         $this->assertSame(40000, $movement->amount);
     }
 
+    public function test_registering_settlement_records_activity_for_settlement_and_movement(): void
+    {
+        $user = User::factory()->create();
+        [, $installment] = $this->manualEntry(FinancialDirection::Receivable, 100000);
+
+        $this->actingAs($user);
+
+        $settlement = app(CreateFinancialSettlement::class)->handle($installment, [
+            'gross_amount' => 50000,
+        ]);
+
+        $movement = $settlement->movements->sole();
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'finance.settlements',
+            'event' => 'created',
+            'subject_type' => FinancialSettlement::class,
+            'subject_id' => $settlement->id,
+            'causer_type' => User::class,
+            'causer_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'finance.movements',
+            'event' => 'created',
+            'subject_type' => FinancialMovement::class,
+            'subject_id' => $movement->id,
+            'causer_type' => User::class,
+            'causer_id' => $user->id,
+        ]);
+    }
+
     public function test_registers_total_payable_settlement_with_outflow_movement(): void
     {
         [$entry, $installment] = $this->manualEntry(FinancialDirection::Payable, 100000);
@@ -153,6 +185,44 @@ class FinancialSettlementTest extends TestCase
             FinancialMovementDirection::Inflow->value,
             FinancialMovementDirection::Outflow->value,
         ], $directions);
+    }
+
+    public function test_reversing_settlement_records_activity_for_reversal_and_inverse_movement(): void
+    {
+        $user = User::factory()->create();
+        [, $installment] = $this->manualEntry(FinancialDirection::Receivable, 100000);
+        $settlement = app(CreateFinancialSettlement::class)->handle($installment, [
+            'gross_amount' => 100000,
+        ]);
+
+        $this->actingAs($user);
+
+        $reversed = app(ReverseFinancialSettlement::class)->handle($settlement, [
+            'reason' => 'Pagamento duplicado',
+        ]);
+
+        $inverseMovement = $reversed->movements
+            ->first(fn (FinancialMovement $movement): bool => ($movement->metadata['kind'] ?? null) === 'settlement_reversal');
+
+        $this->assertNotNull($inverseMovement);
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'finance.settlements',
+            'event' => 'updated',
+            'subject_type' => FinancialSettlement::class,
+            'subject_id' => $settlement->id,
+            'causer_type' => User::class,
+            'causer_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'finance.movements',
+            'event' => 'created',
+            'subject_type' => FinancialMovement::class,
+            'subject_id' => $inverseMovement->id,
+            'causer_type' => User::class,
+            'causer_id' => $user->id,
+        ]);
     }
 
     public function test_finance_user_can_register_settlement_from_web_route(): void
