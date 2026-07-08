@@ -62,6 +62,14 @@ export const apiRoutes = {
     financialCounterparties: {
         options: '/api/v1/financial-counterparty-options',
     },
+    financialAccounts: {
+        index: '/api/v1/financial-accounts',
+        options: '/api/v1/financial-account-options',
+        show: (id: number | string) => `/api/v1/financial-accounts/${id}`,
+        store: '/api/v1/financial-accounts',
+        update: (id: number | string) => `/api/v1/financial-accounts/${id}`,
+        destroy: (id: number | string) => `/api/v1/financial-accounts/${id}`,
+    },
     financialEntries: {
         index: '/api/v1/financial-entries',
         show: (id: number | string) => `/api/v1/financial-entries/${id}`,

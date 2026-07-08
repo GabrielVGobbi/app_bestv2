@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Http\Requests\FinancialSettlement;
 
+use App\Modules\Finance\Models\FinancialAccount;
 use App\Modules\Finance\Models\FinancialSettlement;
 use App\Modules\Finance\Models\PaymentMethod;
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,7 +24,7 @@ class StoreFinancialSettlementRequest extends FormRequest
     {
         return [
             'settled_at' => ['nullable', 'date'],
-            'financial_account_id' => ['nullable', 'integer', 'min:1'],
+            'financial_account_id' => ['required', 'integer', Rule::exists(FinancialAccount::class, 'id')],
             'payment_method_id' => ['nullable', 'integer', Rule::exists(PaymentMethod::class, 'id')],
             'gross_amount' => ['required', 'integer', 'min:1'],
             'discount_amount' => ['nullable', 'integer', 'min:0'],

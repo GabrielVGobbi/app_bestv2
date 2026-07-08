@@ -29,7 +29,8 @@ class FinancialSettlementPolicy
     public function reverse(User $user, FinancialSettlement $financialSettlement): bool
     {
         return $this->hasPermission($user, 'finance.settlements.reverse')
-            && $financialSettlement->status === FinancialSettlementStatus::Posted;
+            && $financialSettlement->status === FinancialSettlementStatus::Posted
+            && ! $financialSettlement->hasReconciledMovements();
     }
 
     private function hasPermission(User $user, string $slug): bool

@@ -7,6 +7,7 @@ namespace App\Modules\Finance\Models;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialInstallmentFactory;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
+use App\Modules\Uploads\Traits\HasUploads;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -33,7 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class FinancialInstallment extends Model
 {
-    use HasFactory, HasUuidIdentifier, SoftDeletes;
+    use HasFactory, HasUploads, HasUuidIdentifier, SoftDeletes;
 
     /** @var array<string, mixed> */
     protected $attributes = [

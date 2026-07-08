@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Clients\Models\Client;
+use App\Modules\Finance\Models\FinancialEntry;
 use App\Modules\Sales\Models\Sale;
 
 return [
@@ -15,6 +16,7 @@ return [
 
     'aliases' => [
         'client' => Client::class,
+        'financial-entry' => FinancialEntry::class,
         'sale' => Sale::class,
     ],
 

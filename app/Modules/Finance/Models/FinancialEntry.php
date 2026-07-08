@@ -14,6 +14,10 @@ use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Suppliers\Models\Supplier;
 use App\Modules\Timeline\Contracts\TimelineSubject;
+use App\Modules\Timeline\Traits\HasComments;
+use App\Modules\Timeline\Traits\HasTimeline;
+use App\Modules\Uploads\Contracts\HasUploadTags;
+use App\Modules\Uploads\Traits\HasUploads;
 use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -49,9 +53,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'currency',
     'metadata',
 ])]
-class FinancialEntry extends Model implements TimelineSubject
+class FinancialEntry extends Model implements HasUploadTags, TimelineSubject
 {
-    use Exportable, HasActivityLog, HasFactory, HasUuidIdentifier, SoftDeletes;
+    use Exportable, HasActivityLog, HasComments, HasFactory, HasTimeline, HasUploads, HasUuidIdentifier, SoftDeletes;
     use Searchable {
         applyApiFilterOperator as protected applyBaseApiFilterOperator;
     }
@@ -128,6 +132,19 @@ class FinancialEntry extends Model implements TimelineSubject
     public static function timelineType(): string
     {
         return 'financial-entry';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function uploadTagSuggestions(): array
+    {
+        return [
+            'document' => 'Documento',
+            'receipt' => 'Comprovante',
+            'contract' => 'Contrato',
+            'evidence' => 'Evidência',
+        ];
     }
 
     public function company(): BelongsTo

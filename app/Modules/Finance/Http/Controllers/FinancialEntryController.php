@@ -67,7 +67,8 @@ class FinancialEntryController extends Controller
                     'amountComponents',
                     'installments.settlementAllocations',
                     'settlements.allocations',
-                    'settlements.movements',
+                    'settlements.financialAccount',
+                    'settlements.movements.financialAccount',
                     'settlements.paymentMethod',
                 ])
             ),

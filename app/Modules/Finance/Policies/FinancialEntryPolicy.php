@@ -31,6 +31,12 @@ class FinancialEntryPolicy
             && (int) $financialEntry->settled_amount === 0;
     }
 
+    public function upload(User $user, FinancialEntry $financialEntry): bool
+    {
+        return $this->hasPermission($user, 'finance.entries.view')
+            && $this->hasPermission($user, 'finance.attachments.manage');
+    }
+
     public function cancel(User $user, FinancialEntry $financialEntry): bool
     {
         return $this->hasPermission($user, 'finance.entries.cancel')

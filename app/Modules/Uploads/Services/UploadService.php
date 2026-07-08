@@ -146,6 +146,10 @@ class UploadService
 
     public function canCreateForParent(User $user, Model $parentable): bool
     {
+        if ($user->can('upload', $parentable)) {
+            return true;
+        }
+
         return $user->can('update', $parentable);
     }
 

@@ -17,14 +17,17 @@ export default function AppDashboardLayout({ children, breadcrumbs = [] }: AppLa
                 <main className="fixed inset-0 flex overflow-hidden bg-background">
                     <DashboardSidebar showLogo />
 
-                    <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                         <DashboardHeader
                             breadcrumbs={breadcrumbs}
                             logoVisibility="mobile"
                             variant="content"
                         />
 
-                        <div className="custom-scrollbar flex-1 overflow-y-auto ">
+                        <div
+                            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto"
+                            scroll-region=""
+                        >
                             {children}
                         </div>
                     </div>
@@ -36,7 +39,10 @@ export default function AppDashboardLayout({ children, breadcrumbs = [] }: AppLa
                     <main className="fixed inset-0 flex overflow-hidden bg-background pt-header">
                         <DashboardSidebar />
 
-                        <div className="custom-scrollbar flex-1 overflow-y-auto px-8 py-5">
+                        <div
+                            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-8 py-5"
+                            scroll-region=""
+                        >
                             {children}
                         </div>
                     </main>

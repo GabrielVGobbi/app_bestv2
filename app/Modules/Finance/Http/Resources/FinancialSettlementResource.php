@@ -24,6 +24,7 @@ class FinancialSettlementResource extends JsonResource
             'direction' => $this->direction?->value ?? $this->direction,
             'settled_at' => $this->settled_at,
             'financial_account_id' => $this->financial_account_id,
+            'financial_account' => new FinancialAccountResource($this->whenLoaded('financialAccount')),
             'payment_method_id' => $this->payment_method_id,
             'payment_method' => new PaymentMethodResource($this->whenLoaded('paymentMethod')),
             'gross_amount' => $this->gross_amount,

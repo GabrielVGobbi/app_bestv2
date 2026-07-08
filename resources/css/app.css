@@ -79,7 +79,9 @@
     --color-sidebar-ring: var(--sidebar-ring);
 
     /* Brand tokens */
-    --color-brand-teal: var(--brand-teal);
+    --color-brand-pink: var(--brand-pink);
+    --color-brand-red: var(--brand-red);
+    --color-brand-teal: var(--brand-pink); /* legacy compat */
     --color-brand-blue: var(--brand-blue);
     --color-runey-orange: var(--orange); /* legacy compat */
 
@@ -103,148 +105,159 @@
    Management dashboard palette:
    - Near-neutral grey surfaces with only a whisper of warmth
      (chroma ≤ 0.006) — easy on the eyes for all-day, dense screens.
-   - Rose primary (#EE245D → oklch(0.617 0.229 12.5)) reserved for
-     actions, links, focus rings, active nav and hover accents.
-   - Neutral charcoal sidebar to anchor the shell without competing.
-   - Teal / blue kept as complementary chart + brand accents.
+   - BestPlay pink/red appears as the action and focus accent.
+   - Graphite surfaces with a subtle berry undertone keep dense screens calm.
+   - Orange remains as a legacy accent for existing BestPlay badges.
 ───────────────────────────────────────────────────────────────── */
 :root {
     /* Surfaces */
     color-scheme: light;
-    --background: oklch(0.984 0.002 14);
-    --foreground: oklch(0.22 0.008 14);
-    --card: oklch(1 0 0);
-    --card-foreground: var(--foreground);
-    --popover: oklch(1 0 0);
-    --popover-foreground: var(--foreground);
+    --background: #f6f7fa;
+    --foreground: #142033;
+    --card: #ffffff;
+    --card-foreground: #142033;
+    --popover: #ffffff;
+    --popover-foreground: #142033;
 
-    /* Primary — brand rose (#EE245D), used sparingly */
-    --primary: oklch(0.617 0.229 12.5);
-    --primary-light: oklch(0.73 0.17 12);
-    --primary-foreground: oklch(0.99 0.008 14);
+    /* Primary - BestPlay pink/red */
+    --primary: #df0753;
+    --primary-light: #ff5f91;
+    --primary-foreground: #ffffff;
 
-    /* Secondary / muted — quiet greys */
-    --secondary: oklch(0.962 0.003 14);
-    --secondary-foreground: oklch(0.3 0.008 14);
-    --muted: oklch(0.968 0.003 14);
-    --muted-foreground: oklch(0.53 0.01 14);
-    --accent: oklch(0.955 0.016 12);
-    --accent-foreground: oklch(0.42 0.1 12);
+    /* Secondary / muted */
+    --secondary: #eef1f6;
+    --secondary-foreground: #263349;
+    --muted: #eef1f6;
+    --muted-foreground: #667085;
+    --accent: #fff0f5;
+    --accent-foreground: #9f073f;
 
     /* Semantic */
     --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.99 0.004 20);
-    --success: oklch(0.59 0.15 154);
-    --success-foreground: oklch(0.99 0.004 154);
+    --destructive-foreground: #ffffff;
+    --success: oklch(0.627 0.194 149.214);
+    --success-foreground: #ffffff;
     --warning: oklch(0.769 0.188 70.08);
-    --warning-foreground: oklch(0.22 0.035 70);
-    --orange: oklch(0.66 0.18 42);
+    --warning-foreground: #2c2100;
+    --orange: #e8613a;
 
     /* Structural */
-    --border: oklch(0.922 0.004 14);
-    --input: oklch(0.922 0.004 14);
-    --ring: oklch(0.617 0.229 12.5 / 45%);
+    --border: #d9dee8;
+    --input: #d9dee8;
+    --ring: rgb(223 7 83 / 34%);
 
     /* Charts */
-    --chart-1: var(--primary);
-    --chart-2: oklch(0.6 0.13 220);
-    --chart-3: var(--orange);
-    --chart-4: var(--success);
-    --chart-5: var(--warning);
+    --chart-1: #df0753;
+    --chart-2: #475467;
+    --chart-3: #e8613a;
+    --chart-4: oklch(0.627 0.194 149.214);
+    --chart-5: oklch(0.769 0.188 70.08);
 
     /* Brand */
-    --brand-teal: oklch(0.72 0.16 185);
-    --brand-blue: oklch(0.58 0.16 238);
+    --brand-pink: #eb0459;
+    --brand-red: #b80643;
+    --brand-teal: #eb0459;
+    --brand-blue: #3654d4;
+    --brand-shadow-primary:
+        0 14px 32px -20px rgb(235 4 89 / 68%),
+        inset 0 1px 0 0 rgb(255 255 255 / 32%);
 
-    /* Sidebar — neutral charcoal */
-    --sidebar: oklch(0.215 0.008 14);
-    --sidebar-foreground: oklch(0.92 0.005 14);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: oklch(0.99 0.008 14);
-    --sidebar-accent: oklch(0.28 0.01 14);
-    --sidebar-accent-foreground: oklch(0.98 0.004 14);
-    --sidebar-border: oklch(0.31 0.01 14);
-    --sidebar-ring: var(--ring);
+    /* Sidebar - graphite shell with berry undertone */
+    --sidebar: #1f1724;
+    --sidebar-foreground: #f7f3f7;
+    --sidebar-primary: #eb0459;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #3d2838;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #4b3447;
+    --sidebar-ring: rgb(235 4 89 / 48%);
 
     /* Header */
-    --header-background: oklch(1 0 0 / 75%);
-    --header-foreground: var(--foreground);
-    --header-border: oklch(0.922 0.004 14);
+    --header-background: rgb(246 247 250 / 88%);
+    --header-foreground: #142033;
+    --header-border: transparent;
 
     /* Table */
-    --table-background: var(--card);
-    --table-text: var(--card-foreground);
+    --table-background: #191621;
+    --table-text: #ffffff;
+
+    --card-background: #eef1f6;
 }
 
 /* ─────────────────────────────────────────────────────────────────
    DARK THEME
 ───────────────────────────────────────────────────────────────── */
 .dark {
-    /* Surfaces — neutral charcoal, barely-there warmth */
+    /* Surfaces */
     color-scheme: dark;
-    --background: oklch(0.165 0.005 14);
-    --foreground: oklch(0.93 0.004 14);
-    --card: oklch(0.205 0.006 14);
-    --card-foreground: var(--foreground);
-    --popover: oklch(0.22 0.007 14);
-    --popover-foreground: var(--foreground);
+    --background: #0d1117;
+    --foreground: #f2f4f7;
+    --card: #151922;
+    --card-foreground: #f2f4f7;
+    --popover: #151922;
+    --popover-foreground: #f2f4f7;
 
-    /* Primary — brighter rose on dark */
-    --primary: oklch(0.66 0.21 13);
-    --primary-light: oklch(0.75 0.16 12);
-    --primary-foreground: oklch(0.99 0.008 14);
+    /* Primary - BestPlay pink/red on dark */
+    --primary: #ff2b73;
+    --primary-light: #ff7aa6;
+    --primary-foreground: #ffffff;
 
-    /* Secondary / muted — quiet greys */
-    --secondary: oklch(0.255 0.006 14);
-    --secondary-foreground: oklch(0.92 0.004 14);
-    --muted: oklch(0.245 0.006 14);
-    --muted-foreground: oklch(0.68 0.008 14);
-    --accent: oklch(0.3 0.028 12);
-    --accent-foreground: oklch(0.93 0.004 14);
+    /* Secondary / muted */
+    --secondary: #1f2530;
+    --secondary-foreground: #f2f4f7;
+    --muted: #1f2530;
+    --muted-foreground: #98a2b3;
+    --accent: #2a1d28;
+    --accent-foreground: #ffd6e4;
 
     /* Semantic */
-    --destructive: oklch(0.68 0.2 25);
-    --destructive-foreground: oklch(0.98 0.004 25);
-    --success: oklch(0.72 0.14 154);
-    --success-foreground: oklch(0.13 0.02 154);
-    --warning: oklch(0.82 0.16 75);
-    --warning-foreground: oklch(0.16 0.025 75);
-    --orange: oklch(0.7 0.16 42);
+    --destructive: #ff5252;
+    --destructive-foreground: #ffffff;
+    --success: #7ec832;
+    --success-foreground: #0d0d0d;
+    --warning: #ffb020;
+    --warning-foreground: #0d0d0d;
+    --orange: #e8613a;
 
     /* Structural */
-    --border: oklch(0.3 0.007 14);
-    --input: oklch(0.3 0.007 14);
-    --ring: oklch(0.66 0.21 13 / 50%);
+    --border: #303847;
+    --input: #303847;
+    --ring: rgb(255 43 115 / 46%);
 
     /* Charts */
-    --chart-1: var(--primary);
-    --chart-2: oklch(0.7 0.11 220);
-    --chart-3: var(--orange);
-    --chart-4: var(--success);
-    --chart-5: var(--warning);
+    --chart-1: #ff2b73;
+    --chart-2: #98a2b3;
+    --chart-3: #e8613a;
+    --chart-4: #7ec832;
+    --chart-5: #ffb020;
 
     /* Brand */
-    --brand-teal: oklch(0.76 0.13 185);
-    --brand-blue: oklch(0.68 0.13 238);
+    --brand-pink: #ff2b73;
+    --brand-red: #eb0459;
+    --brand-teal: #ff2b73;
+    --brand-blue: #7c9cff;
+    --brand-shadow-primary:
+        0 14px 32px -20px rgb(255 43 115 / 72%),
+        inset 0 1px 0 0 rgb(255 255 255 / 18%);
 
-    /* Sidebar — deep neutral charcoal */
-    --sidebar: oklch(0.13 0.005 14);
-    --sidebar-foreground: oklch(0.91 0.005 14);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: oklch(0.99 0.008 14);
-    --sidebar-accent: oklch(0.215 0.007 14);
-    --sidebar-accent-foreground: oklch(0.97 0.004 14);
-    --sidebar-border: oklch(0.25 0.007 14);
-    --sidebar-ring: var(--ring);
+    /* Sidebar */
+    --sidebar: #181520;
+    --sidebar-foreground: #f7f3f7;
+    --sidebar-primary: #ff2b73;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #372536;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #463245;
+    --sidebar-ring: rgb(255 43 115 / 50%);
 
     /* Header */
-    --header-background: oklch(0.18 0.006 14 / 72%);
-    --header-foreground: var(--foreground);
-    --header-border: oklch(0.27 0.007 14);
+    --header-background: rgb(15 15 15 / 78%);
+    --header-foreground: #ededed;
+    --header-border: transparent;
 
     /* Table */
-    --table-background: var(--card);
-    --table-text: var(--card-foreground);
+    --table-background: #151922;
+    --table-text: #f2f4f7;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -274,7 +287,11 @@
        Per-surface overrides (.custom-scrollbar, .sidebar-scrollbar)
        remain available for tighter contexts. */
     html {
-        scrollbar-color: color-mix(in oklab, var(--muted-foreground) 30%, transparent)
+        scrollbar-color: color-mix(
+                in oklab,
+                var(--muted-foreground) 30%,
+                transparent
+            )
             transparent;
         scrollbar-width: thin;
     }
@@ -289,7 +306,11 @@
     }
 
     *::-webkit-scrollbar-thumb {
-        background: color-mix(in oklab, var(--muted-foreground) 28%, transparent);
+        background: color-mix(
+            in oklab,
+            var(--muted-foreground) 28%,
+            transparent
+        );
         border: 2px solid transparent;
         background-clip: padding-box;
         border-radius: 9999px;
@@ -297,7 +318,11 @@
     }
 
     *::-webkit-scrollbar-thumb:hover {
-        background: color-mix(in oklab, var(--muted-foreground) 48%, transparent);
+        background: color-mix(
+            in oklab,
+            var(--muted-foreground) 48%,
+            transparent
+        );
         background-clip: padding-box;
     }
 
@@ -437,4 +462,174 @@
 ::selection {
     background: var(--primary);
     color: var(--primary-foreground);
+}
+
+@property --scroll-mask-t-from {
+    syntax: '<length-percentage>';
+    inherits: false;
+    initial-value: 100%;
+}
+
+@property --scroll-mask-b-from {
+    syntax: '<length-percentage>';
+    inherits: false;
+    initial-value: 100%;
+}
+
+@property --scroll-mask-l-from {
+    syntax: '<length-percentage>';
+    inherits: false;
+    initial-value: 100%;
+}
+
+@property --scroll-mask-r-from {
+    syntax: '<length-percentage>';
+    inherits: false;
+    initial-value: 100%;
+}
+
+@keyframes scroll-mask-y-scroll {
+    0% {
+        --scroll-mask-t-from: 100%;
+    }
+
+    10%,
+    100% {
+        --scroll-mask-t-from: var(--scroll-mask-fade-from-t, 100%);
+    }
+
+    0%,
+    90% {
+        --scroll-mask-b-from: var(--scroll-mask-fade-from-b, 100%);
+    }
+
+    100% {
+        --scroll-mask-b-from: 100%;
+    }
+}
+
+@keyframes scroll-mask-x-scroll {
+    0% {
+        --scroll-mask-l-from: 100%;
+    }
+
+    10%,
+    100% {
+        --scroll-mask-l-from: var(--scroll-mask-fade-from-l, 100%);
+    }
+
+    0%,
+    90% {
+        --scroll-mask-r-from: var(--scroll-mask-fade-from-r, 100%);
+    }
+
+    100% {
+        --scroll-mask-r-from: 100%;
+    }
+}
+
+@supports (animation-timeline: scroll()) {
+    :where([class^='scroll-mask-'], [class*=' scroll-mask-']) {
+        --scroll-mask-t: linear-gradient(
+            to top,
+            black,
+            black var(--scroll-mask-t-from),
+            transparent
+        );
+        --scroll-mask-b: linear-gradient(
+            to bottom,
+            black,
+            black var(--scroll-mask-b-from),
+            transparent
+        );
+        --scroll-mask-l: linear-gradient(
+            to left,
+            black,
+            black var(--scroll-mask-l-from),
+            transparent
+        );
+        --scroll-mask-r: linear-gradient(
+            to right,
+            black,
+            black var(--scroll-mask-r-from),
+            transparent
+        );
+        mask-image:
+            var(--scroll-mask-t), var(--scroll-mask-b), var(--scroll-mask-l),
+            var(--scroll-mask-r);
+        mask-composite: intersect;
+        -webkit-mask-composite: source-in;
+        animation:
+            scroll-mask-y-scroll linear,
+            scroll-mask-x-scroll linear;
+        animation-timeline: scroll(self block), scroll(self inline);
+    }
+}
+
+@utility scroll-mask-t {
+    --scroll-mask-fade-from-t: 80%;
+}
+
+@utility scroll-mask-t-from-* {
+    --scroll-mask-fade-from-t: --spacing(--value(integer));
+    --scroll-mask-fade-from-t: --value(percentage);
+    --scroll-mask-fade-from-t: --value([length], [percentage]);
+}
+
+@utility scroll-mask-b {
+    --scroll-mask-fade-from-b: 80%;
+}
+
+@utility scroll-mask-b-from-* {
+    --scroll-mask-fade-from-b: --spacing(--value(integer));
+    --scroll-mask-fade-from-b: --value(percentage);
+    --scroll-mask-fade-from-b: --value([length], [percentage]);
+}
+
+@utility scroll-mask-y {
+    --scroll-mask-fade-from-t: 80%;
+    --scroll-mask-fade-from-b: 80%;
+}
+
+@utility scroll-mask-y-from-* {
+    --scroll-mask-fade-from-t: --spacing(--value(integer));
+    --scroll-mask-fade-from-t: --value(percentage);
+    --scroll-mask-fade-from-t: --value([length], [percentage]);
+    --scroll-mask-fade-from-b: --spacing(--value(integer));
+    --scroll-mask-fade-from-b: --value(percentage);
+    --scroll-mask-fade-from-b: --value([length], [percentage]);
+}
+
+@utility scroll-mask-l {
+    --scroll-mask-fade-from-l: 80%;
+}
+
+@utility scroll-mask-l-from-* {
+    --scroll-mask-fade-from-l: --spacing(--value(integer));
+    --scroll-mask-fade-from-l: --value(percentage);
+    --scroll-mask-fade-from-l: --value([length], [percentage]);
+}
+
+@utility scroll-mask-r {
+    --scroll-mask-fade-from-r: 80%;
+}
+
+@utility scroll-mask-r-from-* {
+    --scroll-mask-fade-from-r: --spacing(--value(integer));
+    --scroll-mask-fade-from-r: --value(percentage);
+    --scroll-mask-fade-from-r: --value([length], [percentage]);
+}
+
+@utility scroll-mask-x {
+    --scroll-mask-fade-from-l: 80%;
+    --scroll-mask-fade-from-r: 80%;
+}
+
+@utility scroll-mask-x-from-* {
+    --scroll-mask-fade-from-l: --spacing(--value(integer));
+    --scroll-mask-fade-from-l: --value(percentage);
+    --scroll-mask-fade-from-l: --value([length], [percentage]);
+    --scroll-mask-fade-from-r: --spacing(--value(integer));
+    --scroll-mask-fade-from-r: --value(percentage);
+    --scroll-mask-fade-from-r: --value([length], [percentage]);
 }

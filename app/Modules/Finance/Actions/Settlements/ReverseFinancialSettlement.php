@@ -7,6 +7,7 @@ namespace App\Modules\Finance\Actions\Settlements;
 use App\Modules\Finance\Actions\Entries\RecalculateFinancialEntryStatus;
 use App\Modules\Finance\Enums\FinancialMovementDirection;
 use App\Modules\Finance\Enums\FinancialSettlementStatus;
+use App\Modules\Finance\Models\FinancialAccount;
 use App\Modules\Finance\Models\FinancialInstallment;
 use App\Modules\Finance\Models\FinancialMovement;
 use App\Modules\Finance\Models\FinancialSettlement;
@@ -32,7 +33,24 @@ class ReverseFinancialSettlement
                 ]);
             }
 
+            $movements = $settlement->movements()
+                ->lockForUpdate()
+                ->get();
+
+            if ($movements->contains(fn (FinancialMovement $movement): bool => $movement->reconciled_at !== null)) {
+                throw ValidationException::withMessages([
+                    'settlement_id' => __('Baixa conciliada não pode ser estornada. Desfaça a conciliação antes de alterar a baixa.'),
+                ]);
+            }
+
             $entry = $settlement->financialEntry;
+            $originalMovement = $movements->sortBy('id')->first();
+            $inverseDirection = $this->oppositeDirection($originalMovement?->direction);
+            $financialAccount = $this->resolveFinancialAccount($settlement->financial_account_id);
+
+            if ($financialAccount instanceof FinancialAccount) {
+                $this->applyAccountMovement($financialAccount, $inverseDirection, (int) $settlement->net_amount);
+            }
 
             foreach ($settlement->allocations as $allocation) {
                 $installment = FinancialInstallment::query()
@@ -60,14 +78,10 @@ class ReverseFinancialSettlement
                 'reverse_reason' => blank($payload['reason'] ?? null) ? null : (string) $payload['reason'],
             ])->save();
 
-            $originalMovement = $settlement->movements()
-                ->oldest('id')
-                ->first();
-
             FinancialMovement::query()->create([
                 'company_id' => $settlement->company_id,
                 'financial_account_id' => $settlement->financial_account_id,
-                'direction' => $this->oppositeDirection($originalMovement?->direction),
+                'direction' => $inverseDirection,
                 'amount' => $settlement->net_amount,
                 'occurred_at' => now(),
                 'source_type' => $settlement->getMorphClass(),
@@ -84,8 +98,27 @@ class ReverseFinancialSettlement
                 app(RecalculateFinancialEntryStatus::class)->handle($entry);
             }
 
-            return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements', 'paymentMethod']);
+            return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements.financialAccount', 'paymentMethod', 'financialAccount']);
         }, attempts: 3);
+    }
+
+    private function resolveFinancialAccount(?int $financialAccountId): ?FinancialAccount
+    {
+        if ($financialAccountId === null) {
+            return null;
+        }
+
+        $financialAccount = FinancialAccount::query()
+            ->lockForUpdate()
+            ->find($financialAccountId);
+
+        if (! $financialAccount) {
+            throw ValidationException::withMessages([
+                'financial_account_id' => __('Conta financeira da baixa nÃ£o foi encontrada.'),
+            ]);
+        }
+
+        return $financialAccount;
     }
 
     private function oppositeDirection(FinancialMovementDirection|string|null $direction): FinancialMovementDirection
@@ -96,5 +129,24 @@ class ReverseFinancialSettlement
             FinancialMovementDirection::Inflow->value => FinancialMovementDirection::Outflow,
             default => FinancialMovementDirection::Inflow,
         };
+    }
+
+    private function applyAccountMovement(FinancialAccount $financialAccount, FinancialMovementDirection $direction, int $amount): void
+    {
+        $currentBalance = (int) $financialAccount->current_balance_amount;
+        $projectedBalance = match ($direction) {
+            FinancialMovementDirection::Inflow => $currentBalance + $amount,
+            FinancialMovementDirection::Outflow => $currentBalance - $amount,
+        };
+
+        if ($projectedBalance < 0 && ! $financialAccount->allows_negative_balance) {
+            throw ValidationException::withMessages([
+                'financial_account_id' => __('Saldo insuficiente na conta financeira para estornar esta baixa.'),
+            ]);
+        }
+
+        $financialAccount->forceFill([
+            'current_balance_amount' => $projectedBalance,
+        ])->save();
     }
 }

@@ -18,10 +18,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import FormField from '@/components/ui/forms/form-field';
-import { Input } from '@/components/ui/input';
 import { InputMoney } from '@/components/ui/input-money';
 import { Textarea } from '@/components/ui/textarea';
 import { apiRoutes } from '@/lib/api/api-routes';
+import type { FinancialAccount } from '@/types/app/financial-account';
 import type {
     FinancialEntry,
     FinancialInstallment,
@@ -104,6 +104,25 @@ function paymentMethodOption(item: unknown): AsyncSelectOption {
     return {
         value: String(paymentMethod.id ?? ''),
         label: String(paymentMethod.name ?? ''),
+        description,
+    };
+}
+
+function financialAccountOption(item: unknown): AsyncSelectOption {
+    const financialAccount = item as Partial<FinancialAccount>;
+    const description = [
+        financialAccount.type_label,
+        financialAccount.institution_name,
+        financialAccount.account_number,
+    ]
+        .filter(Boolean)
+        .join(' - ');
+
+    return {
+        value: String(financialAccount.id ?? ''),
+        label: String(
+            financialAccount.display_name ?? financialAccount.name ?? '',
+        ),
         description,
     };
 }
@@ -192,11 +211,15 @@ export function SettlementDialog({
             return;
         }
 
+        if (!data.financial_account_id) {
+            toast.error('Selecione a conta financeira da baixa.');
+
+            return;
+        }
+
         form.transform(() => ({
             settled_at: data.settled_at || null,
-            financial_account_id: data.financial_account_id
-                ? Number(data.financial_account_id)
-                : null,
+            financial_account_id: Number(data.financial_account_id),
             payment_method_id: data.payment_method_id
                 ? Number(data.payment_method_id)
                 : null,
@@ -266,7 +289,7 @@ export function SettlementDialog({
                                 endpoint={apiRoutes.paymentMethods.options}
                                 params={{
                                     company_id: entry.company_id,
-                                    active: true,
+                                    active: '1',
                                 }}
                                 transformOption={paymentMethodOption}
                                 placeholder="Selecione o método"
@@ -295,22 +318,23 @@ export function SettlementDialog({
 
                         <FormField
                             label="Conta financeira"
+                            required
                             error={errors.financial_account_id}
                         >
-                            <Input
-                                type="number"
-                                min={1}
-                                value={data.financial_account_id}
-                                placeholder="ID da conta, se houver"
-                                onChange={(event) =>
-                                    setData(
-                                        'financial_account_id',
-                                        event.target.value,
-                                    )
+                            <AsyncSelect
+                                value={data.financial_account_id || null}
+                                endpoint={apiRoutes.financialAccounts.options}
+                                params={{
+                                    company_id: entry.company_id,
+                                    active: '1',
+                                }}
+                                transformOption={financialAccountOption}
+                                placeholder="Selecione a conta"
+                                searchPlaceholder="Buscar conta..."
+                                emptyMessage="Nenhuma conta ativa encontrada."
+                                onChange={(value) =>
+                                    setData('financial_account_id', value ?? '')
                                 }
-                                aria-invalid={Boolean(
-                                    errors.financial_account_id,
-                                )}
                             />
                         </FormField>
 

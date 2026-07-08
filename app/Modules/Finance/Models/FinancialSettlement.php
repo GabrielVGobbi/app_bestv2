@@ -9,6 +9,7 @@ use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialSettlementFactory;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialSettlementStatus;
+use App\Modules\Uploads\Traits\HasUploads;
 use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -42,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 ])]
 class FinancialSettlement extends Model
 {
-    use HasActivityLog, HasFactory, HasUuidIdentifier;
+    use HasActivityLog, HasFactory, HasUploads, HasUuidIdentifier;
 
     protected string $activityLogName = 'finance.settlements';
 
@@ -71,6 +72,11 @@ class FinancialSettlement extends Model
         return $this->belongsTo(PaymentMethod::class);
     }
 
+    public function financialAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinancialAccount::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_id');
@@ -96,11 +102,25 @@ class FinancialSettlement extends Model
         return $this->status === FinancialSettlementStatus::Posted;
     }
 
+    public function hasReconciledMovements(): bool
+    {
+        if ($this->relationLoaded('movements')) {
+            return $this->movements->contains(
+                fn (FinancialMovement $movement): bool => $movement->reconciled_at !== null
+            );
+        }
+
+        return $this->movements()
+            ->whereNotNull('reconciled_at')
+            ->exists();
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
             'direction' => FinancialDirection::class,
+            'financial_account_id' => 'integer',
             'settled_at' => 'datetime',
             'gross_amount' => 'integer',
             'discount_amount' => 'integer',

@@ -49,7 +49,10 @@ function ModuleItemsView({
     return (
         <div className="space-y-3">
             {/* Itens do módulo — key isola o re-mount por módulo sem arrastar o header */}
-            <div key={activeModule.slug} className="animate-in duration-100 fade-in">
+            <div
+                key={activeModule.slug}
+                className="animate-in duration-100 fade-in"
+            >
                 <NavModuleItems variant="sidebar" />
             </div>
         </div>
@@ -210,7 +213,10 @@ function FlatNavItem({
 
 function FlatSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
     const { nav } = usePage().props;
-    const modules = useMemo(() => resolveNavModules(nav.modules), [nav.modules]);
+    const modules = useMemo(
+        () => resolveNavModules(nav.modules),
+        [nav.modules],
+    );
 
     return (
         <div className="space-y-4">
@@ -310,8 +316,14 @@ export function DashboardSidebar({ showLogo = false }: Props) {
 
     // Memoize resolved items — nav props are stable within a page and only
     // change on Inertia navigations, so useMemo avoids re-computing every render.
-    const globalItems = useMemo(() => resolveNavItems(nav.global), [nav.global]);
-    const footerItems = useMemo(() => resolveNavItems(nav.footer), [nav.footer]);
+    const globalItems = useMemo(
+        () => resolveNavItems(nav.global),
+        [nav.global],
+    );
+    const footerItems = useMemo(
+        () => resolveNavItems(nav.footer),
+        [nav.footer],
+    );
 
     return (
         <aside
@@ -350,7 +362,7 @@ export function DashboardSidebar({ showLogo = false }: Props) {
                 )}
 
                 {/* Conteúdo principal — scrollável */}
-                <div className="min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto">
+                <div className="sidebar-scrollbar min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1">
                     {/* Itens globais — sempre visíveis acima dos módulos */}
                     {globalItems.length > 0 && (
                         <div className="space-y-0.5">
@@ -386,7 +398,12 @@ export function DashboardSidebar({ showLogo = false }: Props) {
                                         {item.title}
                                     </span>
                                     {/* Tooltip colapsado */}
-                                    <div className={cn(TOOLTIP_CLS, !isCollapsed && 'hidden')}>
+                                    <div
+                                        className={cn(
+                                            TOOLTIP_CLS,
+                                            !isCollapsed && 'hidden',
+                                        )}
+                                    >
                                         {item.title}
                                     </div>
                                 </Link>
@@ -482,7 +499,12 @@ export function DashboardSidebar({ showLogo = false }: Props) {
                         </DropdownMenu>
 
                         {/* Tooltip usuário colapsado */}
-                        <div className={cn(TOOLTIP_CLS, !isCollapsed && 'hidden')}>
+                        <div
+                            className={cn(
+                                TOOLTIP_CLS,
+                                !isCollapsed && 'hidden',
+                            )}
+                        >
                             {auth.user?.name}
                         </div>
                     </div>

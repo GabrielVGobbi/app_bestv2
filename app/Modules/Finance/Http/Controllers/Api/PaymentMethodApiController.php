@@ -35,7 +35,7 @@ class PaymentMethodApiController extends Controller
         $validated = $request->validate([
             'company_id' => ['nullable', 'integer'],
             'type' => ['nullable', 'string', 'max:32'],
-            'active' => ['nullable', 'boolean'],
+            'active' => ['nullable', 'in:true,false,1,0'],
         ]);
 
         $query = PaymentMethod::query()

@@ -209,6 +209,35 @@ class PaymentMethodTest extends TestCase
             ->assertJsonPath('data.0.code', 'pix_global');
     }
 
+    public function test_payment_method_options_accepts_true_query_string_for_active_filter(): void
+    {
+        $user = $this->userWithRole('finance', seedPermissions: true);
+        $company = Company::factory()->create();
+
+        PaymentMethod::factory()->create([
+            'company_id' => $company->id,
+            'name' => 'Pix ativo',
+            'code' => 'pix_true_filter',
+            'is_active' => true,
+        ]);
+
+        PaymentMethod::factory()->create([
+            'company_id' => $company->id,
+            'name' => 'Boleto inativo',
+            'code' => 'boleto_inactive_filter',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(route('api.payment-methods.options', [
+                'company_id' => $company->id,
+                'active' => 'true',
+            ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.code', 'pix_true_filter');
+    }
+
     private function userWithRole(string $roleSlug, bool $seedPermissions = false): User
     {
         $this->seed(RolesSeeder::class);

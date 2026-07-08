@@ -1,5 +1,6 @@
 import type { StatusPresenter } from '../status';
 import type { FinancialCategory } from './financial-category';
+import type { FinancialAccount } from './financial-account';
 import type { PaymentMethod } from './payment-method';
 
 export type FinancialDirection = 'receivable' | 'payable';
@@ -82,6 +83,7 @@ export interface FinancialMovement {
     uuid: string;
     company_id: number;
     financial_account_id: number | null;
+    financial_account?: FinancialAccount | null;
     direction: FinancialMovementDirection;
     amount: number;
     occurred_at: string;
@@ -101,6 +103,7 @@ export interface FinancialSettlement {
     direction: FinancialDirection;
     settled_at: string;
     financial_account_id: number | null;
+    financial_account?: FinancialAccount | null;
     payment_method_id: number | null;
     gross_amount: number;
     discount_amount: number;
@@ -161,6 +164,7 @@ export interface FinancialEntry {
     permissions: {
         can_update: boolean;
         can_cancel: boolean;
+        can_manage_attachments: boolean;
         can_settle: boolean;
     };
     created_at: string;

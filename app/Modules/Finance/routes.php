@@ -2,18 +2,32 @@
 
 declare(strict_types=1);
 
+use App\Modules\Finance\Http\Controllers\Api\FinancialAccountApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialCategoryApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialCounterpartyApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialEntryApiController;
+use App\Modules\Finance\Http\Controllers\Api\FinancialReportApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialSettlementApiController;
 use App\Modules\Finance\Http\Controllers\Api\PaymentMethodApiController;
+use App\Modules\Finance\Http\Controllers\Api\ReconciliationMatchApiController;
+use App\Modules\Finance\Http\Controllers\FinancialAccountController;
 use App\Modules\Finance\Http\Controllers\FinancialCategoryController;
 use App\Modules\Finance\Http\Controllers\FinancialEntryController;
+use App\Modules\Finance\Http\Controllers\FinancialReconciliationImportController;
+use App\Modules\Finance\Http\Controllers\FinancialReportController;
 use App\Modules\Finance\Http\Controllers\FinancialSettlementController;
 use App\Modules\Finance\Http\Controllers\PaymentMethodController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
+    Route::get('financial-reports', [FinancialReportController::class, 'index'])
+        ->name('financial-reports.index');
+
+    Route::get('financial-reconciliation/imports', [FinancialReconciliationImportController::class, 'index'])
+        ->name('financial-reconciliation.imports.index');
+    Route::post('financial-reconciliation/imports', [FinancialReconciliationImportController::class, 'store'])
+        ->name('financial-reconciliation.imports.store');
+
     Route::resource('financial-entries', FinancialEntryController::class)
         ->only(['index', 'create', 'store', 'show'])
         ->parameters(['financial-entries' => 'financial_entry']);
@@ -26,6 +40,12 @@ Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
 
     Route::patch('financial-categories/{financial_category}/status', [FinancialCategoryController::class, 'updateStatus'])
         ->name('financial-categories.status');
+
+    Route::patch('financial-accounts/{financial_account}/status', [FinancialAccountController::class, 'updateStatus'])
+        ->name('financial-accounts.status');
+
+    Route::resource('financial-accounts', FinancialAccountController::class)
+        ->parameters(['financial-accounts' => 'financial_account']);
 
     Route::resource('financial-categories', FinancialCategoryController::class)
         ->parameters(['financial-categories' => 'financial_category']);
@@ -47,6 +67,23 @@ Route::prefix('api/v1')
         Route::get('financial-counterparty-options', [FinancialCounterpartyApiController::class, 'options'])
             ->name('financial-counterparties.options');
 
+        Route::get('financial-account-options', [FinancialAccountApiController::class, 'options'])
+            ->name('financial-accounts.options');
+
+        Route::get('financial-reports/dashboard', [FinancialReportApiController::class, 'dashboard'])
+            ->name('financial-reports.dashboard');
+        Route::get('financial-reports/receivables-open', [FinancialReportApiController::class, 'receivablesOpen'])
+            ->name('financial-reports.receivables-open');
+        Route::get('financial-reports/installments-schedule', [FinancialReportApiController::class, 'installmentsSchedule'])
+            ->name('financial-reports.installments-schedule');
+
+        Route::post('reconciliation-matches/{match}/confirm', [ReconciliationMatchApiController::class, 'confirm'])
+            ->name('reconciliation-matches.confirm');
+        Route::post('reconciliation-matches/{match}/reject', [ReconciliationMatchApiController::class, 'reject'])
+            ->name('reconciliation-matches.reject');
+        Route::post('reconciliation-matches/{match}/reverse', [ReconciliationMatchApiController::class, 'reverse'])
+            ->name('reconciliation-matches.reverse');
+
         Route::apiResource('financial-entries', FinancialEntryApiController::class)
             ->only(['index', 'store', 'show'])
             ->parameters(['financial-entries' => 'financial_entry']);
@@ -59,6 +96,9 @@ Route::prefix('api/v1')
 
         Route::apiResource('financial-categories', FinancialCategoryApiController::class)
             ->parameters(['financial-categories' => 'financial_category']);
+
+        Route::apiResource('financial-accounts', FinancialAccountApiController::class)
+            ->parameters(['financial-accounts' => 'financial_account']);
 
         Route::get('payment-method-options', [PaymentMethodApiController::class, 'options'])
             ->name('payment-methods.options');

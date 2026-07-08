@@ -45,6 +45,11 @@ class FinancialMovement extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function financialAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinancialAccount::class);
+    }
+
     public function source(): MorphTo
     {
         return $this->morphTo();
@@ -55,6 +60,7 @@ class FinancialMovement extends Model
     {
         return [
             'direction' => FinancialMovementDirection::class,
+            'financial_account_id' => 'integer',
             'amount' => 'integer',
             'occurred_at' => 'datetime',
             'reconciled_at' => 'datetime',

@@ -21,6 +21,8 @@ import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ActivityTimeline } from '@/modules/timeline';
+import { FileAttachments } from '@/modules/uploads';
 import type {
     FinancialEntryResource,
     FinancialInstallment,
@@ -629,6 +631,12 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                 ?.name ??
                                                                 'Sem método'}
                                                         </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {settlement
+                                                                .financial_account
+                                                                ?.display_name ??
+                                                                'Conta não informada'}
+                                                        </p>
                                                     </div>
 
                                                     <div className="flex items-center gap-2">
@@ -708,10 +716,18 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                 >
                                                                     <div className="flex items-center gap-2 text-muted-foreground">
                                                                         <WalletCards className="size-4" />
-                                                                        <span>
-                                                                            {movementLabel(
-                                                                                movement,
-                                                                            )}
+                                                                        <span className="flex flex-col">
+                                                                            <span>
+                                                                                {movementLabel(
+                                                                                    movement,
+                                                                                )}
+                                                                            </span>
+                                                                            <span className="text-xs">
+                                                                                {movement
+                                                                                    .financial_account
+                                                                                    ?.display_name ??
+                                                                                    'Conta não informada'}
+                                                                            </span>
                                                                         </span>
                                                                     </div>
                                                                     <span className="font-medium">
@@ -806,6 +822,24 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        <FileAttachments
+                            modelType="financial-entry"
+                            modelId={entry.uuid}
+                            defaultTag="document"
+                            title="Anexos"
+                            description="Documentos, contratos e comprovantes do lançamento."
+                            readOnly={!entry.permissions.can_manage_attachments}
+                            listMaxHeight={320}
+                        />
+
+                        <ActivityTimeline
+                            modelType="financial-entry"
+                            modelId={entry.uuid}
+                            title="Timeline"
+                            allowAttachments
+                            pageSize={20}
+                        />
                     </aside>
                 </div>
             </div>

@@ -9,6 +9,7 @@ use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Enums\FinancialMovementDirection;
 use App\Modules\Finance\Enums\FinancialSettlementStatus;
+use App\Modules\Finance\Models\FinancialAccount;
 use App\Modules\Finance\Models\FinancialInstallment;
 use App\Modules\Finance\Models\FinancialMovement;
 use App\Modules\Finance\Models\FinancialSettlement;
@@ -44,6 +45,12 @@ class CreateFinancialSettlement
             $penaltyAmount = $this->nonNegativeInteger($payload['penalty_amount'] ?? 0, 'penalty_amount');
             $netAmount = $grossAmount - $discountAmount + $interestAmount + $penaltyAmount;
 
+            if ($discountAmount > $grossAmount) {
+                throw ValidationException::withMessages([
+                    'discount_amount' => __('O desconto não pode ser maior que o valor bruto da baixa.'),
+                ]);
+            }
+
             if ($netAmount <= 0) {
                 throw ValidationException::withMessages([
                     'gross_amount' => __('O valor líquido da baixa deve ser maior que zero.'),
@@ -73,16 +80,20 @@ class CreateFinancialSettlement
             }
 
             $paymentMethod = $this->resolvePaymentMethod($payload['payment_method_id'] ?? null, (int) $entry->company_id);
+            $financialAccount = $this->resolveFinancialAccount($payload['financial_account_id'] ?? null, (int) $entry->company_id);
             $settledAt = $this->dateTimeOrNow($payload['settled_at'] ?? null);
             $balanceBefore = (int) $installment->balance_amount;
             $balanceAfter = $balanceBefore - $grossAmount;
+            $movementDirection = $this->movementDirection($entry->direction);
+
+            $this->applyAccountMovement($financialAccount, $movementDirection, $netAmount);
 
             $settlement = FinancialSettlement::query()->create([
                 'company_id' => $entry->company_id,
                 'financial_entry_id' => $entry->id,
                 'direction' => $entry->direction,
                 'settled_at' => $settledAt,
-                'financial_account_id' => $this->nullablePositiveInteger($payload['financial_account_id'] ?? null, 'financial_account_id'),
+                'financial_account_id' => $financialAccount->id,
                 'payment_method_id' => $paymentMethod?->id,
                 'gross_amount' => $grossAmount,
                 'discount_amount' => $discountAmount,
@@ -115,7 +126,7 @@ class CreateFinancialSettlement
             FinancialMovement::query()->create([
                 'company_id' => $entry->company_id,
                 'financial_account_id' => $settlement->financial_account_id,
-                'direction' => $this->movementDirection($entry->direction),
+                'direction' => $movementDirection,
                 'amount' => $settlement->net_amount,
                 'occurred_at' => $settledAt,
                 'source_type' => $settlement->getMorphClass(),
@@ -130,8 +141,35 @@ class CreateFinancialSettlement
 
             app(RecalculateFinancialEntryStatus::class)->handle($entry);
 
-            return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements', 'paymentMethod']);
+            return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements.financialAccount', 'paymentMethod', 'financialAccount']);
         }, attempts: 3);
+    }
+
+    private function resolveFinancialAccount(mixed $value, int $companyId): FinancialAccount
+    {
+        $financialAccount = FinancialAccount::query()
+            ->lockForUpdate()
+            ->find($this->positiveInteger($value, 'financial_account_id'));
+
+        if (! $financialAccount) {
+            throw ValidationException::withMessages([
+                'financial_account_id' => __('Conta financeira nÃ£o encontrada.'),
+            ]);
+        }
+
+        if ((int) $financialAccount->company_id !== $companyId) {
+            throw ValidationException::withMessages([
+                'financial_account_id' => __('Conta financeira pertence a outra empresa.'),
+            ]);
+        }
+
+        if (! $financialAccount->active) {
+            throw ValidationException::withMessages([
+                'financial_account_id' => __('Conta financeira inativa nÃ£o pode ser usada em nova baixa.'),
+            ]);
+        }
+
+        return $financialAccount;
     }
 
     private function resolvePaymentMethod(mixed $value, int $companyId): ?PaymentMethod
@@ -171,6 +209,25 @@ class CreateFinancialSettlement
         };
     }
 
+    private function applyAccountMovement(FinancialAccount $financialAccount, FinancialMovementDirection $direction, int $amount): void
+    {
+        $currentBalance = (int) $financialAccount->current_balance_amount;
+        $projectedBalance = match ($direction) {
+            FinancialMovementDirection::Inflow => $currentBalance + $amount,
+            FinancialMovementDirection::Outflow => $currentBalance - $amount,
+        };
+
+        if ($projectedBalance < 0 && ! $financialAccount->allows_negative_balance) {
+            throw ValidationException::withMessages([
+                'financial_account_id' => __('Saldo insuficiente na conta financeira.'),
+            ]);
+        }
+
+        $financialAccount->forceFill([
+            'current_balance_amount' => $projectedBalance,
+        ])->save();
+    }
+
     private function dateTimeOrNow(mixed $value): Carbon
     {
         if (blank($value)) {
@@ -208,14 +265,5 @@ class CreateFinancialSettlement
         }
 
         return $value;
-    }
-
-    private function nullablePositiveInteger(mixed $value, string $field): ?int
-    {
-        if (blank($value)) {
-            return null;
-        }
-
-        return $this->positiveInteger($value, $field);
     }
 }

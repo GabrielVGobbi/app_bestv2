@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Modules\Clients\Models\Client;
+use App\Modules\Finance\Models\BankStatementImport;
+use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Models\FinancialSettlement;
 use App\Modules\Playlists\Models\Playlist;
 use App\Modules\Timeline\Models\TimelineComment;
 
@@ -26,6 +30,10 @@ return [
 
     'aliases' => [
         'client' => Client::class,
+        'bank-statement-import' => BankStatementImport::class,
+        'financial-entry' => FinancialEntry::class,
+        'financial-installment' => FinancialInstallment::class,
+        'financial-settlement' => FinancialSettlement::class,
         'playlist' => Playlist::class,
         'timeline-comment' => TimelineComment::class,
     ],

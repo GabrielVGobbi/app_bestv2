@@ -54,6 +54,7 @@ class FinancialEntryResource extends JsonResource
             'permissions' => [
                 'can_update' => $request->user()?->can('update', $this->resource) ?? false,
                 'can_cancel' => $request->user()?->can('cancel', $this->resource) ?? false,
+                'can_manage_attachments' => $request->user()?->can('upload', $this->resource) ?? false,
                 'can_settle' => ($request->user()?->can('create', FinancialSettlement::class) ?? false)
                     && (int) $this->balance_amount > 0,
             ],

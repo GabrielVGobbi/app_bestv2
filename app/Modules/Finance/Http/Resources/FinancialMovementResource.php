@@ -21,6 +21,7 @@ class FinancialMovementResource extends JsonResource
             'uuid' => $this->uuid,
             'company_id' => $this->company_id,
             'financial_account_id' => $this->financial_account_id,
+            'financial_account' => new FinancialAccountResource($this->whenLoaded('financialAccount')),
             'direction' => $this->direction?->value ?? $this->direction,
             'amount' => $this->amount,
             'occurred_at' => $this->occurred_at,

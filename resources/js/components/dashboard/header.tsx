@@ -1,15 +1,13 @@
 interface HeaderFieldProps {
-    children: React.ReactNode
+    children: React.ReactNode;
 }
 
-function Header({
-    children,
-}: HeaderFieldProps) {
+function Header({ children }: HeaderFieldProps) {
     return (
-        <header className="flex bg-header-background sticky top-0 z-10 justify-between p-4">
+        <header className="sticky top-0 z-10 flex justify-between bg-header-background p-4">
             {children}
-        </header >
-    )
+        </header>
+    );
 }
 
-export default Header
+export default Header;

@@ -13,6 +13,7 @@ use App\Modules\Finance\Actions\Settlements\CreateFinancialSettlement;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
 use App\Modules\Finance\Enums\FinancialAmountOperation;
 use App\Modules\Finance\Enums\FinancialDirection;
+use App\Modules\Finance\Models\FinancialAccount;
 use App\Modules\Finance\Models\FinancialAmountComponent;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialEntry;
@@ -66,11 +67,12 @@ class FinancialEntryDemoSeeder extends Seeder
                 $expenseCategory = $this->category('DESP-OPER');
                 $creditCard = $this->paymentMethod('credit_card');
                 $pix = $this->paymentMethod('pix');
+                $financialAccount = $this->financialAccount($company);
 
                 $this->openSingleReceivable($company, $client, $incomeCategory);
                 $this->openInstallmentReceivable($company, $client, $incomeCategory);
-                $this->creditCardPaidReceivable($company, $client, $incomeCategory, $creditCard);
-                $this->paidPayable($company, $supplier, $expenseCategory, $pix);
+                $this->creditCardPaidReceivable($company, $client, $incomeCategory, $creditCard, $financialAccount);
+                $this->paidPayable($company, $supplier, $expenseCategory, $pix, $financialAccount);
                 $this->unpaidPayable($company, $supplier, $expenseCategory);
                 $this->overdueReceivable($company, $client, $incomeCategory);
             } finally {
@@ -258,6 +260,7 @@ class FinancialEntryDemoSeeder extends Seeder
         Client $client,
         FinancialCategory $category,
         PaymentMethod $paymentMethod,
+        FinancialAccount $financialAccount,
     ): FinancialEntry {
         $entry = $this->entry([
             'company_id' => $company->id,
@@ -274,7 +277,7 @@ class FinancialEntryDemoSeeder extends Seeder
             ],
         ]);
 
-        $this->settle($entry, 90000, $paymentMethod, today()->subDay());
+        $this->settle($entry, 90000, $paymentMethod, $financialAccount, today()->subDay());
 
         return $entry->refresh()->load(['installments', 'settlements.movements']);
     }
@@ -284,6 +287,7 @@ class FinancialEntryDemoSeeder extends Seeder
         Supplier $supplier,
         FinancialCategory $category,
         PaymentMethod $paymentMethod,
+        FinancialAccount $financialAccount,
     ): FinancialEntry {
         $entry = $this->entry([
             'company_id' => $company->id,
@@ -300,7 +304,7 @@ class FinancialEntryDemoSeeder extends Seeder
             ],
         ]);
 
-        $this->settle($entry, 65000, $paymentMethod, today());
+        $this->settle($entry, 65000, $paymentMethod, $financialAccount, today());
 
         return $entry->refresh()->load(['installments', 'settlements.movements']);
     }
@@ -358,12 +362,18 @@ class FinancialEntryDemoSeeder extends Seeder
             ->load(['installments', 'settlements']);
     }
 
-    private function settle(FinancialEntry $entry, int $amount, PaymentMethod $paymentMethod, CarbonInterface $settledAt): FinancialSettlement
-    {
+    private function settle(
+        FinancialEntry $entry,
+        int $amount,
+        PaymentMethod $paymentMethod,
+        FinancialAccount $financialAccount,
+        CarbonInterface $settledAt,
+    ): FinancialSettlement {
         $installment = $entry->installments->sole();
 
         return app(CreateFinancialSettlement::class)->handle($installment, [
             'settled_at' => $settledAt->setTime(10, 0)->toDateTimeString(),
+            'financial_account_id' => $financialAccount->id,
             'payment_method_id' => $paymentMethod->id,
             'gross_amount' => $amount,
             'origin' => 'manual',
@@ -371,6 +381,32 @@ class FinancialEntryDemoSeeder extends Seeder
                 'source' => 'financial_entry_demo_seeder',
             ],
         ]);
+    }
+
+    private function financialAccount(Company $company): FinancialAccount
+    {
+        return FinancialAccount::query()->updateOrCreate(
+            [
+                'company_id' => $company->id,
+                'name' => self::PREFIX.'Conta operacional',
+            ],
+            [
+                'type' => 'bank_account',
+                'institution_name' => 'Banco Demo',
+                'agency_number' => '0001',
+                'account_number' => '100200',
+                'account_digit' => '0',
+                'opening_balance_amount' => 1000000,
+                'current_balance_amount' => 1000000,
+                'balance_date' => today()->toDateString(),
+                'currency' => 'BRL',
+                'active' => true,
+                'allows_negative_balance' => false,
+                'metadata' => [
+                    'source' => 'financial_entry_demo_seeder',
+                ],
+            ],
+        );
     }
 
     /**

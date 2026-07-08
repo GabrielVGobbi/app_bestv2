@@ -41,7 +41,7 @@ class FinancialCategoryApiController extends Controller
         $validated = $request->validate([
             'type' => ['nullable', 'string'],
             'company_id' => ['nullable', 'integer'],
-            'active' => ['nullable', 'boolean'],
+            'active' => ['nullable', 'in:true,false,1,0'],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
