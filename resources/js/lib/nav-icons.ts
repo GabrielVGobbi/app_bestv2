@@ -38,6 +38,8 @@ import {
     ReceiptText,
     ListChecks,
     Truck,
+    ChartNoAxesColumn
+
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -85,6 +87,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     ReceiptText,
     ListChecks,
     Truck,
+    ChartNoAxesColumn
 };
 
 export function resolveIcon(name?: string | null): LucideIcon | null {
