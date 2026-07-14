@@ -1,7 +1,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { PaginationMeta } from '@/types/pagination';
 
 interface DataTablePaginationProps {
@@ -13,23 +19,34 @@ interface DataTablePaginationProps {
     onPerPageChange: (perPage: number) => void;
 }
 
-export function DataTablePagination({ meta, page, perPage, showSummary = true, onPageChange, onPerPageChange }: DataTablePaginationProps) {
+export function DataTablePagination({
+    meta,
+    page,
+    perPage,
+    showSummary = true,
+    onPageChange,
+    onPerPageChange,
+}: DataTablePaginationProps) {
     if (!meta) {
         return null;
     }
 
     return (
-        <div className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 py-1 md:flex-row md:items-center md:justify-between">
             {showSummary ? (
-                <p className="text-muted-foreground text-sm">
-                    Mostrando {meta.from ?? 0} a {meta.to ?? 0} de {meta.total} registros
+                <p className="text-sm text-muted-foreground">
+                    Mostrando {meta.from ?? 0} a {meta.to ?? 0} de {meta.total}{' '}
+                    registros
                 </p>
             ) : (
                 <span />
             )}
 
             <div className="flex items-center gap-3">
-                <Select value={String(perPage)} onValueChange={(value) => onPerPageChange(Number(value))}>
+                <Select
+                    value={String(perPage)}
+                    onValueChange={(value) => onPerPageChange(Number(value))}
+                >
                     <SelectTrigger size="sm" className="w-24">
                         <SelectValue />
                     </SelectTrigger>
@@ -42,18 +59,26 @@ export function DataTablePagination({ meta, page, perPage, showSummary = true, o
                     </SelectContent>
                 </Select>
 
-                <div className="text-muted-foreground text-sm">
+                <div className="text-xs font-medium text-muted-foreground">
                     Página {meta.current_page} de {meta.last_page}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" size="icon" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="size-8 p-0"
+                        disabled={page <= 1}
+                        onClick={() => onPageChange(page - 1)}
+                    >
                         <ChevronLeft />
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
-                        size="icon"
+                        size="sm"
+                        className="size-8 p-0"
                         disabled={page >= meta.last_page}
                         onClick={() => onPageChange(page + 1)}
                     >

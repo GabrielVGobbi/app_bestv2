@@ -1,4 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
+import { Menu } from 'lucide-react';
+import type { ReactNode } from 'react';
 import AppLogo from '@/components/app-logo';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { NavModuleSwitcher } from '@/components/nav-module-switcher';
@@ -12,45 +14,58 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/app';
 import type { BreadcrumbItem } from '@/types';
 import { NotificationBell } from '../notification-bell';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
-    logoVisibility?: 'always' | 'mobile' | 'never';
-    variant?: 'fixed' | 'content';
+    showLogo?: boolean;
+    headerActions?: ReactNode;
+    onMobileToggle?: () => void;
 };
 
 export function DashboardHeader({
     breadcrumbs = [],
-    logoVisibility = 'always',
-    variant = 'fixed',
+    showLogo = false,
+    headerActions,
+    onMobileToggle,
 }: Props) {
     const { auth, nav } = usePage().props;
     const getInitials = useInitials();
-    const showLogo = logoVisibility !== 'never';
+    const isFullWidth = showLogo;
     const showModuleSwitcher =
         nav.style === 'modules' && nav.modulesMenuPosition === 'header';
 
     return (
         <header
             className={
-                variant === 'fixed'
-                    ? 'pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-header items-center justify-between  bg-header-background px-5 text-header-foreground backdrop-blur-xl md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:justify-normal'
-                    : 'pointer-events-none z-40 flex h-header shrink-0 items-center justify-between  bg-header-background px-5 text-header-foreground backdrop-blur-xl md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:justify-normal'
+                isFullWidth
+                    ? 'pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-header items-center justify-between app-glass px-4 text-header-foreground shadow-[0_16px_38px_-34px_rgb(16_24_40/45%)] md:px-5'
+                    : 'sticky top-0 z-30 flex h-header shrink-0 items-center justify-between app-glass px-4 text-header-foreground shadow-[0_16px_38px_-34px_rgb(16_24_40/45%)] md:px-5'
             }
         >
-            <div className="pointer-events-auto flex min-w-0 items-center gap-3 md:col-start-1 md:justify-self-start">
+            <div
+                className={cn(
+                    'flex min-w-0 flex-1 items-center gap-3',
+                    isFullWidth && 'pointer-events-auto',
+                )}
+            >
+                <button
+                    type="button"
+                    onClick={onMobileToggle}
+                    className="flex size-9 items-center justify-center rounded-md border border-border bg-card text-foreground shadow-xs transition-colors hover:border-primary/20 hover:bg-secondary md:hidden"
+                    aria-label="Abrir menu"
+                >
+                    <Menu className="size-5" />
+                </button>
+
                 {showLogo && (
                     <Link
                         href={dashboard()}
                         prefetch
-                        className={
-                            logoVisibility === 'mobile'
-                                ? 'flex shrink-0 items-center md:hidden'
-                                : 'flex shrink-0 items-center'
-                        }
+                        className="flex shrink-0 items-center"
                     >
                         <AppLogo />
                     </Link>
@@ -59,13 +74,7 @@ export function DashboardHeader({
                 {breadcrumbs.length > 0 && (
                     <>
                         {showLogo && (
-                            <div
-                                className={
-                                    logoVisibility === 'mobile'
-                                        ? 'mx-1 h-5 w-px bg-border md:hidden'
-                                        : 'mx-1 h-5 w-px bg-border'
-                                }
-                            />
+                            <div className="mx-1 h-5 w-px bg-border" />
                         )}
 
                         <div className="min-w-0 truncate">
@@ -76,12 +85,24 @@ export function DashboardHeader({
             </div>
 
             {showModuleSwitcher && (
-                <div className="pointer-events-auto hidden min-w-0 justify-center md:col-start-2 md:flex">
+                <div
+                    className={cn(
+                        'hidden shrink-0 md:flex',
+                        isFullWidth && 'pointer-events-auto',
+                    )}
+                >
                     <NavModuleSwitcher variant="header" />
                 </div>
             )}
 
-            <div className="pointer-events-auto flex items-center gap-3 md:col-start-3 md:justify-self-end">
+            <div
+                className={cn(
+                    'flex flex-1 items-center justify-end gap-3',
+                    isFullWidth && 'pointer-events-auto',
+                )}
+            >
+                {headerActions}
+
                 <NotificationBell />
 
                 <ThemeToggle />

@@ -121,7 +121,7 @@ export function DataTableBody<TData>({
                         key={row.id}
                         data-state={isSelected ? 'selected' : undefined}
                         className={cn(
-                            'hover:bg-muted/50',
+                            'transition-colors hover:bg-accent/45',
                             showHorizontalLines && 'border-b',
                             appearance.rowStyle === 'striped' &&
                                 'even:bg-muted/40',
@@ -165,7 +165,7 @@ export function DataTableBody<TData>({
                                         align === 'center' && 'text-center',
                                         align === 'right' && 'text-right',
                                         isSticky &&
-                                            'sticky right-0 z-[1] border-l bg-background',
+                                            'sticky right-0 z-[1] border-l bg-card',
                                     )}
                                     style={{
                                         width: cell.column.getSize(),

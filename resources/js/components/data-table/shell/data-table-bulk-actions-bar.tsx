@@ -47,7 +47,7 @@ export function DataTableBulkActionsBar<TData>({
                 className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 shadow-2xl shadow-slate-900/30"
             >
                 <div className="flex items-center gap-2 border-r border-slate-700 pr-4">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-sm font-bold text-white">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-500 text-sm font-bold text-white">
                         {selectedCount}
                     </span>
                     <span className="text-sm font-medium text-slate-300">{selectedLabel}</span>
@@ -95,7 +95,7 @@ export function DataTableBulkActionsBar<TData>({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 rounded-lg p-0 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
+                        className="h-8 w-8 rounded-md p-0 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
                         onClick={onClear}
                         aria-label="Limpar seleção"
                     >

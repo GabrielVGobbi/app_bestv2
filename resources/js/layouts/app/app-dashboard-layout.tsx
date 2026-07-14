@@ -1,53 +1,75 @@
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar';
 import { NavModuleProvider } from '@/contexts/nav-module-context';
 import { ZipDownloadPanel } from '@/modules/uploads';
 import type { AppLayoutProps } from '@/types';
 
-export default function AppDashboardLayout({ children, breadcrumbs = [] }: AppLayoutProps) {
+export default function AppDashboardLayout({
+    children,
+    breadcrumbs = [],
+    headerActions,
+}: AppLayoutProps) {
     const { layout, nav } = usePage().props;
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const isSidebarLogoLayout = layout.style === 'sidebar-logo';
 
-    // DashboardSidebar manages its own collapse state internally so toggling
-    // doesn't trigger a re-render of the entire layout (header + children).
-    const inner = (
-        <div className="relative min-h-screen overflow-x-hidden bg-background">
-            {isSidebarLogoLayout ? (
-                <main className="fixed inset-0 flex overflow-hidden bg-background">
-                    <DashboardSidebar showLogo />
+    useEffect(() => {
+        return router.on('navigate', () => {
+            setIsMobileSidebarOpen(false);
+        });
+    }, []);
 
-                    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                        <DashboardHeader
-                            breadcrumbs={breadcrumbs}
-                            logoVisibility="mobile"
-                            variant="content"
-                        />
+    const inner = isSidebarLogoLayout ? (
+        <div className="app-workspace flex h-screen overflow-hidden">
+            <DashboardSidebar
+                isCollapsed={isSidebarCollapsed}
+                onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
+                showLogo
+                mobileOpen={isMobileSidebarOpen}
+                onMobileClose={() => setIsMobileSidebarOpen(false)}
+            />
 
-                        <div
-                            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto"
-                            scroll-region=""
-                        >
-                            {children}
-                        </div>
-                    </div>
+            <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
+                <DashboardHeader
+                    breadcrumbs={breadcrumbs}
+                    headerActions={headerActions}
+                    onMobileToggle={() =>
+                        setIsMobileSidebarOpen((prev) => !prev)
+                    }
+                />
+
+                <main className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+                    {children}
                 </main>
-            ) : (
-                <>
-                    <DashboardHeader breadcrumbs={breadcrumbs} />
+            </div>
+        </div>
+    ) : (
+        <div className="app-workspace relative min-h-screen overflow-x-hidden">
+            <DashboardHeader
+                breadcrumbs={breadcrumbs}
+                headerActions={headerActions}
+                showLogo
+                onMobileToggle={() => setIsMobileSidebarOpen((prev) => !prev)}
+            />
 
-                    <main className="fixed inset-0 flex overflow-hidden bg-background pt-header">
-                        <DashboardSidebar />
+            <main className="fixed inset-0 z-10 flex overflow-hidden bg-background/80 pt-header backdrop-blur-[1px]">
+                <DashboardSidebar
+                    isCollapsed={isSidebarCollapsed}
+                    onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
+                    mobileOpen={isMobileSidebarOpen}
+                    onMobileClose={() => setIsMobileSidebarOpen(false)}
+                />
 
-                        <div
-                            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-8 py-5"
-                            scroll-region=""
-                        >
-                            {children}
-                        </div>
-                    </main>
-                </>
-            )}
+                <div
+                    className="custom-scrollbar min-h-0 flex-1 overflow-y-auto"
+                    scroll-region=""
+                >
+                    {children}
+                </div>
+            </main>
         </div>
     );
 

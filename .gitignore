@@ -33,3 +33,7 @@ yarn-error.log
 docs/.start_kit.obs/*
 
 .todo
+
+.playwright-cli
+.outputs
+output

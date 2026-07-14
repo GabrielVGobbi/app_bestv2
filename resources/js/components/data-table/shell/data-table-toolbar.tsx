@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
+import { isActiveFilterValue } from '../core/filter-utils';
 import type {
     DataTableDateColumn,
     DataTableDatePreset,
@@ -16,7 +17,6 @@ import type {
     DataTableQuickFilter,
 } from '../core/types';
 
-import { isActiveFilterValue } from '../core/filter-utils';
 import { useExport } from '../hooks/use-export';
 import { AdvancedFilterPanel } from './advanced-filter-panel';
 import { DataTableActionsMenu } from './data-table-actions-menu';
@@ -72,18 +72,20 @@ export function DataTableToolbar<TData>({
         [filterValues],
     );
 
-    const { activeExports, startExport, markAsDownloaded } = useExport(exportConfig);
+    const { activeExports, startExport, markAsDownloaded } =
+        useExport(exportConfig);
 
-    const showExport = features.export && exportConfig && exportConfig.enabled !== false;
+    const showExport =
+        features.export && exportConfig && exportConfig.enabled !== false;
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/80 p-2.5 shadow-[var(--shadow-app-panel)] backdrop-blur-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="cursor-pointer flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+                <div className="flex flex-1 flex-col gap-2.5 md:flex-row md:items-center">
                     {features.search && (
                         <div
                             className={cn(
-                                ' relative h-9 transition-[width] duration-200 ease-out',
+                                'relative h-9 transition-[width] duration-200 ease-out',
                                 searchOpen ? 'w-full md:w-60' : 'w-9',
                             )}
                             onMouseEnter={() => setSearchExpanded(true)}
@@ -94,29 +96,41 @@ export function DataTableToolbar<TData>({
                             }}
                             onFocus={() => setSearchExpanded(true)}
                             onBlur={(event) => {
-                                if (!event.currentTarget.contains(event.relatedTarget) && !search) {
+                                if (
+                                    !event.currentTarget.contains(
+                                        event.relatedTarget,
+                                    ) &&
+                                    !search
+                                ) {
                                     setSearchExpanded(false);
                                 }
                             }}
                         >
                             {!searchOpen ? (
-                                <Button type="button" variant="outline" size="icon" aria-label="Buscar">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label="Buscar"
+                                >
                                     <Search />
                                 </Button>
                             ) : (
                                 <>
-                                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2" />
+                                    <Search className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         value={search}
-                                        onChange={(event) => onSearchChange(event.target.value)}
+                                        onChange={(event) =>
+                                            onSearchChange(event.target.value)
+                                        }
                                         placeholder={searchPlaceholder}
-                                        className="h-9 pl-9 pr-9"
+                                        className="h-9 pr-9 pl-9"
                                         autoFocus={searchExpanded && !search}
                                     />
                                     {search.length > 0 && (
                                         <button
                                             type="button"
-                                            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-sm p-1"
+                                            className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground"
                                             onClick={() => {
                                                 onSearchChange('');
                                                 setSearchExpanded(false);
@@ -136,7 +150,9 @@ export function DataTableToolbar<TData>({
                             key={filter.id}
                             filter={filter}
                             value={filterValues[filter.id]}
-                            onChange={(value) => onFilterChange(filter.id, value)}
+                            onChange={(value) =>
+                                onFilterChange(filter.id, value)
+                            }
                         />
                     ))}
 
@@ -175,13 +191,21 @@ export function DataTableToolbar<TData>({
                             disabled={isFetching}
                             aria-label="Atualizar"
                         >
-                            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+                            <RefreshCw
+                                className={cn(
+                                    'size-4',
+                                    isFetching && 'animate-spin',
+                                )}
+                            />
                         </Button>
                     )}
 
                     {showExport && (
                         <>
-                            <DataTableExportStatus activeExports={activeExports} onDownload={markAsDownloaded} />
+                            <DataTableExportStatus
+                                activeExports={activeExports}
+                                onDownload={markAsDownloaded}
+                            />
                             <Button
                                 type="button"
                                 variant="outline"
@@ -202,7 +226,9 @@ export function DataTableToolbar<TData>({
                                 currentSortDirection={currentSortDirection}
                                 activeExports={activeExports}
                                 onStartExport={startExport}
-                                onExportStarted={() => setExportDialogOpen(false)}
+                                onExportStarted={() =>
+                                    setExportDialogOpen(false)
+                                }
                             />
                         </>
                     )}

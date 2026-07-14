@@ -1,7 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import type { MouseEvent } from 'react';
 import AppLogo from '@/components/app-logo';
+import AppLogoIcon from '@/components/app-logo-icon';
 import { NavModuleItems } from '@/components/nav-module-items';
 import { NavModuleSwitcher } from '@/components/nav-module-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,7 +28,11 @@ const TOOLTIP_CLS =
     'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-bold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
 
 type Props = {
+    isCollapsed: boolean;
+    onToggle: () => void;
     showLogo?: boolean;
+    mobileOpen?: boolean;
+    onMobileClose?: () => void;
 };
 
 // ---------------------------------------------------------------------------
@@ -37,14 +43,8 @@ type Props = {
 // Module Items View — itens do módulo ativo com cabeçalho + back
 // ---------------------------------------------------------------------------
 
-function ModuleItemsView({
-    isCollapsed,
-    showBack = true,
-}: {
-    isCollapsed: boolean;
-    showBack?: boolean;
-}) {
-    const { activeModule, showModuleList } = useNavModule();
+function ModuleItemsView() {
+    const { activeModule } = useNavModule();
 
     return (
         <div className="space-y-3">
@@ -121,8 +121,8 @@ function FlatNavItem({
                     className={cn(
                         sharedClass,
                         childActive
-                            ? 'text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                            ? 'text-foreground'
+                            : 'text-sidebar-foreground/70 hover:bg-secondary hover:text-foreground',
                     )}
                 >
                     {item.icon && <item.icon size={16} className="shrink-0" />}
@@ -187,8 +187,8 @@ function FlatNavItem({
     const cls = cn(
         sharedClass,
         isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            ? 'bg-secondary text-foreground'
+            : 'text-sidebar-foreground/70 hover:bg-secondary hover:text-foreground',
     );
 
     if (isExternal) {
@@ -270,7 +270,7 @@ function ModulesSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
     const { nav } = usePage().props;
 
     if (nav.modulesMenuPosition === 'header') {
-        return <ModuleItemsView isCollapsed={isCollapsed} showBack={false} />;
+        return <ModuleItemsView />;
     }
 
     return sidebarView === 'modules' ? (
@@ -281,7 +281,7 @@ function ModulesSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
             <NavModuleSwitcher isCollapsed={isCollapsed} />
         </div>
     ) : (
-        <ModuleItemsView isCollapsed={isCollapsed} />
+        <ModuleItemsView />
     );
 }
 
@@ -289,30 +289,16 @@ function ModulesSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
 // DashboardSidebar
 // ---------------------------------------------------------------------------
 
-export function DashboardSidebar({ showLogo = false }: Props) {
+export function DashboardSidebar({
+    isCollapsed,
+    onToggle,
+    showLogo = false,
+    mobileOpen = false,
+    onMobileClose,
+}: Props) {
     const { auth, nav } = usePage().props;
     const { isCurrentUrl } = useCurrentUrl();
     const getInitials = useInitials();
-
-    // Collapse state lives here so toggling doesn't re-render the parent layout
-    // (DashboardHeader and page children remain untouched on every toggle).
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        try {
-            return localStorage.getItem('sidebar:collapsed') === 'true';
-        } catch {
-            return false;
-        }
-    });
-
-    const onToggle = useCallback(() => {
-        setIsCollapsed((prev) => {
-            const next = !prev;
-            try {
-                localStorage.setItem('sidebar:collapsed', String(next));
-            } catch {}
-            return next;
-        });
-    }, []);
 
     // Memoize resolved items — nav props are stable within a page and only
     // change on Inertia navigations, so useMemo avoids re-computing every render.
@@ -324,192 +310,232 @@ export function DashboardSidebar({ showLogo = false }: Props) {
         () => resolveNavItems(nav.footer),
         [nav.footer],
     );
+    const closeMobileOnNavClick = (event: MouseEvent<HTMLElement>) => {
+        if (!mobileOpen) {
+            return;
+        }
+
+        if ((event.target as HTMLElement).closest('a[href]')) {
+            onMobileClose?.();
+        }
+    };
 
     return (
-        <aside
-            className={cn(
-                'relative hidden shrink-0 border-r border-sidebar-border bg-sidebar backdrop-blur-md select-none md:flex md:flex-col',
-                'transition-[width] duration-200 ease-out',
-                isCollapsed ? 'w-16' : 'w-60',
-            )}
-        >
-            {/* Toggle */}
-            <button
-                onClick={onToggle}
-                className="absolute top-[93%] -right-3 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md transition-colors hover:bg-sidebar-accent"
-            >
-                <ChevronLeft
-                    size={15}
-                    className={cn(
-                        'transition-transform duration-200 ease-out',
-                        isCollapsed && 'rotate-180',
-                    )}
-                />
-            </button>
-
-            <nav className="flex h-full flex-col px-3 py-5" id="nav-sidebar">
-                {showLogo && (
-                    <Link
-                        href={dashboard()}
-                        prefetch
-                        className={cn(
-                            'mb-5 flex shrink-0 items-center rounded-full px-2 py-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
-                            isCollapsed && 'justify-center',
-                        )}
-                    >
-                        <AppLogo showText={!isCollapsed} />
-                    </Link>
+        <>
+            <div
+                className={cn(
+                    'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden',
+                    mobileOpen
+                        ? 'opacity-100'
+                        : 'pointer-events-none opacity-0',
                 )}
+                onClick={onMobileClose}
+            />
 
-                {/* Conteúdo principal — scrollável */}
-                <div className="sidebar-scrollbar min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1">
-                    {/* Itens globais — sempre visíveis acima dos módulos */}
-                    {globalItems.length > 0 && (
-                        <div className="space-y-0.5">
-                            {globalItems.map((item) => (
-                                <Link
-                                    key={item.title}
-                                    href={item.href as string}
-                                    prefetch
-                                    className={cn(
-                                        'group relative flex w-full items-center rounded-full px-3 py-2 text-[13px] font-medium transition-colors',
-                                        isCollapsed
-                                            ? 'justify-center p-2'
-                                            : 'gap-2.5',
-                                        isCurrentUrl(item.href as string)
-                                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                    )}
-                                >
-                                    {item.icon && (
-                                        <item.icon
-                                            size={16}
-                                            className="shrink-0"
-                                        />
-                                    )}
-                                    <span
-                                        className={cn(
-                                            'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                                            isCollapsed
-                                                ? 'max-w-0 opacity-0'
-                                                : 'max-w-40 opacity-100',
-                                        )}
-                                    >
-                                        {item.title}
-                                    </span>
-                                    {/* Tooltip colapsado */}
-                                    <div
-                                        className={cn(
-                                            TOOLTIP_CLS,
-                                            !isCollapsed && 'hidden',
-                                        )}
-                                    >
-                                        {item.title}
-                                    </div>
-                                </Link>
-                            ))}
-                            <div className="mx-3 border-t border-sidebar-border" />
+            <aside
+                className={cn(
+                    'fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-[18px_0_50px_-42px_rgb(0_0_0/70%)] backdrop-blur-md select-none',
+                    'transition-transform duration-300 ease-out',
+                    mobileOpen ? 'translate-x-0' : '-translate-x-full',
+                    'md:static md:z-auto md:shrink-0 md:translate-x-0 md:transition-[width] md:duration-200',
+                    isCollapsed ? 'md:w-16' : 'md:w-60',
+                )}
+            >
+                {/* Toggle */}
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    className="absolute top-1/2 -right-3 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md transition-[background,color,transform] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
+                    aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+                >
+                    <ChevronLeft
+                        size={15}
+                        className={cn(
+                            'transition-transform duration-200 ease-out',
+                            isCollapsed && 'rotate-180',
+                        )}
+                    />
+                </button>
+
+                <nav
+                    className="flex h-full flex-col px-3 py-5"
+                    id="nav-sidebar"
+                    onClickCapture={closeMobileOnNavClick}
+                >
+                    {showLogo && (
+                        <div
+                            className={cn(
+                                'mb-10 flex shrink-0 items-center',
+                                isCollapsed ? 'justify-center' : 'px-2',
+                            )}
+                        >
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                                className="flex items-center rounded-md text-sidebar-foreground outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                            >
+                                {isCollapsed ? (
+                                    <AppLogoIcon className="size-8" />
+                                ) : (
+                                    <AppLogo />
+                                )}
+                            </Link>
                         </div>
                     )}
 
-                    {nav.style === 'modules' ? (
-                        <ModulesSidebarContent isCollapsed={isCollapsed} />
-                    ) : (
-                        <FlatSidebarContent isCollapsed={isCollapsed} />
-                    )}
-                </div>
-
-                {/* Rodapé fixo — footer links + usuário */}
-                <div className="shrink-0 space-y-1">
-                    {/* Links externos */}
-                    {footerItems.length > 0 && !isCollapsed && (
-                        <div className="space-y-0.5">
-                            <div className="mx-3 border-t border-sidebar-border" />
-                            <div className="pt-2">
-                                {footerItems.map((item) => (
-                                    <a
+                    {/* Conteúdo principal — scrollável */}
+                    <div className="min-h-0 sidebar-scrollbar flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1">
+                        {/* Itens globais — sempre visíveis acima dos módulos */}
+                        {globalItems.length > 0 && (
+                            <div className="space-y-0.5">
+                                {globalItems.map((item) => (
+                                    <Link
                                         key={item.title}
-                                        href={toUrl(item.href)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                        href={item.href as string}
+                                        prefetch
+                                        className={cn(
+                                            'group relative flex w-full items-center rounded-full px-3 py-2 text-[13px] font-medium transition-colors',
+                                            isCollapsed
+                                                ? 'justify-center p-2'
+                                                : 'gap-2.5',
+                                            isCurrentUrl(item.href as string)
+                                                ? 'bg-secondary text-foreground'
+                                                : 'text-sidebar-foreground/70 hover:bg-secondary hover:text-foreground',
+                                        )}
                                     >
                                         {item.icon && (
                                             <item.icon
-                                                size={15}
+                                                size={16}
                                                 className="shrink-0"
                                             />
                                         )}
-                                        <span className="truncate">
+                                        <span
+                                            className={cn(
+                                                'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
+                                                isCollapsed
+                                                    ? 'max-w-0 opacity-0'
+                                                    : 'max-w-40 opacity-100',
+                                            )}
+                                        >
                                             {item.title}
                                         </span>
-                                    </a>
+                                        {/* Tooltip colapsado */}
+                                        <div
+                                            className={cn(
+                                                TOOLTIP_CLS,
+                                                !isCollapsed && 'hidden',
+                                            )}
+                                        >
+                                            {item.title}
+                                        </div>
+                                    </Link>
                                 ))}
+                                <div className="mx-3 border-t border-sidebar-border" />
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* User section */}
-                    <div className="group relative">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    className={cn(
-                                        'flex w-full items-center rounded-full px-2 py-2 text-[13px] font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
-                                        isCollapsed
-                                            ? 'justify-center'
-                                            : 'gap-2.5',
-                                    )}
-                                >
-                                    <Avatar className="size-7 shrink-0 overflow-hidden rounded-full">
-                                        <AvatarImage
-                                            src={auth.user?.avatar}
-                                            alt={auth.user?.name}
-                                        />
-                                        <AvatarFallback className="rounded-full bg-runey-orange text-[10px] font-bold text-white">
-                                            {getInitials(auth.user?.name ?? '')}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div
+                        {nav.style === 'modules' ? (
+                            <ModulesSidebarContent isCollapsed={isCollapsed} />
+                        ) : (
+                            <FlatSidebarContent isCollapsed={isCollapsed} />
+                        )}
+                    </div>
+
+                    {/* Rodapé fixo — footer links + usuário */}
+                    <div className="shrink-0 space-y-1">
+                        {/* Links externos */}
+                        {footerItems.length > 0 && !isCollapsed && (
+                            <div className="space-y-0.5">
+                                <div className="mx-3 border-t border-sidebar-border" />
+                                <div className="pt-2">
+                                    {footerItems.map((item) => (
+                                        <a
+                                            key={item.title}
+                                            href={toUrl(item.href)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium text-sidebar-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+                                        >
+                                            {item.icon && (
+                                                <item.icon
+                                                    size={15}
+                                                    className="shrink-0"
+                                                />
+                                            )}
+                                            <span className="truncate">
+                                                {item.title}
+                                            </span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* User section */}
+                        <div className="group relative">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
                                         className={cn(
-                                            'overflow-hidden text-left transition-[opacity,max-width] duration-200 ease-out',
+                                            'flex w-full items-center rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[13px] font-medium text-white/95 transition-colors hover:border-white/15 hover:bg-white/10 data-[state=open]:border-white/15 data-[state=open]:bg-white/10',
                                             isCollapsed
-                                                ? 'max-w-0 opacity-0'
-                                                : 'max-w-40 opacity-100',
+                                                ? 'justify-center'
+                                                : 'gap-2.5',
                                         )}
                                     >
-                                        <p className="truncate text-[13px] font-semibold text-sidebar-foreground">
-                                            {auth.user?.name}
-                                        </p>
-                                        <p className="truncate text-[11px] text-sidebar-foreground/60">
-                                            {auth.user?.email}
-                                        </p>
-                                    </div>
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                className="w-56"
-                                align={isCollapsed ? 'center' : 'start'}
-                                side="top"
-                            >
-                                {auth.user && (
-                                    <UserMenuContent user={auth.user} />
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                        <Avatar className="size-7 shrink-0 overflow-hidden rounded-full">
+                                            <AvatarImage
+                                                src={auth.user?.avatar}
+                                                alt={auth.user?.name}
+                                            />
+                                            <AvatarFallback className="rounded-full bg-sidebar-primary text-[10px] font-bold text-white">
+                                                {getInitials(
+                                                    auth.user?.name ?? '',
+                                                )}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div
+                                            className={cn(
+                                                'overflow-hidden text-left transition-[opacity,max-width] duration-200 ease-out',
+                                                isCollapsed
+                                                    ? 'max-w-0 opacity-0'
+                                                    : 'max-w-40 opacity-100',
+                                            )}
+                                        >
+                                            <p className="truncate text-[13px] font-semibold text-white/95">
+                                                {auth.user?.name}
+                                            </p>
+                                            <p className="truncate text-[11px] text-white/60">
+                                                {auth.user?.email}
+                                            </p>
+                                        </div>
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    className="w-56"
+                                    align={isCollapsed ? 'center' : 'start'}
+                                    side="top"
+                                >
+                                    {auth.user && (
+                                        <UserMenuContent user={auth.user} />
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
-                        {/* Tooltip usuário colapsado */}
-                        <div
-                            className={cn(
-                                TOOLTIP_CLS,
-                                !isCollapsed && 'hidden',
-                            )}
-                        >
-                            {auth.user?.name}
+                            {/* Tooltip usuário colapsado */}
+                            <div
+                                className={cn(
+                                    TOOLTIP_CLS,
+                                    !isCollapsed && 'hidden',
+                                )}
+                            >
+                                {auth.user?.name}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </nav>
-        </aside>
+                </nav>
+            </aside>
+        </>
     );
 }

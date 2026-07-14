@@ -1,5 +1,3 @@
-import { usePage } from '@inertiajs/react';
-
 import AppLogoIcon, { DEFAULT_LOGO_ALT } from '@/components/app-logo-icon';
 
 type Props = {
@@ -15,8 +13,7 @@ export default function AppLogo({
     text,
     alt = DEFAULT_LOGO_ALT,
 }: Props) {
-    const { name } = usePage().props;
-    const logoText = text ?? name ?? import.meta.env.VITE_APP_NAME ?? 'Laravel';
+    const logoText = text ?? 'BestPlay';
 
     return (
         <>

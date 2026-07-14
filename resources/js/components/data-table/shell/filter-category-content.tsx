@@ -102,7 +102,7 @@ export function CategoryContent({
                         <label
                             key={optionValue}
                             className={cn(
-                                'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent',
+                                'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent',
                                 checked && 'bg-accent',
                             )}
                         >

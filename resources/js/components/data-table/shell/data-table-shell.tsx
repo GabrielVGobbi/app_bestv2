@@ -127,7 +127,7 @@ export function DataTableShell<TData>({
     );
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
             <DataTableToolbar
                 table={table}
                 features={features}
@@ -148,11 +148,11 @@ export function DataTableShell<TData>({
                 currentSortDirection={state.sorting[0]?.desc ? 'desc' : 'asc'}
             />
 
-            <Card className="overflow-hidden py-0 rounded-xs">
+            <Card className="overflow-hidden rounded-sm border-border/80 py-0">
                 <CardContent className="p-0">
                     <div
                         ref={tableViewportRef}
-                        className="overflow-auto"
+                        className="custom-scrollbar overflow-auto"
                         style={{
                             maxHeight: tableMaxHeight,
                         }}
@@ -210,7 +210,7 @@ export function DataTableShell<TData>({
                 </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 px-1 md:flex-row md:items-center md:justify-between">
                 <DataTableResultSummary
                     meta={meta}
                     loadedCount={rows.length}
