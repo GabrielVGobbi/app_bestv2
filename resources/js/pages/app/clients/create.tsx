@@ -2,13 +2,22 @@ import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { create, index, store } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
+import {
+    create,
+    index,
+    store,
+} from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ClientFormFields from '@/pages/app/clients/partials/client-form-fields';
+import type { ClientFormOptions } from '@/types/app/client';
 
-export default function CreateClient() {
+interface Props {
+    formOptions: ClientFormOptions;
+}
+
+export default function CreateClient({ formOptions }: Props) {
     setLayoutProps({
         breadcrumbs: [
             { title: 'Clientes', href: index.url() },
@@ -22,14 +31,21 @@ export default function CreateClient() {
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={index.url()}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
                         <h1 className="text-xl font-semibold">Novo cliente</h1>
-                        <p className="text-sm text-muted-foreground">Cadastrar contato comercial</p>
+                        <p className="text-sm text-muted-foreground">
+                            Cadastrar contato comercial
+                        </p>
                     </div>
                 </div>
             </Header>
@@ -39,7 +55,9 @@ export default function CreateClient() {
                     action={store.url()}
                     method="post"
                     options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatórios.')}
+                    onError={() =>
+                        toast.error('Verifique os campos obrigatórios.')
+                    }
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
@@ -48,10 +66,18 @@ export default function CreateClient() {
                                 <div className="flex flex-1 flex-col gap-6">
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle>Dados do Cliente</CardTitle>
+                                            <CardTitle>
+                                                Dados do Cliente
+                                            </CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <ClientFormFields errors={errors} />
+                                            <ClientFormFields
+                                                errors={errors}
+                                                musicGenres={formOptions.genres}
+                                                canCreateMusicGenre={
+                                                    formOptions.can_create_music_catalog
+                                                }
+                                            />
                                         </CardContent>
                                     </Card>
                                 </div>
@@ -59,15 +85,33 @@ export default function CreateClient() {
                                 <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
                                     <div className="flex items-center justify-between gap-3 py-3">
                                         <p className="text-xs text-muted-foreground">
-                                            Campos marcados com <span className="text-destructive">*</span> são obrigatórios.
+                                            Campos marcados com{' '}
+                                            <span className="text-destructive">
+                                                *
+                                            </span>{' '}
+                                            são obrigatórios.
                                         </p>
                                         <div className="flex items-center gap-2">
-                                            <Button type="button" variant="ghost" size="sm" asChild disabled={processing}>
-                                                <Link href={index.url()}>Cancelar</Link>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                                disabled={processing}
+                                            >
+                                                <Link href={index.url()}>
+                                                    Cancelar
+                                                </Link>
                                             </Button>
-                                            <Button type="submit" size="sm" disabled={processing}>
+                                            <Button
+                                                type="submit"
+                                                size="sm"
+                                                disabled={processing}
+                                            >
                                                 <Save />
-                                                {processing ? 'Salvando...' : 'Salvar'}
+                                                {processing
+                                                    ? 'Salvando...'
+                                                    : 'Salvar'}
                                             </Button>
                                         </div>
                                     </div>

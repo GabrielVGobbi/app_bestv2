@@ -6,11 +6,9 @@ namespace App\Modules\Sales\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Modules\Permissions\Models\Permission;
 use App\Modules\Sales\Exceptions\SpotifyTrackLookupException;
 use App\Modules\Sales\Services\SpotifyTrackLookupService;
 use App\Modules\Sales\Support\SpotifyTrackInputParser;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -70,19 +68,6 @@ class SpotifyTrackLookupController extends Controller
 
     private function hasPermission(User $user, string $slug): bool
     {
-        $superRole = config('permissions.super_role', 'developer');
-
-        if ($user->roles()->where('slug', $superRole)->exists()) {
-            return true;
-        }
-
-        if ($user->permissions()->where('slug', $slug)->exists()) {
-            return true;
-        }
-
-        return Permission::query()
-            ->where('slug', $slug)
-            ->whereHas('roles', fn (Builder $roles): Builder => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
-            ->exists();
+        return $user->hasAnyPermission($slug);
     }
 }

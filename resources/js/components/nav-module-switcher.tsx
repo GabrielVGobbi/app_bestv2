@@ -50,7 +50,7 @@ export function NavModuleSwitcher({
                         (isCollapsed ? 'justify-center p-2' : 'gap-2.5'),
                     isHeader
                         ? isActive
-                            ? 'bg-primary text-primary-foreground font-semibold shadow-sm shadow-primary/30'
+                            ? 'bg-primary font-semibold text-primary-foreground shadow-sm shadow-primary/30'
                             : 'text-foreground/55 hover:bg-muted hover:text-foreground'
                         : isActive
                           ? 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -83,7 +83,7 @@ export function NavModuleSwitcher({
                         {!isHeader && (
                             <div
                                 className={cn(
-                                    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-bold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500',
+                                    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-bold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] delay-200 duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500',
                                     !isCollapsed && 'hidden',
                                 )}
                             >
@@ -98,7 +98,7 @@ export function NavModuleSwitcher({
                         <Link
                             key={mod.slug}
                             href={moduleHref}
-                            prefetch
+                            prefetch="click"
                             onClick={() => {
                                 if (!isLinkModule) {
                                     selectModule(mod.slug);

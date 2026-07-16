@@ -7,7 +7,9 @@ namespace Tests\Feature\Crud;
 use App\Models\User;
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Permissions\Models\Permission;
 use App\Modules\Permissions\Models\Role;
+use App\Modules\Playlists\Models\MusicGenre;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -23,6 +25,39 @@ class ClientCrudTest extends TestCase
         $this->actingAs($user)
             ->get(route('clients.index'))
             ->assertOk();
+    }
+
+    public function test_client_create_exposes_active_music_genres(): void
+    {
+        $user = User::factory()->create();
+        $permission = Permission::query()->create([
+            'name' => 'Criar playlists',
+            'slug' => 'playlists.create',
+            'group' => 'playlists',
+        ]);
+        $user->permissions()->attach($permission);
+        $user->load(['roles', 'permissions']);
+
+        MusicGenre::factory()->create([
+            'name' => 'MPB',
+            'slug' => 'mpb',
+            'is_active' => true,
+        ]);
+        MusicGenre::factory()->create([
+            'name' => 'Inativo',
+            'slug' => 'inativo',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('clients.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('app/clients/create')
+                ->has('formOptions.genres', 1)
+                ->where('formOptions.genres.0.name', 'MPB')
+                ->where('formOptions.can_create_music_catalog', true)
+            );
     }
 
     public function test_client_index_exposes_quick_filter_options(): void

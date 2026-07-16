@@ -17,7 +17,9 @@ use App\Modules\Permissions\Database\Seeders\PermissionsSeeder;
 use App\Modules\Permissions\Database\Seeders\RolesSeeder;
 use App\Modules\Permissions\Models\Role;
 use App\Modules\Suppliers\Models\Supplier;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -371,6 +373,47 @@ class FinancialEntryOperationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.uuid', $entry->uuid)
             ->assertJsonPath('data.origin_kind', 'manual');
+    }
+
+    public function test_financial_entry_api_serializes_categories_with_constant_query_count(): void
+    {
+        $user = $this->userWithRole('finance');
+        Sanctum::actingAs($user);
+
+        $company = Company::factory()->create();
+        $parent = FinancialCategory::factory()->income()->create([
+            'company_id' => $company->id,
+            'name' => 'Receitas',
+            'slug' => 'receitas-query-budget',
+        ]);
+        $category = FinancialCategory::factory()->income()->create([
+            'company_id' => $company->id,
+            'parent_id' => $parent->id,
+            'name' => 'Assinaturas',
+            'slug' => 'assinaturas-query-budget',
+        ]);
+
+        FinancialEntry::factory()->count(10)->create([
+            'company_id' => $company->id,
+            'category_id' => $category->id,
+        ]);
+
+        $queries = [];
+
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $this->getJson(route('api.financial-entries.index', ['per_page' => 30]))
+            ->assertOk()
+            ->assertJsonCount(10, 'data')
+            ->assertJsonPath('data.0.category.full_path', 'Receitas > Assinaturas');
+
+        $this->assertLessThanOrEqual(
+            10,
+            count($queries),
+            'A listagem financeira voltou a executar consultas por registro: '.implode(' | ', $queries),
+        );
     }
 
     public function test_financial_entry_api_filters_by_category_and_counterparty(): void

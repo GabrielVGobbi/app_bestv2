@@ -3,18 +3,17 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Modules\Permissions\Models\Permission;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Processa e disponibiliza a estrutura de navegação definida em config/navigation.php.
  *
- * Cache: em ambientes não-locais, o resultado é persistido indefinidamente.
- * Para invalidar: NavigationService::flush() ou php artisan cache:clear.
+ * A estrutura autenticada é memoizada somente durante a requisição, pois o
+ * resultado depende das permissões do usuário atual.
  */
 class NavigationService
 {
-    private const CACHE_KEY = 'navigation.v4';
+    /** @var array{global: array<int, mixed>, modules: array<int, mixed>, footer: array<int, mixed>}|null */
+    private ?array $resolvedNavigation = null;
 
     public function style(): string
     {
@@ -48,17 +47,13 @@ class NavigationService
 
     public function flush(): void
     {
-        Cache::forget(self::CACHE_KEY);
+        $this->resolvedNavigation = null;
     }
 
     /** @return array{global: array<int, mixed>, modules: array<int, mixed>, footer: array<int, mixed>} */
     private function resolved(): array
     {
-        if (app()->isLocal() || $this->currentUser()) {
-            return $this->build();
-        }
-
-        return Cache::rememberForever(self::CACHE_KEY, fn () => $this->build());
+        return $this->resolvedNavigation ??= $this->build();
     }
 
     /** @return array{global: array<int, mixed>, modules: array<int, mixed>, footer: array<int, mixed>} */
@@ -152,20 +147,8 @@ class NavigationService
         }
 
         $permissions = is_array($entry['permissions']) ? $entry['permissions'] : [$entry['permissions']];
-        $superRole = config('permissions.super_role', 'developer');
 
-        if ($user->roles()->where('slug', $superRole)->exists()) {
-            return true;
-        }
-
-        if ($user->permissions()->whereIn('slug', $permissions)->exists()) {
-            return true;
-        }
-
-        return Permission::query()
-            ->whereIn('slug', $permissions)
-            ->whereHas('roles', fn ($roles) => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
-            ->exists();
+        return $user->hasAnyPermission(...$permissions);
     }
 
     private function currentUser(): ?User

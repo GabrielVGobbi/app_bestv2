@@ -21,7 +21,12 @@ class FinancialEntryApiController extends Controller
         Gate::authorize('viewAny', FinancialEntry::class);
 
         return ApiDisplay::for(FinancialEntry::class, FinancialEntryResource::class)
-            ->usingQuery(FinancialEntry::query()->with(['category', 'counterparty']))
+            ->usingQuery(FinancialEntry::query()->with([
+                'category' => fn ($query) => $query
+                    ->with('parent')
+                    ->withCount(['children', 'financialEntries']),
+                'counterparty',
+            ]))
             ->paginate($request);
     }
 
@@ -29,7 +34,14 @@ class FinancialEntryApiController extends Controller
     {
         $entry = $createManualFinancialEntry->handle($request->validated());
 
-        return new FinancialEntryResource($entry->load(['category', 'counterparty', 'amountComponents', 'installments']));
+        return new FinancialEntryResource($entry->load([
+            'category' => fn ($query) => $query
+                ->with('parent')
+                ->withCount(['children', 'financialEntries']),
+            'counterparty',
+            'amountComponents',
+            'installments',
+        ]));
     }
 
     public function show(FinancialEntry $financialEntry): FinancialEntryResource
@@ -37,7 +49,9 @@ class FinancialEntryApiController extends Controller
         Gate::authorize('view', $financialEntry);
 
         return new FinancialEntryResource($financialEntry->load([
-            'category',
+            'category' => fn ($query) => $query
+                ->with('parent')
+                ->withCount(['children', 'financialEntries']),
             'counterparty',
             'amountComponents',
             'installments.settlementAllocations',

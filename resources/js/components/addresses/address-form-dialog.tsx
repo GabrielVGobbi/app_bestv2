@@ -224,7 +224,7 @@ export function AddressFormDialog({
 
                 <form id="address-form" className="grid gap-5 px-6" onSubmit={submit}>
                     <section className="rounded-lg border bg-muted/20 p-4">
-                        <div className="grid gap-4 sm:grid-cols-12">
+                        <div className="grid gap-4 grid-cols-2">
                             <FormField id="address-zipcode" label="CEP" required error={errors.zipcode} className="sm:col-span-5">
                                 <ActionInput
                                     id="address-zipcode"
@@ -235,7 +235,7 @@ export function AddressFormDialog({
                                     }}
                                     onBlur={handleCepBlur}
                                     onAction={() => void lookupCep()}
-                                    actionLabel="Buscar"
+                                    actionLabel=""
                                     actionAriaLabel="Buscar Endereço pelo CEP"
                                     actionIcon={Search}
                                     actionLoading={cepStatus === 'loading'}
@@ -391,7 +391,6 @@ export function AddressFormDialog({
                                 onCheckedChange={(checked) => setField('is_default', checked)}
                                 title="Endereço Padrão"
                                 description="Usar este Endereço como principal nas proximas operacoes do cliente."
-                                icon={<Star className="size-4" />}
                             />
                         </div>
                     </section>

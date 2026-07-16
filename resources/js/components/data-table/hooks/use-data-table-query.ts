@@ -4,7 +4,11 @@ import { httpGet } from '@/lib/http';
 import type { Paginated } from '@/types/pagination';
 
 import { buildDataTableQueryParams } from '../core/query-params';
-import type { DataTableFilterConfig, DataTableQuickFilter, DataTableState } from '../core/types';
+import type {
+    DataTableFilterConfig,
+    DataTableQuickFilter,
+    DataTableState,
+} from '../core/types';
 import { useDebouncedValue } from './use-debounced-value';
 
 export function useDataTableQuery<TData>(args: {
@@ -27,7 +31,8 @@ export function useDataTableQuery<TData>(args: {
 
     const query = useQuery<Paginated<TData>, Error>({
         queryKey: [args.queryKey, 'paginated', params],
-        queryFn: () => httpGet<Paginated<TData>>(args.endpoint, { params }),
+        queryFn: ({ signal }) =>
+            httpGet<Paginated<TData>>(args.endpoint, { params, signal }),
         enabled: args.enabled ?? true,
         placeholderData: (previousData) => previousData,
     });

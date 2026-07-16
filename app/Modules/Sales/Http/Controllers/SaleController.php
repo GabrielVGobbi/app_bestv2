@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
-use App\Modules\Permissions\Models\Permission;
 use App\Modules\Playlists\Models\Playlist;
 use App\Modules\Playlists\Models\PlaylistTop;
 use App\Modules\Sales\Actions\CreateSaleDraft;
@@ -323,19 +322,6 @@ class SaleController extends Controller
 
     private function hasPermission(User $user, string $slug): bool
     {
-        $superRole = config('permissions.super_role', 'developer');
-
-        if ($user->roles()->where('slug', $superRole)->exists()) {
-            return true;
-        }
-
-        if ($user->permissions()->where('slug', $slug)->exists()) {
-            return true;
-        }
-
-        return Permission::query()
-            ->where('slug', $slug)
-            ->whereHas('roles', fn ($roles) => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
-            ->exists();
+        return $user->hasAnyPermission($slug);
     }
 }

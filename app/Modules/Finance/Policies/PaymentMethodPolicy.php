@@ -6,7 +6,6 @@ namespace App\Modules\Finance\Policies;
 
 use App\Models\User;
 use App\Modules\Finance\Models\PaymentMethod;
-use App\Modules\Permissions\Models\Permission;
 
 class PaymentMethodPolicy
 {
@@ -37,19 +36,6 @@ class PaymentMethodPolicy
 
     private function hasPermission(User $user, string $slug): bool
     {
-        $superRole = config('permissions.super_role', 'developer');
-
-        if ($user->roles()->where('slug', $superRole)->exists()) {
-            return true;
-        }
-
-        if ($user->permissions()->where('slug', $slug)->exists()) {
-            return true;
-        }
-
-        return Permission::query()
-            ->where('slug', $slug)
-            ->whereHas('roles', fn ($roles) => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
-            ->exists();
+        return $user->hasAnyPermission($slug);
     }
 }

@@ -59,7 +59,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     },
                                 )}
                             >
-                                <Link href={item.href} prefetch>
+                                <Link href={item.href} prefetch="click">
                                     {item.icon && (
                                         <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background text-current shadow-xs">
                                             <item.icon className="size-4" />

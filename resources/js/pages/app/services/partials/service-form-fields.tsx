@@ -91,7 +91,7 @@ export default function ServiceFormFields({ service, errors }: Props) {
         <div className="space-y-8">
             <FormSection
                 title="Dados comerciais"
-                description="Cadastro base do catálogo. O Preço e apenas uma sugestao para vendas futuras."
+                description=""
             >
                 <input type="hidden" name="base_price" value={basePriceCents} />
                 <input type="hidden" name="currency" value="BRL" />

@@ -1,4 +1,5 @@
 import type { Address } from '@/types/address';
+import type { MusicGenre } from '@/types/app/playlist';
 
 export interface ClientResponsibleUser {
     id: number;
@@ -34,6 +35,11 @@ export interface Client {
 
 export interface ClientResource {
     data: Client;
+}
+
+export interface ClientFormOptions {
+    genres: MusicGenre[];
+    can_create_music_catalog: boolean;
 }
 
 export interface ClientCollectionResource {

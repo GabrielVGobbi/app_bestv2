@@ -77,7 +77,7 @@ function SidebarNavButton({
     }
 
     return (
-        <Link href={item.href as string} prefetch className={cls}>
+        <Link href={item.href as string} prefetch="click" className={cls}>
             {content}
         </Link>
     );
@@ -99,7 +99,9 @@ function SidebarNavGroup({ item }: { item: NavItem }) {
         return (
             <SidebarNavButton
                 item={item}
-                isActive={!!item.href && isCurrentOrParentUrl(item.href as string)}
+                isActive={
+                    !!item.href && isCurrentOrParentUrl(item.href as string)
+                }
             />
         );
     }
@@ -184,7 +186,8 @@ function SidebarNavSection({
                         key={child.title}
                         item={child}
                         isActive={
-                            !!child.href && isCurrentOrParentUrl(child.href as string)
+                            !!child.href &&
+                            isCurrentOrParentUrl(child.href as string)
                         }
                     />
                 ),
@@ -208,7 +211,8 @@ function SidebarVariant({ items }: { items: NavItem[] }) {
                         key={item.title}
                         item={item}
                         isActive={
-                            !!item.href && isCurrentOrParentUrl(item.href as string)
+                            !!item.href &&
+                            isCurrentOrParentUrl(item.href as string)
                         }
                     />
                 ),
@@ -246,7 +250,7 @@ function HeaderVariant({ items }: { items: NavItem[] }) {
                     <Link
                         key={item.title}
                         href={item.href as string}
-                        prefetch
+                        prefetch="click"
                         className={cn(
                             'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors',
                             isActive
@@ -280,7 +284,8 @@ function DropdownVariant({ items }: { items: NavItem[] }) {
                 <Link
                     href={item.href}
                     className={cn(
-                        isCurrentOrParentUrl(item.href as string) && 'font-semibold',
+                        isCurrentOrParentUrl(item.href as string) &&
+                            'font-semibold',
                     )}
                 >
                     {item.icon && <item.icon size={14} />}

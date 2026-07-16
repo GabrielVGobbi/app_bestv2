@@ -18,7 +18,10 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
-function isAnyChildActive(items: NavItem[], isActive: (href: string) => boolean): boolean {
+function isAnyChildActive(
+    items: NavItem[],
+    isActive: (href: string) => boolean,
+): boolean {
     return items.some(
         (item) =>
             isActive(item.href as string) ||
@@ -35,12 +38,16 @@ function NavSubItems({ items }: { items: NavItem[] }) {
                 const hasChildren = (item.items?.length ?? 0) > 0;
                 const isActive =
                     isCurrentOrParentUrl(item.href as string) ||
-                    (hasChildren && isAnyChildActive(item.items!, isCurrentOrParentUrl));
+                    (hasChildren &&
+                        isAnyChildActive(item.items!, isCurrentOrParentUrl));
 
                 if (hasChildren) {
                     return (
                         <SidebarMenuSubItem key={item.title}>
-                            <Collapsible defaultOpen={isActive} className="group/sub">
+                            <Collapsible
+                                defaultOpen={isActive}
+                                className="group/sub"
+                            >
                                 <CollapsibleTrigger asChild>
                                     <SidebarMenuSubButton isActive={isActive}>
                                         {item.icon && <item.icon />}
@@ -58,8 +65,11 @@ function NavSubItems({ items }: { items: NavItem[] }) {
 
                 return (
                     <SidebarMenuSubItem key={item.title}>
-                        <SidebarMenuSubButton asChild isActive={isCurrentOrParentUrl(item.href as string)}>
-                            <Link href={item.href as string} prefetch>
+                        <SidebarMenuSubButton
+                            asChild
+                            isActive={isCurrentOrParentUrl(item.href as string)}
+                        >
+                            <Link href={item.href as string} prefetch="click">
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
                             </Link>
@@ -82,7 +92,11 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     const hasChildren = (item.items?.length ?? 0) > 0;
                     const isActive =
                         isCurrentOrParentUrl(item.href as string) ||
-                        (hasChildren && isAnyChildActive(item.items!, isCurrentOrParentUrl));
+                        (hasChildren &&
+                            isAnyChildActive(
+                                item.items!,
+                                isCurrentOrParentUrl,
+                            ));
 
                     if (hasChildren) {
                         return (
@@ -115,10 +129,15 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 asChild
-                                isActive={isCurrentOrParentUrl(item.href as string)}
+                                isActive={isCurrentOrParentUrl(
+                                    item.href as string,
+                                )}
                                 tooltip={{ children: item.title }}
                             >
-                                <Link href={item.href as string} prefetch>
+                                <Link
+                                    href={item.href as string}
+                                    prefetch="click"
+                                >
                                     {item.icon && <item.icon />}
                                     <span>{item.title}</span>
                                 </Link>

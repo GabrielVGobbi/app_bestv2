@@ -1,14 +1,17 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import {
     ArrowLeft,
+    ClipboardList,
     FileText,
+    History,
     Mail,
     MapPin,
+    MessageSquareText,
     Phone,
-    Share2,
     SquarePen,
     UserRound,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import {
     destroy,
@@ -19,18 +22,27 @@ import {
 import { AddressManager } from '@/components/addresses/address-manager';
 import Header from '@/components/dashboard/header';
 import DeleteButton from '@/components/delete-button';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CopyableText } from '@/components/ui/copyable-text';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn, formatCpfCnpj, formatDate, formatPhone } from '@/lib/utils';
+import { formatCpfCnpj, formatDate, formatPhone, cn } from '@/lib/utils';
 import { ActivityTimeline } from '@/modules/timeline';
-import type { Address } from '@/types/address';
 import type { ClientResource } from '@/types/app/client';
 import { ClientQuickUpdatePanel } from './components/client-quick-update-panel';
 import type { ClientQuickUpdateColumn } from './components/client-quick-update-panel';
 import { ClientStatusMenu } from './components/client-status-menu';
+import {
+    ClientStatusBadge,
+    DefaultAddressSummary,
+    FieldGrid,
+    Section,
+    SidebarContactRow,
+    SidebarMetaRow,
+    TechnicalIdsDisclosure,
+    isBlank,
+} from './partials/client-show-helpers';
+import type { DetailItem } from './partials/client-show-helpers';
 
 interface Props {
     clientData: ClientResource;
@@ -39,11 +51,6 @@ interface Props {
         id: string | number;
     };
 }
-
-type DetailItem = {
-    label: string;
-    value: string | null | undefined;
-};
 
 const quickUpdateColumns: ClientQuickUpdateColumn[] = [
     {
@@ -56,124 +63,27 @@ const quickUpdateColumns: ClientQuickUpdateColumn[] = [
     },
 ];
 
-function cleanValue(value: string | null | undefined): string {
-    return value && value.trim() !== '' ? value : '-';
-}
-
-function FieldGrid({
-    items,
-    columns = 'sm:grid-cols-2 xl:grid-cols-3',
-}: {
-    items: DetailItem[];
-    columns?: string;
-}) {
-    return (
-        <dl className={cn('grid gap-x-8 gap-y-5', columns)}>
-            {items.map((item) => (
-                <div key={item.label} className="min-w-0">
-                    <dt className="text-xs font-medium text-muted-foreground">
-                        {item.label}
-                    </dt>
-                    <dd className="mt-1 min-w-0 text-sm font-medium break-words text-foreground">
-                        {cleanValue(item.value)}
-                    </dd>
-                </div>
-            ))}
-        </dl>
-    );
-}
-
-function Panel({
-    title,
-    children,
-    className,
-}: {
-    title: string;
-    children: React.ReactNode;
-    className?: string;
-}) {
-    return (
-        <section className={cn('rounded-lg border bg-card', className)}>
-            <header className="flex min-h-10 items-center px-4 pt-4">
-                <h2 className="text-sm font-semibold">{title}</h2>
-            </header>
-            <div className="px-4 pt-3 pb-4">{children}</div>
-        </section>
-    );
-}
-
-function SidebarItem({
-    icon: Icon,
-    label,
-    value,
-    copyable = false,
-    copyValue,
-}: {
-    icon: typeof UserRound;
+const clientTabs: Array<{
+    value: string;
     label: string;
-    value: string | null | undefined;
-    copyable?: boolean;
-    copyValue?: string | null | undefined;
-}) {
-    const content = (
-        <>
-            <Icon className="size-4 shrink-0" />
-            <span className="sr-only">{label}</span>
-            <span className="truncate">{cleanValue(value)}</span>
-        </>
-    );
+    icon: LucideIcon;
+    count?: boolean;
+}> = [
+    { value: 'overview', label: 'Visão geral', icon: ClipboardList },
+    { value: 'addresses', label: 'Endereços', icon: MapPin, count: true },
+    { value: 'notes', label: 'Observações', icon: MessageSquareText },
+    { value: 'activity', label: 'Atividade', icon: History },
+];
 
-    if (copyable) {
-        return (
-            <CopyableText
-                value={value}
-                copyValue={copyValue}
-                label={label}
-                className="w-full px-2 py-1.5 text-sm text-muted-foreground"
-            >
-                <span className="flex min-w-0 items-center gap-2">
-                    {content}
-                </span>
-            </CopyableText>
-        );
-    }
-
-    return (
-        <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-secondary/60">
-            {content}
-        </div>
-    );
-}
-
-function DefaultAddress({ address }: { address?: Address }) {
-    if (!address) {
-        return (
-            <div className="text-sm text-muted-foreground">
-                Nenhum endereço padrão definido.
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center gap-2">
-                <MapPin className="size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">
-                    {address.name || 'Endereço'}
-                </p>
-                <Badge
-                    variant="secondary"
-                    className="h-5 rounded-sm px-1.5 text-[10px]"
-                >
-                    Padrão
-                </Badge>
-            </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-                {address.full_address}
-            </p>
-        </div>
-    );
-}
+const tabTriggerClass = cn(
+    'group relative h-11 flex-none gap-2 rounded-none border-0 bg-transparent px-3.5',
+    'text-sm font-medium text-muted-foreground shadow-none',
+    'hover:bg-transparent hover:text-foreground',
+    'focus-visible:ring-0 focus-visible:outline-none',
+    'data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none',
+    'after:absolute after:right-2 after:bottom-0 after:left-2 after:h-0.5 after:rounded-full after:bg-transparent after:transition-colors',
+    'data-[state=active]:after:bg-primary',
+);
 
 export default function ShowClient({ clientData, timelineSubject }: Props) {
     const client = clientData.data;
@@ -181,6 +91,7 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
     const addresses = client.addresses ?? [];
     const defaultAddress = addresses.find((address) => address.is_default);
     const canUpdate = client.permissions.can_update;
+    const editUrl = edit.url(client.uuid);
 
     setLayoutProps({
         breadcrumbs: [
@@ -193,6 +104,12 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
     });
 
     const clientName = String(client.name ?? client.uuid);
+    const subtitle = !isBlank(client.company_name)
+        ? client.company_name
+        : !isBlank(client.email)
+          ? client.email
+          : null;
+
     const initials = clientName
         .split(' ')
         .map((namePart) => namePart[0])
@@ -209,34 +126,70 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
         { label: 'Agente/produtor', value: client.is_agent ? 'Sim' : 'Não' },
     ];
 
+    const technicalItems: DetailItem[] = [
+        { label: 'UUID', value: client.uuid },
+        { label: 'ID interno', value: String(client.id) },
+        {
+            label: 'Empresa ID',
+            value: client.company_id ? String(client.company_id) : null,
+        },
+        {
+            label: 'Responsável ID',
+            value: client.responsible_user_id
+                ? String(client.responsible_user_id)
+                : null,
+        },
+    ];
+
     return (
         <>
             <Head title={clientName} />
 
             <Header>
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                     <Button
                         variant="outline"
                         size="icon"
-                        className="size-8"
+                        className="size-8 shrink-0"
                         asChild
                     >
-                        <Link href={index.url()}>
+                        <Link href={index.url()} aria-label="Voltar para clientes">
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">{clientName}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {client.uuid}
-                        </p>
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="truncate text-xl font-semibold">
+                                {clientName}
+                            </h1>
+                           
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                            {subtitle ? (
+                                <span className="truncate">{subtitle}</span>
+                            ) : null}
+                            {subtitle ? (
+                                <span className="text-border" aria-hidden>
+                                    ·
+                                </span>
+                            ) : null}
+                            <CopyableText
+                                value={client.uuid}
+                                label="ID"
+                                className="text-xs text-muted-foreground"
+                            >
+                                <span className="underline-offset-2 group-hover/copyable:underline">
+                                    Copiar ID
+                                </span>
+                            </CopyableText>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {canUpdate ? (
                         <>
                             <Button variant="outline" size="action" asChild>
-                                <Link href={edit.url(client.uuid)}>
+                                <Link href={editUrl}>
                                     <SquarePen className="size-4" />
                                     Editar
                                 </Link>
@@ -260,280 +213,208 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-                    <aside className="rounded-lg border bg-card">
-                        <div className="p-5">
-                            <div className="flex h-32 items-center justify-center rounded-lg bg-secondary text-4xl font-semibold text-primary">
-                                {initials}
+                <div className="grid gap-4 p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+                    <aside className="lg:sticky lg:top-4 lg:self-start">
+                        <div className="rounded-lg border bg-card">
+                            <div className="p-5">
+                                <div className="flex h-20 items-center justify-center rounded-lg bg-secondary text-2xl font-semibold text-primary">
+                                    {initials}
+                                </div>
+
+                                <div className="mt-5 space-y-0.5">
+                                    <SidebarContactRow
+                                        icon={FileText}
+                                        label="Documento"
+                                        value={formatCpfCnpj(client.document)}
+                                        copyable
+                                        emptyHref={canUpdate ? editUrl : undefined}
+                                        emptyLabel={
+                                            canUpdate
+                                                ? 'Adicionar documento'
+                                                : undefined
+                                        }
+                                    />
+                                    <SidebarContactRow
+                                        icon={Mail}
+                                        label="Email"
+                                        value={client.email}
+                                        copyable
+                                        emptyHref={canUpdate ? editUrl : undefined}
+                                        emptyLabel={
+                                            canUpdate
+                                                ? 'Adicionar email'
+                                                : undefined
+                                        }
+                                    />
+                                    <SidebarContactRow
+                                        icon={Phone}
+                                        label="Telefone"
+                                        value={formatPhone(client.phone)}
+                                        copyable
+                                        emptyHref={canUpdate ? editUrl : undefined}
+                                        emptyLabel={
+                                            canUpdate
+                                                ? 'Adicionar telefone'
+                                                : undefined
+                                        }
+                                    />
+                                </div>
+
+                                <Separator className="my-4" />
+
+                                <div className="space-y-0.5">
+                                    <SidebarMetaRow
+                                        icon={UserRound}
+                                        label="Responsável"
+                                        value={
+                                            responsibleUser?.name ??
+                                            responsibleUser?.email
+                                        }
+                                    />
+                                    <DefaultAddressSummary
+                                        address={defaultAddress}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="mt-4 space-y-1">
-                                <h2 className="truncate text-base font-semibold">
-                                    {clientName}
-                                </h2>
-                                <p className="truncate text-sm text-muted-foreground">
-                                    {cleanValue(
-                                        client.company_name ?? client.email,
-                                    )}
+                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
+                                <p>Criado · {formatDate(client.created_at)}</p>
+                                <p className="mt-1">
+                                    Atualizado · {formatDate(client.updated_at)}
                                 </p>
                             </div>
-
-                            <div className="mt-4">
-                                {canUpdate ? (
-                                    <ClientStatusMenu
-                                        uuid={client.uuid}
-                                        status={client.status}
-                                        size="sm"
-                                        className="w-full justify-between"
-                                    />
-                                ) : (
-                                    <Badge
-                                        variant="secondary"
-                                        className="w-full justify-center"
-                                    >
-                                        {client.status === 'active'
-                                            ? 'Ativo'
-                                            : client.status === 'inactive'
-                                              ? 'Inativo'
-                                              : 'Arquivado'}
-                                    </Badge>
-                                )}
-                            </div>
-
-                            <div className="mt-5 space-y-1">
-                                <SidebarItem
-                                    icon={UserRound}
-                                    label="Cliente"
-                                    value={clientName}
-                                />
-                                <SidebarItem
-                                    icon={FileText}
-                                    label="Documento"
-                                    value={formatCpfCnpj(client.document)}
-                                    copyable
-                                />
-                                <SidebarItem
-                                    icon={Mail}
-                                    label="Email"
-                                    value={client.email}
-                                    copyable
-                                />
-                                <SidebarItem
-                                    icon={Phone}
-                                    label="Telefone"
-                                    value={formatPhone(client.phone)}
-                                    copyable
-                                />
-                                <SidebarItem
-                                    icon={Share2}
-                                    label="Compartilhar"
-                                    value="Compartilhar"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="border-t px-5 py-4 text-xs text-muted-foreground">
-                            <p>Criado - {formatDate(client.created_at)}</p>
-                            <p className="mt-1">
-                                Última edição - {formatDate(client.updated_at)}
-                            </p>
                         </div>
                     </aside>
 
                     <main className="min-w-0">
                         <Tabs
                             defaultValue="overview"
-                            className="overflow-hidden rounded-lg border bg-card"
+                            className="gap-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[var(--shadow-app-panel)]"
                         >
-                            <div className="overflow-x-auto border-b px-5">
-                                <TabsList className="h-auto gap-6 rounded-none bg-transparent p-0">
-                                    <TabsTrigger
-                                        value="overview"
-                                        className="h-12 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                                    >
-                                        Detalhes
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="addresses"
-                                        className="h-12 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                                    >
-                                        Endereço
-                                        <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                            {addresses.length}
-                                        </span>
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="notes"
-                                        className="h-12 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                                    >
-                                        Observações
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="timeline"
-                                        className="h-12 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                                    >
-                                        Timeline
-                                    </TabsTrigger>
+                            <div className="border-b border-border/70 bg-muted/35">
+                                <TabsList className="h-11 w-full justify-start gap-0 overflow-x-auto rounded-none border-0 bg-transparent p-0">
+                                    {clientTabs.map((tab) => {
+                                        const Icon = tab.icon;
+
+                                        return (
+                                            <TabsTrigger
+                                                key={tab.value}
+                                                value={tab.value}
+                                                className={tabTriggerClass}
+                                            >
+                                                <Icon className="size-3.5 opacity-70 group-data-[state=active]:opacity-100" />
+                                                <span>{tab.label}</span>
+                                                {tab.count ? (
+                                                    <span className="rounded-md bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums ring-1 ring-border/60 group-data-[state=active]:text-foreground">
+                                                        {addresses.length}
+                                                    </span>
+                                                ) : null}
+                                            </TabsTrigger>
+                                        );
+                                    })}
                                 </TabsList>
                             </div>
 
                             <TabsContent
                                 value="overview"
-                                className="max-h-[70vh] overflow-y-auto p-5 outline-none"
+                                className="mt-0 space-y-6 p-5 outline-none sm:p-6"
                             >
-                                <div className="space-y-5">
-                                    <Panel title="Dados do Cliente">
-                                        <div className="space-y-5">
-                                            {canUpdate ? (
-                                                <>
-                                                    <ClientQuickUpdatePanel
-                                                        key={`${client.uuid}:${client.updated_at}`}
-                                                        client={client}
-                                                        columns={
-                                                            quickUpdateColumns
-                                                        }
-                                                    />
-                                                    <Separator />
-                                                </>
-                                            ) : null}
-                                            <FieldGrid items={profileItems} />
+                                {canUpdate ? (
+                                    <Section title="Dados rápidos">
+                                        <div className="rounded-lg border border-border/70 px-3.5 py-3.5">
+                                            <ClientQuickUpdatePanel
+                                                key={`${client.uuid}:${client.updated_at}`}
+                                                client={client}
+                                                columns={quickUpdateColumns}
+                                            />
                                         </div>
-                                    </Panel>
+                                    </Section>
+                                ) : null}
 
-                                    <Panel title="Histórico do cadastro">
-                                        <FieldGrid
-                                            columns="sm:grid-cols-3"
-                                            items={[
-                                                {
-                                                    label: 'Criado em',
-                                                    value: formatDate(
-                                                        client.created_at,
-                                                    ),
-                                                },
-                                                {
-                                                    label: 'Atualizado em',
-                                                    value: formatDate(
-                                                        client.updated_at,
-                                                    ),
-                                                },
-                                                {
-                                                    label: 'Endereços',
-                                                    value: String(
-                                                        addresses.length,
-                                                    ),
-                                                },
-                                            ]}
-                                        />
-                                    </Panel>
-
-                                    <ActivityTimeline
-                                        showHeader={false}
-                                        modelType={timelineSubject.type}
-                                        modelId={timelineSubject.id}
-                                        title=""
-                                        allowAttachments
-                                        className="m-0 border-0 bg-transparent p-0 shadow-none"
+                                <Section title="Classificação">
+                                    <FieldGrid
+                                        items={profileItems}
+                                        variant="rows"
                                     />
-                                </div>
+                                </Section>
                             </TabsContent>
 
                             <TabsContent
                                 value="addresses"
-                                className="max-h-[70vh] overflow-y-auto p-5 outline-none"
+                                className="mt-0 p-5 outline-none sm:p-6"
                             >
-                                <div className="space-y-5">
-                                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-                                        <AddressManager
-                                            model="client"
-                                            modelId={client.uuid}
-                                            initialAddresses={addresses}
-                                        />
-
-                                        <div className="space-y-5">
-                                            <Panel title="Endereço principal">
-                                                <DefaultAddress
-                                                    address={defaultAddress}
-                                                />
-                                            </Panel>
-
-                                            <Panel title="Contato">
-                                                <FieldGrid
-                                                    columns="grid-cols-1"
-                                                    items={[
-                                                        {
-                                                            label: 'Email',
-                                                            value: client.email,
-                                                        },
-                                                        {
-                                                            label: 'Telefone',
-                                                            value: formatPhone(
-                                                                client.phone,
-                                                            ),
-                                                        },
-                                                        {
-                                                            label: 'Responsável',
-                                                            value:
-                                                                responsibleUser?.email ??
-                                                                responsibleUser?.name,
-                                                        },
-                                                    ]}
-                                                />
-                                            </Panel>
-                                        </div>
-                                    </div>
-                                </div>
+                                <AddressManager
+                                    model="client"
+                                    modelId={client.uuid}
+                                    initialAddresses={addresses}
+                                    variant="plain"
+                                    title="Lista de endereços"
+                                    emptyMessage="Cadastre o endereço de cobrança ou entrega deste cliente."
+                                />
                             </TabsContent>
 
                             <TabsContent
                                 value="notes"
-                                className="max-h-[70vh] overflow-y-auto p-5 outline-none"
+                                className="mt-0 space-y-6 p-5 outline-none sm:p-6"
                             >
-                                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-                                    <Panel title="Observações">
-                                        <div className="min-h-40 text-sm leading-6 whitespace-pre-wrap text-muted-foreground">
-                                            {client.notes ||
-                                                'Nenhuma Observação cadastrada.'}
+                                <Section
+                                    title="Observações"
+                                    action={
+                                        canUpdate ? (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link href={editUrl}>
+                                                    Editar
+                                                </Link>
+                                            </Button>
+                                        ) : null
+                                    }
+                                >
+                                    {isBlank(client.notes) ? (
+                                        <div className="flex min-h-36 flex-col items-start justify-center gap-3 rounded-lg border border-dashed bg-muted/25 px-4 py-8">
+                                            <p className="text-sm text-muted-foreground">
+                                                Nenhuma observação cadastrada.
+                                            </p>
+                                            {canUpdate ? (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <Link href={editUrl}>
+                                                        Adicionar observação
+                                                    </Link>
+                                                </Button>
+                                            ) : null}
                                         </div>
-                                    </Panel>
+                                    ) : (
+                                        <div className="rounded-lg border border-border/70 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-foreground">
+                                            {client.notes}
+                                        </div>
+                                    )}
+                                </Section>
 
-                                    <Panel title="Identificadores">
-                                        <FieldGrid
-                                            columns="grid-cols-1"
-                                            items={[
-                                                {
-                                                    label: 'UUID',
-                                                    value: client.uuid,
-                                                },
-                                                {
-                                                    label: 'ID interno',
-                                                    value: String(client.id),
-                                                },
-                                                {
-                                                    label: 'Empresa ID',
-                                                    value: client.company_id
-                                                        ? String(
-                                                              client.company_id,
-                                                          )
-                                                        : null,
-                                                },
-                                                {
-                                                    label: 'Responsável ID',
-                                                    value: client.responsible_user_id
-                                                        ? String(
-                                                              client.responsible_user_id,
-                                                          )
-                                                        : null,
-                                                },
-                                            ]}
-                                        />
-                                    </Panel>
-                                </div>
+                                <TechnicalIdsDisclosure
+                                    items={technicalItems}
+                                />
                             </TabsContent>
 
                             <TabsContent
-                                value="timeline"
-                                className="max-h-[70vh] overflow-y-auto p-5 outline-none"
-                            ></TabsContent>
+                                value="activity"
+                                className="mt-0 p-5 outline-none sm:p-6"
+                            >
+                                <ActivityTimeline
+                                    showHeader={false}
+                                    modelType={timelineSubject.type}
+                                    modelId={timelineSubject.id}
+                                    title=""
+                                    allowAttachments
+                                    className="m-0 border-0 bg-transparent p-0 shadow-none"
+                                />
+                            </TabsContent>
                         </Tabs>
                     </main>
                 </div>

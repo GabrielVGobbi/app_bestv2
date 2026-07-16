@@ -10,6 +10,9 @@ use App\Modules\Clients\Http\Requests\Client\StoreClientRequest;
 use App\Modules\Clients\Http\Requests\Client\UpdateClientRequest;
 use App\Modules\Clients\Http\Resources\ClientResource;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Playlists\Http\Resources\MusicGenreResource;
+use App\Modules\Playlists\Models\MusicGenre;
+use App\Modules\Playlists\Models\Playlist;
 use App\Supports\ActivityActions\ActivityActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +37,9 @@ class ClientController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('app/clients/create');
+        return Inertia::render('app/clients/create', [
+            'formOptions' => $this->formOptions(),
+        ]);
     }
 
     public function store(StoreClientRequest $request): RedirectResponse
@@ -147,6 +152,25 @@ class ClientController extends Controller
                 ])
                 ->values()
                 ->all(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     genres: array<int, array<string, mixed>>,
+     *     can_create_music_catalog: bool
+     * }
+     */
+    private function formOptions(): array
+    {
+        return [
+            'genres' => MusicGenreResource::collection(
+                MusicGenre::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get()
+            )->resolve(),
+            'can_create_music_catalog' => auth()->user()?->can('create', Playlist::class) ?? false,
         ];
     }
 }

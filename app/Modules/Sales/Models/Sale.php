@@ -9,7 +9,6 @@ use App\Concerns\Searchable;
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
-use App\Modules\Permissions\Models\Permission;
 use App\Modules\Sales\Database\Factories\SaleFactory;
 use App\Modules\Sales\Enums\SaleStatus;
 use App\Modules\Timeline\Contracts\TimelineSubject;
@@ -267,19 +266,6 @@ class Sale extends Model implements TimelineSubject
 
     private function userHasPermission(User $user, string $slug): bool
     {
-        $superRole = config('permissions.super_role', 'developer');
-
-        if ($user->roles()->where('slug', $superRole)->exists()) {
-            return true;
-        }
-
-        if ($user->permissions()->where('slug', $slug)->exists()) {
-            return true;
-        }
-
-        return Permission::query()
-            ->where('slug', $slug)
-            ->whereHas('roles', fn (Builder $roles): Builder => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
-            ->exists();
+        return $user->hasAnyPermission($slug);
     }
 }

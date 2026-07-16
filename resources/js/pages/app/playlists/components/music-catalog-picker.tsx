@@ -1,4 +1,13 @@
-import { Check, Link2, Loader2, Music2, Plus, Search, Tags, X } from 'lucide-react';
+import {
+    Check,
+    Link2,
+    Loader2,
+    Music2,
+    Plus,
+    Search,
+    Tags,
+    X,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -12,7 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getErrorMessage, httpPost, isApiError, type ApiResponse } from '@/lib/http';
+import { getErrorMessage, httpPost, isApiError } from '@/lib/http';
+import type { ApiResponse } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import type { MusicGenre, MusicSubgenre } from '@/types/app/playlist';
 
@@ -27,6 +37,16 @@ interface Props {
     onSubgenresChange: (subgenres: MusicSubgenre[]) => void;
     onGenreChange: (genreId: string) => void;
     onSubgenreIdsChange: (ids: number[]) => void;
+}
+
+interface MusicGenrePickerProps {
+    genres: MusicGenre[];
+    selectedGenreId: string;
+    error?: string;
+    canCreate?: boolean;
+    showSubgenreCount?: boolean;
+    onGenresChange: (genres: MusicGenre[]) => void;
+    onGenreChange: (genreId: string) => void;
 }
 
 interface ModalShellProps {
@@ -191,7 +211,7 @@ function CreateGenreButton({
             {open ? (
                 <ModalShell
                     title="Novo gênero"
-                    description="Crie um gênero principal para organizar a playlist."
+                    description="Crie um gênero principal para organizar o catálogo musical."
                     onClose={close}
                 >
                     <Input
@@ -231,6 +251,71 @@ function CreateGenreButton({
     );
 }
 
+export function MusicGenrePicker({
+    genres,
+    selectedGenreId,
+    error,
+    canCreate = false,
+    showSubgenreCount = true,
+    onGenresChange,
+    onGenreChange,
+}: MusicGenrePickerProps) {
+    const genreOptions = useMemo<AsyncSelectOption[]>(
+        () =>
+            genres.map((genre) => ({
+                value: String(genre.id),
+                label: genre.name,
+                description: showSubgenreCount
+                    ? `${genre.subgenres?.length ?? 0} subgêneros`
+                    : undefined,
+                disabled: !genre.is_active,
+            })),
+        [genres, showSubgenreCount],
+    );
+
+    return (
+        <div className="space-y-2">
+            <Label htmlFor="field-music-genre">Gênero musical</Label>
+            <div className="flex gap-2">
+                <AsyncSelect
+                    className="min-w-0 flex-1"
+                    value={selectedGenreId || null}
+                    options={genreOptions}
+                    placeholder="Selecione ou busque um gênero"
+                    searchPlaceholder="Buscar gênero..."
+                    emptyMessage="Nenhum gênero encontrado."
+                    onChange={(value) => onGenreChange(value ?? '')}
+                    clearable
+                    renderOption={(option) => (
+                        <div className="flex min-w-0 items-center gap-2">
+                            <Music2 className="size-4 text-muted-foreground" />
+                            <div className="min-w-0">
+                                <span className="block truncate">
+                                    {option.label}
+                                </span>
+                                {option.description ? (
+                                    <span className="block truncate text-xs text-muted-foreground">
+                                        {option.description}
+                                    </span>
+                                ) : null}
+                            </div>
+                        </div>
+                    )}
+                />
+                {canCreate ? (
+                    <CreateGenreButton
+                        onCreated={(genre) => {
+                            onGenresChange(sortGenres([...genres, genre]));
+                            onGenreChange(String(genre.id));
+                        }}
+                    />
+                ) : null}
+            </div>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+    );
+}
+
 function AttachSubgenreButton({
     selectedGenre,
     subgenres,
@@ -250,10 +335,14 @@ function AttachSubgenreButton({
     const [busyKey, setBusyKey] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    function updateSearch(value: string): void {
+        setSearch(value);
+        setVisibleLimit(12);
+    }
+
     function close(): void {
         setOpen(false);
-        setSearch('');
-        setVisibleLimit(12);
+        updateSearch('');
         setBusyKey(null);
     }
 
@@ -268,10 +357,6 @@ function AttachSubgenreButton({
 
         return () => window.cancelAnimationFrame(frame);
     }, [open]);
-
-    useEffect(() => {
-        setVisibleLimit(12);
-    }, [search]);
 
     const availableSubgenres = useMemo(() => {
         const normalizedSearch = normalizeSearch(search);
@@ -336,7 +421,7 @@ function AttachSubgenreButton({
                 { name: '', music_subgenre_id: subgenre.id },
             );
             onLinked(response.data);
-            setSearch('');
+            updateSearch('');
             toast.success('Subgênero atrelado.');
         } catch (error) {
             toast.error(catalogErrorMessage(error));
@@ -354,6 +439,7 @@ function AttachSubgenreButton({
 
         if (exactExistingSubgenre) {
             await linkSubgenre(exactExistingSubgenre);
+
             return;
         }
 
@@ -365,7 +451,7 @@ function AttachSubgenreButton({
                 { name, music_subgenre_id: null },
             );
             onLinked(response.data);
-            setSearch('');
+            updateSearch('');
             toast.success('Subgênero criado e atrelado.');
         } catch (error) {
             toast.error(catalogErrorMessage(error));
@@ -408,7 +494,7 @@ function AttachSubgenreButton({
                                     className="pl-9"
                                     disabled={Boolean(busyKey)}
                                     onChange={(event) =>
-                                        setSearch(event.target.value)
+                                        updateSearch(event.target.value)
                                     }
                                     onKeyDown={(event) => {
                                         if (event.key === 'Enter') {
@@ -548,17 +634,6 @@ export function MusicCatalogPicker({
         [linkedSubgenres],
     );
 
-    const genreOptions = useMemo<AsyncSelectOption[]>(
-        () =>
-            genres.map((genre) => ({
-                value: String(genre.id),
-                label: genre.name,
-                description: `${genre.subgenres?.length ?? 0} subgêneros`,
-                disabled: !genre.is_active,
-            })),
-        [genres],
-    );
-
     function selectGenre(value: string | null): void {
         const genreId = value ?? '';
         const nextGenre = genres.find((genre) => String(genre.id) === genreId);
@@ -577,6 +652,7 @@ export function MusicCatalogPicker({
             onSubgenreIdsChange(
                 selectedSubgenreIds.filter((id) => id !== subgenre.id),
             );
+
             return;
         }
 
@@ -605,53 +681,21 @@ export function MusicCatalogPicker({
 
         onGenresChange(nextGenres);
         onSubgenresChange(nextSubgenres);
-        onSubgenreIdsChange([...new Set([...selectedSubgenreIds, subgenre.id])]);
+        onSubgenreIdsChange([
+            ...new Set([...selectedSubgenreIds, subgenre.id]),
+        ]);
     }
 
     return (
         <div className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="field-music-genre">Gênero musical</Label>
-                <div className="flex gap-2">
-                    <AsyncSelect
-                        className="min-w-0 flex-1"
-                        value={selectedGenreId || null}
-                        options={genreOptions}
-                        placeholder="Selecione ou busque um gênero"
-                        searchPlaceholder="Buscar gênero..."
-                        emptyMessage="Nenhum gênero encontrado."
-                        onChange={selectGenre}
-                        clearable
-                        renderOption={(option) => (
-                            <div className="flex min-w-0 items-center gap-2">
-                                <Music2 className="size-4 text-muted-foreground" />
-                                <div className="min-w-0">
-                                    <span className="block truncate">
-                                        {option.label}
-                                    </span>
-                                    <span className="block truncate text-xs text-muted-foreground">
-                                        {option.description}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-                    />
-                    {canCreate ? (
-                        <CreateGenreButton
-                            onCreated={(genre) => {
-                                onGenresChange(sortGenres([...genres, genre]));
-                                onGenreChange(String(genre.id));
-                                onSubgenreIdsChange([]);
-                            }}
-                        />
-                    ) : null}
-                </div>
-                {errors.music_genre_id ? (
-                    <p className="text-sm text-destructive">
-                        {errors.music_genre_id}
-                    </p>
-                ) : null}
-            </div>
+            <MusicGenrePicker
+                genres={genres}
+                selectedGenreId={selectedGenreId}
+                error={errors.music_genre_id}
+                canCreate={canCreate}
+                onGenresChange={onGenresChange}
+                onGenreChange={selectGenre}
+            />
 
             <div className="rounded-md border bg-muted/20 p-3">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

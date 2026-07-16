@@ -6,14 +6,12 @@ namespace App\Modules\Playlists\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Modules\Permissions\Models\Permission;
 use App\Modules\Playlists\Actions\CancelPlaylistSlot;
 use App\Modules\Playlists\Actions\CheckPlaylistSlotAvailability;
 use App\Modules\Playlists\Actions\SchedulePlaylistSlot;
 use App\Modules\Playlists\Http\Requests\SchedulePlaylistSlotRequest;
 use App\Modules\Playlists\Models\PlaylistSlot;
 use App\Modules\Playlists\Models\PlaylistTop;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -72,14 +70,6 @@ class PlaylistSlotController extends Controller
 
     private function hasPlaylistSlotPermission(?User $user, string $permission): bool
     {
-        return $user instanceof User
-            && (
-                $user->roles()->where('slug', config('permissions.super_role', 'developer'))->exists()
-                || $user->permissions()->where('slug', $permission)->exists()
-                || Permission::query()
-                    ->where('slug', $permission)
-                    ->whereHas('roles', fn (Builder $roles): Builder => $roles->whereIn('roles.id', $user->roles()->select('roles.id')))
-                    ->exists()
-            );
+        return $user instanceof User && $user->hasAnyPermission($permission);
     }
 }

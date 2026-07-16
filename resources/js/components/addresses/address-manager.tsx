@@ -19,6 +19,7 @@ import {
     isApiError,
 } from '@/lib/http';
 import type { ApiResponse, ValidationErrors } from '@/lib/http';
+import { cn } from '@/lib/utils';
 import type { Address } from '@/types/address';
 
 interface AddressManagerProps {
@@ -27,6 +28,9 @@ interface AddressManagerProps {
     initialAddresses?: Address[];
     title?: string;
     emptyMessage?: string;
+    /** `plain` removes the outer Card chrome for embedding inside another surface. */
+    variant?: 'card' | 'plain';
+    className?: string;
 }
 
 type AddressCollectionResponse = {
@@ -44,7 +48,10 @@ export function AddressManager({
     initialAddresses = [],
     title = 'Endereços',
     emptyMessage = 'Nenhum Endereço cadastrado.',
+    variant = 'card',
+    className,
 }: AddressManagerProps) {
+    const isPlain = variant === 'plain';
     const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogVersion, setDialogVersion] = useState(0);
@@ -155,73 +162,98 @@ export function AddressManager({
         }
     }
 
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
-                <CardTitle>{title}</CardTitle>
-                <Button type="button" size="sm" onClick={openCreateDialog}>
-                    <Plus className="size-4" />
-                    Adicionar
-                </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                {orderedAddresses.length === 0 ? (
-                    <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">{emptyMessage}</div>
-                ) : (
-                    orderedAddresses.map((address) => (
-                        <div key={address.uuid} className="rounded-md border p-3">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div className="flex min-w-0 gap-2">
-                                    <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <p className="text-sm font-medium">{address.name || 'Endereço'}</p>
-                                            {address.is_default && <Badge variant="secondary">Padrão</Badge>}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">{address.full_address}</p>
-                                    </div>
-                                </div>
+    const header = (
+        <div className="flex flex-row items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+            <Button type="button" size="sm" onClick={openCreateDialog}>
+                <Plus className="size-4" />
+                Adicionar
+            </Button>
+        </div>
+    );
 
-                                <div className="flex shrink-0 items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="size-8"
-                                        onClick={() => setDefaultAddress(address)}
-                                        disabled={processing || address.is_default}
-                                        title="Definir como Padrão"
-                                        aria-label="Definir como Endereço Padrão"
-                                    >
-                                        <Star className="size-4" />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="size-8"
-                                        onClick={() => openEditDialog(address)}
-                                        aria-label="Editar Endereço"
-                                    >
-                                        <Edit className="size-4" />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        className="size-8"
-                                        onClick={() => setAddressToDelete(address)}
-                                        aria-label="Remover Endereço"
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </Button>
+    const body = (
+        <div className="space-y-3">
+            {orderedAddresses.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                        <MapPin className="size-5 text-muted-foreground" />
+                    </div>
+                    <p className="max-w-sm text-sm text-muted-foreground">
+                        {emptyMessage}
+                    </p>
+                    <Button type="button" size="sm" variant="outline" onClick={openCreateDialog}>
+                        <Plus className="size-4" />
+                        Adicionar endereço
+                    </Button>
+                </div>
+            ) : (
+                orderedAddresses.map((address) => (
+                    <div
+                        key={address.uuid}
+                        className="rounded-lg border border-border/70 bg-background/60 p-3"
+                    >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex min-w-0 gap-2">
+                                <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <p className="text-sm font-medium">
+                                            {address.name || 'Endereço'}
+                                        </p>
+                                        {address.is_default ? (
+                                            <Badge variant="secondary">Padrão</Badge>
+                                        ) : null}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        {address.full_address}
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                    ))
-                )}
-            </CardContent>
 
+                            <div className="flex shrink-0 items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="size-8"
+                                    onClick={() => setDefaultAddress(address)}
+                                    disabled={processing || address.is_default}
+                                    title="Definir como Padrão"
+                                    aria-label="Definir como Endereço Padrão"
+                                >
+                                    <Star className="size-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="size-8"
+                                    onClick={() => openEditDialog(address)}
+                                    aria-label="Editar Endereço"
+                                >
+                                    <Edit className="size-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="size-8"
+                                    onClick={() => setAddressToDelete(address)}
+                                    aria-label="Remover Endereço"
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+    );
+
+    const dialogs = (
+        <>
             <AddressFormDialog
                 key={`${editingAddress?.uuid ?? 'new-address'}-${dialogVersion}`}
                 open={dialogOpen}
@@ -241,6 +273,30 @@ export function AddressManager({
                 description="Este Endereço sera removido do cadastro. Se ele for o Padrão, o sistema promovera outro Endereço automaticamente."
                 confirmLabel="Remover Endereço"
             />
+        </>
+    );
+
+    if (isPlain) {
+        return (
+            <div className={cn('space-y-4', className)}>
+                {header}
+                {body}
+                {dialogs}
+            </div>
+        );
+    }
+
+    return (
+        <Card className={className}>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+                <CardTitle>{title}</CardTitle>
+                <Button type="button" size="sm" onClick={openCreateDialog}>
+                    <Plus className="size-4" />
+                    Adicionar
+                </Button>
+            </CardHeader>
+            <CardContent>{body}</CardContent>
+            {dialogs}
         </Card>
     );
 }

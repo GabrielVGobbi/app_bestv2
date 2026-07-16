@@ -161,6 +161,7 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
                                 aria-label="Visualizacao de clientes"
                                 className="rounded-lg"
                             >
+                                {/*
                                 <ToggleGroupItem
                                     value="table"
                                     aria-label="Visualizacao em tabela"
@@ -179,6 +180,7 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
                                         Duas colunas
                                     </span>
                                 </ToggleGroupItem>
+                                */}
                             </ToggleGroup>
 
                             <Button asChild>

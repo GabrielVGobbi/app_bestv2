@@ -4,7 +4,11 @@ import { httpGet } from '@/lib/http';
 import type { Paginated } from '@/types/pagination';
 
 import { buildDataTableQueryParams } from '../core/query-params';
-import type { DataTableFilterConfig, DataTableQuickFilter, DataTableState } from '../core/types';
+import type {
+    DataTableFilterConfig,
+    DataTableQuickFilter,
+    DataTableState,
+} from '../core/types';
 import { useDebouncedValue } from './use-debounced-value';
 
 export function useDataTableInfiniteQuery<TData>(args: {
@@ -28,8 +32,9 @@ export function useDataTableInfiniteQuery<TData>(args: {
         queryKey: [args.queryKey, 'infinite', baseParams],
         initialPageParam: 1,
         enabled: args.enabled ?? true,
-        queryFn: ({ pageParam }) =>
+        queryFn: ({ pageParam, signal }) =>
             httpGet<Paginated<TData>>(args.endpoint, {
+                signal,
                 params: {
                     ...baseParams,
                     page: pageParam,

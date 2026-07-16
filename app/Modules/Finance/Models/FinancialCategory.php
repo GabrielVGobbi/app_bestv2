@@ -200,6 +200,10 @@ class FinancialCategory extends Model
 
     private function parentCategory(): ?self
     {
+        if ($this->parent_id === null) {
+            return null;
+        }
+
         if ($this->relationLoaded('parent')) {
             /** @var self|null $parent */
             $parent = $this->getRelation('parent');
@@ -207,8 +211,12 @@ class FinancialCategory extends Model
             return $parent;
         }
 
-        /** @var self|null */
-        return $this->parent()->first();
+        $this->loadMissing('parent');
+
+        /** @var self|null $parent */
+        $parent = $this->getRelation('parent');
+
+        return $parent;
     }
 
     /** @return array<int, string> */
@@ -216,15 +224,30 @@ class FinancialCategory extends Model
     {
         $blockers = [];
 
-        if ($this->children()->exists()) {
+        if ($this->relatedRecordsExist('children', 'children_count')) {
             $blockers[] = 'children';
         }
 
-        if ($this->financialEntries()->exists()) {
+        if ($this->relatedRecordsExist('financialEntries', 'financial_entries_count')) {
             $blockers[] = 'financial_entries';
         }
 
         return $blockers;
+    }
+
+    private function relatedRecordsExist(string $relation, string $countAttribute): bool
+    {
+        if (array_key_exists($countAttribute, $this->attributes)) {
+            return (int) $this->attributes[$countAttribute] > 0;
+        }
+
+        if ($this->relationLoaded($relation)) {
+            $related = $this->getRelation($relation);
+
+            return $related instanceof Collection && $related->isNotEmpty();
+        }
+
+        return $this->{$relation}()->exists();
     }
 
     public function canBeDeleted(): bool

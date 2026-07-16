@@ -25,8 +25,11 @@ export function AppSidebar() {
     const modules = resolveNavModules(nav.modules);
     const mainItems: NavItem[] = modules.flatMap((m) => {
         if (m.items.length === 0 && m.href) {
-            return [{ title: m.label, href: m.href, icon: m.icon ?? undefined }];
+            return [
+                { title: m.label, href: m.href, icon: m.icon ?? undefined },
+            ];
         }
+
         return m.items;
     });
     const footerItems = resolveNavItems(nav.footer);
@@ -37,7 +40,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboard()} prefetch="click">
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

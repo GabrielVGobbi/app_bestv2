@@ -10,7 +10,9 @@ use App\Modules\Permissions\Database\Seeders\RolesSeeder;
 use App\Modules\Permissions\Models\Permission;
 use App\Modules\Permissions\Models\Role;
 use App\Services\NavigationService;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class FinancePermissionsNavigationTest extends TestCase
@@ -83,6 +85,45 @@ class FinancePermissionsNavigationTest extends TestCase
 
         $this->assertIsArray($cadastros);
         $this->assertNotContains('Fornecedores', collect($cadastros['items'])->pluck('title')->all());
+    }
+
+    public function test_access_control_preserves_super_role_direct_role_and_denied_permissions(): void
+    {
+        $financeUser = $this->userWithRole('finance');
+        $commercialUser = $this->userWithRole('commercial');
+        $developerUser = $this->userWithRole('developer');
+        $directUser = User::factory()->create();
+        $permission = Permission::query()->where('slug', 'finance.entries.view')->firstOrFail();
+
+        $directUser->permissions()->attach($permission);
+
+        $this->assertTrue($financeUser->hasAnyPermission('finance.entries.view'));
+        $this->assertTrue($directUser->hasAnyPermission('finance.entries.view'));
+        $this->assertTrue($developerUser->hasAnyPermission('ability.without.database.permission'));
+        $this->assertFalse($commercialUser->hasAnyPermission('finance.entries.view'));
+    }
+
+    public function test_navigation_is_built_once_with_a_constant_access_control_query_count(): void
+    {
+        $financeUser = $this->userWithRole('finance');
+        $this->actingAs($financeUser);
+
+        $queries = [];
+
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $navigation = app(NavigationService::class);
+        $navigation->global();
+        $navigation->modules();
+        $navigation->footer();
+
+        $this->assertLessThanOrEqual(
+            3,
+            count($queries),
+            'A navegacao voltou a consultar ACL por item: '.implode(' | ', $queries),
+        );
     }
 
     private function userWithRole(string $roleSlug): User

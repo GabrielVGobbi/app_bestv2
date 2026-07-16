@@ -20,6 +20,8 @@ trait HasPermissionsTrait
 
     public function hasRole(string ...$roles): bool
     {
+        $this->loadMissing('roles:id,name,slug');
+
         $super = config('permissions.super_role', 'developer');
 
         if ($this->roles->contains('slug', $super)) {
@@ -37,22 +39,36 @@ trait HasPermissionsTrait
 
     public function hasPermissionTo(Permission $permission): bool
     {
-        $super = config('permissions.super_role', 'developer');
+        return $this->hasAnyPermission($permission->slug);
+    }
 
-        if ($this->hasRole($super)) {
+    public function hasAnyPermission(string ...$permissions): bool
+    {
+        $this->loadAccessControl();
+
+        if ($this->hasRole(config('permissions.super_role', 'developer'))) {
             return true;
         }
 
-        if ($this->permissions->contains('slug', $permission->slug)) {
+        if ($this->permissions->contains(fn (Permission $permission): bool => in_array($permission->slug, $permissions, true))) {
             return true;
         }
 
-        foreach ($permission->roles as $role) {
-            if ($this->roles->contains($role)) {
-                return true;
-            }
-        }
+        return $this->roles->contains(
+            fn (Role $role): bool => $role->permissions->contains(
+                fn (Permission $permission): bool => in_array($permission->slug, $permissions, true),
+            ),
+        );
+    }
 
-        return false;
+    public function loadAccessControl(): static
+    {
+        $this->loadMissing([
+            'roles:id,name,slug',
+            'roles.permissions:id,slug',
+            'permissions:id,slug',
+        ]);
+
+        return $this;
     }
 }

@@ -37,7 +37,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $nav = app(NavigationService::class);
-        $user = $request->user()?->loadMissing('roles:id,name,slug');
+        $user = $request->user()?->loadAccessControl();
 
         return [
             ...parent::share($request),

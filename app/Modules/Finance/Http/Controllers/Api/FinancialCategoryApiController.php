@@ -27,7 +27,7 @@ class FinancialCategoryApiController extends Controller
 
         $query = FinancialCategory::query()
             ->with('parent')
-            ->withCount('children');
+            ->withCount(['children', 'financialEntries']);
 
         return ApiDisplay::for(FinancialCategory::class, FinancialCategoryResource::class)
             ->usingQuery($query)
@@ -47,6 +47,7 @@ class FinancialCategoryApiController extends Controller
 
         $categories = FinancialCategory::query()
             ->with('parent')
+            ->withCount(['children', 'financialEntries'])
             ->when(
                 filled($validated['type'] ?? null),
                 fn (Builder $query) => $query->where('type', $validated['type'])
@@ -79,21 +80,27 @@ class FinancialCategoryApiController extends Controller
     {
         $category = FinancialCategory::query()->create($request->validated());
 
-        return new FinancialCategoryResource($category->load(['parent', 'children']));
+        return new FinancialCategoryResource($category
+            ->load(['parent', 'children'])
+            ->loadCount(['children', 'financialEntries']));
     }
 
     public function show(FinancialCategory $financialCategory): FinancialCategoryResource
     {
         Gate::authorize('view', $financialCategory);
 
-        return new FinancialCategoryResource($financialCategory->load(['parent', 'children']));
+        return new FinancialCategoryResource($financialCategory
+            ->load(['parent', 'children'])
+            ->loadCount(['children', 'financialEntries']));
     }
 
     public function update(UpdateFinancialCategoryRequest $request, FinancialCategory $financialCategory): FinancialCategoryResource
     {
         $financialCategory->update($request->validated());
 
-        return new FinancialCategoryResource($financialCategory->load(['parent', 'children']));
+        return new FinancialCategoryResource($financialCategory
+            ->load(['parent', 'children'])
+            ->loadCount(['children', 'financialEntries']));
     }
 
     public function destroy(FinancialCategory $financialCategory): JsonResponse
