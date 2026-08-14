@@ -49,11 +49,11 @@ function SidebarNavButton({
     const isExternal =
         typeof item.href === 'string' && item.href.startsWith('http');
     const cls = cn(
-        'flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium transition-colors',
+        'relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
         indent && 'pl-4',
         isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
+            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
     );
 
     const content = (
@@ -111,10 +111,10 @@ function SidebarNavGroup({ item }: { item: NavItem }) {
             <button
                 onClick={() => setOpen((v) => !v)}
                 className={cn(
-                    'flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium transition-colors',
+                    'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
                     childActive
                         ? 'text-sidebar-accent-foreground'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                        : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                 )}
             >
                 {item.icon && <item.icon size={15} className="shrink-0" />}
@@ -169,7 +169,7 @@ function SidebarNavSection({
         <div className={cn('space-y-1', !nested && 'pt-4 first:pt-0')}>
             <div
                 className={cn(
-                    'mt-5 px-3 pb-1 text-[10px] leading-none font-bold tracking-widest text-sidebar-foreground/45 uppercase',
+                    'mt-5 px-3 pb-1 text-[10px] leading-none font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase',
                     nested && 'pl-1',
                 )}
             >
@@ -252,7 +252,7 @@ function HeaderVariant({ items }: { items: NavItem[] }) {
                         href={item.href as string}
                         prefetch="click"
                         className={cn(
-                            'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors',
+                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
                             isActive
                                 ? 'bg-secondary text-foreground'
                                 : 'text-muted-foreground hover:text-foreground',

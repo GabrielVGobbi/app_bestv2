@@ -28,7 +28,7 @@ export function NavModuleSwitcher({
             aria-label="Módulos"
         >
             {!isHeader && !isCollapsed && (
-                <p className="mb-2 px-3 text-[10px] font-bold tracking-widest text-sidebar-foreground/55 uppercase">
+                <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase">
                     Módulos
                 </p>
             )}
@@ -44,8 +44,8 @@ export function NavModuleSwitcher({
                 const sharedClass = cn(
                     'group relative flex items-center font-medium transition-all duration-150 ease-out',
                     isHeader
-                        ? 'h-7 shrink-0 gap-2 rounded-full px-3.5 text-[13px]'
-                        : 'w-full rounded-full px-3 py-2 text-[13px]',
+                        ? 'h-7 shrink-0 gap-2 rounded-md px-3.5 text-[13px]'
+                        : 'w-full rounded-lg px-3 py-2 text-[13px]',
                     !isHeader &&
                         (isCollapsed ? 'justify-center p-2' : 'gap-2.5'),
                     isHeader
@@ -53,8 +53,8 @@ export function NavModuleSwitcher({
                             ? 'bg-primary font-semibold text-primary-foreground shadow-sm shadow-primary/30'
                             : 'text-foreground/55 hover:bg-muted hover:text-foreground'
                         : isActive
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
+                          : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                 );
 
                 const inner = (

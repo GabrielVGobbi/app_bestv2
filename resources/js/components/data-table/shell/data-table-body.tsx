@@ -163,7 +163,8 @@ export function DataTableBody<TData>({
                                         showVerticalLines &&
                                             'border-r last:border-r-0',
                                         align === 'center' && 'text-center',
-                                        align === 'right' && 'text-right',
+                                        align === 'right' &&
+                                            'text-right font-tabular',
                                         isSticky &&
                                             'sticky right-0 z-[1] border-l bg-card',
                                     )}

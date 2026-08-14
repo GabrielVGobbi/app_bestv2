@@ -44,7 +44,7 @@ void createInertiaApp({
         );
     },
     progress: {
-        color: '#14b8a6',
+        color: '#eb0459',
     },
 }).then(() => {
     document.getElementById('boot-shell')?.remove();

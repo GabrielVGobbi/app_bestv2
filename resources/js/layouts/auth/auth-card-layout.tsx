@@ -41,10 +41,10 @@ export default function AuthCardLayout({
                             <span className="h-7 w-1.5 rounded-full bg-white/70" />
                             <span className="h-10 w-1.5 rounded-full bg-white/45" />
                         </div>
-                        <p className="text-[11px] font-semibold tracking-[0.16em] text-primary uppercase">
+                        <p className="font-brand text-[11px] font-semibold tracking-[0.12em] text-primary uppercase">
                             Operação conectada
                         </p>
-                        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-balance text-white">
+                        <h1 className="font-brand mt-3 text-3xl font-semibold tracking-[-0.04em] text-balance text-white">
                             Gestão musical, comercial e operacional em um só
                             ritmo.
                         </h1>
@@ -70,10 +70,10 @@ export default function AuthCardLayout({
                         </Link>
 
                         <header className="mb-8">
-                            <p className="text-[11px] font-semibold tracking-[0.14em] text-primary uppercase">
+                            <p className="font-brand text-[11px] font-semibold tracking-[0.12em] text-primary uppercase">
                                 Área segura
                             </p>
-                            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">
+                            <h2 className="font-brand mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">
                                 {title}
                             </h2>
                             {description && (

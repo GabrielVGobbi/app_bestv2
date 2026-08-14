@@ -36,8 +36,8 @@ const ActionInput = React.forwardRef<HTMLInputElement, ActionInputProps>(
         return (
             <div
                 className={cn(
-                    'flex h-10 w-full min-w-0 items-center overflow-hidden rounded-md border border-input bg-background/60 shadow-xs transition-[border-color,box-shadow,color]',
-                    'focus-within:border-ring focus-within:ring-[2px] focus-within:ring-ring/15',
+                    'flex h-9 w-full min-w-0 items-center overflow-hidden rounded-md border border-input bg-card shadow-xs transition-[border-color,box-shadow,color]',
+                    'focus-within:border-primary/60 focus-within:ring-[3px] focus-within:ring-ring/20',
                     'has-[input[aria-invalid=true]]:border-destructive has-[input[aria-invalid=true]]:ring-destructive/20 dark:has-[input[aria-invalid=true]]:ring-destructive/40',
                     disabled && 'cursor-not-allowed opacity-50',
                     className,

@@ -8,12 +8,12 @@ export default function Heading({
     variant?: 'default' | 'small';
 }) {
     return (
-        <header className={variant === 'small' ? '' : 'space-y-1'}>
+        <header className={variant === 'small' ? '' : 'space-y-1.5'}>
             <h2
                 className={
                     variant === 'small'
-                        ? 'mb-0.5 text-base font-semibold tracking-tight'
-                        : 'text-2xl font-semibold tracking-[-0.03em]'
+                        ? 'mb-0.5 text-base font-semibold tracking-[-0.02em]'
+                        : 'font-brand text-2xl font-semibold tracking-[-0.03em]'
                 }
             >
                 {title}

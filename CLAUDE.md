@@ -22,7 +22,7 @@ Activate skills in `**/skills/**` before working in their domain. Do not wait un
 
 ## Internal Documentation (Obsidian)
 
-Path: `D:\laragon\www\ProV2\best_play\app2_best_play\.docs\best_play.obs`
+Path: `D:\laragon\www\ProV2\best_play\.docs\.best_play.obs`
 Consult before working on: existing docs in obsidian
 
 **When documentation exists:**

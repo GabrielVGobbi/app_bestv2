@@ -25,7 +25,18 @@ import type { NavItem } from '@/types';
 // - delay-200: prevents tooltip from appearing during the 200ms collapse animation.
 // - group-hover:delay-500: tooltip appears 500ms after hover (avoids flash on quick moves).
 const TOOLTIP_CLS =
-    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-bold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
+    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
+
+const SECTION_LABEL_CLS =
+    'px-3 pb-1 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase';
+
+const NAV_ITEM_BASE =
+    'group relative flex w-full items-center rounded-lg px-3 py-2 text-[13px] font-medium transition-colors';
+
+const navItemState = (isActive: boolean) =>
+    isActive
+        ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
+        : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground';
 
 type Props = {
     isCollapsed: boolean;
@@ -87,9 +98,7 @@ function FlatNavItem({
         return (
             <div className={cn('space-y-0.5', !isCollapsed && 'pt-3')}>
                 {!isCollapsed && (
-                    <div className="px-3 pb-1 text-[10px] leading-none font-bold tracking-widest text-sidebar-foreground/45 uppercase">
-                        {item.title}
-                    </div>
+                    <div className={SECTION_LABEL_CLS}>{item.title}</div>
                 )}
                 {item.items?.map((child) => (
                     <FlatNavItem
@@ -108,7 +117,7 @@ function FlatNavItem({
     }
 
     const sharedClass = cn(
-        'group relative flex w-full items-center rounded-full px-3 py-2 text-[13px] font-medium transition-colors',
+        NAV_ITEM_BASE,
         isCollapsed ? 'justify-center p-2' : 'gap-2.5',
         depth > 0 && !isCollapsed && 'pl-4',
     );
@@ -121,8 +130,8 @@ function FlatNavItem({
                     className={cn(
                         sharedClass,
                         childActive
-                            ? 'text-foreground'
-                            : 'text-sidebar-foreground/70 hover:bg-secondary hover:text-foreground',
+                            ? 'text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                     )}
                 >
                     {item.icon && <item.icon size={16} className="shrink-0" />}
@@ -184,12 +193,7 @@ function FlatNavItem({
         </>
     );
 
-    const cls = cn(
-        sharedClass,
-        isActive
-            ? 'bg-secondary text-foreground'
-            : 'text-sidebar-foreground/70 hover:bg-secondary hover:text-foreground',
-    );
+    const cls = cn(sharedClass, navItemState(isActive));
 
     if (isExternal) {
         return (
@@ -243,7 +247,7 @@ function FlatSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
                 return (
                     <div key={m.slug} className="space-y-0.5">
                         {!isCollapsed && (
-                            <p className="mb-1 px-3 text-[10px] font-bold tracking-widest text-sidebar-foreground/55 uppercase">
+                            <p className={cn(SECTION_LABEL_CLS, 'mb-1')}>
                                 {m.label}
                             </p>
                         )}
@@ -394,13 +398,15 @@ export function DashboardSidebar({
                                         href={item.href as string}
                                         prefetch
                                         className={cn(
-                                            'group relative flex w-full items-center rounded-full px-3 py-2 text-[13px] font-medium transition-colors',
+                                            NAV_ITEM_BASE,
                                             isCollapsed
                                                 ? 'justify-center p-2'
                                                 : 'gap-2.5',
-                                            isCurrentUrl(item.href as string)
-                                                ? 'bg-secondary text-foreground'
-                                                : 'text-sidebar-foreground/70 hover:bg-secondary hover:text-foreground',
+                                            navItemState(
+                                                isCurrentUrl(
+                                                    item.href as string,
+                                                ),
+                                            ),
                                         )}
                                     >
                                         {item.icon && (
@@ -454,7 +460,7 @@ export function DashboardSidebar({
                                             href={toUrl(item.href)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium text-sidebar-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+                                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
                                         >
                                             {item.icon && (
                                                 <item.icon

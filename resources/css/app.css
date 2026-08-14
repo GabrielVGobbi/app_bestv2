@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @import 'tailwindcss';
 @import 'tw-animate-css';
@@ -11,20 +11,20 @@
 
 @theme {
     --font-sans:
-        'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif,
+        'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
     --font-mono:
         'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
-    --font-brand: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-brand: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 
-    --radius: 0.875rem;
-    --radius-xs: 0.5rem;
-    --radius-sm: 0.625rem;
-    --radius-md: 0.875rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
-    --radius-2xl: 1.5rem;
+    --radius: 0.75rem;
+    --radius-xs: 0.375rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 0.875rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -93,14 +93,20 @@
     --color-app-surface-foreground: var(--app-surface-foreground);
     --color-app-line: var(--app-line);
 
-    --shadow-app-panel: 0 24px 64px -42px rgb(16 24 40 / 42%);
-    --shadow-app-floating: 0 28px 72px -36px rgb(16 24 40 / 52%);
+    --shadow-app-panel: 0 18px 48px -36px rgb(27 21 32 / 28%);
+    --shadow-app-floating: 0 24px 56px -32px rgb(27 21 32 / 38%);
+    --shadow-app-header: 0 12px 32px -28px rgb(27 21 32 / 32%);
+
+    --z-header: 30;
+    --z-sidebar: 40;
+    --z-overlay: 50;
+    --z-modal: 60;
 
     --container-8xl: 88rem;
     --container-9xl: 96rem;
     --container-10xl: 100rem;
 
-    --spacing-header: 4rem;
+    --spacing-header: 3.75rem;
     --color-header-background: var(--header-background);
     --color-header-foreground: var(--header-foreground);
     --color-header-border: var(--header-border);
@@ -168,18 +174,18 @@
     --sidebar-foreground: #f8f7fb;
     --sidebar-primary: var(--brand-pink);
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #f3f4f7;
-    --sidebar-accent-foreground: #101828;
+    --sidebar-accent: rgb(255 255 255 / 8%);
+    --sidebar-accent-foreground: #ffffff;
     --sidebar-border: rgb(255 255 255 / 10%);
     --sidebar-ring: var(--brand-focus);
 
     --header-background: color-mix(
         in oklab,
-        var(--background) 84%,
+        var(--background) 88%,
         transparent
     );
     --header-foreground: var(--foreground);
-    --header-border: color-mix(in oklab, var(--border) 80%, transparent);
+    --header-border: color-mix(in oklab, var(--border) 88%, transparent);
 
     --table-background: #1d1722;
     --table-text: #ffffff;
@@ -245,22 +251,26 @@
     --sidebar-foreground: #f7f2f6;
     --sidebar-primary: var(--brand-pink);
     --sidebar-primary-foreground: #10080d;
-    --sidebar-accent: #302432;
+    --sidebar-accent: rgb(255 255 255 / 8%);
     --sidebar-accent-foreground: #fff7fb;
     --sidebar-border: rgb(255 255 255 / 9%);
     --sidebar-ring: var(--brand-focus);
 
     --header-background: color-mix(
         in oklab,
-        var(--background) 82%,
+        var(--background) 86%,
         transparent
     );
     --header-foreground: var(--foreground);
-    --header-border: color-mix(in oklab, var(--border) 72%, transparent);
+    --header-border: color-mix(in oklab, var(--border) 78%, transparent);
 
     --table-background: #18131d;
     --table-text: #fff7fb;
     --card-background: var(--secondary);
+
+    --shadow-app-panel: 0 18px 48px -36px rgb(0 0 0 / 55%);
+    --shadow-app-floating: 0 24px 56px -32px rgb(0 0 0 / 65%);
+    --shadow-app-header: 0 12px 32px -28px rgb(0 0 0 / 50%);
 }
 
 @layer base {
@@ -272,6 +282,7 @@
         min-height: 100%;
         background: var(--background);
         color-scheme: light;
+        scroll-behavior: smooth;
     }
 
     html.dark {
@@ -279,13 +290,24 @@
     }
 
     body {
-        @apply bg-background text-foreground antialiased;
+        @apply bg-background text-foreground font-sans antialiased;
         margin: 0;
         min-height: 100%;
         overflow-x: hidden;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        letter-spacing: -0.01em;
         text-rendering: optimizeLegibility;
-        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+        font-feature-settings: 'ss01' on, 'cv11' on;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        text-wrap: balance;
+        letter-spacing: -0.03em;
+        font-weight: 600;
     }
 
     #app {
@@ -315,7 +337,7 @@
     .page-wrapper-md,
     .page-wrapper-lg,
     .page-wrapper-xl {
-        @apply mb-6 w-full px-4 pt-5 md:px-8 lg:px-10;
+        @apply mb-8 w-full px-4 pt-6 pb-8 md:px-8 lg:px-10;
     }
 
     .page-wrapper {
@@ -347,14 +369,9 @@
         isolation: isolate;
         background:
             radial-gradient(
-                circle at 12% 8%,
-                color-mix(in oklab, var(--primary) 7%, transparent),
-                transparent 28rem
-            ),
-            radial-gradient(
-                circle at 88% 92%,
-                color-mix(in oklab, var(--brand-blue) 5%, transparent),
-                transparent 32rem
+                ellipse 55% 40% at 8% 0%,
+                color-mix(in oklab, var(--primary) 6%, transparent),
+                transparent 70%
             ),
             var(--background);
     }
@@ -365,32 +382,30 @@
         inset: 0;
         content: '';
         pointer-events: none;
-        opacity: 0.22;
-        background-image: linear-gradient(
-            115deg,
-            transparent 0 46%,
-            color-mix(in oklab, var(--foreground) 4%, transparent) 46% 47%,
-            transparent 47% 100%
+        opacity: 0.14;
+        background-image: radial-gradient(
+            color-mix(in oklab, var(--foreground) 8%, transparent) 0.6px,
+            transparent 0.6px
         );
-        background-size: 3.5rem 3.5rem;
-        mask-image: linear-gradient(to bottom, black, transparent 72%);
+        background-size: 18px 18px;
+        mask-image: linear-gradient(to bottom, black 0%, transparent 55%);
     }
 
     .dark .app-workspace::before {
-        opacity: 0.12;
+        opacity: 0.08;
     }
 
     .auth-workspace {
         background:
             radial-gradient(
-                circle at 16% 16%,
-                color-mix(in oklab, var(--primary) 12%, transparent),
-                transparent 24rem
+                ellipse 50% 45% at 12% 10%,
+                color-mix(in oklab, var(--primary) 14%, transparent),
+                transparent 70%
             ),
             radial-gradient(
-                circle at 84% 84%,
-                color-mix(in oklab, var(--brand-blue) 8%, transparent),
-                transparent 28rem
+                ellipse 40% 35% at 92% 88%,
+                color-mix(in oklab, var(--brand-red) 8%, transparent),
+                transparent 65%
             ),
             var(--background);
     }
@@ -413,11 +428,16 @@
     background: var(--header-background);
     color: var(--header-foreground);
     border-color: var(--header-border);
-    backdrop-filter: blur(18px) saturate(1.12);
+    backdrop-filter: blur(14px) saturate(1.08);
 }
 
 @utility brand-focus-ring {
     box-shadow: 0 0 0 3px var(--brand-focus);
+}
+
+@utility font-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' on;
 }
 
 @utility bg-app-grid {
@@ -589,4 +609,5 @@
 @utility card-title {
     font-size: clamp(1rem, 1.2vw + 0.6rem, 1.5rem);
     line-height: 1.2;
+    letter-spacing: -0.03em;
 }

@@ -148,7 +148,7 @@ export function DataTableShell<TData>({
                 currentSortDirection={state.sorting[0]?.desc ? 'desc' : 'asc'}
             />
 
-            <Card className="overflow-hidden rounded-sm border-border/80 py-0">
+            <Card className="overflow-hidden rounded-xl border-app-line/80 py-0 shadow-[var(--shadow-app-panel)]">
                 <CardContent className="p-0">
                     <div
                         ref={tableViewportRef}

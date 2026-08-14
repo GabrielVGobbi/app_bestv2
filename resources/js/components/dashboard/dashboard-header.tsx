@@ -42,8 +42,8 @@ export function DashboardHeader({
         <header
             className={
                 isFullWidth
-                    ? 'pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-header items-center justify-between app-glass px-4 text-header-foreground shadow-[0_16px_38px_-34px_rgb(16_24_40/45%)] md:px-5'
-                    : 'sticky top-0 z-30 flex h-header shrink-0 items-center justify-between app-glass px-4 text-header-foreground shadow-[0_16px_38px_-34px_rgb(16_24_40/45%)] md:px-5'
+                    ? 'pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-header items-center justify-between border-b border-header-border app-glass px-4 text-header-foreground shadow-[var(--shadow-app-header)] md:px-5'
+                    : 'sticky top-0 z-30 flex h-header shrink-0 items-center justify-between border-b border-header-border app-glass px-4 text-header-foreground shadow-[var(--shadow-app-header)] md:px-5'
             }
         >
             <div
@@ -55,7 +55,7 @@ export function DashboardHeader({
                 <button
                     type="button"
                     onClick={onMobileToggle}
-                    className="flex size-9 items-center justify-center rounded-md border border-border bg-card text-foreground shadow-xs transition-colors hover:border-primary/20 hover:bg-secondary md:hidden"
+                    className="flex size-9 items-center justify-center rounded-md border border-border/80 bg-card text-foreground shadow-xs transition-colors hover:border-primary/20 hover:bg-secondary md:hidden"
                     aria-label="Abrir menu"
                 >
                     <Menu className="size-5" />
@@ -74,7 +74,7 @@ export function DashboardHeader({
                 {breadcrumbs.length > 0 && (
                     <>
                         {showLogo && (
-                            <div className="mx-1 h-5 w-px bg-border" />
+                            <div className="mx-1 h-5 w-px bg-border/80" />
                         )}
 
                         <div className="min-w-0 truncate">
@@ -97,7 +97,7 @@ export function DashboardHeader({
 
             <div
                 className={cn(
-                    'flex flex-1 items-center justify-end gap-3',
+                    'flex flex-1 items-center justify-end gap-2',
                     isFullWidth && 'pointer-events-auto',
                 )}
             >
@@ -111,7 +111,7 @@ export function DashboardHeader({
                     <DropdownMenuTrigger asChild>
                         <Button
                             variant="ghost"
-                            className="relative size-9 rounded-full border border-border bg-card p-0 transition-colors duration-150 ease-out hover:bg-secondary"
+                            className="relative size-9 rounded-full border border-border/80 bg-card p-0 transition-colors duration-150 ease-out hover:bg-secondary"
                         >
                             <Avatar className="size-8 overflow-hidden rounded-full">
                                 <AvatarImage

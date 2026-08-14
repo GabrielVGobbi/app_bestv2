@@ -79,7 +79,7 @@ export function DataTableToolbar<TData>({
         features.export && exportConfig && exportConfig.enabled !== false;
 
     return (
-        <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/80 p-2.5 shadow-[var(--shadow-app-panel)] backdrop-blur-sm">
+        <div className="flex flex-col gap-3 rounded-xl border border-app-line/80 bg-card/90 p-2.5 shadow-[var(--shadow-app-panel)] backdrop-blur-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-1 flex-col gap-2.5 md:flex-row md:items-center">
                     {features.search && (

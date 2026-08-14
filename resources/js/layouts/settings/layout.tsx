@@ -40,8 +40,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 description="Gerencie seu perfil, segurança e preferências da conta."
             />
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-                <aside className="h-fit rounded-xl border border-border/80 bg-card p-3 shadow-[var(--shadow-app-panel)]">
+            <div className="mt-8 grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+                <aside className="h-fit rounded-xl border border-app-line/80 bg-card p-3 shadow-[var(--shadow-app-panel)]">
                     <nav
                         className="grid gap-1 sm:grid-cols-3 lg:grid-cols-1"
                         aria-label="Configurações"
@@ -74,7 +74,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
 
                 <Separator className="lg:hidden" />
 
-                <div className="min-w-0 rounded-xl border border-border/80 bg-card p-5 shadow-[var(--shadow-app-panel)] sm:p-7">
+                <div className="min-w-0 rounded-xl border border-app-line/80 bg-card p-5 shadow-[var(--shadow-app-panel)] sm:p-7">
                     <section className="max-w-2xl space-y-12">
                         {children}
                     </section>
