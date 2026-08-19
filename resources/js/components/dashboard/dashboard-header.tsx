@@ -2,8 +2,9 @@ import { Link, usePage } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
 import type { ReactNode } from 'react';
 import AppLogo from '@/components/app-logo';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import { GlobalCommandPalette } from '@/components/global-command-palette';
 import { NavModuleSwitcher } from '@/components/nav-module-switcher';
+import { NotificationBell } from '@/components/notification-bell';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
-import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/app';
 import type { BreadcrumbItem } from '@/types';
-import { NotificationBell } from '../notification-bell';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -26,106 +25,69 @@ type Props = {
     onMobileToggle?: () => void;
 };
 
-export function DashboardHeader({
-    breadcrumbs = [],
-    showLogo = false,
-    headerActions,
-    onMobileToggle,
-}: Props) {
+export function DashboardHeader({ headerActions, onMobileToggle }: Props) {
     const { auth, nav } = usePage().props;
     const getInitials = useInitials();
-    const isFullWidth = showLogo;
-    const showModuleSwitcher =
+    const showModules =
         nav.style === 'modules' && nav.modulesMenuPosition === 'header';
 
     return (
-        <header
-            className={
-                isFullWidth
-                    ? 'pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-header items-center justify-between border-b border-header-border app-glass px-4 text-header-foreground shadow-[var(--shadow-app-header)] md:px-5'
-                    : 'sticky top-0 z-30 flex h-header shrink-0 items-center justify-between border-b border-header-border app-glass px-4 text-header-foreground shadow-[var(--shadow-app-header)] md:px-5'
-            }
-        >
-            <div
-                className={cn(
-                    'flex min-w-0 flex-1 items-center gap-3',
-                    isFullWidth && 'pointer-events-auto',
-                )}
-            >
+        <header className="bg-header relative z-50 flex h-[60px] shrink-0 items-center border-b border-header-border px-3 text-header-foreground md:px-5">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
                 <button
+                    id="mobile-navigation-trigger"
                     type="button"
                     onClick={onMobileToggle}
-                    className="flex size-9 items-center justify-center rounded-md border border-border/80 bg-card text-foreground shadow-xs transition-colors hover:border-primary/20 hover:bg-secondary md:hidden"
-                    aria-label="Abrir menu"
+                    className="flex size-9 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted md:hidden"
+                    aria-label="Abrir navegação"
                 >
                     <Menu className="size-5" />
                 </button>
 
-                {showLogo && (
-                    <Link
-                        href={dashboard()}
-                        prefetch
-                        className="flex shrink-0 items-center"
-                    >
-                        <AppLogo />
-                    </Link>
-                )}
+                <Link
+                    href={dashboard()}
+                    prefetch
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-muted"
+                    aria-label="BestPlay"
+                >
+                    <AppLogo showText={false} />
+                </Link>
 
-                {breadcrumbs.length > 0 && (
-                    <>
-                        {showLogo && (
-                            <div className="mx-1 h-5 w-px bg-border/80" />
-                        )}
-
-                        <div className="min-w-0 truncate">
-                            <Breadcrumbs breadcrumbs={breadcrumbs} />
-                        </div>
-                    </>
+                {showModules && (
+                    <div className="hidden min-w-0 md:block">
+                        <NavModuleSwitcher variant="header" />
+                    </div>
                 )}
             </div>
 
-            {showModuleSwitcher && (
-                <div
-                    className={cn(
-                        'hidden shrink-0 md:flex',
-                        isFullWidth && 'pointer-events-auto',
-                    )}
-                >
-                    <NavModuleSwitcher variant="header" />
-                </div>
-            )}
+            <div className="mx-3 flex w-auto justify-center md:w-[min(34vw,360px)]">
+                <GlobalCommandPalette />
+            </div>
 
-            <div
-                className={cn(
-                    'flex flex-1 items-center justify-end gap-2',
-                    isFullWidth && 'pointer-events-auto',
-                )}
-            >
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
                 {headerActions}
-
                 <NotificationBell />
-
                 <ThemeToggle />
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
                             variant="ghost"
-                            className="relative size-9 rounded-full border border-border/80 bg-card p-0 transition-colors duration-150 ease-out hover:bg-secondary"
+                            className="relative size-9 rounded-full p-0"
+                            aria-label="Abrir menu do usuário"
                         >
                             <Avatar className="size-8 overflow-hidden rounded-full">
                                 <AvatarImage
                                     src={auth.user?.avatar}
                                     alt={auth.user?.name}
                                 />
-                                <AvatarFallback className="rounded-full bg-runey-orange text-sm font-bold text-white">
+                                <AvatarFallback className="rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                                     {getInitials(auth.user?.name ?? '')}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-success" />
+                            <span className="absolute end-0 top-0 size-2.5 rounded-full border-2 border-background bg-success" />
                         </Button>
                     </DropdownMenuTrigger>
-
                     <DropdownMenuContent className="w-56" align="end">
                         {auth.user && <UserMenuContent user={auth.user} />}
                     </DropdownMenuContent>

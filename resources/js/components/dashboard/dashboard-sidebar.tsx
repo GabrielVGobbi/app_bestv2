@@ -1,24 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
-import AppLogo from '@/components/app-logo';
-import AppLogoIcon from '@/components/app-logo-icon';
 import { NavModuleItems } from '@/components/nav-module-items';
 import { NavModuleSwitcher } from '@/components/nav-module-switcher';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { UserMenuContent } from '@/components/user-menu-content';
 import { useNavModule } from '@/contexts/nav-module-context';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { useInitials } from '@/hooks/use-initials';
 import { resolveNavItems, resolveNavModules } from '@/lib/resolve-nav-items';
-import { cn, toUrl } from '@/lib/utils';
-import { dashboard } from '@/routes/app';
+import { cn } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 // Tooltip class shared across all sidebar tooltips.
@@ -28,7 +17,7 @@ const TOOLTIP_CLS =
     'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
 
 const SECTION_LABEL_CLS =
-    'px-3 pb-1 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase';
+    'px-3 pb-2 text-xs font-normal text-sidebar-foreground/45';
 
 const NAV_ITEM_BASE =
     'group relative flex w-full items-center rounded-lg px-3 py-2 text-[13px] font-medium transition-colors';
@@ -41,7 +30,6 @@ const navItemState = (isActive: boolean) =>
 type Props = {
     isCollapsed: boolean;
     onToggle: () => void;
-    showLogo?: boolean;
     mobileOpen?: boolean;
     onMobileClose?: () => void;
 };
@@ -296,13 +284,11 @@ function ModulesSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
 export function DashboardSidebar({
     isCollapsed,
     onToggle,
-    showLogo = false,
     mobileOpen = false,
     onMobileClose,
 }: Props) {
-    const { auth, nav } = usePage().props;
+    const { nav } = usePage().props;
     const { isCurrentUrl } = useCurrentUrl();
-    const getInitials = useInitials();
 
     // Memoize resolved items — nav props are stable within a page and only
     // change on Inertia navigations, so useMemo avoids re-computing every render.
@@ -310,10 +296,28 @@ export function DashboardSidebar({
         () => resolveNavItems(nav.global),
         [nav.global],
     );
-    const footerItems = useMemo(
-        () => resolveNavItems(nav.footer),
-        [nav.footer],
-    );
+
+    useEffect(() => {
+        if (!mobileOpen) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onMobileClose?.();
+                document.getElementById('mobile-navigation-trigger')?.focus();
+            }
+        };
+
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', closeOnEscape);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [mobileOpen, onMobileClose]);
     const closeMobileOnNavClick = (event: MouseEvent<HTMLElement>) => {
         if (!mobileOpen) {
             return;
@@ -338,11 +342,11 @@ export function DashboardSidebar({
 
             <aside
                 className={cn(
-                    'fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-[18px_0_50px_-42px_rgb(0_0_0/70%)] backdrop-blur-md select-none',
+                    'fixed inset-y-0 start-0 z-50 flex w-72 flex-col border-e border-sidebar-border bg-sidebar shadow-lg select-none',
                     'transition-transform duration-300 ease-out',
                     mobileOpen ? 'translate-x-0' : '-translate-x-full',
                     'md:static md:z-auto md:shrink-0 md:translate-x-0 md:transition-[width] md:duration-200',
-                    isCollapsed ? 'md:w-16' : 'md:w-60',
+                    isCollapsed ? 'md:w-16' : 'md:w-[250px]',
                 )}
             >
                 {/* Toggle */}
@@ -366,27 +370,6 @@ export function DashboardSidebar({
                     id="nav-sidebar"
                     onClickCapture={closeMobileOnNavClick}
                 >
-                    {showLogo && (
-                        <div
-                            className={cn(
-                                'mb-10 flex shrink-0 items-center',
-                                isCollapsed ? 'justify-center' : 'px-2',
-                            )}
-                        >
-                            <Link
-                                href={dashboard()}
-                                prefetch
-                                className="flex items-center rounded-md text-sidebar-foreground outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                            >
-                                {isCollapsed ? (
-                                    <AppLogoIcon className="size-8" />
-                                ) : (
-                                    <AppLogo />
-                                )}
-                            </Link>
-                        </div>
-                    )}
-
                     {/* Conteúdo principal — scrollável */}
                     <div className="min-h-0 sidebar-scrollbar flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1">
                         {/* Itens globais — sempre visíveis acima dos módulos */}
@@ -447,99 +430,6 @@ export function DashboardSidebar({
                         )}
                     </div>
 
-                    {/* Rodapé fixo — footer links + usuário */}
-                    <div className="shrink-0 space-y-1">
-                        {/* Links externos */}
-                        {footerItems.length > 0 && !isCollapsed && (
-                            <div className="space-y-0.5">
-                                <div className="mx-3 border-t border-sidebar-border" />
-                                <div className="pt-2">
-                                    {footerItems.map((item) => (
-                                        <a
-                                            key={item.title}
-                                            href={toUrl(item.href)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                                        >
-                                            {item.icon && (
-                                                <item.icon
-                                                    size={15}
-                                                    className="shrink-0"
-                                                />
-                                            )}
-                                            <span className="truncate">
-                                                {item.title}
-                                            </span>
-                                        </a>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* User section */}
-                        <div className="group relative">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button
-                                        type="button"
-                                        className={cn(
-                                            'flex w-full items-center rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[13px] font-medium text-white/95 transition-colors hover:border-white/15 hover:bg-white/10 data-[state=open]:border-white/15 data-[state=open]:bg-white/10',
-                                            isCollapsed
-                                                ? 'justify-center'
-                                                : 'gap-2.5',
-                                        )}
-                                    >
-                                        <Avatar className="size-7 shrink-0 overflow-hidden rounded-full">
-                                            <AvatarImage
-                                                src={auth.user?.avatar}
-                                                alt={auth.user?.name}
-                                            />
-                                            <AvatarFallback className="rounded-full bg-sidebar-primary text-[10px] font-bold text-white">
-                                                {getInitials(
-                                                    auth.user?.name ?? '',
-                                                )}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div
-                                            className={cn(
-                                                'overflow-hidden text-left transition-[opacity,max-width] duration-200 ease-out',
-                                                isCollapsed
-                                                    ? 'max-w-0 opacity-0'
-                                                    : 'max-w-40 opacity-100',
-                                            )}
-                                        >
-                                            <p className="truncate text-[13px] font-semibold text-white/95">
-                                                {auth.user?.name}
-                                            </p>
-                                            <p className="truncate text-[11px] text-white/60">
-                                                {auth.user?.email}
-                                            </p>
-                                        </div>
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    className="w-56"
-                                    align={isCollapsed ? 'center' : 'start'}
-                                    side="top"
-                                >
-                                    {auth.user && (
-                                        <UserMenuContent user={auth.user} />
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* Tooltip usuário colapsado */}
-                            <div
-                                className={cn(
-                                    TOOLTIP_CLS,
-                                    !isCollapsed && 'hidden',
-                                )}
-                            >
-                                {auth.user?.name}
-                            </div>
-                        </div>
-                    </div>
                 </nav>
             </aside>
         </>

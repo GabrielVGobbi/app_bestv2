@@ -11,7 +11,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border-0 bg-linear-to-b from-primary-light to-primary text-primary-foreground shadow-[var(--brand-shadow-primary)] hover:-translate-y-0.5 hover:brightness-[1.04] hover:shadow-[0_16px_30px_-18px_var(--primary)] active:translate-y-px active:shadow-sm",
+          "border border-transparent bg-brand-red text-white shadow-xs hover:bg-brand-red/90 active:translate-y-px",
         destructive:
           "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/80 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:

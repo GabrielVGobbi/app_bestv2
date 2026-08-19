@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
             PlaylistSeeder::class,
             // PlaylistDeliveryTaskDemoSeeder::class,
 
-            FinancialEntryDemoSeeder::class,
+            // FinancialEntryDemoSeeder::class,
         ]);
     }
 }

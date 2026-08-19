@@ -22,7 +22,7 @@ export function NavModuleSwitcher({
         <nav
             className={cn(
                 isHeader
-                    ? 'flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-muted/40 p-1 backdrop-blur-sm'
+                    ? 'flex min-w-0 items-center gap-0.5 overflow-hidden'
                     : 'space-y-0.5',
             )}
             aria-label="Módulos"
@@ -50,7 +50,7 @@ export function NavModuleSwitcher({
                         (isCollapsed ? 'justify-center p-2' : 'gap-2.5'),
                     isHeader
                         ? isActive
-                            ? 'bg-primary font-semibold text-primary-foreground shadow-sm shadow-primary/30'
+                            ? 'bg-muted font-semibold text-foreground after:absolute after:inset-x-3 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-primary'
                             : 'text-foreground/55 hover:bg-muted hover:text-foreground'
                         : isActive
                           ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'

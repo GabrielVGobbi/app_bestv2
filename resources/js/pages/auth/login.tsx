@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LogIn } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import type { FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -60,7 +60,7 @@ export default function Login({
         });
     }
 
-    function useLocalLogin(user: LocalLoginUser): void {
+    function loginAsLocalUser(user: LocalLoginUser): void {
         const loginData = {
             email: user.email,
             password: user.password,
@@ -73,33 +73,28 @@ export default function Login({
 
     return (
         <>
-            <Head title="Log in" />
+            <Head title="Entrar" />
 
             <form onSubmit={submit} className="flex flex-col gap-6">
                 <div className="grid gap-6">
                     {localLoginUsers.length > 0 && (
-                        <div className="grid gap-3 rounded-lg border border-dashed bg-muted/40 p-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                    Acesso local
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    Somente local
-                                </span>
-                            </div>
+                        <details className="group rounded-lg border border-border bg-muted/30">
+                            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between px-3 text-sm text-muted-foreground">
+                                Acessos de desenvolvimento
+                                <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+                            </summary>
 
-                            <div className="grid gap-2">
+                            <div className="grid max-h-52 gap-1 overflow-y-auto border-t border-border p-2">
                                 {localLoginUsers.map((user, index) => (
                                     <Button
                                         key={user.email}
                                         type="button"
                                         variant="outline"
-                                        className="h-auto justify-start gap-3 px-3 py-2 text-left"
+                                        className="h-auto justify-start px-3 py-2 text-left"
                                         tabIndex={index + 6}
                                         disabled={form.processing}
-                                        onClick={() => useLocalLogin(user)}
+                                        onClick={() => loginAsLocalUser(user)}
                                     >
-                                        <LogIn className="size-4 text-muted-foreground" />
                                         <span className="grid min-w-0 gap-0.5">
                                             <span className="text-sm leading-tight font-medium">
                                                 {user.role}
@@ -111,11 +106,11 @@ export default function Login({
                                     </Button>
                                 ))}
                             </div>
-                        </div>
+                        </details>
                     )}
 
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        <Label htmlFor="email">E-mail</Label>
                         <Input
                             id="email"
                             type="email"
@@ -124,7 +119,7 @@ export default function Login({
                             autoFocus
                             tabIndex={1}
                             autoComplete="username"
-                            placeholder="email@example.com"
+                            placeholder="voce@empresa.com.br"
                             value={form.data.email}
                             onChange={(event) =>
                                 form.setData('email', event.target.value)
@@ -135,14 +130,14 @@ export default function Login({
 
                     <div className="grid gap-2">
                         <div className="flex items-center">
-                            <Label htmlFor="current-password">Password</Label>
+                            <Label htmlFor="current-password">Senha</Label>
                             {canResetPassword && (
                                 <TextLink
                                     href={request()}
                                     className="ml-auto text-sm"
                                     tabIndex={5}
                                 >
-                                    Forgot password?
+                                    Esqueceu a senha?
                                 </TextLink>
                             )}
                         </div>
@@ -152,7 +147,7 @@ export default function Login({
                             required
                             tabIndex={2}
                             autoComplete="current-password"
-                            placeholder="Password"
+                            placeholder="Sua senha"
                             value={form.data.password}
                             onChange={(event) =>
                                 form.setData('password', event.target.value)
@@ -171,7 +166,7 @@ export default function Login({
                                 form.setData('remember', checked === true)
                             }
                         />
-                        <Label htmlFor="remember">Remember me</Label>
+                        <Label htmlFor="remember">Manter conectado</Label>
                     </div>
 
                     <Button
@@ -182,15 +177,15 @@ export default function Login({
                         data-test="login-button"
                     >
                         {form.processing && <Spinner />}
-                        Log in
+                        Entrar
                     </Button>
                 </div>
 
                 {canRegister && (
                     <div className="text-center text-sm text-muted-foreground">
-                        Don't have an account?{' '}
+                        Não possui uma conta?{' '}
                         <TextLink href={register()} tabIndex={5}>
-                            Sign up
+                            Criar conta
                         </TextLink>
                     </div>
                 )}
@@ -206,6 +201,6 @@ export default function Login({
 }
 
 Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    title: 'Entrar na BestPlay',
+    description: 'Use seu e-mail e senha para continuar.',
 };

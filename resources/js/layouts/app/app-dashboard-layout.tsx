@@ -11,10 +11,21 @@ export default function AppDashboardLayout({
     breadcrumbs = [],
     headerActions,
 }: AppLayoutProps) {
-    const { layout, nav } = usePage().props;
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const { nav } = usePage().props;
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
+        typeof window === 'undefined'
+            ? false
+            : window.localStorage.getItem('bestplay.sidebar.collapsed') ===
+              'true',
+    );
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    const isSidebarLogoLayout = layout.style === 'sidebar-logo';
+
+    useEffect(() => {
+        window.localStorage.setItem(
+            'bestplay.sidebar.collapsed',
+            String(isSidebarCollapsed),
+        );
+    }, [isSidebarCollapsed]);
 
     useEffect(() => {
         return router.on('navigate', () => {
@@ -22,32 +33,8 @@ export default function AppDashboardLayout({
         });
     }, []);
 
-    const inner = isSidebarLogoLayout ? (
-        <div className="app-workspace flex h-screen overflow-hidden">
-            <DashboardSidebar
-                isCollapsed={isSidebarCollapsed}
-                onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
-                showLogo
-                mobileOpen={isMobileSidebarOpen}
-                onMobileClose={() => setIsMobileSidebarOpen(false)}
-            />
-
-            <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
-                <DashboardHeader
-                    breadcrumbs={breadcrumbs}
-                    headerActions={headerActions}
-                    onMobileToggle={() =>
-                        setIsMobileSidebarOpen((prev) => !prev)
-                    }
-                />
-
-                <main className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-                    {children}
-                </main>
-            </div>
-        </div>
-    ) : (
-        <div className="app-workspace relative min-h-screen overflow-x-hidden">
+    const inner = (
+        <div className="app-workspace flex h-screen flex-col overflow-hidden">
             <DashboardHeader
                 breadcrumbs={breadcrumbs}
                 headerActions={headerActions}
@@ -55,7 +42,7 @@ export default function AppDashboardLayout({
                 onMobileToggle={() => setIsMobileSidebarOpen((prev) => !prev)}
             />
 
-            <main className="fixed inset-0 z-10 flex overflow-hidden bg-background/80 pt-header backdrop-blur-[1px]">
+            <div className="flex min-h-0 flex-1 overflow-hidden">
                 <DashboardSidebar
                     isCollapsed={isSidebarCollapsed}
                     onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
@@ -63,13 +50,13 @@ export default function AppDashboardLayout({
                     onMobileClose={() => setIsMobileSidebarOpen(false)}
                 />
 
-                <div
-                    className="custom-scrollbar min-h-0 flex-1 overflow-y-auto"
+                <main
+                    className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto"
                     scroll-region=""
                 >
                     {children}
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     );
 

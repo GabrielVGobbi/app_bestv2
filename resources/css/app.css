@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import '@fontsource-variable/geist';
 
 @import 'tailwindcss';
 @import 'tw-animate-css';
@@ -11,12 +11,12 @@
 
 @theme {
     --font-sans:
-        'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif,
+        'Geist Variable', ui-sans-serif, system-ui, -apple-system, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
     --font-mono:
-        'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
-    --font-brand: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+        ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
+    --font-brand: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
     --radius: 0.75rem;
     --radius-xs: 0.375rem;
@@ -93,9 +93,9 @@
     --color-app-surface-foreground: var(--app-surface-foreground);
     --color-app-line: var(--app-line);
 
-    --shadow-app-panel: 0 18px 48px -36px rgb(27 21 32 / 28%);
-    --shadow-app-floating: 0 24px 56px -32px rgb(27 21 32 / 38%);
-    --shadow-app-header: 0 12px 32px -28px rgb(27 21 32 / 32%);
+    --shadow-app-panel: 0 8px 30px -24px rgb(0 0 0 / 18%);
+    --shadow-app-floating: 0 28px 80px -34px rgb(0 0 0 / 24%);
+    --shadow-app-header: 0 12px 32px -30px rgb(0 0 0 / 18%);
 
     --z-header: 30;
     --z-sidebar: 40;
@@ -118,21 +118,21 @@
 :root {
     color-scheme: light;
 
-    --background: #f5f6fa;
-    --foreground: #101828;
+    --background: #ffffff;
+    --foreground: #242424;
     --card: #ffffff;
-    --card-foreground: #101828;
+    --card-foreground: #242424;
     --popover: #ffffff;
-    --popover-foreground: #101828;
+    --popover-foreground: #242424;
 
     --primary: #eb0459;
     --primary-light: #ff6699;
     --primary-foreground: #ffffff;
 
-    --secondary: #eef1f6;
-    --secondary-foreground: #101828;
-    --muted: #eef2f7;
-    --muted-foreground: #667085;
+    --secondary: #f1f1f1;
+    --secondary-foreground: #242424;
+    --muted: #f7f7f7;
+    --muted-foreground: #686868;
     --accent: #fff0f6;
     --accent-foreground: #9f063f;
 
@@ -144,8 +144,8 @@
     --warning-foreground: #2d1800;
     --orange: #f97316;
 
-    --border: #dce1ea;
-    --input: #d5dbe6;
+    --border: #e8e8e8;
+    --input: #dedede;
     --ring: rgb(235 4 89 / 42%);
 
     --chart-1: #eb0459;
@@ -160,56 +160,52 @@
     --brand-teal: var(--brand-pink);
     --brand-surface: #fff7fb;
     --brand-surface-strong: #ffe0ec;
-    --brand-muted: #667085;
+    --brand-muted: #686868;
     --brand-focus: rgb(235 4 89 / 42%);
     --brand-danger: #e60023;
     --brand-shadow-primary: 0 12px 28px -16px rgb(235 4 89 / 70%);
 
     --app-surface: #ffffff;
-    --app-surface-raised: #fafbfc;
-    --app-surface-foreground: #101828;
-    --app-line: #d9dee8;
+    --app-surface-raised: #f7f7f7;
+    --app-surface-foreground: #242424;
+    --app-line: #e8e8e8;
 
-    --sidebar: #1b1520;
-    --sidebar-foreground: #f8f7fb;
-    --sidebar-primary: var(--brand-pink);
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgb(255 255 255 / 8%);
+    --sidebar: #c0084d;
+    --sidebar-foreground: #fff7fb;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #9f063f;
+    --sidebar-accent: rgb(255 255 255 / 16%);
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgb(255 255 255 / 10%);
-    --sidebar-ring: var(--brand-focus);
+    --sidebar-border: rgb(255 255 255 / 20%);
+    --sidebar-ring: rgb(255 255 255 / 72%);
 
-    --header-background: color-mix(
-        in oklab,
-        var(--background) 88%,
-        transparent
-    );
+    --header-background: color-mix(in oklab, #ffffff 94%, transparent);
     --header-foreground: var(--foreground);
     --header-border: color-mix(in oklab, var(--border) 88%, transparent);
 
-    --table-background: #1d1722;
-    --table-text: #ffffff;
+    --table-background: #f7f7f7;
+    --table-text: #242424;
     --card-background: var(--secondary);
 }
 
 .dark {
     color-scheme: dark;
 
-    --background: #0f1016;
+    --background: #101010;
     --foreground: #f6f7fb;
-    --card: #171922;
+    --card: #171717;
     --card-foreground: #f6f7fb;
-    --popover: #1b1e29;
+    --popover: #1b1b1b;
     --popover-foreground: #f6f7fb;
 
     --primary: #ff2b73;
     --primary-light: #ff7aa6;
     --primary-foreground: #10080d;
 
-    --secondary: #252a36;
+    --secondary: #282828;
     --secondary-foreground: #f6f7fb;
-    --muted: #1c202b;
-    --muted-foreground: #9aa4b2;
+    --muted: #202020;
+    --muted-foreground: #a3a3a3;
     --accent: #2a1622;
     --accent-foreground: #ffd7e6;
 
@@ -221,8 +217,8 @@
     --warning-foreground: #1f1600;
     --orange: #fb923c;
 
-    --border: #303646;
-    --input: #303646;
+    --border: #303030;
+    --input: #383838;
     --ring: rgb(255 43 115 / 48%);
 
     --chart-1: #ff2b73;
@@ -242,18 +238,18 @@
     --brand-danger: #ff4d5f;
     --brand-shadow-primary: 0 14px 30px -18px rgb(255 43 115 / 80%);
 
-    --app-surface: #171923;
-    --app-surface-raised: #1c1f29;
+    --app-surface: #171717;
+    --app-surface-raised: #202020;
     --app-surface-foreground: #f6f7fb;
-    --app-line: #303646;
+    --app-line: #303030;
 
-    --sidebar: #17121b;
-    --sidebar-foreground: #f7f2f6;
-    --sidebar-primary: var(--brand-pink);
-    --sidebar-primary-foreground: #10080d;
-    --sidebar-accent: rgb(255 255 255 / 8%);
-    --sidebar-accent-foreground: #fff7fb;
-    --sidebar-border: rgb(255 255 255 / 9%);
+    --sidebar: #3b0b21;
+    --sidebar-foreground: #ffe8f1;
+    --sidebar-primary: #ff7aa6;
+    --sidebar-primary-foreground: #2b0718;
+    --sidebar-accent: #651437;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #741a40;
     --sidebar-ring: var(--brand-focus);
 
     --header-background: color-mix(
@@ -264,8 +260,8 @@
     --header-foreground: var(--foreground);
     --header-border: color-mix(in oklab, var(--border) 78%, transparent);
 
-    --table-background: #18131d;
-    --table-text: #fff7fb;
+    --table-background: #202020;
+    --table-text: #f5f5f5;
     --card-background: var(--secondary);
 
     --shadow-app-panel: 0 18px 48px -36px rgb(0 0 0 / 55%);
@@ -290,7 +286,7 @@
     }
 
     body {
-        @apply bg-background text-foreground font-sans antialiased;
+        @apply bg-background font-sans text-foreground antialiased;
         margin: 0;
         min-height: 100%;
         overflow-x: hidden;
@@ -298,7 +294,9 @@
         line-height: 1.5;
         letter-spacing: -0.01em;
         text-rendering: optimizeLegibility;
-        font-feature-settings: 'ss01' on, 'cv11' on;
+        font-feature-settings:
+            'ss01' on,
+            'cv11' on;
     }
 
     h1,
@@ -337,7 +335,7 @@
     .page-wrapper-md,
     .page-wrapper-lg,
     .page-wrapper-xl {
-        @apply mb-8 w-full px-4 pt-6 pb-8 md:px-8 lg:px-10;
+        @apply mb-8 w-full px-[18px] pt-8 pb-10 md:px-8 lg:px-10;
     }
 
     .page-wrapper {
@@ -367,13 +365,7 @@
     .app-workspace {
         position: relative;
         isolation: isolate;
-        background:
-            radial-gradient(
-                ellipse 55% 40% at 8% 0%,
-                color-mix(in oklab, var(--primary) 6%, transparent),
-                transparent 70%
-            ),
-            var(--background);
+        background: var(--background);
     }
 
     .app-workspace::before {
@@ -382,13 +374,12 @@
         inset: 0;
         content: '';
         pointer-events: none;
-        opacity: 0.14;
+        opacity: 0.2;
         background-image: radial-gradient(
-            color-mix(in oklab, var(--foreground) 8%, transparent) 0.6px,
-            transparent 0.6px
+            color-mix(in oklab, var(--foreground) 9%, transparent) 0.7px,
+            transparent 0.7px
         );
-        background-size: 18px 18px;
-        mask-image: linear-gradient(to bottom, black 0%, transparent 55%);
+        background-size: 7px 7px;
     }
 
     .dark .app-workspace::before {
@@ -396,18 +387,18 @@
     }
 
     .auth-workspace {
-        background:
-            radial-gradient(
-                ellipse 50% 45% at 12% 10%,
-                color-mix(in oklab, var(--primary) 14%, transparent),
-                transparent 70%
-            ),
-            radial-gradient(
-                ellipse 40% 35% at 92% 88%,
-                color-mix(in oklab, var(--brand-red) 8%, transparent),
-                transparent 65%
-            ),
-            var(--background);
+        background: var(--background);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Dashboard\BuildOperationalDashboard;
+use App\Models\User;
 use App\Supports\TheOneResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 use Laravel\Fortify\Features;
 
 class AppController extends Controller
@@ -21,9 +24,16 @@ class AppController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function dashboard()
+    public function dashboard(BuildOperationalDashboard $dashboard): Response
     {
-        return Inertia::render('dashboard');
+        /** @var User $user */
+        $user = request()->user();
+
+        return Inertia::render('dashboard', [
+            'operationalDashboard' => Inertia::defer(
+                fn (): array => $dashboard->handle($user),
+            ),
+        ]);
     }
 
     public function ping()

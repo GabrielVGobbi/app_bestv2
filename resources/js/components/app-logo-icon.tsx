@@ -60,21 +60,43 @@ export default function AppLogoIcon(props: AppLogoIconProps) {
     return (
         <svg
             {...svgProps}
-            viewBox="0 0 120 120"
+            viewBox="0 0 32 32"
+            fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
         >
-            <circle cx="60" cy="60" r="54" fill="#ededed" />
-            <text
-                x="60"
-                y="78"
-                fill="#0d0d0d"
-                fontFamily="var(--font-brand), Poppins, sans-serif"
-                fontSize="56"
-                fontWeight="700"
-                textAnchor="middle"
-            >
-                R
-            </text>
+            <rect
+                x="3"
+                y="11"
+                width="4"
+                height="10"
+                rx="2"
+                fill="currentColor"
+            />
+            <rect
+                x="10"
+                y="6"
+                width="4"
+                height="20"
+                rx="2"
+                fill="currentColor"
+            />
+            <rect
+                x="17"
+                y="9"
+                width="4"
+                height="14"
+                rx="2"
+                fill="currentColor"
+            />
+            <rect
+                x="24"
+                y="13"
+                width="4"
+                height="6"
+                rx="2"
+                fill="currentColor"
+            />
         </svg>
     );
 }

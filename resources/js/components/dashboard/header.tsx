@@ -4,7 +4,7 @@ interface HeaderFieldProps {
 
 function Header({ children }: HeaderFieldProps) {
     return (
-        <header className="sticky top-0 z-10 flex h-header shrink-0 items-center justify-between border-b border-header-border bg-background/80 px-5 backdrop-blur-xl">
+        <header className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 md:px-6">
             {children}
         </header>
     );
