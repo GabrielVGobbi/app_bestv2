@@ -478,6 +478,10 @@
     box-shadow: var(--shadow-app-panel);
 }
 
+@utility bg-data-table-head {
+    background-color: var(--header-background);
+}
+
 @utility app-glass {
     background: var(--header-background);
     color: var(--header-foreground);

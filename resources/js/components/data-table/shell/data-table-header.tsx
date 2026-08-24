@@ -33,7 +33,7 @@ export function DataTableHeader<TData>({
         appearance.gridLines === 'vertical' || appearance.gridLines === 'both';
 
     return (
-        <thead className="sticky top-0 z-10 border-b border-app-line bg-app-surface-raised">
+        <thead className="sticky top-0 z-10 border-b border-white/10 bg-data-table-head">
             {headerGroups.map((headerGroup) => {
                 const visibleHeaders = headerGroup.headers.filter((header) =>
                     isColumnVisible(header.column.id, columnVisibility),
@@ -69,7 +69,7 @@ export function DataTableHeader<TData>({
                                 <th
                                     key={header.id}
                                     className={cn(
-                                        'relative overflow-hidden font-medium whitespace-nowrap text-muted-foreground',
+                                        'relative overflow-hidden font-medium whitespace-nowrap text-sidebar-foreground',
                                         HEADER_SIZE_STYLES[appearance.size],
                                         showVerticalLines &&
                                             'border-r last:border-r-0',
@@ -77,7 +77,7 @@ export function DataTableHeader<TData>({
                                         align === 'right' &&
                                             'text-right font-tabular',
                                         isSticky &&
-                                            'sticky z-20 border-l bg-app-surface-raised',
+                                            'sticky z-20 border-l border-white/10 bg-data-table-head',
                                     )}
                                     style={{
                                         width: header.getSize(),
