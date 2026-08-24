@@ -75,6 +75,7 @@ class FinancialEntryOperationTest extends TestCase
         $user = $this->userWithRole('finance');
         $company = Company::factory()->create();
         $client = Client::factory()->create(['company_id' => $company->id]);
+        $category = FinancialCategory::factory()->income()->create(['company_id' => $company->id]);
 
         $this->actingAs($user)
             ->from(route('financial-entries.create'))
@@ -83,7 +84,9 @@ class FinancialEntryOperationTest extends TestCase
                 'direction' => FinancialDirection::Receivable->value,
                 'counterparty_type' => Client::class,
                 'counterparty_id' => $client->id,
+                'category_id' => $category->id,
                 'description' => 'Recebível com ajustes inválidos',
+                'due_date' => now()->addWeek()->toDateString(),
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,
@@ -178,6 +181,7 @@ class FinancialEntryOperationTest extends TestCase
                 'counterparty_id' => $client->id,
                 'category_id' => $category->id,
                 'description' => 'Recebivel web parcelado',
+                'due_date' => '2026-07-20',
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,
@@ -233,6 +237,7 @@ class FinancialEntryOperationTest extends TestCase
             'counterparty_id' => $supplier->id,
             'category_id' => $category->id,
             'description' => 'Pagavel web parcelado para baixa',
+            'due_date' => '2026-07-28',
             'components' => [
                 [
                     'code' => FinancialAmountComponentCode::Principal->value,
@@ -293,6 +298,7 @@ class FinancialEntryOperationTest extends TestCase
                 'direction' => FinancialDirection::Receivable->value,
                 'category_id' => $category->id,
                 'description' => 'Recebivel sem cliente',
+                'due_date' => now()->addWeek()->toDateString(),
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,
@@ -325,6 +331,7 @@ class FinancialEntryOperationTest extends TestCase
                 'counterparty_id' => $supplier->id,
                 'category_id' => $category->id,
                 'description' => 'Recebivel com fornecedor',
+                'due_date' => now()->addWeek()->toDateString(),
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,
@@ -357,6 +364,7 @@ class FinancialEntryOperationTest extends TestCase
                 'counterparty_id' => $client->id,
                 'category_id' => $category->id,
                 'description' => 'Despesa com cliente',
+                'due_date' => now()->addWeek()->toDateString(),
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,
@@ -388,6 +396,7 @@ class FinancialEntryOperationTest extends TestCase
                 'counterparty_id' => $supplier->id,
                 'category_id' => $category->id,
                 'description' => 'Despesa com fornecedor',
+                'due_date' => now()->addWeek()->toDateString(),
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,

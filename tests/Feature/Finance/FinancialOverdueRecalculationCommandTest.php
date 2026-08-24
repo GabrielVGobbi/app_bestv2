@@ -20,7 +20,7 @@ class FinancialOverdueRecalculationCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_command_marks_titles_overdue_after_the_day_turns(): void
+    public function test_command_preserves_operational_status_and_overdue_is_derived_after_day_turns(): void
     {
         Carbon::setTestNow('2026-07-06 10:00:00');
 
@@ -37,8 +37,10 @@ class FinancialOverdueRecalculationCommandTest extends TestCase
 
             $entry->refresh()->load('installments');
 
-            $this->assertSame(FinancialEntryStatus::Overdue, $entry->status);
-            $this->assertSame(FinancialEntryStatus::Overdue, $entry->installments->sole()->status);
+            $this->assertSame(FinancialEntryStatus::Open, $entry->status);
+            $this->assertSame(FinancialEntryStatus::Open, $entry->installments->sole()->status);
+            $this->assertTrue($entry->isOverdue());
+            $this->assertTrue($entry->installments->sole()->isOverdue());
         } finally {
             Carbon::setTestNow();
         }

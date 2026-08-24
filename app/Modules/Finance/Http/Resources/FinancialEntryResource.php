@@ -42,6 +42,7 @@ class FinancialEntryResource extends JsonResource
             'issue_date' => $this->issue_date?->toDateString(),
             'competence_date' => $this->competence_date?->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
+            'is_overdue' => $this->isOverdue(),
             'gross_amount' => $this->gross_amount,
             'addition_amount' => $this->addition_amount,
             'deduction_amount' => $this->deduction_amount,

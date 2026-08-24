@@ -8,7 +8,9 @@ use App\Modules\Clients\Models\Client;
 use App\Modules\Finance\Actions\Entries\CreateManualFinancialEntry;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
 use App\Modules\Finance\Enums\FinancialAmountOperation;
+use App\Modules\Finance\Enums\FinancialCategoryType;
 use App\Modules\Finance\Enums\FinancialDirection;
+use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialEntry;
 use App\Modules\Sales\Models\Sale;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -78,6 +80,7 @@ class CreateReceivableFromSale
             'issue_date' => $referenceDate,
             'competence_date' => $referenceDate,
             'due_date' => $referenceDate,
+            'category_id' => $this->salesCategoryId(),
             'currency' => $sale->currency,
             'components' => $this->buildComponents($sale),
             'metadata' => [
@@ -86,6 +89,30 @@ class CreateReceivableFromSale
                 'order_number' => $sale->order_number,
             ],
         ];
+    }
+
+    private function salesCategoryId(): int
+    {
+        $seededCategory = FinancialCategory::query()
+            ->whereNull('company_id')
+            ->where('code', 'REC-VEND')
+            ->whereDoesntHave('children')
+            ->first();
+
+        if ($seededCategory instanceof FinancialCategory) {
+            return (int) $seededCategory->id;
+        }
+
+        return (int) FinancialCategory::query()->firstOrCreate(
+            ['company_id' => null, 'code' => 'SYS-SALES', 'type' => FinancialCategoryType::Income->value],
+            [
+                'name' => 'Receitas de vendas',
+                'slug' => 'receitas-de-vendas-sistema',
+                'description' => 'Categoria sistêmica para recebíveis originados por vendas.',
+                'sort_order' => 65534,
+                'is_active' => true,
+            ],
+        )->id;
     }
 
     /**

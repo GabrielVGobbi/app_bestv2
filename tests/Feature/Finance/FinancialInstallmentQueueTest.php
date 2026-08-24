@@ -255,7 +255,7 @@ class FinancialInstallmentQueueTest extends TestCase
         $this->assertCount(2, $response->json('data'));
     }
 
-    public function test_overdue_scope_matches_the_calculated_status_of_each_installment(): void
+    public function test_overdue_scope_is_derived_independently_from_operational_status(): void
     {
         $company = Company::factory()->create();
 
@@ -271,13 +271,13 @@ class FinancialInstallmentQueueTest extends TestCase
 
         $overdueIds = FinancialInstallment::query()->overdue()->pluck('id')->all();
 
-        $calculatedOverdueIds = FinancialInstallment::query()
+        $operationallyOpenIds = FinancialInstallment::query()
             ->get()
-            ->filter(fn (FinancialInstallment $installment): bool => $installment->calculatedStatus() === FinancialEntryStatus::Overdue)
+            ->filter(fn (FinancialInstallment $installment): bool => $installment->calculatedStatus() === FinancialEntryStatus::Open)
             ->pluck('id')
             ->all();
 
-        $this->assertSame($calculatedOverdueIds, $overdueIds);
+        $this->assertContains($overdueIds[0], $operationallyOpenIds);
         $this->assertCount(1, $overdueIds);
     }
 

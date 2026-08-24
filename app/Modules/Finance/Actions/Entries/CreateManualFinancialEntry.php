@@ -66,7 +66,10 @@ class CreateManualFinancialEntry
             $netAmount,
             $dueDate,
             $competenceDate,
-        );
+        )->map(fn (array $installment): array => [
+            ...$installment,
+            'due_date' => $installment['due_date'] ?? $issueDate,
+        ]);
         $entryDueDate = $dueDate ?? $installments
             ->pluck('due_date')
             ->filter()
@@ -186,7 +189,27 @@ class CreateManualFinancialEntry
     private function resolveCategory(mixed $value, Company $company, FinancialDirection $direction): ?FinancialCategory
     {
         if (blank($value)) {
-            return null;
+            $type = match ($direction) {
+                FinancialDirection::Receivable => FinancialCategoryType::Income,
+                FinancialDirection::Payable => FinancialCategoryType::Expense,
+            };
+            $code = match ($direction) {
+                FinancialDirection::Receivable => 'SYS-UNCAT-REC',
+                FinancialDirection::Payable => 'SYS-UNCAT-PAY',
+            };
+
+            return FinancialCategory::query()->firstOrCreate(
+                ['company_id' => null, 'code' => $code, 'type' => $type->value],
+                [
+                    'name' => $direction === FinancialDirection::Receivable
+                        ? 'Receitas não classificadas'
+                        : 'Despesas não classificadas',
+                    'slug' => strtolower($code),
+                    'description' => 'Categoria sistêmica para fluxos internos sem classificação explícita.',
+                    'sort_order' => 65535,
+                    'is_active' => true,
+                ],
+            );
         }
 
         $category = FinancialCategory::query()->find($this->positiveInteger($value, 'category_id'));

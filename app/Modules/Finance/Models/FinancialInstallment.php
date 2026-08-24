@@ -261,10 +261,6 @@ class FinancialInstallment extends Model
             return FinancialEntryStatus::Paid;
         }
 
-        if ($this->isOverdue()) {
-            return FinancialEntryStatus::Overdue;
-        }
-
         if ($this->settled_amount > 0) {
             return FinancialEntryStatus::PartiallyPaid;
         }

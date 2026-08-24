@@ -75,10 +75,6 @@ class RecalculateFinancialEntryStatus
             return FinancialEntryStatus::Paid;
         }
 
-        if ($activeInstallments->contains(fn (FinancialInstallment $installment): bool => $installment->status === FinancialEntryStatus::Overdue)) {
-            return FinancialEntryStatus::Overdue;
-        }
-
         if ($activeInstallments->contains(fn (FinancialInstallment $installment): bool => $installment->status === FinancialEntryStatus::PartiallyPaid || $installment->settled_amount > 0)) {
             return FinancialEntryStatus::PartiallyPaid;
         }

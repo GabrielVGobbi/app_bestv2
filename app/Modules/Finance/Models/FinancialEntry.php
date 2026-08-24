@@ -202,6 +202,18 @@ class FinancialEntry extends Model implements HasUploadTags, TimelineSubject
         return $this->originable_type === null && $this->originable_id === null;
     }
 
+    public function isOverdue(): bool
+    {
+        return $this->due_date !== null
+            && (int) $this->balance_amount > 0
+            && in_array($this->status, [
+                FinancialEntryStatus::Open,
+                FinancialEntryStatus::Overdue,
+                FinancialEntryStatus::PartiallyPaid,
+            ], true)
+            && $this->due_date->lt(today());
+    }
+
     public function originKind(): string
     {
         if ($this->isManualOrigin()) {

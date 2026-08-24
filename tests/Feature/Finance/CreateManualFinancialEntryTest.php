@@ -174,7 +174,7 @@ class CreateManualFinancialEntryTest extends TestCase
         ]);
     }
 
-    public function test_marks_past_due_open_installments_and_entry_as_overdue(): void
+    public function test_keeps_operational_status_open_and_derives_overdue_state(): void
     {
         Carbon::setTestNow('2026-07-04 10:00:00');
 
@@ -206,8 +206,9 @@ class CreateManualFinancialEntryTest extends TestCase
 
             $entry->refresh()->load('installments');
 
-            $this->assertSame(FinancialEntryStatus::Overdue, $entry->status);
-            $this->assertSame(FinancialEntryStatus::Overdue, $entry->installments->sole()->status);
+            $this->assertSame(FinancialEntryStatus::Open, $entry->status);
+            $this->assertSame(FinancialEntryStatus::Open, $entry->installments->sole()->status);
+            $this->assertTrue($entry->isOverdue());
             $this->assertTrue($entry->installments->sole()->isOverdue());
         } finally {
             Carbon::setTestNow();
