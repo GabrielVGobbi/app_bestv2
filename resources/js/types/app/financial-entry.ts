@@ -22,8 +22,14 @@ export type FinancialAmountComponentCode =
     | 'fee'
     | 'withholding'
     | 'adjustment'
+    | 'informational'
     | 'other';
-export type FinancialAmountOperation = 'add' | 'subtract';
+export type FinancialAmountNature =
+    | 'principal'
+    | 'addition'
+    | 'deduction'
+    | 'informational';
+export type FinancialAmountOperation = 'add' | 'subtract' | 'none';
 export type FinancialSettlementStatus = 'posted' | 'reversed';
 export type FinancialMovementDirection = 'inflow' | 'outflow';
 
@@ -33,10 +39,16 @@ export interface FinancialAmountComponent {
     company_id: number;
     code: FinancialAmountComponentCode;
     code_label: string;
+    nature: FinancialAmountNature;
     label: string | null;
     operation: FinancialAmountOperation;
     operation_label: string;
+    affects_net: boolean;
     amount: number;
+    origin: string;
+    base_amount: number | null;
+    rate_basis_points: number | null;
+    calculation_method: string | null;
     position: number;
     metadata: Record<string, unknown> | null;
     created_at: string;
@@ -101,6 +113,28 @@ export interface FinancialSettlementAllocation {
     updated_at: string;
 }
 
+export interface FinancialSettlementComponent {
+    id: number;
+    uuid: string;
+    company_id: number;
+    settlement_id: number;
+    code: FinancialAmountComponentCode;
+    code_label: string;
+    nature: FinancialAmountNature;
+    label: string | null;
+    operation: FinancialAmountOperation;
+    affects_net: boolean;
+    amount: number;
+    origin: string;
+    base_amount: number | null;
+    rate_basis_points: number | null;
+    calculation_method: string | null;
+    position: number;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface FinancialMovement {
     id: number;
     uuid: string;
@@ -129,6 +163,8 @@ export interface FinancialSettlement {
     financial_account?: FinancialAccount | null;
     payment_method_id: number | null;
     gross_amount: number;
+    addition_amount: number;
+    deduction_amount: number;
     discount_amount: number;
     interest_amount: number;
     penalty_amount: number;
@@ -142,6 +178,7 @@ export interface FinancialSettlement {
     reverse_reason: string | null;
     metadata: Record<string, unknown> | null;
     allocations?: FinancialSettlementAllocation[];
+    components?: FinancialSettlementComponent[];
     movements?: FinancialMovement[];
     payment_method?: PaymentMethod | null;
     permissions: {
@@ -176,6 +213,8 @@ export interface FinancialEntry {
     competence_date: string | null;
     due_date: string | null;
     gross_amount: number;
+    addition_amount: number;
+    deduction_amount: number;
     net_amount: number;
     settled_amount: number;
     balance_amount: number;
@@ -213,6 +252,8 @@ export interface FinancialAmountAdjustmentOption {
     label: string;
     value: FinancialAmountComponentCode;
     operation: FinancialAmountOperation | null;
+    nature: FinancialAmountNature;
+    affects_net: boolean;
     requires_description: boolean;
 }
 

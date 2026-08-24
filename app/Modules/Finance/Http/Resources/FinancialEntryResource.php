@@ -43,6 +43,8 @@ class FinancialEntryResource extends JsonResource
             'competence_date' => $this->competence_date?->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
             'gross_amount' => $this->gross_amount,
+            'addition_amount' => $this->addition_amount,
+            'deduction_amount' => $this->deduction_amount,
             'net_amount' => $this->net_amount,
             'settled_amount' => $this->settled_amount,
             'balance_amount' => $this->balance_amount,

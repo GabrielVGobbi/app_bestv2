@@ -89,6 +89,7 @@ class FinancialEntryController extends Controller
                     'amountComponents',
                     'installments.settlementAllocations',
                     'settlements.allocations',
+                    'settlements.components',
                     'settlements.financialAccount',
                     'settlements.movements.financialAccount',
                     'settlements.paymentMethod',
@@ -109,7 +110,7 @@ class FinancialEntryController extends Controller
     }
 
     /**
-     * @return array<int, array{label: string, value: string, operation: ?string, requires_description: bool}>
+     * @return array<int, array{label: string, value: string, operation: ?string, nature: string, affects_net: bool, requires_description: bool}>
      */
     private function amountAdjustmentOptions(): array
     {
@@ -119,6 +120,8 @@ class FinancialEntryController extends Controller
                 'label' => $code->label(),
                 'value' => $code->value,
                 'operation' => $code->fixedOperation()?->value,
+                'nature' => $code->defaultNature($code->fixedOperation())->value,
+                'affects_net' => $code->defaultNature($code->fixedOperation())->affectsNet(),
                 'requires_description' => $code->requiresDescription(),
             ])
             ->values()

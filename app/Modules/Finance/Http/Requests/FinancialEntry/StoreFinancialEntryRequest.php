@@ -7,6 +7,7 @@ namespace App\Modules\Finance\Http\Requests\FinancialEntry;
 use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
+use App\Modules\Finance\Enums\FinancialAmountNature;
 use App\Modules\Finance\Enums\FinancialAmountOperation;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Models\FinancialCategory;
@@ -56,11 +57,17 @@ class StoreFinancialEntryRequest extends FormRequest
             'currency' => ['nullable', 'string', 'size:3'],
             'metadata' => ['nullable', 'array'],
             'components' => ['required', 'array', 'min:1'],
-            'components.*' => ['required', 'array:code,label,operation,amount,position,metadata'],
+            'components.*' => ['required', 'array:code,nature,label,operation,affects_net,amount,origin,base_amount,rate_basis_points,calculation_method,position,metadata'],
             'components.*.code' => ['required', Rule::enum(FinancialAmountComponentCode::class)],
+            'components.*.nature' => ['nullable', Rule::enum(FinancialAmountNature::class)],
             'components.*.label' => ['nullable', 'string', 'max:255'],
-            'components.*.operation' => ['required', Rule::enum(FinancialAmountOperation::class)],
+            'components.*.operation' => ['nullable', Rule::enum(FinancialAmountOperation::class)],
+            'components.*.affects_net' => ['nullable', 'boolean'],
             'components.*.amount' => ['required', 'integer', 'min:1'],
+            'components.*.origin' => ['nullable', 'string', 'max:32'],
+            'components.*.base_amount' => ['nullable', 'integer', 'min:0'],
+            'components.*.rate_basis_points' => ['nullable', 'integer', 'min:0'],
+            'components.*.calculation_method' => ['nullable', 'string', 'max:32'],
             'components.*.position' => ['nullable', 'integer', 'min:0'],
             'components.*.metadata' => ['nullable', 'array'],
             'installments' => ['nullable', 'array', 'min:1'],
@@ -98,16 +105,25 @@ class StoreFinancialEntryRequest extends FormRequest
                         ? FinancialAmountOperation::tryFrom($component['operation'])
                         : null;
 
-                    if (! $code || ! $operation) {
+                    if (! $code) {
                         continue;
                     }
 
-                    $fixedOperation = $code->fixedOperation();
+                    $nature = is_string($component['nature'] ?? null)
+                        ? FinancialAmountNature::tryFrom($component['nature'])
+                        : $code->defaultNature($operation);
 
-                    if ($fixedOperation && $operation !== $fixedOperation) {
+                    if (! in_array($nature, $code->allowedNatures(), true)) {
+                        $validator->errors()->add(
+                            "components.{$index}.nature",
+                            __('A natureza não é compatível com o tipo do componente.'),
+                        );
+                    }
+
+                    if ($operation && $operation !== $nature->operation()) {
                         $validator->errors()->add(
                             "components.{$index}.operation",
-                            __('A operação informada não é permitida para este tipo de ajuste.'),
+                            __('A operação não é compatível com a natureza do componente.'),
                         );
                     }
 

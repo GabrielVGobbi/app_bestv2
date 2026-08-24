@@ -7,6 +7,7 @@ namespace App\Modules\Finance\Models;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialAmountComponentFactory;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
+use App\Modules\Finance\Enums\FinancialAmountNature;
 use App\Modules\Finance\Enums\FinancialAmountOperation;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,9 +23,15 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'amountable_type',
     'amountable_id',
     'code',
+    'nature',
     'label',
     'operation',
+    'affects_net',
     'amount',
+    'origin',
+    'base_amount',
+    'rate_basis_points',
+    'calculation_method',
     'position',
     'metadata',
 ])]
@@ -52,8 +59,12 @@ class FinancialAmountComponent extends Model
     {
         return [
             'code' => FinancialAmountComponentCode::class,
+            'nature' => FinancialAmountNature::class,
             'operation' => FinancialAmountOperation::class,
+            'affects_net' => 'boolean',
             'amount' => 'integer',
+            'base_amount' => 'integer',
+            'rate_basis_points' => 'integer',
             'position' => 'integer',
             'metadata' => 'array',
             'created_at' => 'datetime',

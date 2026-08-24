@@ -47,13 +47,14 @@ class FinancialEntryOperationTest extends TestCase
                 ->component('app/financial-entries/create')
                 ->has('directionOptions')
                 ->where('amountAdjustmentOptions', [
-                    ['label' => 'Desconto', 'value' => 'discount', 'operation' => 'subtract', 'requires_description' => false],
-                    ['label' => 'Imposto', 'value' => 'tax', 'operation' => 'add', 'requires_description' => false],
-                    ['label' => 'Juros', 'value' => 'interest', 'operation' => 'add', 'requires_description' => false],
-                    ['label' => 'Multa', 'value' => 'penalty', 'operation' => 'add', 'requires_description' => false],
-                    ['label' => 'Taxa', 'value' => 'fee', 'operation' => 'add', 'requires_description' => false],
-                    ['label' => 'Retenção', 'value' => 'withholding', 'operation' => 'subtract', 'requires_description' => false],
-                    ['label' => 'Outro', 'value' => 'other', 'operation' => null, 'requires_description' => true],
+                    ['label' => 'Desconto', 'value' => 'discount', 'operation' => 'subtract', 'nature' => 'deduction', 'affects_net' => true, 'requires_description' => false],
+                    ['label' => 'Imposto', 'value' => 'tax', 'operation' => 'add', 'nature' => 'addition', 'affects_net' => true, 'requires_description' => false],
+                    ['label' => 'Juros', 'value' => 'interest', 'operation' => 'add', 'nature' => 'addition', 'affects_net' => true, 'requires_description' => false],
+                    ['label' => 'Multa', 'value' => 'penalty', 'operation' => 'add', 'nature' => 'addition', 'affects_net' => true, 'requires_description' => false],
+                    ['label' => 'Taxa', 'value' => 'fee', 'operation' => 'add', 'nature' => 'addition', 'affects_net' => true, 'requires_description' => false],
+                    ['label' => 'Retenção', 'value' => 'withholding', 'operation' => 'subtract', 'nature' => 'deduction', 'affects_net' => true, 'requires_description' => false],
+                    ['label' => 'Informativo', 'value' => 'informational', 'operation' => 'none', 'nature' => 'informational', 'affects_net' => false, 'requires_description' => false],
+                    ['label' => 'Outro', 'value' => 'other', 'operation' => null, 'nature' => 'addition', 'affects_net' => true, 'requires_description' => true],
                 ])
                 ->has('counterpartyTypeOptions')
                 ->where('counterpartyTypeByDirection.receivable', Client::class)

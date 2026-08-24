@@ -14,6 +14,7 @@ use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Support\FinancialAmountComposition;
 use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,7 @@ class CreateManualFinancialEntry
     public function __construct(
         private readonly FinancialCompanyAccess $companyAccess,
         private readonly RecalculateFinancialEntryStatus $recalculateStatus,
+        private readonly FinancialAmountComposition $amountComposition,
     ) {}
 
     /**
@@ -45,20 +47,15 @@ class CreateManualFinancialEntry
         $counterparty = $this->resolveCounterparty($payload, $company, $direction);
         $category = $this->resolveCategory($payload['category_id'] ?? null, $company, $direction);
 
-        $components = $this->normalizeComponents($payload['components'] ?? null);
-        $grossAmount = $components
-            ->where('operation', FinancialAmountOperation::Add)
-            ->sum('amount');
-        $subtractAmount = $components
-            ->where('operation', FinancialAmountOperation::Subtract)
-            ->sum('amount');
-        $netAmount = $grossAmount - $subtractAmount;
-
-        if ($netAmount <= 0) {
-            throw ValidationException::withMessages([
-                'components' => __('O valor liquido do lancamento deve ser maior que zero.'),
-            ]);
-        }
+        $componentOrigin = blank($payload['originable_type'] ?? null)
+            ? 'manual'
+            : str((string) $payload['originable_type'])->classBasename()->snake()->value();
+        $composition = $this->amountComposition->normalize($payload['components'] ?? null, $componentOrigin);
+        $components = $composition['components'];
+        $grossAmount = $composition['gross_amount'];
+        $additionAmount = $composition['addition_amount'];
+        $deductionAmount = $composition['deduction_amount'];
+        $netAmount = $composition['net_amount'];
 
         $description = trim((string) ($payload['description'] ?? ''));
         $issueDate = $this->dateOrNull($payload['issue_date'] ?? null) ?? now()->toDateString();
@@ -82,7 +79,7 @@ class CreateManualFinancialEntry
             ]);
         }
 
-        return DB::transaction(function () use ($payload, $actor, $company, $direction, $counterparty, $category, $components, $grossAmount, $netAmount, $description, $issueDate, $competenceDate, $entryDueDate, $installments): FinancialEntry {
+        return DB::transaction(function () use ($payload, $actor, $company, $direction, $counterparty, $category, $components, $grossAmount, $additionAmount, $deductionAmount, $netAmount, $description, $issueDate, $competenceDate, $entryDueDate, $installments): FinancialEntry {
             $entry = FinancialEntry::query()->create([
                 'company_id' => $company->id,
                 'created_by_id' => $actor?->getKey(),
@@ -98,6 +95,8 @@ class CreateManualFinancialEntry
                 'competence_date' => $competenceDate,
                 'due_date' => $entryDueDate,
                 'gross_amount' => $grossAmount,
+                'addition_amount' => $additionAmount,
+                'deduction_amount' => $deductionAmount,
                 'net_amount' => $netAmount,
                 'settled_amount' => 0,
                 'balance_amount' => $netAmount,
@@ -110,9 +109,15 @@ class CreateManualFinancialEntry
                     ->map(fn (array $component): array => [
                         'company_id' => $company->id,
                         'code' => $component['code'],
+                        'nature' => $component['nature'],
                         'label' => $component['label'],
                         'operation' => $component['operation'],
+                        'affects_net' => $component['affects_net'],
                         'amount' => $component['amount'],
+                        'origin' => $component['origin'],
+                        'base_amount' => $component['base_amount'],
+                        'rate_basis_points' => $component['rate_basis_points'],
+                        'calculation_method' => $component['calculation_method'],
                         'position' => $component['position'],
                         'metadata' => $component['metadata'],
                     ])

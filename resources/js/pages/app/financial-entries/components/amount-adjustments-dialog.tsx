@@ -381,7 +381,10 @@ export function AmountAdjustmentsDialog({
                                                         ? 'Você define'
                                                         : isAddition
                                                           ? '+ Acréscimo'
-                                                          : '− Redução'}
+                                                          : option.operation ===
+                                                              'subtract'
+                                                            ? '− Redução'
+                                                            : 'Informativo'}
                                                 </span>
                                             </span>
                                             {isSelected ? (
@@ -443,7 +446,10 @@ export function AmountAdjustmentsDialog({
                                                             draft.operation ===
                                                                 'add'
                                                                 ? 'bg-inflow-soft text-inflow-soft-foreground'
-                                                                : 'bg-outflow-soft text-outflow-soft-foreground',
+                                                                : draft.operation ===
+                                                                    'subtract'
+                                                                  ? 'bg-outflow-soft text-outflow-soft-foreground'
+                                                                  : 'bg-secondary text-secondary-foreground',
                                                         )}
                                                     >
                                                         <Icon className="size-4" />
@@ -461,13 +467,19 @@ export function AmountAdjustmentsDialog({
                                                                     draft.operation ===
                                                                     'add'
                                                                         ? 'inflow'
-                                                                        : 'outflow'
+                                                                        : draft.operation ===
+                                                                            'subtract'
+                                                                          ? 'outflow'
+                                                                          : 'secondary'
                                                                 }
                                                             >
                                                                 {draft.operation ===
                                                                 'add'
                                                                     ? 'Acréscimo'
-                                                                    : 'Redução'}
+                                                                    : draft.operation ===
+                                                                        'subtract'
+                                                                      ? 'Redução'
+                                                                      : 'Informativo'}
                                                             </Badge>
                                                         </div>
                                                     </div>

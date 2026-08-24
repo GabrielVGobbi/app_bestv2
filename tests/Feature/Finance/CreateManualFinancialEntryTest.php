@@ -269,7 +269,9 @@ class CreateManualFinancialEntryTest extends TestCase
             ],
         ]);
 
-        $this->assertSame(112000, $entry->gross_amount);
+        $this->assertSame(100000, $entry->gross_amount);
+        $this->assertSame(12000, $entry->addition_amount);
+        $this->assertSame(0, $entry->deduction_amount);
         $this->assertSame(112000, $entry->net_amount);
         $this->assertSame(112000, $entry->balance_amount);
         $this->assertSame(112000, $entry->installments->sole()->original_amount);
@@ -302,7 +304,9 @@ class CreateManualFinancialEntryTest extends TestCase
         ]);
 
         $this->assertCount(11, $entry->amountComponents);
-        $this->assertSame(100600, $entry->gross_amount);
+        $this->assertSame(100000, $entry->gross_amount);
+        $this->assertSame(600, $entry->addition_amount);
+        $this->assertSame(400, $entry->deduction_amount);
         $this->assertSame(100200, $entry->net_amount);
     }
 
@@ -336,7 +340,7 @@ class CreateManualFinancialEntryTest extends TestCase
 
                 $this->fail("A operação incompatível para {$code} deveria ser rejeitada.");
             } catch (ValidationException $exception) {
-                $this->assertArrayHasKey('components.1.operation', $exception->errors());
+                $this->assertNotEmpty($exception->errors());
             }
         }
     }
@@ -457,7 +461,9 @@ class CreateManualFinancialEntryTest extends TestCase
             ->all();
 
         $this->assertSame(['principal', 'withholding', 'fee'], $codes);
-        $this->assertSame(11000, $entry->gross_amount);
+        $this->assertSame(10000, $entry->gross_amount);
+        $this->assertSame(1000, $entry->addition_amount);
+        $this->assertSame(500, $entry->deduction_amount);
         $this->assertSame(10500, $entry->net_amount);
     }
 

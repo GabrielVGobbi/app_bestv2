@@ -6,6 +6,7 @@ namespace App\Modules\Finance\Database\Factories;
 
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
+use App\Modules\Finance\Enums\FinancialAmountNature;
 use App\Modules\Finance\Enums\FinancialAmountOperation;
 use App\Modules\Finance\Models\FinancialAmountComponent;
 use App\Modules\Finance\Models\FinancialEntry;
@@ -23,9 +24,12 @@ class FinancialAmountComponentFactory extends Factory
             'amountable_type' => FinancialEntry::class,
             'amountable_id' => FinancialEntry::factory(),
             'code' => FinancialAmountComponentCode::Principal,
+            'nature' => FinancialAmountNature::Principal,
             'label' => 'Principal',
             'operation' => FinancialAmountOperation::Add,
+            'affects_net' => true,
             'amount' => 10000,
+            'origin' => 'factory',
             'position' => 0,
             'metadata' => null,
         ];

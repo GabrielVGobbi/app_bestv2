@@ -8,4 +8,5 @@ enum FinancialAmountOperation: string
 {
     case Add = 'add';
     case Subtract = 'subtract';
+    case None = 'none';
 }

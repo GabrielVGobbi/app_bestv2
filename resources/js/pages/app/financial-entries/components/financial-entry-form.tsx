@@ -1144,13 +1144,19 @@ export default function FinancialEntryForm({
                                                                         component.operation ===
                                                                             'add'
                                                                             ? 'bg-inflow-soft text-inflow-soft-foreground'
-                                                                            : 'bg-outflow-soft text-outflow-soft-foreground',
+                                                                            : component.operation ===
+                                                                                'subtract'
+                                                                              ? 'bg-outflow-soft text-outflow-soft-foreground'
+                                                                              : 'bg-secondary text-secondary-foreground',
                                                                     )}
                                                                 >
                                                                     {component.operation ===
                                                                     'add'
                                                                         ? '+'
-                                                                        : '−'}
+                                                                        : component.operation ===
+                                                                            'subtract'
+                                                                          ? '−'
+                                                                          : '•'}
                                                                 </span>
                                                                 <span className="min-w-0 flex-1">
                                                                     <span className="flex items-center gap-2">
@@ -1166,14 +1172,20 @@ export default function FinancialEntryForm({
                                                                                 component.operation ===
                                                                                 'add'
                                                                                     ? 'inflow'
-                                                                                    : 'outflow'
+                                                                                    : component.operation ===
+                                                                                        'subtract'
+                                                                                      ? 'outflow'
+                                                                                      : 'secondary'
                                                                             }
                                                                             className="hidden sm:inline-flex"
                                                                         >
                                                                             {component.operation ===
                                                                             'add'
                                                                                 ? 'Acréscimo'
-                                                                                : 'Redução'}
+                                                                                : component.operation ===
+                                                                                    'subtract'
+                                                                                  ? 'Redução'
+                                                                                  : 'Informativo'}
                                                                         </Badge>
                                                                     </span>
                                                                 </span>
@@ -1184,13 +1196,19 @@ export default function FinancialEntryForm({
                                                                     component.operation ===
                                                                         'add'
                                                                         ? 'text-inflow'
-                                                                        : 'text-outflow',
+                                                                        : component.operation ===
+                                                                            'subtract'
+                                                                          ? 'text-outflow'
+                                                                          : 'text-muted-foreground',
                                                                 )}
                                                             >
                                                                 {component.operation ===
                                                                 'add'
                                                                     ? '+'
-                                                                    : '−'}
+                                                                    : component.operation ===
+                                                                        'subtract'
+                                                                      ? '−'
+                                                                      : ''}
                                                                 {formatMoneyFromCents(
                                                                     parseAmountToCents(
                                                                         component.amount,
