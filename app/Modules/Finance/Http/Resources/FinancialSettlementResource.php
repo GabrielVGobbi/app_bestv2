@@ -28,6 +28,8 @@ class FinancialSettlementResource extends JsonResource
             'payment_method_id' => $this->payment_method_id,
             'payment_method' => new PaymentMethodResource($this->whenLoaded('paymentMethod')),
             'gross_amount' => $this->gross_amount,
+            'addition_amount' => $this->addition_amount,
+            'deduction_amount' => $this->deduction_amount,
             'discount_amount' => $this->discount_amount,
             'interest_amount' => $this->interest_amount,
             'penalty_amount' => $this->penalty_amount,
@@ -40,6 +42,7 @@ class FinancialSettlementResource extends JsonResource
             'reversed_by_id' => $this->reversed_by_id,
             'reverse_reason' => $this->reverse_reason,
             'metadata' => $this->metadata,
+            'components' => FinancialSettlementComponentResource::collection($this->whenLoaded('components')),
             'allocations' => FinancialSettlementAllocationResource::collection($this->whenLoaded('allocations')),
             'movements' => FinancialMovementResource::collection($this->whenLoaded('movements')),
             'permissions' => [

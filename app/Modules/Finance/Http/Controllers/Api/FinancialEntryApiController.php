@@ -57,6 +57,7 @@ class FinancialEntryApiController extends Controller
             'amountComponents',
             'installments.settlementAllocations',
             'settlements.allocations',
+            'settlements.components',
             'settlements.financialAccount',
             'settlements.movements.financialAccount',
             'settlements.paymentMethod',

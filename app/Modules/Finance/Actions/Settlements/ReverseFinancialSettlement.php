@@ -127,7 +127,7 @@ class ReverseFinancialSettlement
                 $this->recalculateStatus->handle($entry);
             }
 
-            return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements.financialAccount', 'paymentMethod', 'financialAccount']);
+            return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements.financialAccount', 'components', 'paymentMethod', 'financialAccount']);
         }, attempts: 3);
     }
 

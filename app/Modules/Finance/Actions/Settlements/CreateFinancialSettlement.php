@@ -6,6 +6,7 @@ namespace App\Modules\Finance\Actions\Settlements;
 
 use App\Models\User;
 use App\Modules\Finance\Actions\Entries\RecalculateFinancialEntryStatus;
+use App\Modules\Finance\Enums\FinancialAmountComponentCode;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Enums\FinancialMovementDirection;
@@ -15,6 +16,7 @@ use App\Modules\Finance\Models\FinancialInstallment;
 use App\Modules\Finance\Models\FinancialMovement;
 use App\Modules\Finance\Models\FinancialSettlement;
 use App\Modules\Finance\Models\PaymentMethod;
+use App\Modules\Finance\Support\FinancialAmountComposition;
 use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
@@ -26,6 +28,7 @@ class CreateFinancialSettlement
     public function __construct(
         private readonly FinancialCompanyAccess $companyAccess,
         private readonly RecalculateFinancialEntryStatus $recalculateStatus,
+        private readonly FinancialAmountComposition $amountComposition,
     ) {}
 
     /**
@@ -69,10 +72,12 @@ class CreateFinancialSettlement
                 }
 
                 $grossAmount = $command['gross_amount'];
+                $additionAmount = $command['addition_amount'];
+                $deductionAmount = $command['deduction_amount'];
                 $discountAmount = $command['discount_amount'];
                 $interestAmount = $command['interest_amount'];
                 $penaltyAmount = $command['penalty_amount'];
-                $netAmount = $grossAmount - $discountAmount + $interestAmount + $penaltyAmount;
+                $netAmount = $command['net_amount'];
 
                 if ($discountAmount > $grossAmount) {
                     throw ValidationException::withMessages([
@@ -125,6 +130,8 @@ class CreateFinancialSettlement
                     'financial_account_id' => $financialAccount->id,
                     'payment_method_id' => $paymentMethod?->id,
                     'gross_amount' => $grossAmount,
+                    'addition_amount' => $additionAmount,
+                    'deduction_amount' => $deductionAmount,
                     'discount_amount' => $discountAmount,
                     'interest_amount' => $interestAmount,
                     'penalty_amount' => $penaltyAmount,
@@ -136,6 +143,14 @@ class CreateFinancialSettlement
                     'created_by_id' => $actor?->getKey(),
                     'metadata' => $command['metadata'],
                 ]);
+
+                $settlement->components()->createMany(
+                    collect($command['components'])->map(fn (array $component): array => [
+                        ...$component,
+                        'company_id' => $entry->company_id,
+                        'origin' => $component['origin'] ?: 'settlement',
+                    ])->all(),
+                );
 
                 $settlement->allocations()->create([
                     'company_id' => $entry->company_id,
@@ -204,13 +219,30 @@ class CreateFinancialSettlement
 
     /**
      * @param  array<string, mixed>  $payload
-     * @return array{installment_id: int, settled_at: ?string, financial_account_id: int, payment_method_id: ?int, gross_amount: int, discount_amount: int, interest_amount: int, penalty_amount: int, origin: string, idempotency_key: ?string, metadata: ?array}
+     * @return array<string, mixed>
      */
     private function normalizeCommand(FinancialInstallment $installment, array $payload): array
     {
         $idempotencyKey = blank($payload['idempotency_key'] ?? null)
             ? null
             : trim((string) $payload['idempotency_key']);
+        $componentInput = is_array($payload['components'] ?? null)
+            ? $payload['components']
+            : $this->legacyComponents($payload);
+        $composition = $this->amountComposition->normalize($componentInput, 'settlement');
+        $components = $composition['components']
+            ->sortBy(fn (array $component): string => sprintf('%05d:%s', $component['position'], $component['code']->value))
+            ->values()
+            ->map(fn (array $component): array => [
+                ...$component,
+                'code' => $component['code']->value,
+                'nature' => $component['nature']->value,
+                'operation' => $component['operation']->value,
+                'metadata' => is_array($component['metadata'])
+                    ? $this->canonicalizeArray($component['metadata'])
+                    : null,
+            ])->all();
+        $componentCollection = collect($components);
 
         return [
             'installment_id' => (int) $installment->getKey(),
@@ -221,16 +253,55 @@ class CreateFinancialSettlement
             'payment_method_id' => blank($payload['payment_method_id'] ?? null)
                 ? null
                 : $this->positiveInteger($payload['payment_method_id'], 'payment_method_id'),
-            'gross_amount' => $this->positiveInteger($payload['gross_amount'] ?? $payload['amount'] ?? null, 'gross_amount'),
-            'discount_amount' => $this->nonNegativeInteger($payload['discount_amount'] ?? 0, 'discount_amount'),
-            'interest_amount' => $this->nonNegativeInteger($payload['interest_amount'] ?? 0, 'interest_amount'),
-            'penalty_amount' => $this->nonNegativeInteger($payload['penalty_amount'] ?? 0, 'penalty_amount'),
+            'gross_amount' => $composition['gross_amount'],
+            'addition_amount' => $composition['addition_amount'],
+            'deduction_amount' => $composition['deduction_amount'],
+            'net_amount' => $composition['net_amount'],
+            'discount_amount' => (int) $componentCollection->where('code', FinancialAmountComponentCode::Discount->value)->sum('amount'),
+            'interest_amount' => (int) $componentCollection->where('code', FinancialAmountComponentCode::Interest->value)->sum('amount'),
+            'penalty_amount' => (int) $componentCollection->where('code', FinancialAmountComponentCode::Penalty->value)->sum('amount'),
+            'components' => $components,
             'origin' => blank($payload['origin'] ?? null) ? 'manual' : trim((string) $payload['origin']),
             'idempotency_key' => $idempotencyKey,
             'metadata' => is_array($payload['metadata'] ?? null)
                 ? $this->canonicalizeArray($payload['metadata'])
                 : null,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
+    private function legacyComponents(array $payload): array
+    {
+        $components = [[
+            'code' => 'principal',
+            'nature' => 'principal',
+            'operation' => 'add',
+            'amount' => $payload['gross_amount'] ?? $payload['amount'] ?? null,
+            'position' => 0,
+        ]];
+
+        foreach ([
+            ['discount', 'deduction', 'subtract', 'discount_amount'],
+            ['interest', 'addition', 'add', 'interest_amount'],
+            ['penalty', 'addition', 'add', 'penalty_amount'],
+        ] as $index => [$code, $nature, $operation, $field]) {
+            $amount = $this->nonNegativeInteger($payload[$field] ?? 0, $field);
+
+            if ($amount > 0) {
+                $components[] = [
+                    'code' => $code,
+                    'nature' => $nature,
+                    'operation' => $operation,
+                    'amount' => $amount,
+                    'position' => $index + 1,
+                ];
+            }
+        }
+
+        return $components;
     }
 
     /**
@@ -260,6 +331,7 @@ class CreateFinancialSettlement
             'financialEntry',
             'allocations.installment',
             'movements.financialAccount',
+            'components',
             'paymentMethod',
             'financialAccount',
         ]);

@@ -231,10 +231,52 @@ export function SettlementDialog({
             payment_method_id: data.payment_method_id
                 ? Number(data.payment_method_id)
                 : null,
-            gross_amount: grossAmount,
-            discount_amount: discountAmount,
-            interest_amount: interestAmount,
-            penalty_amount: penaltyAmount,
+            components: [
+                {
+                    code: 'principal',
+                    nature: 'principal',
+                    operation: 'add',
+                    affects_net: true,
+                    amount: grossAmount,
+                    position: 0,
+                },
+                ...(discountAmount > 0
+                    ? [
+                          {
+                              code: 'discount',
+                              nature: 'deduction',
+                              operation: 'subtract',
+                              affects_net: true,
+                              amount: discountAmount,
+                              position: 1,
+                          },
+                      ]
+                    : []),
+                ...(interestAmount > 0
+                    ? [
+                          {
+                              code: 'interest',
+                              nature: 'addition',
+                              operation: 'add',
+                              affects_net: true,
+                              amount: interestAmount,
+                              position: 2,
+                          },
+                      ]
+                    : []),
+                ...(penaltyAmount > 0
+                    ? [
+                          {
+                              code: 'penalty',
+                              nature: 'addition',
+                              operation: 'add',
+                              affects_net: true,
+                              amount: penaltyAmount,
+                              position: 3,
+                          },
+                      ]
+                    : []),
+            ],
             origin: 'manual',
             metadata: data.notes.trim() ? { notes: data.notes.trim() } : null,
         }));

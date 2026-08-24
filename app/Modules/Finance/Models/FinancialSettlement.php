@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'financial_account_id',
     'payment_method_id',
     'gross_amount',
+    'addition_amount',
+    'deduction_amount',
     'discount_amount',
     'interest_amount',
     'penalty_amount',
@@ -53,6 +55,8 @@ class FinancialSettlement extends Model
     protected $attributes = [
         'direction' => 'receivable',
         'discount_amount' => 0,
+        'addition_amount' => 0,
+        'deduction_amount' => 0,
         'interest_amount' => 0,
         'penalty_amount' => 0,
         'origin' => 'manual',
@@ -94,6 +98,12 @@ class FinancialSettlement extends Model
         return $this->hasMany(FinancialSettlementAllocation::class, 'settlement_id');
     }
 
+    public function components(): HasMany
+    {
+        return $this->hasMany(FinancialSettlementComponent::class, 'settlement_id')
+            ->orderBy('position');
+    }
+
     public function movements(): MorphMany
     {
         return $this->morphMany(FinancialMovement::class, 'source');
@@ -125,6 +135,8 @@ class FinancialSettlement extends Model
             'financial_account_id' => 'integer',
             'settled_at' => 'datetime',
             'gross_amount' => 'integer',
+            'addition_amount' => 'integer',
+            'deduction_amount' => 'integer',
             'discount_amount' => 'integer',
             'interest_amount' => 'integer',
             'penalty_amount' => 'integer',

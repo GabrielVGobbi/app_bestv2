@@ -677,6 +677,8 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                             settlement.allocations ?? [];
                                         const movements =
                                             settlement.movements ?? [];
+                                        const components =
+                                            settlement.components ?? [];
 
                                         return (
                                             <div
@@ -758,6 +760,50 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                         ) : null}
                                                     </div>
                                                 </div>
+
+                                                {components.length > 0 ? (
+                                                    <div className="space-y-2 border-t pt-3">
+                                                        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                                            Composição realizada
+                                                        </p>
+                                                        {components.map(
+                                                            (component) => (
+                                                                <div
+                                                                    key={
+                                                                        component.uuid
+                                                                    }
+                                                                    className="flex items-center justify-between gap-3 text-sm"
+                                                                >
+                                                                    <span className="text-muted-foreground">
+                                                                        {component.label ??
+                                                                            component.code_label}
+                                                                        {component.nature ===
+                                                                        'informational'
+                                                                            ? ' (informativo)'
+                                                                            : ''}
+                                                                    </span>
+                                                                    <span className="font-medium">
+                                                                        {component.nature ===
+                                                                        'deduction'
+                                                                            ? '− '
+                                                                            : component.nature ===
+                                                                                'addition'
+                                                                              ? '+ '
+                                                                              : ''}
+                                                                        <MoneyAmount
+                                                                            value={
+                                                                                component.amount
+                                                                            }
+                                                                            currency={
+                                                                                entry.currency
+                                                                            }
+                                                                        />
+                                                                    </span>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : null}
 
                                                 {allocations.length > 0 ? (
                                                     <div className="grid gap-2 sm:grid-cols-2">
@@ -865,6 +911,28 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         />
                                     </span>
                                 </div>
+                                {entry.addition_amount > 0 ? (
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm text-muted-foreground">
+                                            Acréscimos
+                                        </span>
+                                        <MoneyAmount
+                                            value={entry.addition_amount}
+                                            currency={entry.currency}
+                                        />
+                                    </div>
+                                ) : null}
+                                {entry.deduction_amount > 0 ? (
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm text-muted-foreground">
+                                            Deduções
+                                        </span>
+                                        <MoneyAmount
+                                            value={entry.deduction_amount}
+                                            currency={entry.currency}
+                                        />
+                                    </div>
+                                ) : null}
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="text-sm text-muted-foreground">
                                         Líquido
