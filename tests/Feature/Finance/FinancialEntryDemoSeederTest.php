@@ -75,7 +75,8 @@ class FinancialEntryDemoSeederTest extends TestCase
         $overdueReceivable = $entries->get('FIN-DEMO - Recebivel vencido nao pago');
         $this->assertNotNull($overdueReceivable);
         $this->assertSame(FinancialDirection::Receivable, $overdueReceivable->direction);
-        $this->assertSame(FinancialEntryStatus::Overdue, $overdueReceivable->status);
+        $this->assertSame(FinancialEntryStatus::Open, $overdueReceivable->status);
+        $this->assertTrue($overdueReceivable->isOverdue());
         $this->assertTrue($overdueReceivable->installments->sole()->due_date->isPast());
 
         $this->assertSame(2, FinancialSettlement::query()->count());

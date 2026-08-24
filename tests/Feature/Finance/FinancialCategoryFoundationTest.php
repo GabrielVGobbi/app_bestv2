@@ -27,7 +27,7 @@ class FinancialCategoryFoundationTest extends TestCase
         $this->seed(FinancialCategorySeeder::class);
         $this->seed(FinancialCategorySeeder::class);
 
-        $this->assertDatabaseCount('financial_categories', 10);
+        $this->assertDatabaseCount('financial_categories', 12);
 
         $revenue = FinancialCategory::query()
             ->where('code', 'REC')

@@ -35,7 +35,7 @@ class FinanceFoundationTest extends TestCase
         $this->seed(PaymentMethodSeeder::class);
         $this->seed(PaymentMethodSeeder::class);
 
-        $this->assertDatabaseCount('financial_categories', 10);
+        $this->assertDatabaseCount('financial_categories', 12);
         $this->assertDatabaseCount('payment_methods', 7);
     }
 }

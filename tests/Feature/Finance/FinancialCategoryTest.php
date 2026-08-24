@@ -30,7 +30,7 @@ class FinancialCategoryTest extends TestCase
         $this->assertTrue($incomeRoot->hasChildren());
         $this->assertSame('Receitas', $incomeRoot->fullPath());
         $this->assertSame(0, $incomeRoot->depth());
-        $this->assertSame(10, FinancialCategory::query()->count());
+        $this->assertSame(12, FinancialCategory::query()->count());
     }
 
     public function test_blocks_parent_with_different_type(): void

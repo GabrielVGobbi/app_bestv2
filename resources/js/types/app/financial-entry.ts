@@ -77,7 +77,6 @@ export interface FinancialInstallment {
     position_label: string;
     description: string | null;
     due_date: string | null;
-    is_overdue: boolean;
     competence_date: string | null;
     original_amount: number;
     settled_amount: number;
@@ -213,6 +212,7 @@ export interface FinancialEntry {
     issue_date: string | null;
     competence_date: string | null;
     due_date: string | null;
+    is_overdue: boolean;
     gross_amount: number;
     addition_amount: number;
     deduction_amount: number;
