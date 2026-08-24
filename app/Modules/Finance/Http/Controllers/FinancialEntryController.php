@@ -40,7 +40,7 @@ class FinancialEntryController extends Controller
                 'starts_at' => $monthStart->toDateString(),
                 'ends_at' => $monthStart->endOfMonth()->toDateString(),
             ],
-            'summary' => $buildSummary->handle($monthStart),
+            'summary' => $buildSummary->handle($monthStart, user: $request->user()),
         ]);
     }
 
@@ -61,7 +61,7 @@ class FinancialEntryController extends Controller
 
     public function store(StoreFinancialEntryRequest $request, CreateManualFinancialEntry $createManualFinancialEntry): RedirectResponse
     {
-        $entry = $createManualFinancialEntry->handle($request->validated());
+        $entry = $createManualFinancialEntry->handle($request->validated(), $request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Lancamento financeiro criado.')]);
 

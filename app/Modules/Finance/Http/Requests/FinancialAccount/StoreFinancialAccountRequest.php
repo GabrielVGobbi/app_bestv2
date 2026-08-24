@@ -6,14 +6,19 @@ namespace App\Modules\Finance\Http\Requests\FinancialAccount;
 
 use App\Modules\Finance\Enums\FinancialAccountType;
 use App\Modules\Finance\Models\FinancialAccount;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreFinancialAccountRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
-        return $this->user()?->can('create', FinancialAccount::class) ?? false;
+        $user = $this->user();
+
+        return $user !== null
+            && $user->can('create', FinancialAccount::class)
+            && $companyAccess->canAccess($user, $this->integer('company_id'));
     }
 
     /**

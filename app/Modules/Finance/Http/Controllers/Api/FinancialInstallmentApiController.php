@@ -9,6 +9,7 @@ use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Http\Requests\FinancialInstallmentIndexRequest;
 use App\Modules\Finance\Http\Resources\FinancialInstallmentResource;
 use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Supports\Api\ApiDisplay;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,15 +25,18 @@ class FinancialInstallmentApiController extends Controller
      * Segundo, e o que garante que a fila de pagar nunca devolva um recebivel: o
      * recorte e aplicado na query base, fora do alcance dos filtros do cliente.
      */
-    public function index(string $direction, FinancialInstallmentIndexRequest $request): AnonymousResourceCollection
-    {
+    public function index(
+        string $direction,
+        FinancialInstallmentIndexRequest $request,
+        FinancialCompanyAccess $companyAccess,
+    ): AnonymousResourceCollection {
         Gate::authorize('viewAny', FinancialInstallment::class);
 
         $monthStart = $request->monthStart();
 
         return ApiDisplay::for(FinancialInstallment::class, FinancialInstallmentResource::class)
             ->usingQuery(
-                FinancialInstallment::query()
+                $companyAccess->scope(FinancialInstallment::query(), $request->user())
                     ->when(
                         $direction !== 'all',
                         fn ($query) => $query->direction(FinancialDirection::from($direction)),

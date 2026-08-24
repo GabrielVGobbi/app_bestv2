@@ -10,6 +10,7 @@ use App\Modules\Finance\Http\Requests\FinancialAccount\StoreFinancialAccountRequ
 use App\Modules\Finance\Http\Requests\FinancialAccount\UpdateFinancialAccountRequest;
 use App\Modules\Finance\Http\Resources\FinancialAccountResource;
 use App\Modules\Finance\Models\FinancialAccount;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Supports\Api\ApiDisplay;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -19,16 +20,16 @@ use Illuminate\Support\Facades\Gate;
 
 class FinancialAccountApiController extends Controller
 {
-    public function index(PaginationRequest $request): AnonymousResourceCollection
+    public function index(PaginationRequest $request, FinancialCompanyAccess $companyAccess): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', FinancialAccount::class);
 
         return ApiDisplay::for(FinancialAccount::class, FinancialAccountResource::class)
-            ->usingQuery(FinancialAccount::query())
+            ->usingQuery($companyAccess->scope(FinancialAccount::query(), $request->user()))
             ->paginate($request);
     }
 
-    public function options(Request $request): AnonymousResourceCollection
+    public function options(Request $request, FinancialCompanyAccess $companyAccess): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', FinancialAccount::class);
 
@@ -38,7 +39,7 @@ class FinancialAccountApiController extends Controller
             'active' => ['nullable', 'in:true,false,1,0'],
         ]);
 
-        $query = FinancialAccount::query()
+        $query = $companyAccess->scope(FinancialAccount::query(), $request->user())
             ->when(
                 filled($validated['company_id'] ?? null),
                 fn (Builder $query) => $query->forCompany((int) $validated['company_id'])

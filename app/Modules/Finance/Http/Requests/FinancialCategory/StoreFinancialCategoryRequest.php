@@ -6,6 +6,7 @@ namespace App\Modules\Finance\Http\Requests\FinancialCategory;
 
 use App\Modules\Finance\Enums\FinancialCategoryType;
 use App\Modules\Finance\Models\FinancialCategory;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -13,9 +14,14 @@ use Illuminate\Validation\Validator;
 
 class StoreFinancialCategoryRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
-        return $this->user()?->can('create', FinancialCategory::class) ?? false;
+        $user = $this->user();
+        $companyId = $this->integer('company_id');
+
+        return $user !== null
+            && $user->can('create', FinancialCategory::class)
+            && ($companyId === 0 || $companyAccess->canAccess($user, $companyId));
     }
 
     /**

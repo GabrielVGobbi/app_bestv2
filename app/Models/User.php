@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Concerns\Exportable;
 use App\Concerns\Searchable;
+use App\Modules\Companies\Models\Company;
 use App\Modules\Permissions\Models\Role;
 use App\Modules\Permissions\Traits\HasPermissionsTrait;
 use App\Supports\Traits\HasActivityLog;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -78,6 +80,13 @@ class User extends Authenticatable
             'roles',
             fn (Builder $roles): Builder => $roles->where('slug', $role),
         );
+    }
+
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class)
+            ->withPivot('access_source')
+            ->withTimestamps();
     }
 
     /**

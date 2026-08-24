@@ -6,6 +6,7 @@ namespace App\Modules\Finance\Http\Requests\PaymentMethod;
 
 use App\Modules\Finance\Enums\PaymentMethodType;
 use App\Modules\Finance\Models\PaymentMethod;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -13,9 +14,14 @@ use Illuminate\Validation\Validator;
 
 class StorePaymentMethodRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
-        return $this->user()?->can('create', PaymentMethod::class) ?? false;
+        $user = $this->user();
+        $companyId = $this->integer('company_id');
+
+        return $user !== null
+            && $user->can('create', PaymentMethod::class)
+            && ($companyId === 0 || $companyAccess->canAccess($user, $companyId));
     }
 
     /**

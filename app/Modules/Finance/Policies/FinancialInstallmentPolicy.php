@@ -6,6 +6,7 @@ namespace App\Modules\Finance\Policies;
 
 use App\Models\User;
 use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 
 /**
  * As filas de contas a pagar e a receber sao o mesmo dado do lancamento visto por
@@ -14,6 +15,8 @@ use App\Modules\Finance\Models\FinancialInstallment;
  */
 class FinancialInstallmentPolicy
 {
+    public function __construct(private readonly FinancialCompanyAccess $companyAccess) {}
+
     public function viewAny(User $user): bool
     {
         return $this->hasPermission($user, 'finance.entries.view');
@@ -21,7 +24,8 @@ class FinancialInstallmentPolicy
 
     public function view(User $user, FinancialInstallment $financialInstallment): bool
     {
-        return $this->hasPermission($user, 'finance.entries.view');
+        return $this->hasPermission($user, 'finance.entries.view')
+            && $this->companyAccess->canAccess($user, (int) $financialInstallment->company_id);
     }
 
     private function hasPermission(User $user, string $slug): bool

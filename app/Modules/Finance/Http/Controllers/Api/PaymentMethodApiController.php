@@ -10,6 +10,7 @@ use App\Modules\Finance\Http\Requests\PaymentMethod\StorePaymentMethodRequest;
 use App\Modules\Finance\Http\Requests\PaymentMethod\UpdatePaymentMethodRequest;
 use App\Modules\Finance\Http\Resources\PaymentMethodResource;
 use App\Modules\Finance\Models\PaymentMethod;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Supports\Api\ApiDisplay;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -19,16 +20,19 @@ use Illuminate\Support\Facades\Gate;
 
 class PaymentMethodApiController extends Controller
 {
-    public function index(PaginationRequest $request): AnonymousResourceCollection
+    public function index(PaginationRequest $request, FinancialCompanyAccess $companyAccess): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', PaymentMethod::class);
 
+        $query = PaymentMethod::query();
+        $companyAccess->scopeIncludingShared($query, $request->user());
+
         return ApiDisplay::for(PaymentMethod::class, PaymentMethodResource::class)
-            ->usingQuery(PaymentMethod::query())
+            ->usingQuery($query)
             ->paginate($request);
     }
 
-    public function options(Request $request): AnonymousResourceCollection
+    public function options(Request $request, FinancialCompanyAccess $companyAccess): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', PaymentMethod::class);
 
@@ -38,7 +42,10 @@ class PaymentMethodApiController extends Controller
             'active' => ['nullable', 'in:true,false,1,0'],
         ]);
 
-        $query = PaymentMethod::query()
+        $query = PaymentMethod::query();
+        $companyAccess->scopeIncludingShared($query, $request->user());
+
+        $query
             ->when(
                 filled($validated['company_id'] ?? null),
                 fn (Builder $query) => $query->forCompany((int) $validated['company_id'])

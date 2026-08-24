@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Reports;
 
+use App\Models\User;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class BuildInstallmentsQueueSummary
 {
+    public function __construct(private readonly FinancialCompanyAccess $companyAccess) {}
+
     /**
      * @return array{
      *     receivable: array{amount: int, count: int},
@@ -25,14 +29,20 @@ class BuildInstallmentsQueueSummary
      *     overdue_count: int
      * }
      */
-    public function handle(CarbonImmutable $monthStart, ?int $companyId = null): array
+    public function handle(CarbonImmutable $monthStart, ?int $companyId = null, ?User $user = null): array
     {
         $monthEnd = $monthStart->endOfMonth();
         $today = today()->toDateString();
         $receivable = FinancialDirection::Receivable->value;
         $payable = FinancialDirection::Payable->value;
 
-        $summary = FinancialInstallment::query()
+        $query = FinancialInstallment::query();
+
+        if ($user instanceof User) {
+            $query = $this->companyAccess->scope($query, $user);
+        }
+
+        $summary = $query
             ->open()
             ->whereBetween('due_date', [
                 $monthStart->toDateString(),

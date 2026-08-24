@@ -11,6 +11,7 @@ use App\Modules\Finance\Enums\FinancialAmountOperation;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,9 +19,18 @@ use Illuminate\Validation\Validator;
 
 class StoreFinancialEntryRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
-        return $this->user()?->can('create', FinancialEntry::class) ?? false;
+        $user = $this->user();
+
+        if (! $user?->can('create', FinancialEntry::class)) {
+            return false;
+        }
+
+        $companyId = $this->input('company_id');
+
+        return ! is_numeric($companyId)
+            || $companyAccess->canAccess($user, (int) $companyId);
     }
 
     /**

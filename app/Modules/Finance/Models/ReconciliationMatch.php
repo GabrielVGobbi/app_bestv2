@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'bank_statement_line_id',
     'financial_movement_id',
     'status',
+    'confirmed_bank_statement_line_id',
+    'confirmed_financial_movement_id',
     'score',
     'reasons',
     'confirmed_by_id',
@@ -66,6 +68,8 @@ class ReconciliationMatch extends Model
     {
         return [
             'status' => ReconciliationMatchStatus::class,
+            'confirmed_bank_statement_line_id' => 'integer',
+            'confirmed_financial_movement_id' => 'integer',
             'company_id' => 'integer',
             'bank_statement_line_id' => 'integer',
             'financial_movement_id' => 'integer',

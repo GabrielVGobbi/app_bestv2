@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Reports;
 
+use App\Models\User;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -18,16 +20,24 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class BuildOpenInstallmentsReport
 {
+    public function __construct(private readonly FinancialCompanyAccess $companyAccess) {}
+
     /**
      * @param  array{category_id?: int|null, company_id?: int|null, direction?: string|null, limit?: int|null}  $filters
      * @return array<string, mixed>
      */
-    public function handle(array $filters = []): array
+    public function handle(array $filters = [], ?User $user = null): array
     {
         $categoryIds = $this->categoryIds($filters['category_id'] ?? null);
         $limit = min(500, max(1, (int) ($filters['limit'] ?? 200)));
 
-        $base = FinancialInstallment::query()
+        $base = FinancialInstallment::query();
+
+        if ($user instanceof User) {
+            $base = $this->companyAccess->scope($base, $user);
+        }
+
+        $base
             ->open()
             ->when(
                 filled($filters['company_id'] ?? null),

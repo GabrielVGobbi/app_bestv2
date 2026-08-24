@@ -6,6 +6,7 @@ namespace App\Modules\Companies\Models;
 
 use App\Concerns\Exportable;
 use App\Concerns\Searchable;
+use App\Models\User;
 use App\Modules\Companies\Database\Factories\CompanyFactory;
 use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -44,6 +46,13 @@ class Company extends Model
     protected string $defaultSortColumn = 'id';
 
     protected string $defaultSortDirection = 'desc';
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot('access_source')
+            ->withTimestamps();
+    }
 
     /**
      * @return array<string, string>

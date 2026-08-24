@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Entries;
 
+use App\Models\User;
 use App\Modules\Clients\Models\Client;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
@@ -13,6 +14,7 @@ use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -23,12 +25,21 @@ use ValueError;
 
 class CreateManualFinancialEntry
 {
+    public function __construct(
+        private readonly FinancialCompanyAccess $companyAccess,
+        private readonly RecalculateFinancialEntryStatus $recalculateStatus,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function handle(array $payload): FinancialEntry
+    public function handle(array $payload, ?User $actor = null): FinancialEntry
     {
         $company = $this->resolveCompany($payload['company_id'] ?? null);
+
+        if ($actor instanceof User) {
+            $this->companyAccess->authorize($actor, $company);
+        }
         $direction = $this->resolveDirection($payload['direction'] ?? null);
         $this->validateOriginablePair($payload);
         $counterparty = $this->resolveCounterparty($payload, $company, $direction);
@@ -71,10 +82,10 @@ class CreateManualFinancialEntry
             ]);
         }
 
-        return DB::transaction(function () use ($payload, $company, $direction, $counterparty, $category, $components, $grossAmount, $netAmount, $description, $issueDate, $competenceDate, $entryDueDate, $installments): FinancialEntry {
+        return DB::transaction(function () use ($payload, $actor, $company, $direction, $counterparty, $category, $components, $grossAmount, $netAmount, $description, $issueDate, $competenceDate, $entryDueDate, $installments): FinancialEntry {
             $entry = FinancialEntry::query()->create([
                 'company_id' => $company->id,
-                'created_by_id' => auth()->id(),
+                'created_by_id' => $actor?->getKey(),
                 'direction' => $direction,
                 'status' => FinancialEntryStatus::Open,
                 'counterparty_type' => $counterparty?->getMorphClass(),
@@ -130,7 +141,7 @@ class CreateManualFinancialEntry
                     ->all()
             );
 
-            return app(RecalculateFinancialEntryStatus::class)->handle($entry);
+            return $this->recalculateStatus->handle($entry);
         }, attempts: 3);
     }
 

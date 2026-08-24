@@ -10,6 +10,7 @@ use App\Modules\Finance\Http\Requests\FinancialCategory\StoreFinancialCategoryRe
 use App\Modules\Finance\Http\Requests\FinancialCategory\UpdateFinancialCategoryRequest;
 use App\Modules\Finance\Http\Resources\FinancialCategoryResource;
 use App\Modules\Finance\Models\FinancialCategory;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Supports\Api\ApiDisplay;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -21,13 +22,14 @@ use Illuminate\Support\Facades\Gate;
 
 class FinancialCategoryApiController extends Controller
 {
-    public function index(PaginationRequest $request): AnonymousResourceCollection
+    public function index(PaginationRequest $request, FinancialCompanyAccess $companyAccess): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', FinancialCategory::class);
 
         $query = FinancialCategory::query()
             ->with('parent')
             ->withCount(['children', 'financialEntries']);
+        $companyAccess->scopeIncludingShared($query, $request->user());
 
         $ids = $this->lookupIds($request->input('ids'));
 
@@ -40,7 +42,7 @@ class FinancialCategoryApiController extends Controller
             ->paginate($request);
     }
 
-    public function tree(Request $request): ResourceCollection
+    public function tree(Request $request, FinancialCompanyAccess $companyAccess): ResourceCollection
     {
         Gate::authorize('viewAny', FinancialCategory::class);
 
@@ -51,7 +53,10 @@ class FinancialCategoryApiController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $categories = FinancialCategory::query()
+        $query = FinancialCategory::query();
+        $companyAccess->scopeIncludingShared($query, $request->user());
+
+        $categories = $query
             ->with('parent')
             ->withCount(['children', 'financialEntries'])
             ->when(

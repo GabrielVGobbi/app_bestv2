@@ -23,7 +23,7 @@ class ReconciliationMatchApiController extends Controller
     ): ReconciliationMatchResource {
         Gate::authorize('finance.reconciliation.manage');
 
-        return new ReconciliationMatchResource($confirmMatch->handle($match));
+        return new ReconciliationMatchResource($confirmMatch->handle($match, $request->user()));
     }
 
     public function reject(
@@ -33,7 +33,7 @@ class ReconciliationMatchApiController extends Controller
     ): ReconciliationMatchResource {
         Gate::authorize('finance.reconciliation.manage');
 
-        return new ReconciliationMatchResource($rejectMatch->handle($match));
+        return new ReconciliationMatchResource($rejectMatch->handle($match, $request->user()));
     }
 
     public function reverse(
@@ -43,6 +43,6 @@ class ReconciliationMatchApiController extends Controller
     ): ReconciliationMatchResource {
         Gate::authorize('finance.reconciliation.manage');
 
-        return new ReconciliationMatchResource($reverseMatch->handle($match, $request->validated()));
+        return new ReconciliationMatchResource($reverseMatch->handle($match, $request->validated(), $request->user()));
     }
 }

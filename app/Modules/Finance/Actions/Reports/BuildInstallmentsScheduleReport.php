@@ -4,22 +4,32 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Reports;
 
+use App\Models\User;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialInstallment;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Database\Eloquent\Builder;
 
 class BuildInstallmentsScheduleReport
 {
+    public function __construct(private readonly FinancialCompanyAccess $companyAccess) {}
+
     /**
      * @param  array{category_id?: int|null, company_id?: int|null, direction?: string|null, due_from?: string|null, due_to?: string|null, limit?: int|null, status?: string|null}  $filters
      * @return array<string, mixed>
      */
-    public function handle(array $filters = []): array
+    public function handle(array $filters = [], ?User $user = null): array
     {
         $categoryIds = $this->categoryIds($filters['category_id'] ?? null);
         $limit = min(200, max(1, (int) ($filters['limit'] ?? 100)));
 
-        $query = FinancialInstallment::query()
+        $query = FinancialInstallment::query();
+
+        if ($user instanceof User) {
+            $query = $this->companyAccess->scope($query, $user);
+        }
+
+        $query
             ->with(['financialEntry.category', 'financialEntry.counterparty'])
             ->open()
             ->when(

@@ -10,18 +10,19 @@ use App\Modules\Finance\Actions\Entries\CreateManualFinancialEntry;
 use App\Modules\Finance\Http\Requests\FinancialEntry\StoreFinancialEntryRequest;
 use App\Modules\Finance\Http\Resources\FinancialEntryResource;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Supports\Api\ApiDisplay;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 class FinancialEntryApiController extends Controller
 {
-    public function index(PaginationRequest $request): AnonymousResourceCollection
+    public function index(PaginationRequest $request, FinancialCompanyAccess $companyAccess): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', FinancialEntry::class);
 
         return ApiDisplay::for(FinancialEntry::class, FinancialEntryResource::class)
-            ->usingQuery(FinancialEntry::query()->with([
+            ->usingQuery($companyAccess->scope(FinancialEntry::query(), $request->user())->with([
                 'category' => fn ($query) => $query
                     ->with('parent')
                     ->withCount(['children', 'financialEntries']),
@@ -32,7 +33,7 @@ class FinancialEntryApiController extends Controller
 
     public function store(StoreFinancialEntryRequest $request, CreateManualFinancialEntry $createManualFinancialEntry): FinancialEntryResource
     {
-        $entry = $createManualFinancialEntry->handle($request->validated());
+        $entry = $createManualFinancialEntry->handle($request->validated(), $request->user());
 
         return new FinancialEntryResource($entry->load([
             'category' => fn ($query) => $query

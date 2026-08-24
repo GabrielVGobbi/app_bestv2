@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Modules\Companies\Models\Company;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -16,6 +17,19 @@ class UserFactory extends Factory
      * The current password being used by the factory.
      */
     protected static ?string $password;
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $companyIds = Company::query()->pluck('id');
+
+            foreach ($companyIds as $companyId) {
+                $user->companies()->syncWithoutDetaching([
+                    $companyId => ['access_source' => 'factory'],
+                ]);
+            }
+        });
+    }
 
     /**
      * Define the model's default state.

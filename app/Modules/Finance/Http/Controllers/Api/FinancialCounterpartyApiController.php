@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Clients\Models\Client;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +20,7 @@ use ValueError;
 
 class FinancialCounterpartyApiController extends Controller
 {
-    public function options(Request $request): JsonResponse
+    public function options(Request $request, FinancialCompanyAccess $companyAccess): JsonResponse
     {
         Gate::authorize('viewAny', FinancialEntry::class);
 
@@ -33,6 +35,11 @@ class FinancialCounterpartyApiController extends Controller
         ]);
 
         $companyId = filled($validated['company_id'] ?? null) ? (int) $validated['company_id'] : null;
+        $user = $request->user();
+
+        if ($companyId !== null) {
+            $companyAccess->authorize($user, $companyId);
+        }
         $direction = $this->directionOrNull($validated['direction'] ?? null);
         $search = trim((string) ($validated['search'] ?? ''));
         $limit = min(50, max(1, (int) ($validated['limit'] ?? $validated['per_page'] ?? 20)));
@@ -40,18 +47,18 @@ class FinancialCounterpartyApiController extends Controller
 
         if ($lookupValues !== []) {
             return response()->json([
-                'data' => $this->optionsFromValues($lookupValues, $companyId, $direction)->all(),
+                'data' => $this->optionsFromValues($lookupValues, $companyId, $direction, $user, $companyAccess)->all(),
             ]);
         }
 
         $options = collect();
 
         if ($direction === null || $direction === FinancialDirection::Receivable) {
-            $options = $options->merge($this->clientOptions($companyId, $search, $limit));
+            $options = $options->merge($this->clientOptions($companyId, $search, $limit, $user, $companyAccess));
         }
 
         if ($direction === null || $direction === FinancialDirection::Payable) {
-            $options = $options->merge($this->supplierOptions($companyId, $search, $limit));
+            $options = $options->merge($this->supplierOptions($companyId, $search, $limit, $user, $companyAccess));
         }
 
         return response()->json([
@@ -66,9 +73,17 @@ class FinancialCounterpartyApiController extends Controller
     /**
      * @return Collection<int, array{value: string, label: string, description: string}>
      */
-    private function clientOptions(?int $companyId, string $search, int $limit): Collection
-    {
-        return Client::query()
+    private function clientOptions(
+        ?int $companyId,
+        string $search,
+        int $limit,
+        User $user,
+        FinancialCompanyAccess $companyAccess,
+    ): Collection {
+        $query = Client::query();
+        $this->scopeCounterparties($query, $companyId, $user, $companyAccess);
+
+        return $query
             ->when(
                 $companyId !== null,
                 fn (Builder $query): Builder => $query->where(function (Builder $companyQuery) use ($companyId): void {
@@ -96,9 +111,17 @@ class FinancialCounterpartyApiController extends Controller
     /**
      * @return Collection<int, array{value: string, label: string, description: string}>
      */
-    private function supplierOptions(?int $companyId, string $search, int $limit): Collection
-    {
-        return Supplier::query()
+    private function supplierOptions(
+        ?int $companyId,
+        string $search,
+        int $limit,
+        User $user,
+        FinancialCompanyAccess $companyAccess,
+    ): Collection {
+        $query = Supplier::query();
+        $this->scopeCounterparties($query, $companyId, $user, $companyAccess);
+
+        return $query
             ->when(
                 $companyId !== null,
                 fn (Builder $query): Builder => $query->where(function (Builder $companyQuery) use ($companyId): void {
@@ -142,8 +165,13 @@ class FinancialCounterpartyApiController extends Controller
      * @param  list<string>  $values
      * @return Collection<int, array{value: string, label: string, description: string}>
      */
-    private function optionsFromValues(array $values, ?int $companyId, ?FinancialDirection $direction): Collection
-    {
+    private function optionsFromValues(
+        array $values,
+        ?int $companyId,
+        ?FinancialDirection $direction,
+        User $user,
+        FinancialCompanyAccess $companyAccess,
+    ): Collection {
         $options = collect();
         $clientMorph = (new Client)->getMorphClass();
         $supplierMorph = (new Supplier)->getMorphClass();
@@ -162,7 +190,10 @@ class FinancialCounterpartyApiController extends Controller
                 $type === $clientMorph
                 && ($direction === null || $direction === FinancialDirection::Receivable)
             ) {
-                $client = Client::query()
+                $clientQuery = Client::query();
+                $this->scopeCounterparties($clientQuery, $companyId, $user, $companyAccess);
+
+                $client = $clientQuery
                     ->when(
                         $companyId !== null,
                         fn (Builder $query): Builder => $query->where(function (Builder $companyQuery) use ($companyId): void {
@@ -188,7 +219,10 @@ class FinancialCounterpartyApiController extends Controller
                 $type === $supplierMorph
                 && ($direction === null || $direction === FinancialDirection::Payable)
             ) {
-                $supplier = Supplier::query()
+                $supplierQuery = Supplier::query();
+                $this->scopeCounterparties($supplierQuery, $companyId, $user, $companyAccess);
+
+                $supplier = $supplierQuery
                     ->when(
                         $companyId !== null,
                         fn (Builder $query): Builder => $query->where(function (Builder $companyQuery) use ($companyId): void {
@@ -210,6 +244,34 @@ class FinancialCounterpartyApiController extends Controller
         }
 
         return $options->values();
+    }
+
+    /**
+     * @param  Builder<Client|Supplier>  $query
+     */
+    private function scopeCounterparties(
+        Builder $query,
+        ?int $companyId,
+        User $user,
+        FinancialCompanyAccess $companyAccess,
+    ): void {
+        if ($companyId !== null) {
+            $query->where(function (Builder $companyQuery) use ($companyId): void {
+                $companyQuery->whereNull('company_id')->orWhere('company_id', $companyId);
+            });
+
+            return;
+        }
+
+        if ($companyAccess->isGlobalAdministrator($user)) {
+            return;
+        }
+
+        $query->where(function (Builder $companyQuery) use ($user): void {
+            $companyQuery
+                ->whereNull('company_id')
+                ->orWhereIn('company_id', $user->companies()->select('companies.id'));
+        });
     }
 
     private function directionOrNull(mixed $value): ?FinancialDirection

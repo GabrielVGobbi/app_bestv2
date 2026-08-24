@@ -5,14 +5,29 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Http\Requests\BankStatementImport;
 
 use App\Modules\Finance\Models\FinancialAccount;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreBankStatementImportRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
-        return $this->user()?->can('finance.reconciliation.manage') ?? false;
+        $user = $this->user();
+
+        if (! $user?->can('finance.reconciliation.manage')) {
+            return false;
+        }
+
+        $accountId = $this->input('financial_account_id');
+
+        if (! is_numeric($accountId)) {
+            return true;
+        }
+
+        $companyId = FinancialAccount::query()->whereKey((int) $accountId)->value('company_id');
+
+        return $companyId === null || $companyAccess->canAccess($user, (int) $companyId);
     }
 
     /**

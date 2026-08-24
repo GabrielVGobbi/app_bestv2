@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Http\Requests\FinancialCategory;
 
 use App\Modules\Finance\Models\FinancialCategory;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Validation\Validator;
 
 class UpdateFinancialCategoryRequest extends StoreFinancialCategoryRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
         $category = $this->route('financial_category');
+        $user = $this->user();
+        $companyId = $this->integer('company_id');
 
         return $category instanceof FinancialCategory
-            && ($this->user()?->can('update', $category) ?? false);
+            && $user !== null
+            && $user->can('update', $category)
+            && ($companyId === 0 || $companyAccess->canAccess($user, $companyId));
     }
 
     protected function validateParent(Validator $validator): void
