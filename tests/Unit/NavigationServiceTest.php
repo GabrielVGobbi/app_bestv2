@@ -38,13 +38,69 @@ class NavigationServiceTest extends TestCase
                 'enabled' => true,
                 'route_prefixes' => ['/users'],
                 'default_href' => '/users',
-                'items' => [],
+                'items' => [
+                    [
+                        'slug' => 'users',
+                        'label' => 'Users',
+                        'type' => 'link',
+                        'href' => '/users',
+                        'order' => 1,
+                        'enabled' => true,
+                        'visible' => true,
+                    ],
+                ],
             ],
         ]);
 
         $modules = app(NavigationService::class)->modules();
 
         $this->assertSame('/users', $modules[0]['defaultHref']);
+    }
+
+    public function test_empty_modules_are_hidden_and_default_href_falls_back_to_visible_item(): void
+    {
+        config()->set('navigation.modules', [
+            [
+                'slug' => 'empty',
+                'label' => 'Empty',
+                'enabled' => true,
+                'default_href' => '/hidden',
+                'items' => [
+                    [
+                        'slug' => 'hidden',
+                        'label' => 'Hidden',
+                        'type' => 'link',
+                        'href' => '/hidden',
+                        'order' => 1,
+                        'enabled' => false,
+                        'visible' => true,
+                    ],
+                ],
+            ],
+            [
+                'slug' => 'gestao',
+                'label' => 'Gestão',
+                'enabled' => true,
+                'default_href' => '/companies',
+                'items' => [
+                    [
+                        'slug' => 'suppliers',
+                        'label' => 'Fornecedores',
+                        'type' => 'link',
+                        'href' => '/suppliers',
+                        'order' => 1,
+                        'enabled' => true,
+                        'visible' => true,
+                    ],
+                ],
+            ],
+        ]);
+
+        $modules = app(NavigationService::class)->modules();
+
+        $this->assertCount(1, $modules);
+        $this->assertSame('gestao', $modules[0]['slug']);
+        $this->assertSame('/suppliers', $modules[0]['defaultHref']);
     }
 
     public function test_section_items_are_preserved_for_frontend_grouping(): void

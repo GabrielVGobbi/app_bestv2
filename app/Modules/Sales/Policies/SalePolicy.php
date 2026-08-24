@@ -35,6 +35,11 @@ class SalePolicy
         return $this->hasPermission($user, 'sales.quote');
     }
 
+    public function revertToDraft(User $user, Sale $sale): bool
+    {
+        return $this->hasPermission($user, 'sales.update');
+    }
+
     public function confirm(User $user, Sale $sale): bool
     {
         return $this->hasPermission($user, 'sales.confirm');

@@ -82,13 +82,17 @@ function DatePicker({
                     disabled={disabled}
                     aria-invalid={ariaInvalid}
                     className={cn(
-                        'h-9 w-full justify-start text-left font-normal',
+                        'h-9 min-w-0 w-full justify-start overflow-hidden text-left font-normal',
                         !selected && 'text-muted-foreground',
                         className,
                     )}
                 >
-                    <CalendarIcon className="mr-2 size-4" />
-                    {selected ? format(selected, 'dd/MM/yyyy', { locale: ptBR }) : placeholder}
+                    <CalendarIcon className="mr-2 size-4 shrink-0" />
+                    <span className="min-w-0 truncate">
+                        {selected
+                            ? format(selected, 'dd/MM/yyyy', { locale: ptBR })
+                            : placeholder}
+                    </span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">

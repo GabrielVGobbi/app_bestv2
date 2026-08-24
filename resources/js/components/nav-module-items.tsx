@@ -14,8 +14,8 @@
 
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -29,9 +29,45 @@ import type { NavItem } from '@/types';
 
 type Variant = 'sidebar' | 'header' | 'dropdown';
 
-// ---------------------------------------------------------------------------
-// Sidebar variant
-// ---------------------------------------------------------------------------
+function sidebarItemClass(item: NavItem, isActive: boolean, indent = false): string {
+    const tone = item.tone;
+
+    return cn(
+        'relative flex w-full min-h-10 items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+        indent && 'pl-4',
+        tone === 'inflow' &&
+            (isActive
+                ? 'bg-inflow/15 text-inflow hover:bg-inflow/20'
+                : 'text-sidebar-muted hover:bg-inflow/10 hover:text-inflow'),
+        tone === 'outflow' &&
+            (isActive
+                ? 'bg-outflow/15 text-outflow hover:bg-outflow/20'
+                : 'text-sidebar-muted hover:bg-outflow/10 hover:text-outflow'),
+        !tone &&
+            (isActive
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground'),
+    );
+}
+
+function SidebarNavIcon({ item }: { item: NavItem }) {
+    if (!item.icon) {
+        return null;
+    }
+
+    const Icon = item.icon;
+
+    return (
+        <Icon
+            size={18}
+            className={cn(
+                'shrink-0',
+                item.tone === 'inflow' && 'text-inflow',
+                item.tone === 'outflow' && 'text-outflow',
+            )}
+        />
+    );
+}
 
 function SidebarNavButton({
     item,
@@ -48,17 +84,11 @@ function SidebarNavButton({
 
     const isExternal =
         typeof item.href === 'string' && item.href.startsWith('http');
-    const cls = cn(
-        'relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
-        indent && 'pl-4',
-        isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
-            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-    );
+    const cls = sidebarItemClass(item, isActive, indent);
 
     const content = (
         <>
-            {item.icon && <item.icon size={15} className="shrink-0" />}
+            <SidebarNavIcon item={item} />
             <span className="truncate">{item.title}</span>
         </>
     );
@@ -93,40 +123,90 @@ function SidebarNavGroup({ item }: { item: NavItem }) {
         );
 
     const childActive = anyChildActive(item.items ?? []);
-    const [open, setOpen] = useState(childActive);
+    const parentActive =
+        !!item.href && isCurrentOrParentUrl(item.href as string);
+    const [open, setOpen] = useState(childActive || parentActive);
+
+    useEffect(() => {
+        if (parentActive || childActive) {
+            setOpen(true);
+        }
+    }, [childActive, parentActive]);
 
     if (!item.items?.length) {
         return (
             <SidebarNavButton
                 item={item}
-                isActive={
-                    !!item.href && isCurrentOrParentUrl(item.href as string)
-                }
+                isActive={parentActive}
             />
         );
     }
 
+    const groupLabelClass = cn(
+        'flex min-h-10 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+        parentActive
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+            : childActive
+              ? 'text-sidebar-accent-foreground hover:bg-white/5'
+              : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground',
+    );
+
+    const groupLabel = (
+        <>
+            <SidebarNavIcon item={item} />
+            <span className="truncate">{item.title}</span>
+        </>
+    );
+
+    const handleToggle = (
+        event: MouseEvent<HTMLButtonElement>,
+    ): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen((value) => !value);
+    };
+
     return (
         <div>
-            <button
-                onClick={() => setOpen((v) => !v)}
-                className={cn(
-                    'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
-                    childActive
-                        ? 'text-sidebar-accent-foreground'
-                        : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+            <div className="flex items-center gap-0.5">
+                {item.href ? (
+                    <Link
+                        href={item.href as string}
+                        prefetch="click"
+                        className={groupLabelClass}
+                        onClick={() => setOpen(true)}
+                    >
+                        {groupLabel}
+                    </Link>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => setOpen((value) => !value)}
+                        className={groupLabelClass}
+                    >
+                        {groupLabel}
+                    </button>
                 )}
-            >
-                {item.icon && <item.icon size={15} className="shrink-0" />}
-                <span className="truncate">{item.title}</span>
-                <ChevronRight
-                    size={12}
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-label={open ? 'Recolher submenu' : 'Expandir submenu'}
+                    onClick={handleToggle}
                     className={cn(
-                        'ml-auto shrink-0 transition-transform duration-200',
-                        open && 'rotate-90',
+                        'flex size-10 shrink-0 items-center justify-center rounded-lg text-sidebar-muted transition-colors hover:bg-white/5 hover:text-sidebar-foreground',
+                        (parentActive || childActive) &&
+                            'text-sidebar-accent-foreground',
                     )}
-                />
-            </button>
+                >
+                    <ChevronRight
+                        size={12}
+                        className={cn(
+                            'transition-transform duration-200',
+                            open && 'rotate-90',
+                        )}
+                    />
+                </button>
+            </div>
             {open && (
                 <div className="mt-0.5 ml-2 space-y-0.5 border-l border-sidebar-border pl-3">
                     {item.items.map((child) =>
@@ -169,7 +249,7 @@ function SidebarNavSection({
         <div className={cn('space-y-1', !nested && 'pt-4 first:pt-0')}>
             <div
                 className={cn(
-                    'mt-5 px-3 pb-1 text-[10px] leading-none font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase',
+                    'mt-5 px-3 pb-1.5 text-[11px] leading-none font-semibold tracking-[0.08em] text-sidebar-muted uppercase',
                     nested && 'pl-1',
                 )}
             >
@@ -252,13 +332,13 @@ function HeaderVariant({ items }: { items: NavItem[] }) {
                         href={item.href as string}
                         prefetch="click"
                         className={cn(
-                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
+                            'flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors',
                             isActive
-                                ? 'bg-secondary text-foreground'
-                                : 'text-muted-foreground hover:text-foreground',
+                                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                : 'text-header-foreground/70 hover:bg-white/10 hover:text-header-foreground',
                         )}
                     >
-                        {item.icon && <item.icon size={14} />}
+                        {item.icon && <item.icon size={16} />}
                         {item.title}
                     </Link>
                 );

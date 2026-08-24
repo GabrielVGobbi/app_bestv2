@@ -54,7 +54,7 @@ class FinancialCategory extends Model
     protected array $searchable = ['code', 'name', 'slug', 'description'];
 
     /** @var array<int, string> */
-    protected array $filterable = ['uuid', 'company_id', 'parent_id', 'code', 'name', 'slug', 'type', 'is_active', 'created_at', 'updated_at'];
+    protected array $filterable = ['id', 'uuid', 'company_id', 'parent_id', 'code', 'name', 'slug', 'type', 'is_active', 'created_at', 'updated_at'];
 
     /** @var array<int, string> */
     protected array $sortable = ['id', 'code', 'name', 'type', 'sort_order', 'is_active', 'created_at', 'updated_at'];

@@ -44,6 +44,8 @@ export interface PlaylistLineForm {
     playlist_top_id: string;
     quantity: string;
     unit_amount: string;
+    starts_on: string;
+    ends_on: string;
     track_name: string;
     track_spotify_url: string;
     track_artists?: string[];
@@ -94,6 +96,8 @@ export const emptyPlaylistLine = (): PlaylistLineForm => ({
     playlist_top_id: '',
     quantity: '1',
     unit_amount: '0.00',
+    starts_on: '',
+    ends_on: '',
     track_name: '',
     track_spotify_url: '',
 });
@@ -423,6 +427,25 @@ export function PlaylistItemDialog({
             return;
         }
 
+        const hasStartsOn = draft.starts_on.trim() !== '';
+        const hasEndsOn = draft.ends_on.trim() !== '';
+
+        if (hasStartsOn !== hasEndsOn) {
+            toast.error(
+                'Informe o período completo (início e fim) ou deixe as duas datas vazias.',
+            );
+
+            return;
+        }
+
+        if (hasStartsOn && hasEndsOn && draft.ends_on < draft.starts_on) {
+            toast.error(
+                'A data final deve ser igual ou posterior à data inicial.',
+            );
+
+            return;
+        }
+
         onSave({
             ...draft,
             id: initialLine?.id ?? draft.id,
@@ -535,6 +558,55 @@ export function PlaylistItemDialog({
                                     updateDraft('unit_amount', value)
                                 }
                             />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+                        <p className="text-sm font-medium">
+                            Período da vaga{' '}
+                            <span className="font-normal text-muted-foreground">
+                                (opcional)
+                            </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Com período definido, a disponibilidade do TOP é
+                            validada e a vaga entra ativa na confirmação da
+                            venda. Sem período, a vaga fica pendente de agenda.
+                        </p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="playlist_item_starts_on">
+                                    Início
+                                </Label>
+                                <Input
+                                    id="playlist_item_starts_on"
+                                    type="date"
+                                    value={draft.starts_on}
+                                    onChange={(event) =>
+                                        updateDraft(
+                                            'starts_on',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="playlist_item_ends_on">
+                                    Fim
+                                </Label>
+                                <Input
+                                    id="playlist_item_ends_on"
+                                    type="date"
+                                    min={draft.starts_on || undefined}
+                                    value={draft.ends_on}
+                                    onChange={(event) =>
+                                        updateDraft(
+                                            'ends_on',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
                         </div>
                     </div>
 

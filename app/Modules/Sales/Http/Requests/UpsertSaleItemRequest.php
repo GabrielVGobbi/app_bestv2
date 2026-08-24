@@ -37,6 +37,8 @@ class UpsertSaleItemRequest extends FormRequest
             'quantity' => ['sometimes', 'integer', 'min:1'],
             'unit_amount' => ['nullable', 'integer', 'min:0'],
             'discount_amount' => ['sometimes', 'integer', 'min:0'],
+            'starts_on' => ['nullable', 'date'],
+            'ends_on' => ['nullable', 'date', 'after_or_equal:starts_on'],
             'track_spotify_url' => ['nullable', 'string', 'max:500'],
             'track_spotify_id' => ['nullable', 'string', 'max:100'],
             'track_name' => ['nullable', 'string', 'max:255'],
@@ -55,6 +57,10 @@ class UpsertSaleItemRequest extends FormRequest
             function (Validator $validator): void {
                 if ($this->input('type') === 'service' && ! $this->filled('service_id')) {
                     $validator->errors()->add('service_id', __('Informe o serviço vendido.'));
+                }
+
+                if ($this->filled('starts_on') !== $this->filled('ends_on')) {
+                    $validator->errors()->add('ends_on', __('Informe o período completo (início e fim) ou deixe as duas datas vazias.'));
                 }
 
                 if ($this->input('type') === 'playlist_slot') {

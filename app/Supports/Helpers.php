@@ -89,3 +89,23 @@ function fromCents(int $cents): string
 {
     return number_format($cents / 100, 2, '.', '');
 }
+
+/**
+ * Formats a date for Brazilian display without changing API payloads.
+ */
+function format_date_br(mixed $value, string $fallback = '-'): string
+{
+    if ($value === null || $value === '') {
+        return $fallback;
+    }
+
+    try {
+        $date = $value instanceof DateTimeInterface
+            ? Carbon\Carbon::parse($value)
+            : Carbon\Carbon::parse((string) $value);
+
+        return $date->format('d/m/Y');
+    } catch (Throwable) {
+        return $fallback;
+    }
+}

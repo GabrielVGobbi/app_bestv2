@@ -13,6 +13,10 @@ Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
         ->defaults('ability', 'quote')
         ->name('sales.quote');
 
+    Route::patch('sales/{sale}/revert-to-draft', [SaleLifecycleController::class, 'revertToDraft'])
+        ->defaults('ability', 'revert-to-draft')
+        ->name('sales.revert-to-draft');
+
     Route::patch('sales/{sale}/confirm', [SaleLifecycleController::class, 'confirm'])
         ->defaults('ability', 'confirm')
         ->name('sales.confirm');

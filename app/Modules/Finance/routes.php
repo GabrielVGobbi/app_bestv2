@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Http\Controllers\Api\FinancialAccountApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialCategoryApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialCounterpartyApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialEntryApiController;
+use App\Modules\Finance\Http\Controllers\Api\FinancialInstallmentApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialReportApiController;
 use App\Modules\Finance\Http\Controllers\Api\FinancialSettlementApiController;
 use App\Modules\Finance\Http\Controllers\Api\PaymentMethodApiController;
@@ -13,6 +15,7 @@ use App\Modules\Finance\Http\Controllers\Api\ReconciliationMatchApiController;
 use App\Modules\Finance\Http\Controllers\FinancialAccountController;
 use App\Modules\Finance\Http\Controllers\FinancialCategoryController;
 use App\Modules\Finance\Http\Controllers\FinancialEntryController;
+use App\Modules\Finance\Http\Controllers\FinancialInstallmentController;
 use App\Modules\Finance\Http\Controllers\FinancialReconciliationImportController;
 use App\Modules\Finance\Http\Controllers\FinancialReportController;
 use App\Modules\Finance\Http\Controllers\FinancialSettlementController;
@@ -20,6 +23,14 @@ use App\Modules\Finance\Http\Controllers\PaymentMethodController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
+    Route::get('contas-a-receber', [FinancialInstallmentController::class, 'index'])
+        ->defaults('direction', FinancialDirection::Receivable->value)
+        ->name('financial-installments.receivable.index');
+
+    Route::get('contas-a-pagar', [FinancialInstallmentController::class, 'index'])
+        ->defaults('direction', FinancialDirection::Payable->value)
+        ->name('financial-installments.payable.index');
+
     Route::get('financial-reports', [FinancialReportController::class, 'index'])
         ->name('financial-reports.index');
 
@@ -27,6 +38,9 @@ Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
         ->name('financial-reconciliation.imports.index');
     Route::post('financial-reconciliation/imports', [FinancialReconciliationImportController::class, 'store'])
         ->name('financial-reconciliation.imports.store');
+
+    Route::patch('financial-entries/{financial_entry}/cancel', [FinancialEntryController::class, 'cancel'])
+        ->name('financial-entries.cancel');
 
     Route::resource('financial-entries', FinancialEntryController::class)
         ->only(['index', 'create', 'store', 'show'])
@@ -72,8 +86,8 @@ Route::prefix('api/v1')
 
         Route::get('financial-reports/dashboard', [FinancialReportApiController::class, 'dashboard'])
             ->name('financial-reports.dashboard');
-        Route::get('financial-reports/receivables-open', [FinancialReportApiController::class, 'receivablesOpen'])
-            ->name('financial-reports.receivables-open');
+        Route::get('financial-reports/open-installments', [FinancialReportApiController::class, 'openInstallments'])
+            ->name('financial-reports.open-installments');
         Route::get('financial-reports/installments-schedule', [FinancialReportApiController::class, 'installmentsSchedule'])
             ->name('financial-reports.installments-schedule');
 
@@ -87,6 +101,10 @@ Route::prefix('api/v1')
         Route::apiResource('financial-entries', FinancialEntryApiController::class)
             ->only(['index', 'store', 'show'])
             ->parameters(['financial-entries' => 'financial_entry']);
+
+        Route::get('financial-installments/{direction}', [FinancialInstallmentApiController::class, 'index'])
+            ->whereIn('direction', ['all', FinancialDirection::Receivable->value, FinancialDirection::Payable->value])
+            ->name('financial-installments.index');
 
         Route::post('financial-installments/{financial_installment}/settlements', [FinancialSettlementApiController::class, 'store'])
             ->name('financial-installments.settlements.store');

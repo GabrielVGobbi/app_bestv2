@@ -46,8 +46,15 @@ class FinancialEntryOperationTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('app/financial-entries/create')
                 ->has('directionOptions')
-                ->has('componentCodeOptions')
-                ->has('componentOperationOptions')
+                ->where('amountAdjustmentOptions', [
+                    ['label' => 'Desconto', 'value' => 'discount', 'operation' => 'subtract', 'requires_description' => false],
+                    ['label' => 'Imposto', 'value' => 'tax', 'operation' => 'add', 'requires_description' => false],
+                    ['label' => 'Juros', 'value' => 'interest', 'operation' => 'add', 'requires_description' => false],
+                    ['label' => 'Multa', 'value' => 'penalty', 'operation' => 'add', 'requires_description' => false],
+                    ['label' => 'Taxa', 'value' => 'fee', 'operation' => 'add', 'requires_description' => false],
+                    ['label' => 'Retenção', 'value' => 'withholding', 'operation' => 'subtract', 'requires_description' => false],
+                    ['label' => 'Outro', 'value' => 'other', 'operation' => null, 'requires_description' => true],
+                ])
                 ->has('counterpartyTypeOptions')
                 ->where('counterpartyTypeByDirection.receivable', Client::class)
                 ->where('counterpartyTypeByDirection.payable', Supplier::class));
@@ -60,6 +67,48 @@ class FinancialEntryOperationTest extends TestCase
                 ->has('entryData.data')
                 ->has('entryData.data.category')
                 ->missing('entryData.data.category.data'));
+    }
+
+    public function test_financial_entry_request_rejects_component_domain_invariants_on_specific_fields(): void
+    {
+        $user = $this->userWithRole('finance');
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+
+        $this->actingAs($user)
+            ->from(route('financial-entries.create'))
+            ->post(route('financial-entries.store'), [
+                'company_id' => $company->id,
+                'direction' => FinancialDirection::Receivable->value,
+                'counterparty_type' => Client::class,
+                'counterparty_id' => $client->id,
+                'description' => 'Recebível com ajustes inválidos',
+                'components' => [
+                    [
+                        'code' => FinancialAmountComponentCode::Principal->value,
+                        'operation' => FinancialAmountOperation::Add->value,
+                        'amount' => 100000,
+                    ],
+                    [
+                        'code' => FinancialAmountComponentCode::Interest->value,
+                        'operation' => FinancialAmountOperation::Subtract->value,
+                        'amount' => 1000,
+                    ],
+                    [
+                        'code' => FinancialAmountComponentCode::Other->value,
+                        'label' => '   ',
+                        'operation' => FinancialAmountOperation::Add->value,
+                        'amount' => 500,
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('financial-entries.create'))
+            ->assertSessionHasErrors([
+                'components.1.operation',
+                'components.2.label',
+            ]);
+
+        $this->assertSame(0, FinancialEntry::query()->count());
     }
 
     public function test_financial_entry_can_be_created_from_web_without_sales_origin(): void
@@ -79,7 +128,7 @@ class FinancialEntryOperationTest extends TestCase
                 'counterparty_id' => $client->id,
                 'category_id' => $category->id,
                 'description' => 'Recebivel manual web',
-                'due_date' => '2026-07-20',
+                'due_date' => now()->addWeek()->toDateString(),
                 'components' => [
                     [
                         'code' => FinancialAmountComponentCode::Principal->value,
@@ -367,7 +416,8 @@ class FinancialEntryOperationTest extends TestCase
         $this->getJson(route('api.financial-entries.index'))
             ->assertOk()
             ->assertJsonPath('data.0.uuid', $entry->uuid)
-            ->assertJsonPath('data.0.status_presenter.label', 'Em aberto');
+            ->assertJsonPath('data.0.status_presenter.label', 'Em aberto')
+            ->assertJsonPath('data.0.status_presenter.color', 'amber');
 
         $this->getJson(route('api.financial-entries.show', $entry))
             ->assertOk()
@@ -535,6 +585,15 @@ class FinancialEntryOperationTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.value', $client->getMorphClass().'|'.$client->id);
+
+        $this->getJson(route('api.financial-counterparties.options', [
+            'company_id' => $company->id,
+            'values' => [$supplier->getMorphClass().'|'.$supplier->id],
+        ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.value', $supplier->getMorphClass().'|'.$supplier->id)
+            ->assertJsonPath('data.0.label', 'Beta Pagamentos');
     }
 
     public function test_user_without_entry_permission_cannot_access_financial_entries(): void

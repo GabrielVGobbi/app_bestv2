@@ -16,6 +16,7 @@ import {
     ReceiptText,
     RefreshCw,
     Send,
+    Undo2,
     UserRound,
     XCircle,
 } from 'lucide-react';
@@ -36,6 +37,7 @@ import {
     confirm,
     finish,
     quote,
+    revertToDraft,
 } from '@/actions/App/Modules/Sales/Http/Controllers/SaleLifecycleController';
 import Header from '@/components/dashboard/header';
 import InputError from '@/components/input-error';
@@ -43,7 +45,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { cn, formatDate, formatMoney } from '@/lib/utils';
+import { cn, formatDate, formatDateOnly, formatMoney } from '@/lib/utils';
 import type {
     Sale,
     SaleItem,
@@ -70,22 +72,6 @@ function valueOrDash(value: string | number | null | undefined): string {
     }
 
     return String(value);
-}
-
-function formatDateOnly(value: string | null | undefined): string {
-    if (!value) {
-        return '-';
-    }
-
-    const [year, month, day] = value.split('-').map(Number);
-
-    if (!year || !month || !day) {
-        return formatDate(value);
-    }
-
-    return new Intl.DateTimeFormat('pt-BR', {
-        dateStyle: 'short',
-    }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
 function formatPeriod(
@@ -189,6 +175,22 @@ function LifecycleActions({
                         >
                             <Send className="size-4" />
                             Orçar
+                        </Button>
+                    )}
+                </Form>
+            ) : null}
+
+            {sale.status === 'quoted' && permissions.can_update ? (
+                <Form action={revertToDraft.url(sale.uuid)} method="patch">
+                    {({ processing }) => (
+                        <Button
+                            type="submit"
+                            size="sm"
+                            variant="outline"
+                            disabled={processing}
+                        >
+                            <Undo2 className="size-4" />
+                            Voltar para rascunho
                         </Button>
                     )}
                 </Form>

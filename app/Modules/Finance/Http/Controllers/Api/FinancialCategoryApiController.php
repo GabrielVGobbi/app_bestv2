@@ -29,6 +29,12 @@ class FinancialCategoryApiController extends Controller
             ->with('parent')
             ->withCount(['children', 'financialEntries']);
 
+        $ids = $this->lookupIds($request->input('ids'));
+
+        if ($ids !== []) {
+            $query->whereIn('id', $ids);
+        }
+
         return ApiDisplay::for(FinancialCategory::class, FinancialCategoryResource::class)
             ->usingQuery($query)
             ->paginate($request);
@@ -134,5 +140,20 @@ class FinancialCategoryApiController extends Controller
         return ($byParent->get(0) ?? collect())
             ->map(fn (FinancialCategory $category): FinancialCategory => $attachChildren($category))
             ->values();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function lookupIds(mixed $raw): array
+    {
+        $items = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+        return collect($items)
+            ->map(fn (mixed $item): int => (int) trim((string) $item))
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

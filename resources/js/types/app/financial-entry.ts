@@ -1,9 +1,10 @@
 import type { StatusPresenter } from '../status';
-import type { FinancialCategory } from './financial-category';
 import type { FinancialAccount } from './financial-account';
+import type { FinancialCategory } from './financial-category';
 import type { PaymentMethod } from './payment-method';
 
 export type FinancialDirection = 'receivable' | 'payable';
+export type FinancialAgendaDirection = FinancialDirection | 'all';
 export type FinancialEntryStatus =
     | 'open'
     | 'overdue'
@@ -42,6 +43,15 @@ export interface FinancialAmountComponent {
     updated_at: string;
 }
 
+export interface FinancialInstallmentEntryContext {
+    id: number;
+    uuid: string;
+    description: string;
+    origin_label: string;
+    origin_display_name: string;
+    installments_count: number | null;
+}
+
 export interface FinancialInstallment {
     id: number;
     uuid: string;
@@ -49,16 +59,29 @@ export interface FinancialInstallment {
     financial_entry_id: number;
     status: FinancialEntryStatus;
     status_presenter: StatusPresenter;
+    direction: FinancialDirection | null;
+    direction_label: string;
     installment_number: number;
+    position_label: string;
+    description: string | null;
     due_date: string | null;
     competence_date: string | null;
     original_amount: number;
     settled_amount: number;
     balance_amount: number;
+    discount_amount: number;
+    interest_amount: number;
+    penalty_amount: number;
     currency: string;
     settled_at: string | null;
     is_overdue: boolean;
     metadata: Record<string, unknown> | null;
+    counterparty_type: string | null;
+    counterparty_id: number | null;
+    counterparty_label: string | null;
+    category_id: number | null;
+    category?: FinancialCategory | null;
+    entry: FinancialInstallmentEntryContext | null;
     settlement_allocations?: FinancialSettlementAllocation[];
     permissions: {
         can_settle: boolean;
@@ -184,6 +207,13 @@ export interface FinancialEntryCollectionResource {
 export interface FinancialEntryOption {
     label: string;
     value: string;
+}
+
+export interface FinancialAmountAdjustmentOption {
+    label: string;
+    value: FinancialAmountComponentCode;
+    operation: FinancialAmountOperation | null;
+    requires_description: boolean;
 }
 
 export type CounterpartyTypeByDirection = Record<FinancialDirection, string>;

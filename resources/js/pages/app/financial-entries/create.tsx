@@ -1,29 +1,26 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 
 import {
     create,
     index,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
-import Header from '@/components/dashboard/header';
-import { Button } from '@/components/ui/button';
+import { ContentHeader } from '@/components/content-header';
 import type {
     CounterpartyTypeByDirection,
+    FinancialAmountAdjustmentOption,
     FinancialEntryOption,
 } from '@/types/app/financial-entry';
 import FinancialEntryForm from './components/financial-entry-form';
 
 interface Props {
     directionOptions: FinancialEntryOption[];
-    componentCodeOptions: FinancialEntryOption[];
-    componentOperationOptions: FinancialEntryOption[];
+    amountAdjustmentOptions: FinancialAmountAdjustmentOption[];
     counterpartyTypeByDirection: CounterpartyTypeByDirection;
 }
 
 export default function CreateFinancialEntry({
     directionOptions,
-    componentCodeOptions,
-    componentOperationOptions,
+    amountAdjustmentOptions,
     counterpartyTypeByDirection,
 }: Props) {
     setLayoutProps({
@@ -37,29 +34,16 @@ export default function CreateFinancialEntry({
         <>
             <Head title="Novo lançamento financeiro" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">
-                            Novo lançamento financeiro
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Entrada manual independente de vendas, compras ou fiscal
-                        </p>
-                    </div>
-                </div>
-            </Header>
+            <ContentHeader
+                title="Novo lançamento financeiro"
+                description="Entrada manual independente de vendas, compras ou fiscal"
+                backHref={index.url()}
+            />
 
-            <div className="mx-auto max-w-2xl p-6">
+            <div className="mx-auto max-w-2xl p-3 sm:p-6">
                 <FinancialEntryForm
                     directionOptions={directionOptions}
-                    componentCodeOptions={componentCodeOptions}
-                    componentOperationOptions={componentOperationOptions}
+                    amountAdjustmentOptions={amountAdjustmentOptions}
                     counterpartyTypeByDirection={counterpartyTypeByDirection}
                 />
             </div>

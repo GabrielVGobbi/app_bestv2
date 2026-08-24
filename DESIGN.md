@@ -1,23 +1,29 @@
 ---
 version: alpha
 name: BestPlay Editorial Workspace
-description: A calm operational workspace that combines Alpaca's editorial clarity with BestPlay's musical and commercial identity.
+description: An operational workspace with ink chrome, a quiet gray canvas, and BestPlay pink used only as accent.
 colors:
     background: '#ffffff'
-    foreground: '#242424'
+    foreground: '#171717'
+    canvas: '#f4f4f5'
     surface: '#ffffff'
-    surface-soft: '#f7f7f7'
+    surface-soft: '#f4f4f5'
     surface-active: '#f1f1f1'
-    border: '#e8e8e8'
-    border-strong: '#dedede'
-    muted: '#686868'
-    subtle: '#8c8c8c'
+    border: '#d4d4d8'
+    border-strong: '#d4d4d8'
+    muted: '#52525b'
+    subtle: '#a1a1aa'
     primary: '#eb0459'
     primary-strong: '#b80643'
     primary-foreground: '#ffffff'
     success: '#008f5f'
     warning: '#f59e0b'
     destructive: '#e60023'
+    info: '#3654d4'
+    inflow: '#008f5f'
+    outflow: '#e60023'
+    sidebar: '#171717'
+    header: '#171717'
 typography:
     sans:
         fontFamily: Geist Variable
@@ -61,8 +67,8 @@ spacing:
     2xl: 32px
     3xl: 48px
     4xl: 64px
-    header: 60px
-    sidebar: 250px
+    header: 68px
+    sidebar: 264px
 components:
     button-primary:
         backgroundColor: '{colors.primary-strong}'
@@ -79,30 +85,41 @@ components:
         textColor: '{colors.foreground}'
         rounded: '{rounded.md}'
     navigation-item:
-        backgroundColor: '{colors.surface-active}'
-        textColor: '{colors.foreground}'
+        backgroundColor: '{colors.sidebar}'
+        textColor: '#f5f5f5'
         rounded: '{rounded.sm}'
-        height: 36px
+        height: 40px
 ---
 
 ## Overview
 
-BestPlay is an operational workspace for musical, commercial, financial, and administrative work. Its interface is editorial and restrained: clear typography, quiet neutral surfaces, compact navigation, and deliberate use of the BestPlay pink accent make complex daily work feel ordered without removing the brand's energy.
+BestPlay is an operational workspace for musical, commercial, financial, and administrative work. The authenticated shell uses ink chrome (header and sidebar), a quiet gray canvas, and white cards. Saturated brand pink is reserved for actions, focus, and priority. Active navigation uses a soft rose fill, never a vertical rail or a washed magenta slab.
 
 ## Colors
 
-Use neutral surfaces for structure and reserve primary pink for actions, focus, selection, and priority. Status colors communicate meaning and never replace a text label or icon.
+Use the canvas for page structure, white cards for data, and ink chrome for persistent navigation. Reserve primary pink for actions, focus, and priority. Active sidebar and header items use the soft rose accent surface. Status and cash-flow colors communicate meaning and never replace a text label, icon, or sign. Inflow is green, outflow is red, pending action is amber, overdue is destructive, and informational states use a contained blue.
 
 | Role           | Light     | Dark      |
 | -------------- | --------- | --------- |
 | Background     | `#ffffff` | `#101010` |
+| Canvas         | `#f4f4f5` | `#101010` |
 | Surface        | `#ffffff` | `#171717` |
-| Soft surface   | `#f7f7f7` | `#202020` |
+| Soft surface   | `#f4f4f5` | `#202020` |
 | Active surface | `#f1f1f1` | `#282828` |
-| Border         | `#e8e8e8` | `#303030` |
-| Foreground     | `#242424` | `#f5f5f5` |
-| Muted          | `#686868` | `#a3a3a3` |
+| Border         | `#d4d4d8` | `#303030` |
+| Foreground     | `#171717` | `#f5f5f5` |
+| Muted          | `#52525b` | `#a3a3a3` |
 | Primary        | `#eb0459` | `#ff2b73` |
+| Success        | `#008f5f` | `#31c48d` |
+| Warning        | `#f59e0b` | `#fbbf24` |
+| Destructive    | `#e60023` | `#ff4d5f` |
+| Info           | `#3654d4` | `#7c8cff` |
+| Inflow         | `#008f5f` | `#31c48d` |
+| Outflow        | `#e60023` | `#ff4d5f` |
+| Sidebar        | `#171717` | `#202020` |
+| Header         | `#171717` | `#171717` |
+| Sidebar muted  | `#a1a1aa` | `#a1a1aa` |
+| Sidebar accent | `#52283a` | `#52283a` |
 
 ## Typography
 
@@ -110,7 +127,7 @@ Use Geist Variable across navigation, content, controls, and data. Titles use co
 
 ## Layout
 
-The persistent desktop shell uses a 60px topbar and a 250px contextual sidebar that collapses to an icon rail. Page content uses a 4px spacing foundation, 24px mobile gutters, and 32px desktop gutters. Group related controls with spacing before adding separators. Keep forms narrow, data surfaces fluid, and dashboards bounded by a readable maximum width.
+The persistent desktop shell uses a 68px topbar and a 264px contextual sidebar that collapses to an icon rail. Page content uses a 4px spacing foundation, 24px mobile gutters, and 32px desktop gutters. Group related controls with spacing before adding separators. Keep forms narrow, data surfaces fluid, and dashboards bounded by a readable maximum width.
 
 At compact widths, preserve the topbar and move the sidebar into a focus-managed drawer. Components adapt to their available container; critical actions remain in the normal flow or stable chrome and never depend on horizontal scrolling.
 
@@ -132,5 +149,5 @@ Primary buttons carry the pink accent; secondary controls use quiet neutral surf
 - Do preserve visible keyboard focus, semantic labels, reduced motion, and WCAG AA contrast.
 - Do let long names wrap or truncate deliberately without hiding critical actions.
 - Don't use decorative gradients as primary page backgrounds.
-- Don't use pink for large passive surfaces or as the only status signal.
+- Don't use pink for large passive surfaces, washed nav backgrounds, or as the only status signal.
 - Don't introduce page-local spacing, radius, typography, or shadow systems.

@@ -6,12 +6,15 @@ export type BreadcrumbItem = {
     href: NonNullable<InertiaLinkProps['href']>;
 };
 
+export type NavTone = 'inflow' | 'outflow';
+
 /** Formato consumido pelos componentes de navegação (ícone já resolvido). */
 export type NavItem = {
     title: string;
     type?: 'link' | 'group' | 'section';
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
+    tone?: NavTone;
     isActive?: boolean;
     items?: NavItem[];
 };
@@ -22,6 +25,7 @@ export type RawNavItem = {
     type?: 'link' | 'group' | 'section';
     href?: string;
     icon?: string | null;
+    tone?: NavTone;
     visible?: boolean;
     items?: RawNavItem[];
 };

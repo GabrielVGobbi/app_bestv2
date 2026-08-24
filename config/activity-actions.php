@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Finance\Models\FinancialEntry;
 use App\Modules\Sales\Models\Sale;
 
 return [
@@ -64,6 +65,16 @@ return [
             'icon' => 'Pencil',
             'severity' => 'warning',
             'subject_type' => Sale::class,
+            'enabled' => true,
+        ],
+        'finance.entries.canceled' => [
+            'label' => 'Cancelou lançamento financeiro',
+            'log_name' => 'finance.entries',
+            'event' => 'canceled',
+            'description' => ':causer cancelou o lançamento financeiro :subject.',
+            'icon' => 'XCircle',
+            'severity' => 'danger',
+            'subject_type' => FinancialEntry::class,
             'enabled' => true,
         ],
     ],

@@ -14,6 +14,7 @@ use App\Modules\Finance\Models\FinancialEntry;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreFinancialEntryRequest extends FormRequest
 {
@@ -23,6 +24,11 @@ class StoreFinancialEntryRequest extends FormRequest
     }
 
     /**
+     * A origem (`originable_type`/`originable_id`) nao e aceita pela API publica.
+     * Ela e definida apenas por Actions internas, como CreateReceivableFromSale,
+     * para que ninguem possa forjar a origem de um lancamento e sequestrar o
+     * indice unico `financial_entries_origin_unique`.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -32,8 +38,6 @@ class StoreFinancialEntryRequest extends FormRequest
             'direction' => ['required', Rule::enum(FinancialDirection::class)],
             'counterparty_type' => ['required', 'string', Rule::in([Client::class, Supplier::class])],
             'counterparty_id' => ['required', 'integer'],
-            'originable_type' => ['nullable', 'string', 'max:255'],
-            'originable_id' => ['nullable', 'integer'],
             'category_id' => ['nullable', 'integer', Rule::exists(FinancialCategory::class, 'id')],
             'description' => ['required', 'string', 'max:255'],
             'issue_date' => ['nullable', 'date'],
@@ -56,6 +60,55 @@ class StoreFinancialEntryRequest extends FormRequest
             'installments.*.competence_date' => ['nullable', 'date'],
             'installments.*.amount' => ['required', 'integer', 'min:1'],
             'installments.*.metadata' => ['nullable', 'array'],
+        ];
+    }
+
+    /**
+     * @return array<int, callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $components = $this->input('components', []);
+
+                if (! is_array($components)) {
+                    return;
+                }
+
+                foreach (array_values($components) as $index => $component) {
+                    if (! is_array($component)) {
+                        continue;
+                    }
+
+                    $code = is_string($component['code'] ?? null)
+                        ? FinancialAmountComponentCode::tryFrom($component['code'])
+                        : null;
+                    $operation = is_string($component['operation'] ?? null)
+                        ? FinancialAmountOperation::tryFrom($component['operation'])
+                        : null;
+
+                    if (! $code || ! $operation) {
+                        continue;
+                    }
+
+                    $fixedOperation = $code->fixedOperation();
+
+                    if ($fixedOperation && $operation !== $fixedOperation) {
+                        $validator->errors()->add(
+                            "components.{$index}.operation",
+                            __('A operação informada não é permitida para este tipo de ajuste.'),
+                        );
+                    }
+
+                    if ($code->requiresDescription() && blank($component['label'] ?? null)) {
+                        $validator->errors()->add(
+                            "components.{$index}.label",
+                            __('Informe uma descrição para o ajuste do tipo Outro.'),
+                        );
+                    }
+                }
+            },
         ];
     }
 }

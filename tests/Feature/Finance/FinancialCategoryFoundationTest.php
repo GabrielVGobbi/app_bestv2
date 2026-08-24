@@ -224,6 +224,15 @@ class FinancialCategoryFoundationTest extends TestCase
             ->assertJsonPath('data.0.children.0.depth', 1)
             ->assertJsonPath('data.0.children.0.has_children', false)
             ->assertJsonPath('data.0.children.0.breadcrumb.0.name', 'Despesas');
+
+        $this->actingAs($user)
+            ->getJson(route('api.financial-categories.index', [
+                'ids' => (string) $child->id,
+            ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $child->id)
+            ->assertJsonPath('data.0.name', 'Marketing');
     }
 
     public function test_category_delete_route_blocks_records_in_use(): void

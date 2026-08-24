@@ -356,7 +356,7 @@ export default function ServiceIndex({ permissions }: Props) {
                         actions={actions}
                         actionsConfig={{
                             display: 'inline',
-                            label: 'Acoes',
+                            label: 'Ações',
                             buttonSize: 'icon',
                             showTooltips: true,
                             sticky: true,
@@ -368,7 +368,7 @@ export default function ServiceIndex({ permissions }: Props) {
                         }}
                         appearance={{
                             size: 'md',
-                            gridLines: 'none',
+                            gridLines: 'horizontal',
                             rowStyle: 'soft-striped',
                         }}
                         searchPlaceholder="Buscar Serviços..."

@@ -130,6 +130,27 @@ function sanitizeColumnVisibility(
     );
 }
 
+function isDefaultColumnVisibility(
+    current: VisibilityState,
+    initial?: VisibilityState,
+): boolean {
+    const keys = new Set([
+        ...Object.keys(current),
+        ...Object.keys(initial ?? {}),
+    ]);
+
+    for (const key of keys) {
+        const currentVisible = current[key] ?? true;
+        const initialVisible = initial?.[key] ?? true;
+
+        if (currentVisible !== initialVisible) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 function readPersistedState(args: {
     config: ResolvedPersistStateConfig | null;
     filterIds: Set<string>;
@@ -186,6 +207,7 @@ export function useDataTableState(args: {
     queryKey: string;
     initialPerPage: number;
     initialColumnVisibility?: VisibilityState;
+    initialFilters?: Record<string, DataTableFilterValue>;
     filters: Array<DataTableFilterConfig | DataTableQuickFilter>;
     columnIds?: string[];
     persistState?: boolean | DataTablePersistStateConfig;
@@ -199,6 +221,8 @@ export function useDataTableState(args: {
     setRowSelection: Dispatch<SetStateAction<RowSelectionState>>;
     setFilterValue: (id: string, value: DataTableFilterValue) => void;
     resetFilters: () => void;
+    resetTable: () => void;
+    canResetTable: boolean;
 } {
     const persistStateConfig =
         typeof args.persistState === 'object' ? args.persistState : undefined;
@@ -239,13 +263,24 @@ export function useDataTableState(args: {
     // re-triggering every time filterIds/columnIds get new Set instances
     // (which happens when default empty-array props cause useMemo to re-run).
     const filterIdsRef = useRef(filterIds);
-    filterIdsRef.current = filterIds;
     const columnIdsRef = useRef(columnIds);
-    columnIdsRef.current = columnIds;
     const initialPerPageRef = useRef(args.initialPerPage);
-    initialPerPageRef.current = args.initialPerPage;
     const initialColumnVisibilityRef = useRef(args.initialColumnVisibility);
-    initialColumnVisibilityRef.current = args.initialColumnVisibility;
+    const initialFiltersRef = useRef(args.initialFilters);
+
+    useEffect(() => {
+        filterIdsRef.current = filterIds;
+        columnIdsRef.current = columnIds;
+        initialPerPageRef.current = args.initialPerPage;
+        initialColumnVisibilityRef.current = args.initialColumnVisibility;
+        initialFiltersRef.current = args.initialFilters;
+    }, [
+        args.initialColumnVisibility,
+        args.initialFilters,
+        args.initialPerPage,
+        columnIds,
+        filterIds,
+    ]);
 
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(args.initialPerPage);
@@ -257,10 +292,11 @@ export function useDataTableState(args: {
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [filters, setFilters] = useState<
         Record<string, DataTableFilterValue>
-    >({});
+    >({ ...(args.initialFilters ?? {}) });
     const [hasRestoredPersistedState, setHasRestoredPersistedState] = useState(
         () => !persistConfig,
     );
+    const skipNextPersistRef = useRef(false);
 
     useEffect(() => {
         if (!persistConfig) {
@@ -282,15 +318,18 @@ export function useDataTableState(args: {
                 ...(initialColumnVisibilityRef.current ?? {}),
                 ...(restoredState.columnVisibility ?? {}),
             });
-            setFilters(restoredState.filters ?? {});
+            setFilters(
+                restoredState.filters ?? {
+                    ...(initialFiltersRef.current ?? {}),
+                },
+            );
             setHasRestoredPersistedState(true);
         }, 0);
 
         return () => window.clearTimeout(timeout);
-    // Only re-run when persistConfig itself changes (i.e. once on mount).
-    // filterIds/columnIds/initialPerPage/initialColumnVisibility are read via
-    // refs above so they don't need to be deps here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // Only re-run when persistConfig itself changes (i.e. once on mount).
+        // filterIds/columnIds/initialPerPage/initialColumnVisibility are read via
+        // refs above so they don't need to be deps here.
     }, [persistConfig]);
 
     useEffect(() => {
@@ -299,6 +338,12 @@ export function useDataTableState(args: {
             !hasRestoredPersistedState ||
             typeof window === 'undefined'
         ) {
+            return;
+        }
+
+        if (skipNextPersistRef.current) {
+            skipNextPersistRef.current = false;
+
             return;
         }
 
@@ -371,8 +416,40 @@ export function useDataTableState(args: {
 
     function resetFilters(): void {
         setPage(1);
-        setFilters({});
+        setFilters({ ...(initialFiltersRef.current ?? {}) });
     }
+
+    function resetTable(): void {
+        setPage(1);
+        setPerPage(initialPerPageRef.current);
+        setSearchState('');
+        setSortingState([]);
+        setColumnVisibility({
+            ...(initialColumnVisibilityRef.current ?? {}),
+        });
+        setFilters({ ...(initialFiltersRef.current ?? {}) });
+        setRowSelection({});
+        skipNextPersistRef.current = true;
+
+        if (persistConfig && typeof window !== 'undefined') {
+            try {
+                window.localStorage.removeItem(persistConfig.key);
+            } catch {
+                // Ignore storage quota and browser privacy mode failures.
+            }
+        }
+    }
+
+    const canResetTable =
+        search.length > 0 ||
+        sorting.length > 0 ||
+        page !== 1 ||
+        perPage !== args.initialPerPage ||
+        JSON.stringify(filters) !== JSON.stringify(args.initialFilters ?? {}) ||
+        !isDefaultColumnVisibility(
+            columnVisibility,
+            args.initialColumnVisibility,
+        );
 
     return {
         state: {
@@ -392,5 +469,7 @@ export function useDataTableState(args: {
         setRowSelection,
         setFilterValue,
         resetFilters,
+        resetTable,
+        canResetTable,
     };
 }

@@ -106,7 +106,7 @@ function renderInlineActions<TData>(
     }
 
     return (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-2.5">
             {actions.map((action) => {
                 const disabled = action.disabled?.(row) ?? false;
                 const showLabel = shouldShowLabel(action);
@@ -242,6 +242,7 @@ export function DataTable<TData>({
     gridLines,
     rowStyle,
     initialPerPage = mode === 'infinite-scroll' ? 30 : 15,
+    initialFilters,
     searchPlaceholder = 'Buscar...',
     emptyMessage = 'Nenhum registro encontrado.',
     exportConfig,
@@ -259,7 +260,7 @@ export function DataTable<TData>({
 
     const resolvedAppearance = {
         size: size ?? appearance?.size ?? 'md',
-        gridLines: gridLines ?? appearance?.gridLines ?? 'both',
+        gridLines: gridLines ?? appearance?.gridLines ?? 'horizontal',
         rowStyle: rowStyle ?? appearance?.rowStyle ?? 'plain',
     } as const;
 
@@ -293,6 +294,7 @@ export function DataTable<TData>({
                 size: 44,
                 enableSorting: false,
                 enableResizing: false,
+                enableHiding: false,
                 header: ({ table }) => {
                     const rowSelection = table.getState().rowSelection;
                     const rows = table.getRowModel().rows;
@@ -363,8 +365,8 @@ export function DataTable<TData>({
                     : actionsConfig?.buttonSize === 'sm'
                       ? 56
                       : 80;
-            const gapPx = 6; // gap-1.5
-            const cellPaddingPx = 24; // px-3 on both sides
+            const gapPx = 10;
+            const cellPaddingPx = 32;
 
             const autoSize =
                 actionDisplay === 'inline'
@@ -381,6 +383,7 @@ export function DataTable<TData>({
                 size: actionsConfig?.columnSize ?? autoSize,
                 enableSorting: false,
                 enableResizing: false,
+                enableHiding: false,
                 header: actionsConfig?.label ?? '',
                 cell: ({ row }) =>
                     actionDisplay === 'inline'
@@ -426,6 +429,7 @@ export function DataTable<TData>({
         queryKey,
         initialPerPage,
         initialColumnVisibility,
+        initialFilters,
         filters: allFilters,
         columnIds,
         persistState,
@@ -520,6 +524,8 @@ export function DataTable<TData>({
             onSearchChange={tableState.setSearch}
             onFilterChange={tableState.setFilterValue}
             onResetFilters={tableState.resetFilters}
+            onResetTable={tableState.resetTable}
+            canResetTable={tableState.canResetTable}
             onClearSearch={() => tableState.setSearch('')}
             onRefresh={query.refresh}
             onPageChange={tableState.setPage}

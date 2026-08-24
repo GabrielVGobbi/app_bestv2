@@ -113,6 +113,10 @@ class CreateManualFinancialEntry
                     ->map(fn (array $installment): array => [
                         'company_id' => $company->id,
                         'status' => FinancialEntryStatus::Open,
+                        'direction' => $direction,
+                        'counterparty_type' => $counterparty?->getMorphClass(),
+                        'counterparty_id' => $counterparty?->getKey(),
+                        'category_id' => $category?->id,
                         'installment_number' => $installment['installment_number'],
                         'due_date' => $installment['due_date'],
                         'competence_date' => $installment['competence_date'],
@@ -323,15 +327,42 @@ class CreateManualFinancialEntry
                     ]);
                 }
 
+                $code = $this->resolveComponentCode($component['code'] ?? null, $index);
+                $label = blank($component['label'] ?? null) ? null : trim((string) $component['label']);
+                $operation = $this->resolveOperation($component['operation'] ?? null, $index);
+
+                $this->validateComponentInvariants($code, $label, $operation, $index);
+
                 return [
-                    'code' => $this->resolveComponentCode($component['code'] ?? null, $index),
-                    'label' => blank($component['label'] ?? null) ? null : (string) $component['label'],
-                    'operation' => $this->resolveOperation($component['operation'] ?? null, $index),
+                    'code' => $code,
+                    'label' => $label,
+                    'operation' => $operation,
                     'amount' => $this->positiveInteger($component['amount'] ?? null, "components.{$index}.amount"),
                     'position' => $this->positiveInteger($component['position'] ?? $index, "components.{$index}.position", allowZero: true),
                     'metadata' => is_array($component['metadata'] ?? null) ? $component['metadata'] : null,
                 ];
             });
+    }
+
+    private function validateComponentInvariants(
+        FinancialAmountComponentCode $code,
+        ?string $label,
+        FinancialAmountOperation $operation,
+        int $index,
+    ): void {
+        $fixedOperation = $code->fixedOperation();
+
+        if ($fixedOperation && $operation !== $fixedOperation) {
+            throw ValidationException::withMessages([
+                "components.{$index}.operation" => __('A operação informada não é permitida para este tipo de ajuste.'),
+            ]);
+        }
+
+        if ($code->requiresDescription() && blank($label)) {
+            throw ValidationException::withMessages([
+                "components.{$index}.label" => __('Informe uma descrição para o ajuste do tipo Outro.'),
+            ]);
+        }
     }
 
     /**

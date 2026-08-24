@@ -39,7 +39,7 @@ export function NotificationBell() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="relative size-9 border border-border bg-card hover:bg-secondary"
+                    className="relative size-10 border border-white/10 bg-transparent text-header-foreground hover:bg-white/10 hover:text-header-foreground"
                 >
                     <Bell className="size-4" />
                     {unreadCount > 0 && (

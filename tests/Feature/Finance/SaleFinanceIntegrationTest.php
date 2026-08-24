@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Tests\Feature\Finance;
 
 use App\Models\User;
+use App\Modules\Finance\Actions\Settlements\CreateFinancialSettlement;
 use App\Modules\Finance\Enums\FinancialAmountComponentCode;
 use App\Modules\Finance\Enums\FinancialDirection;
+use App\Modules\Finance\Enums\FinancialEntryStatus;
+use App\Modules\Finance\Models\FinancialAccount;
 use App\Modules\Finance\Models\FinancialEntry;
+use App\Modules\Sales\Actions\Status\CancelSale;
 use App\Modules\Sales\Actions\Status\ConfirmSale;
 use App\Modules\Sales\Enums\SaleItemStatus;
 use App\Modules\Sales\Enums\SaleStatus;
+use App\Modules\Sales\Events\SaleCanceled;
 use App\Modules\Sales\Events\SaleConfirmed;
 use App\Modules\Sales\Models\Sale;
 use App\Modules\Sales\Models\SaleItem;
@@ -92,5 +97,98 @@ class SaleFinanceIntegrationTest extends TestCase
         SaleConfirmed::dispatch($sale->refresh());
 
         $this->assertSame(1, FinancialEntry::query()->count());
+    }
+
+    public function test_canceled_sale_cancels_open_receivable(): void
+    {
+        $user = User::factory()->create();
+        $sale = $this->confirmedSale($user, 10000);
+
+        app(CancelSale::class)->handle($sale, reason: 'Cliente desistiu', confirmed: true);
+
+        $entry = FinancialEntry::query()->with('installments')->sole();
+        $installment = $entry->installments->sole();
+
+        $this->assertSame(FinancialEntryStatus::Canceled, $entry->status);
+        $this->assertSame(0, $entry->balance_amount);
+        $this->assertSame(FinancialEntryStatus::Canceled, $installment->status);
+        $this->assertSame(0, $installment->balance_amount);
+        $this->assertSame('Cliente desistiu', $entry->metadata['cancellation']['reason']);
+        $this->assertFalse($entry->metadata['cancellation']['requires_review']);
+    }
+
+    public function test_canceling_sale_twice_keeps_receivable_canceled(): void
+    {
+        $user = User::factory()->create();
+        $sale = $this->confirmedSale($user, 10000);
+
+        app(CancelSale::class)->handle($sale, reason: 'Cliente desistiu', confirmed: true);
+        SaleCanceled::dispatch($sale->refresh());
+
+        $entry = FinancialEntry::query()->sole();
+
+        $this->assertSame(FinancialEntryStatus::Canceled, $entry->status);
+    }
+
+    public function test_canceled_sale_with_partial_settlement_keeps_paid_amount_and_flags_review(): void
+    {
+        $user = User::factory()->create();
+        $sale = $this->confirmedSale($user, 10000);
+
+        $entry = FinancialEntry::query()->with('installments')->sole();
+        $account = FinancialAccount::factory()->create([
+            'company_id' => $sale->company_id,
+            'opening_balance_amount' => 0,
+            'current_balance_amount' => 0,
+            'active' => true,
+        ]);
+
+        app(CreateFinancialSettlement::class)->handle($entry->installments->sole(), [
+            'financial_account_id' => $account->id,
+            'gross_amount' => 4000,
+        ]);
+
+        app(CancelSale::class)->handle($sale, reason: 'Cliente desistiu', confirmed: true);
+
+        $entry->refresh()->load('installments');
+        $installment = $entry->installments->sole();
+
+        $this->assertSame(FinancialEntryStatus::PartiallyPaid, $entry->status);
+        $this->assertSame(4000, $entry->settled_amount);
+        $this->assertSame(6000, $entry->balance_amount);
+        $this->assertSame(FinancialEntryStatus::PartiallyPaid, $installment->status);
+        $this->assertTrue($entry->metadata['cancellation']['requires_review']);
+    }
+
+    public function test_canceled_sale_without_receivable_does_not_fail(): void
+    {
+        $user = User::factory()->create();
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        app(CancelSale::class)->handle($sale, reason: 'Cliente desistiu', confirmed: true);
+
+        $this->assertSame(SaleStatus::Canceled, $sale->refresh()->status);
+        $this->assertSame(0, FinancialEntry::query()->count());
+    }
+
+    private function confirmedSale(User $user, int $unitAmount): Sale
+    {
+        $sale = Sale::factory()->create([
+            'seller_id' => $user->id,
+            'status' => SaleStatus::Quoted,
+        ]);
+        SaleItem::factory()->for($sale)->create([
+            'quantity' => 1,
+            'unit_amount' => $unitAmount,
+            'discount_amount' => 0,
+        ]);
+
+        $this->actingAs($user);
+
+        app(ConfirmSale::class)->handle($sale, confirmed: true);
+
+        return $sale->refresh();
     }
 }

@@ -52,6 +52,15 @@ class ReverseFinancialSettlement
                 $this->applyAccountMovement($financialAccount, $inverseDirection, (int) $settlement->net_amount);
             }
 
+            /**
+             * Invariante: `CreateFinancialSettlement` gera exatamente uma alocacao
+             * por baixa, entao desconto, juros e multa da baixa pertencem inteiros
+             * a essa unica parcela. Se a baixa passar a alocar em varias parcelas,
+             * os acumuladores precisam descer para `financial_settlement_allocations`,
+             * senao o estorno devolveria o ajuste cheio para cada parcela.
+             */
+            $adjustmentsReverted = false;
+
             foreach ($settlement->allocations as $allocation) {
                 $installment = FinancialInstallment::query()
                     ->lockForUpdate()
@@ -60,11 +69,20 @@ class ReverseFinancialSettlement
                 $settledAmount = max(0, (int) $installment->settled_amount - (int) $allocation->amount);
                 $balanceAmount = (int) $installment->balance_amount + (int) $allocation->amount;
 
-                $installment->forceFill([
+                $attributes = [
                     'settled_amount' => $settledAmount,
                     'balance_amount' => $balanceAmount,
                     'settled_at' => null,
-                ])->save();
+                ];
+
+                if (! $adjustmentsReverted) {
+                    $attributes['discount_amount'] = max(0, (int) $installment->discount_amount - (int) $settlement->discount_amount);
+                    $attributes['interest_amount'] = max(0, (int) $installment->interest_amount - (int) $settlement->interest_amount);
+                    $attributes['penalty_amount'] = max(0, (int) $installment->penalty_amount - (int) $settlement->penalty_amount);
+                    $adjustmentsReverted = true;
+                }
+
+                $installment->forceFill($attributes)->save();
 
                 $installment->forceFill([
                     'status' => $installment->fresh()->calculatedStatus(),
@@ -114,7 +132,7 @@ class ReverseFinancialSettlement
 
         if (! $financialAccount) {
             throw ValidationException::withMessages([
-                'financial_account_id' => __('Conta financeira da baixa nÃ£o foi encontrada.'),
+                'financial_account_id' => __('Conta financeira da baixa não foi encontrada.'),
             ]);
         }
 

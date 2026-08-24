@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { InputMoney } from '@/components/ui/input-money';
-import { cn } from '@/lib/utils';
+import { cn, formatDateOnly } from '@/lib/utils';
 
 export interface InstallmentItem {
     amount: string;
@@ -43,16 +43,6 @@ const moneyFormatter = new Intl.NumberFormat('pt-BR', {
 
 function parseAmount(value: string): number {
     return Number.parseFloat(value) || 0;
-}
-
-function formatDate(value: string): string {
-    if (!value) {
-        return '-';
-    }
-
-    const [year, month, day] = value.split('-');
-
-    return `${day}/${month}/${year}`;
 }
 
 function dateStringToDate(value: string): Date | undefined {
@@ -141,7 +131,11 @@ export function InstallmentsConfig({
     function handleOpen(): void {
         if (confirmedInstallments.length > 0) {
             setCount(confirmedInstallments.length);
-            setRows(confirmedInstallments.map((installment) => ({ ...installment })));
+            setRows(
+                confirmedInstallments.map((installment) => ({
+                    ...installment,
+                })),
+            );
         } else {
             const baseDueDate = initialDueDate || todayString();
 
@@ -154,21 +148,24 @@ export function InstallmentsConfig({
 
     function handleCountChange(nextCount: number): void {
         const normalizedCount = Math.max(1, Math.min(360, nextCount || 1));
-        const baseDueDate = rows[0]?.due_date || initialDueDate || todayString();
+        const baseDueDate =
+            rows[0]?.due_date || initialDueDate || todayString();
 
         setCount(normalizedCount);
         setRows(distributeEvenly(totalAmount, normalizedCount, baseDueDate));
     }
 
     function handleDistribute(): void {
-        const baseDueDate = rows[0]?.due_date || initialDueDate || todayString();
+        const baseDueDate =
+            rows[0]?.due_date || initialDueDate || todayString();
 
         setRows(distributeEvenly(totalAmount, rows.length, baseDueDate));
         setCount(rows.length);
     }
 
     function handleAddRow(): void {
-        const lastDueDate = rows[rows.length - 1]?.due_date || initialDueDate || '';
+        const lastDueDate =
+            rows[rows.length - 1]?.due_date || initialDueDate || '';
         const nextRows = [
             ...rows,
             {
@@ -186,7 +183,9 @@ export function InstallmentsConfig({
             return;
         }
 
-        const nextRows = rows.filter((_, currentIndex) => currentIndex !== index);
+        const nextRows = rows.filter(
+            (_, currentIndex) => currentIndex !== index,
+        );
 
         setRows(nextRows);
         setCount(nextRows.length);
@@ -224,19 +223,21 @@ export function InstallmentsConfig({
     return (
         <>
             <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-sm font-medium">Parcelamento</p>
                         {hasConfirmed ? (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm font-medium">
                                 {confirmedInstallments.length} parcela
-                                {confirmedInstallments.length > 1 ? 's' : ''}{' '}
+                                {confirmedInstallments.length > 1
+                                    ? 's'
+                                    : ''}{' '}
                                 configurada
                                 {confirmedInstallments.length > 1 ? 's' : ''}
                             </p>
                         ) : (
-                            <p className="text-xs text-muted-foreground">
-                                Opcional parcelar este título em múltiplos vencimentos
+                            <p className="text-sm text-muted-foreground">
+                                Será criada uma parcela única no vencimento
+                                informado.
                             </p>
                         )}
                     </div>
@@ -247,9 +248,12 @@ export function InstallmentsConfig({
                         variant={hasConfirmed ? 'default' : 'outline'}
                         onClick={handleOpen}
                         disabled={disabled}
+                        className="w-full justify-center sm:w-auto"
                     >
                         <CreditCard className="mr-1.5 size-3.5" />
-                        {hasConfirmed ? 'Editar Parcelas' : 'Configurar Parcelas'}
+                        {hasConfirmed
+                            ? 'Editar parcelas'
+                            : 'Configurar parcelas'}
                     </Button>
                 </div>
 
@@ -262,10 +266,12 @@ export function InstallmentsConfig({
                             >
                                 <span className="truncate text-muted-foreground">
                                     {index + 1}/{confirmedInstallments.length} -{' '}
-                                    {formatDate(installment.due_date)}
+                                    {formatDateOnly(installment.due_date)}
                                 </span>
                                 <span className="ml-4 shrink-0 font-medium">
-                                    {moneyFormatter.format(parseAmount(installment.amount))}
+                                    {moneyFormatter.format(
+                                        parseAmount(installment.amount),
+                                    )}
                                 </span>
                             </div>
                         ))}
@@ -276,9 +282,10 @@ export function InstallmentsConfig({
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Configurar Parcelas</DialogTitle>
+                        <DialogTitle>Configurar parcelas</DialogTitle>
                         <DialogDescription className="sr-only">
-                            Configure quantidade, vencimentos e valores das parcelas.
+                            Configure quantidade, vencimentos e valores das
+                            parcelas.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -288,16 +295,18 @@ export function InstallmentsConfig({
                                 <div className="flex items-end gap-3">
                                     <div className="flex-1">
                                         <p className="mb-1 text-xs text-muted-foreground">
-                                            Valor Total
+                                            Valor total
                                         </p>
                                         <p className="text-xl font-semibold tabular-nums">
-                                            {moneyFormatter.format(totalAmountNumber)}
+                                            {moneyFormatter.format(
+                                                totalAmountNumber,
+                                            )}
                                         </p>
                                     </div>
 
                                     <div className="w-28">
                                         <p className="mb-1 text-xs text-muted-foreground">
-                                            Nº Parcelas
+                                            Nº de parcelas
                                         </p>
                                         <Input
                                             type="number"
@@ -309,7 +318,7 @@ export function InstallmentsConfig({
                                                     Number(event.target.value),
                                                 )
                                             }
-                                            className="h-8 text-center text-sm"
+                                            className="h-8 text-center text-sm selection:bg-primary/20 selection:text-foreground dark:selection:bg-primary/30"
                                         />
                                     </div>
                                 </div>
@@ -327,7 +336,7 @@ export function InstallmentsConfig({
                                     title="Distribuir igualmente"
                                 >
                                     <RefreshCw className="mr-1.5 size-3.5" />
-                                    Distribuir Igualmente
+                                    Distribuir igualmente
                                 </Button>
 
                                 <Button
@@ -338,7 +347,7 @@ export function InstallmentsConfig({
                                     className="h-8 w-full border border-dashed"
                                 >
                                     <Plus className="mr-1.5 size-3.5" />
-                                    Adicionar Parcela
+                                    Adicionar parcela
                                 </Button>
                             </div>
 
@@ -368,7 +377,7 @@ export function InstallmentsConfig({
                                         onChange={(value) =>
                                             updateRow(index, 'amount', value)
                                         }
-                                        className="h-8 text-sm"
+                                        className="h-8 text-sm selection:bg-primary/20 selection:text-foreground dark:selection:bg-primary/30"
                                     />
                                     <DatePicker
                                         value={dateStringToDate(row.due_date)}
@@ -376,7 +385,9 @@ export function InstallmentsConfig({
                                             updateRow(
                                                 index,
                                                 'due_date',
-                                                date ? dateToDateString(date) : '',
+                                                date
+                                                    ? dateToDateString(date)
+                                                    : '',
                                             )
                                         }
                                         placeholder="Vencimento"
@@ -446,7 +457,7 @@ export function InstallmentsConfig({
                         >
                             <CheckCircle2 className="mr-1.5 size-3.5" />
                             Confirmar {rows.length}{' '}
-                            {rows.length === 1 ? 'Parcela' : 'Parcelas'}
+                            {rows.length === 1 ? 'parcela' : 'parcelas'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

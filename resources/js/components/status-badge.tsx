@@ -1,17 +1,37 @@
 import {
+    AlertCircle,
+    AlertTriangle,
     Archive,
     BadgeAlert,
     CalendarClock,
     CalendarDays,
+    Check,
     CheckCircle2,
+    Circle,
+    CircleDashed,
+    CircleDollarSign,
     CircleHelp,
+    CircleSlash,
+    Clock,
+    Clock3,
+    Eye,
     FilePenLine,
     Link2Off,
+    ListMinus,
+    ListPlus,
+    Loader2,
+    Mail,
+    MousePointerClick,
     PauseCircle,
     PlayCircle,
     Radio,
+    RefreshCw,
+    Replace,
+    RotateCcw,
     SearchX,
     Send,
+    ShieldOff,
+    Sparkles,
     XCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -21,32 +41,61 @@ import { cn } from '@/lib/utils';
 import type { StatusPresenter } from '@/types/status';
 
 const colorClasses: Record<string, string> = {
-    amber: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-    blue: 'border-blue-500/25 bg-blue-500/10 text-blue-700 dark:text-blue-300',
-    emerald:
-        'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    red: 'border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300',
-    sky: 'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-    violet: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300',
-    zinc: 'border-zinc-500/25 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300',
+    amber: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
+    orange: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
+    yellow: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
+    emerald: 'border-success/25 bg-success-soft text-success-soft-foreground',
+    green: 'border-success/25 bg-success-soft text-success-soft-foreground',
+    red: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
+    rose: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
+    blue: 'border-info/25 bg-info-soft text-info-soft-foreground',
+    sky: 'border-info/25 bg-info-soft text-info-soft-foreground',
+    cyan: 'border-info/25 bg-info-soft text-info-soft-foreground',
+    indigo: 'border-info/25 bg-info-soft text-info-soft-foreground',
+    violet: 'border-info/25 bg-info-soft text-info-soft-foreground',
+    zinc: 'border-border/70 bg-secondary text-muted-foreground',
+    slate: 'border-border/70 bg-secondary text-muted-foreground',
+    stone: 'border-border/70 bg-secondary text-muted-foreground',
 };
 
 const icons: Record<string, LucideIcon> = {
+    AlertCircle,
+    AlertTriangle,
     Archive,
+    BadgeAlert,
     CalendarClock,
     CalendarDays,
+    Check,
     CheckCircle2,
+    Circle,
+    CircleDashed,
+    CircleDollarSign,
     CircleHelp,
+    CircleSlash,
+    Clock,
+    Clock3,
+    Eye,
     FilePenLine,
-    BadgeAlert,
     Link2Off,
+    ListMinus,
+    ListPlus,
+    Loader2,
+    Mail,
+    MousePointerClick,
     PauseCircle,
     PlayCircle,
     Radio,
+    RefreshCw,
+    Replace,
+    RotateCcw,
     SearchX,
     Send,
+    ShieldOff,
+    Sparkles,
     XCircle,
 };
+
+const spinningIcons = new Set(['Loader2']);
 
 interface StatusBadgeProps {
     presenter: StatusPresenter;
@@ -60,6 +109,7 @@ export function StatusBadge({
     showIcon = false,
 }: StatusBadgeProps) {
     const Icon = icons[presenter.icon];
+    const shouldSpin = spinningIcons.has(presenter.icon);
 
     return (
         <Badge
@@ -70,7 +120,9 @@ export function StatusBadge({
                 className,
             )}
         >
-            {showIcon && Icon ? <Icon className="size-3" /> : null}
+            {showIcon && Icon ? (
+                <Icon className={cn('size-3', shouldSpin && 'animate-spin')} />
+            ) : null}
             {presenter.label}
         </Badge>
     );

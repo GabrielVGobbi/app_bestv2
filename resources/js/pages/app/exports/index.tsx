@@ -1,11 +1,13 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import { Check, Clock, Download, FileText, Loader2, X } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 
 import Heading from '@/components/heading';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
 import type { ExportRecord } from '@/types/export';
+import type { StatusPresenter } from '@/types/status';
 
 interface PageProps {
     exports: ExportRecord[];
@@ -23,40 +25,35 @@ function formatModelClass(modelClass: string | undefined): string {
     return modelClass.split('\\').pop() ?? modelClass;
 }
 
-function StatusBadge({ status }: { status: ExportRecord['status'] }) {
-    if (status === 'completed') {
-        return (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                <Check className="size-3" />
-                Concluído
-            </span>
-        );
-    }
+const EXPORT_STATUS_PRESENTERS: Record<ExportRecord['status'], StatusPresenter> = {
+    completed: {
+        value: 'completed',
+        label: 'Concluído',
+        color: 'emerald',
+        icon: 'Check',
+    },
+    failed: {
+        value: 'failed',
+        label: 'Falhou',
+        color: 'red',
+        icon: 'XCircle',
+    },
+    processing: {
+        value: 'processing',
+        label: 'Processando',
+        color: 'blue',
+        icon: 'Loader2',
+    },
+    pending: {
+        value: 'pending',
+        label: 'Aguardando',
+        color: 'amber',
+        icon: 'Clock',
+    },
+};
 
-    if (status === 'failed') {
-        return (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                <X className="size-3" />
-                Falhou
-            </span>
-        );
-    }
-
-    if (status === 'processing') {
-        return (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                <Loader2 className="size-3 animate-spin" />
-                Processando
-            </span>
-        );
-    }
-
-    return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-            <Clock className="size-3" />
-            Aguardando
-        </span>
-    );
+function ExportStatusBadge({ status }: { status: ExportRecord['status'] }) {
+    return <StatusBadge presenter={EXPORT_STATUS_PRESENTERS[status]} showIcon />;
 }
 
 function DownloadCell({ record }: { record: ExportRecord }) {
@@ -141,7 +138,7 @@ export default function ExportsIndex({ exports }: PageProps) {
                                             }
                                         >
                                             <td className="px-4 py-3">
-                                                <StatusBadge status={exp.status} />
+                                                <ExportStatusBadge status={exp.status} />
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-1.5">

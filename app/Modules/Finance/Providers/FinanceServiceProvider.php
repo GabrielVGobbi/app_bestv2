@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Providers;
 
+use App\Modules\Finance\Listeners\CancelReceivableForCanceledSale;
 use App\Modules\Finance\Listeners\CreateReceivableForConfirmedSale;
 use App\Modules\Finance\Models\BankStatementImport;
 use App\Modules\Finance\Models\FinancialAccount;
@@ -16,8 +17,10 @@ use App\Modules\Finance\Models\ReconciliationMatch;
 use App\Modules\Finance\Policies\FinancialAccountPolicy;
 use App\Modules\Finance\Policies\FinancialCategoryPolicy;
 use App\Modules\Finance\Policies\FinancialEntryPolicy;
+use App\Modules\Finance\Policies\FinancialInstallmentPolicy;
 use App\Modules\Finance\Policies\FinancialSettlementPolicy;
 use App\Modules\Finance\Policies\PaymentMethodPolicy;
+use App\Modules\Sales\Events\SaleCanceled;
 use App\Modules\Sales\Events\SaleConfirmed;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -43,9 +46,11 @@ class FinanceServiceProvider extends ServiceProvider
         Gate::policy(FinancialCategory::class, FinancialCategoryPolicy::class);
         Gate::policy(FinancialAccount::class, FinancialAccountPolicy::class);
         Gate::policy(FinancialEntry::class, FinancialEntryPolicy::class);
+        Gate::policy(FinancialInstallment::class, FinancialInstallmentPolicy::class);
         Gate::policy(FinancialSettlement::class, FinancialSettlementPolicy::class);
         Gate::policy(PaymentMethod::class, PaymentMethodPolicy::class);
 
         Event::listen(SaleConfirmed::class, CreateReceivableForConfirmedSale::class);
+        Event::listen(SaleCanceled::class, CancelReceivableForCanceledSale::class);
     }
 }

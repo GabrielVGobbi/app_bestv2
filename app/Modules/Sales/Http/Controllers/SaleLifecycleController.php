@@ -9,6 +9,7 @@ use App\Modules\Sales\Actions\Status\CancelSale;
 use App\Modules\Sales\Actions\Status\ConfirmSale;
 use App\Modules\Sales\Actions\Status\FinishSaleCampaign;
 use App\Modules\Sales\Actions\Status\QuoteSale;
+use App\Modules\Sales\Actions\Status\RevertSaleToDraft;
 use App\Modules\Sales\Http\Requests\UpdateSaleStatusRequest;
 use App\Modules\Sales\Models\Sale;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,15 @@ class SaleLifecycleController extends Controller
         $action->handle($sale);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Venda enviada como orçamento.')]);
+
+        return back();
+    }
+
+    public function revertToDraft(UpdateSaleStatusRequest $request, Sale $sale, RevertSaleToDraft $action): RedirectResponse
+    {
+        $action->handle($sale);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Venda retornou para rascunho.')]);
 
         return back();
     }

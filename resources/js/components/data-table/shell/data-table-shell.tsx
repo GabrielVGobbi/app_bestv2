@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 
+import { isColumnVisible } from '../core/column-visibility';
 import { isActiveFilterValue } from '../core/filter-utils';
 import type { DataTableShellProps } from '../core/types';
 import { DataTableBody } from './data-table-body';
@@ -42,6 +43,8 @@ export function DataTableShell<TData>({
     onSearchChange,
     onFilterChange,
     onResetFilters,
+    onResetTable,
+    canResetTable,
     onClearSearch,
     onRefresh,
     onPageChange,
@@ -126,30 +129,44 @@ export function DataTableShell<TData>({
         [state.filters],
     );
 
+    const visibleLeafColumns = table
+        .getAllLeafColumns()
+        .filter((column) => isColumnVisible(column.id, state.columnVisibility));
+    const visibleTableWidth = visibleLeafColumns.reduce(
+        (total, column) => total + column.getSize(),
+        0,
+    );
+
     return (
         <div className="flex flex-col gap-3">
-            <DataTableToolbar
-                table={table}
-                features={features}
-                filters={filterConfig}
-                quickFilters={quickFilters}
-                dateFilterColumns={dateFilterColumns}
-                dateFilterPresets={dateFilterPresets}
-                filterValues={state.filters}
-                search={state.search}
-                searchPlaceholder={searchPlaceholder}
-                isFetching={isFetching}
-                onSearchChange={onSearchChange}
-                onFilterChange={onFilterChange}
-                onResetFilters={onResetFilters}
-                onRefresh={onRefresh}
-                exportConfig={exportConfig}
-                currentSort={state.sorting[0]?.id}
-                currentSortDirection={state.sorting[0]?.desc ? 'desc' : 'asc'}
-            />
-
-            <Card className="overflow-hidden rounded-xl border-app-line/80 py-0 shadow-[var(--shadow-app-panel)]">
+            <Card className="overflow-hidden rounded-xl border-app-line py-0 shadow-none">
                 <CardContent className="p-0">
+                    <div className="border-b border-app-line bg-card p-3">
+                        <DataTableToolbar
+                            table={table}
+                            features={features}
+                            filters={filterConfig}
+                            quickFilters={quickFilters}
+                            dateFilterColumns={dateFilterColumns}
+                            dateFilterPresets={dateFilterPresets}
+                            filterValues={state.filters}
+                            search={state.search}
+                            searchPlaceholder={searchPlaceholder}
+                            isFetching={isFetching}
+                            onSearchChange={onSearchChange}
+                            onFilterChange={onFilterChange}
+                            onResetFilters={onResetFilters}
+                            onResetTable={onResetTable}
+                            canResetTable={canResetTable}
+                            onRefresh={onRefresh}
+                            exportConfig={exportConfig}
+                            currentSort={state.sorting[0]?.id}
+                            currentSortDirection={
+                                state.sorting[0]?.desc ? 'desc' : 'asc'
+                            }
+                        />
+                    </div>
+
                     <div
                         ref={tableViewportRef}
                         className="custom-scrollbar overflow-auto"
@@ -161,21 +178,21 @@ export function DataTableShell<TData>({
                             className="w-full caption-bottom border-collapse text-sm"
                             style={{
                                 tableLayout: 'fixed',
-                                minWidth: table.getTotalSize(),
+                                minWidth: visibleTableWidth,
                             }}
                         >
                             <DataTableHeader
                                 headerGroups={table.getHeaderGroups()}
                                 appearance={appearance}
                                 isScrolled={isScrolled}
+                                columnVisibility={state.columnVisibility}
                             />
                             <DataTableBody
                                 rows={rows}
                                 rowSelection={state.rowSelection}
+                                columnVisibility={state.columnVisibility}
                                 isScrolled={isScrolled}
-                                visibleColumnCount={
-                                    table.getVisibleLeafColumns().length
-                                }
+                                visibleColumnCount={visibleLeafColumns.length}
                                 isLoading={isLoading}
                                 appearance={appearance}
                                 error={error}

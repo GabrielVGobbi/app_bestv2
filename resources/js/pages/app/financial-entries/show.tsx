@@ -1,6 +1,5 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     CalendarDays,
     CircleDollarSign,
     Filter,
@@ -11,12 +10,15 @@ import {
     X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
-import Header from '@/components/dashboard/header';
+import { ContentHeader } from '@/components/content-header';
+import { DirectionBadge } from '@/components/direction-badge';
+import { MoneyAmount } from '@/components/money-amount';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,18 +32,12 @@ import type {
     FinancialSettlement,
 } from '@/types/app/financial-entry';
 
+import { EntryCancelDialog } from './components/entry-cancel-dialog';
 import { SettlementDialog } from './components/settlement-dialog';
 import { SettlementReversalDialog } from './components/settlement-reversal-dialog';
 
 interface Props {
     entryData: FinancialEntryResource;
-}
-
-function money(value: number, currency = 'BRL'): string {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency,
-    }).format(value / 100);
 }
 
 function formatDateTime(value: string | null): string {
@@ -59,13 +55,21 @@ function movementLabel(movement: FinancialMovement): string {
     return movement.direction === 'inflow' ? 'Entrada' : 'Saída';
 }
 
-function Info({ label, value }: { label: string; value: string | null }) {
+function Info({
+    label,
+    value,
+    children,
+}: {
+    label: string;
+    value?: string | null;
+    children?: ReactNode;
+}) {
     return (
         <div className="space-y-1">
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </p>
-            <p className="text-sm">{value || '-'}</p>
+            {children ?? <p className="text-sm">{value || '-'}</p>}
         </div>
     );
 }
@@ -210,6 +214,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
         useState<FinancialInstallment | null>(null);
     const [reversalSettlement, setReversalSettlement] =
         useState<FinancialSettlement | null>(null);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [installmentStatusFilter, setInstallmentStatusFilter] =
         useState<InstallmentStatusFilter>('all');
     const [installmentDateFilter, setInstallmentDateFilter] =
@@ -245,42 +250,40 @@ export default function ShowFinancialEntry({ entryData }: Props) {
         <>
             <Head title={entry.description} />
 
-            <Header>
-                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="size-8"
-                            asChild
-                        >
-                            <Link href={index.url()}>
-                                <ArrowLeft className="size-4" />
-                            </Link>
-                        </Button>
-                        <div>
-                            <h1 className="text-xl font-semibold">
-                                {entry.description}
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                {entry.direction_label} - {entry.origin_label}
-                            </p>
-                        </div>
-                    </div>
-
-                    {entry.permissions.can_settle && firstOpenInstallment ? (
-                        <Button
-                            type="button"
-                            onClick={() =>
-                                setSettlementInstallment(firstOpenInstallment)
-                            }
-                        >
-                            <ReceiptText className="size-4" />
-                            Registrar baixa
-                        </Button>
-                    ) : null}
-                </div>
-            </Header>
+            <ContentHeader
+                title={entry.description}
+                description={`${entry.direction_label} - ${entry.origin_label}`}
+                backHref={index.url()}
+                actions={
+                    <>
+                        {entry.permissions.can_cancel ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setCancelDialogOpen(true)}
+                            >
+                                <X className="size-4" />
+                                Cancelar lançamento
+                            </Button>
+                        ) : null}
+                        {entry.permissions.can_settle &&
+                        firstOpenInstallment ? (
+                            <Button
+                                type="button"
+                                onClick={() =>
+                                    setSettlementInstallment(
+                                        firstOpenInstallment,
+                                    )
+                                }
+                            >
+                                <ReceiptText className="size-4" />
+                                Registrar baixa
+                            </Button>
+                        ) : null}
+                    </>
+                }
+            />
 
             <div className="page-wrapper-lg">
                 <div className="grid gap-4 p-4 lg:grid-cols-[1fr_22rem]">
@@ -293,10 +296,12 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 />
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-3">
-                                <Info
-                                    label="Direção"
-                                    value={entry.direction_label}
-                                />
+                                <Info label="Direção">
+                                    <DirectionBadge
+                                        direction={entry.direction}
+                                        label={entry.direction_label}
+                                    />
+                                </Info>
                                 <Info
                                     label="Contraparte"
                                     value={
@@ -308,10 +313,17 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     label="Origem"
                                     value={entry.origin_display_name}
                                 />
-                                <Info
-                                    label="Vencimento"
-                                    value={entry.due_date}
-                                />
+                                <Info label="Vencimento">
+                                    <p
+                                        className={
+                                            entry.status === 'overdue'
+                                                ? 'text-sm font-medium text-destructive'
+                                                : 'text-sm'
+                                        }
+                                    >
+                                        {entry.due_date || '-'}
+                                    </p>
+                                </Info>
                                 <Info
                                     label="Categoria"
                                     value={entry.category?.full_path ?? null}
@@ -320,6 +332,26 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     label="Empresa"
                                     value={`#${entry.company_id}`}
                                 />
+                                <Info label="Líquido">
+                                    <MoneyAmount
+                                        value={entry.net_amount}
+                                        currency={entry.currency}
+                                        direction={entry.direction}
+                                        overdue={entry.status === 'overdue'}
+                                        signed
+                                        className="text-sm font-semibold"
+                                    />
+                                </Info>
+                                <Info label="Saldo">
+                                    <MoneyAmount
+                                        value={entry.balance_amount}
+                                        currency={entry.currency}
+                                        direction={entry.direction}
+                                        overdue={entry.status === 'overdue'}
+                                        signed
+                                        className="text-sm font-semibold"
+                                    />
+                                </Info>
                             </CardContent>
                         </Card>
 
@@ -348,10 +380,17 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                 </p>
                                             </div>
                                             <span className="text-sm font-semibold">
-                                                {money(
-                                                    component.amount,
-                                                    entry.currency,
-                                                )}
+                                                <MoneyAmount
+                                                    value={component.amount}
+                                                    currency={entry.currency}
+                                                    direction={
+                                                        component.operation ===
+                                                        'subtract'
+                                                            ? 'outflow'
+                                                            : 'inflow'
+                                                    }
+                                                    signed
+                                                />
                                             </span>
                                         </div>
                                     ))
@@ -514,7 +553,11 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                             key={
                                                                 installment.uuid
                                                             }
-                                                            className="bg-card odd:bg-muted/20"
+                                                            className={
+                                                                installment.is_overdue
+                                                                    ? 'bg-destructive-soft/40 odd:bg-destructive-soft/55'
+                                                                    : 'bg-card odd:bg-muted/20'
+                                                            }
                                                         >
                                                             <td className="px-3 py-3 font-medium">
                                                                 #
@@ -529,7 +572,13 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                     }
                                                                 />
                                                             </td>
-                                                            <td className="px-3 py-3">
+                                                            <td
+                                                                className={
+                                                                    installment.is_overdue
+                                                                        ? 'px-3 py-3 font-medium text-destructive'
+                                                                        : 'px-3 py-3'
+                                                                }
+                                                            >
                                                                 {installment.due_date ??
                                                                     '-'}
                                                             </td>
@@ -538,22 +587,45 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                     '-'}
                                                             </td>
                                                             <td className="px-3 py-3 text-right font-medium">
-                                                                {money(
-                                                                    installment.original_amount,
-                                                                    installment.currency,
-                                                                )}
+                                                                <MoneyAmount
+                                                                    value={
+                                                                        installment.original_amount
+                                                                    }
+                                                                    currency={
+                                                                        installment.currency
+                                                                    }
+                                                                    direction={
+                                                                        entry.direction
+                                                                    }
+                                                                />
                                                             </td>
                                                             <td className="px-3 py-3 text-right text-muted-foreground">
-                                                                {money(
-                                                                    installment.settled_amount,
-                                                                    installment.currency,
-                                                                )}
+                                                                <MoneyAmount
+                                                                    value={
+                                                                        installment.settled_amount
+                                                                    }
+                                                                    currency={
+                                                                        installment.currency
+                                                                    }
+                                                                    className="text-muted-foreground"
+                                                                />
                                                             </td>
                                                             <td className="px-3 py-3 text-right font-semibold">
-                                                                {money(
-                                                                    installment.balance_amount,
-                                                                    installment.currency,
-                                                                )}
+                                                                <MoneyAmount
+                                                                    value={
+                                                                        installment.balance_amount
+                                                                    }
+                                                                    currency={
+                                                                        installment.currency
+                                                                    }
+                                                                    direction={
+                                                                        entry.direction
+                                                                    }
+                                                                    overdue={
+                                                                        installment.is_overdue
+                                                                    }
+                                                                    signed
+                                                                />
                                                             </td>
                                                             <td className="px-3 py-3">
                                                                 <div className="flex justify-end">
@@ -642,17 +714,30 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                     <div className="flex items-center gap-2">
                                                         <div className="text-right">
                                                             <p className="text-sm font-semibold">
-                                                                {money(
-                                                                    settlement.net_amount,
-                                                                    entry.currency,
-                                                                )}
+                                                                <MoneyAmount
+                                                                    value={
+                                                                        settlement.net_amount
+                                                                    }
+                                                                    currency={
+                                                                        entry.currency
+                                                                    }
+                                                                    direction={
+                                                                        settlement.direction
+                                                                    }
+                                                                    signed
+                                                                />
                                                             </p>
                                                             <p className="text-xs text-muted-foreground">
                                                                 Bruto{' '}
-                                                                {money(
-                                                                    settlement.gross_amount,
-                                                                    entry.currency,
-                                                                )}
+                                                                <MoneyAmount
+                                                                    value={
+                                                                        settlement.gross_amount
+                                                                    }
+                                                                    currency={
+                                                                        entry.currency
+                                                                    }
+                                                                    className="text-muted-foreground"
+                                                                />
                                                             </p>
                                                         </div>
                                                         {settlement.permissions
@@ -693,10 +778,15 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                     </p>
                                                                     <p className="text-xs text-muted-foreground">
                                                                         Valor{' '}
-                                                                        {money(
-                                                                            allocation.amount,
-                                                                            entry.currency,
-                                                                        )}
+                                                                        <MoneyAmount
+                                                                            value={
+                                                                                allocation.amount
+                                                                            }
+                                                                            currency={
+                                                                                entry.currency
+                                                                            }
+                                                                            className="text-muted-foreground"
+                                                                        />
                                                                     </p>
                                                                 </div>
                                                             ),
@@ -731,10 +821,18 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                         </span>
                                                                     </div>
                                                                     <span className="font-medium">
-                                                                        {money(
-                                                                            movement.amount,
-                                                                            entry.currency,
-                                                                        )}
+                                                                        <MoneyAmount
+                                                                            value={
+                                                                                movement.amount
+                                                                            }
+                                                                            currency={
+                                                                                entry.currency
+                                                                            }
+                                                                            direction={
+                                                                                movement.direction
+                                                                            }
+                                                                            signed
+                                                                        />
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -760,10 +858,11 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         Bruto
                                     </span>
                                     <span className="font-medium">
-                                        {money(
-                                            entry.gross_amount,
-                                            entry.currency,
-                                        )}
+                                        <MoneyAmount
+                                            value={entry.gross_amount}
+                                            currency={entry.currency}
+                                            direction={entry.direction}
+                                        />
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
@@ -771,10 +870,12 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         Líquido
                                     </span>
                                     <span className="font-medium">
-                                        {money(
-                                            entry.net_amount,
-                                            entry.currency,
-                                        )}
+                                        <MoneyAmount
+                                            value={entry.net_amount}
+                                            currency={entry.currency}
+                                            direction={entry.direction}
+                                            signed
+                                        />
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
@@ -782,10 +883,10 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         Liquidado
                                     </span>
                                     <span className="font-medium">
-                                        {money(
-                                            entry.settled_amount,
-                                            entry.currency,
-                                        )}
+                                        <MoneyAmount
+                                            value={entry.settled_amount}
+                                            currency={entry.currency}
+                                        />
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
@@ -793,10 +894,13 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         Saldo
                                     </span>
                                     <span className="font-semibold">
-                                        {money(
-                                            entry.balance_amount,
-                                            entry.currency,
-                                        )}
+                                        <MoneyAmount
+                                            value={entry.balance_amount}
+                                            currency={entry.currency}
+                                            direction={entry.direction}
+                                            overdue={entry.status === 'overdue'}
+                                            signed
+                                        />
                                     </span>
                                 </div>
                             </CardContent>
@@ -845,7 +949,8 @@ export default function ShowFinancialEntry({ entryData }: Props) {
             </div>
 
             <SettlementDialog
-                entry={entry}
+                companyId={entry.company_id}
+                currency={entry.currency}
                 installment={settlementInstallment}
                 open={settlementInstallment !== null}
                 onOpenChange={(open) => {
@@ -861,6 +966,11 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                         setReversalSettlement(null);
                     }
                 }}
+            />
+            <EntryCancelDialog
+                entry={entry}
+                open={cancelDialogOpen}
+                onOpenChange={setCancelDialogOpen}
             />
         </>
     );

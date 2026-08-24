@@ -32,6 +32,7 @@ interface AsyncSelectResponse {
 
 interface AsyncSelectBaseProps {
     placeholder?: string;
+    fieldLabel?: string;
     searchPlaceholder?: string;
     emptyMessage?: string;
     disabled?: boolean;
@@ -66,17 +67,28 @@ export type AsyncSelectProps =
     | AsyncSelectSingleProps
     | AsyncSelectMultipleProps;
 
+function textOrUndefined(value: unknown): string | undefined {
+    if (typeof value !== 'string' && typeof value !== 'number') {
+        return undefined;
+    }
+
+    const text = String(value).trim();
+
+    return text === '' ? undefined : text;
+}
+
 function defaultTransformOption(item: unknown): AsyncSelectOption {
     if (typeof item === 'object' && item !== null) {
         const record = item as Record<string, unknown>;
 
         return {
             value: String(record.value ?? record.id ?? record.uuid ?? ''),
-            label: String(record.label ?? record.name ?? record.email ?? ''),
-            description:
-                record.description !== undefined
-                    ? String(record.description)
-                    : undefined,
+            label:
+                textOrUndefined(record.label) ??
+                textOrUndefined(record.name) ??
+                textOrUndefined(record.email) ??
+                '',
+            description: textOrUndefined(record.description),
         };
     }
 
@@ -154,6 +166,7 @@ function useDebouncedValue(value: string, delay: number): string {
 export function AsyncSelect(props: AsyncSelectProps) {
     const {
         placeholder = 'Selecione...',
+        fieldLabel,
         searchPlaceholder = 'Buscar...',
         emptyMessage = 'Nenhuma opcao encontrada.',
         disabled = false,
@@ -184,6 +197,8 @@ export function AsyncSelect(props: AsyncSelectProps) {
     const scrollAreaRef = useRef<HTMLDivElement | null>(null);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
     const abortRef = useRef<AbortController | null>(null);
+    const hydrateAbortRef = useRef<AbortController | null>(null);
+    const hydratedValuesRef = useRef<Set<string>>(new Set());
     const isLoadingRef = useRef(false);
     const debouncedSearch = useDebouncedValue(searchTerm, debounceMs);
 
@@ -349,6 +364,97 @@ export function AsyncSelect(props: AsyncSelectProps) {
         [debouncedSearch, endpoint, pageSize, params, transformOption],
     );
 
+    const hydrateSelectedOptions = useCallback(
+        async (missingValues: string[]): Promise<void> => {
+            if (!endpoint || missingValues.length === 0) {
+                return;
+            }
+
+            hydrateAbortRef.current?.abort();
+
+            const controller = new AbortController();
+            hydrateAbortRef.current = controller;
+
+            const url = new URL(endpoint, window.location.origin);
+            url.searchParams.set('ids', missingValues.join(','));
+            url.searchParams.set('values', missingValues.join(','));
+            url.searchParams.set('limit', String(missingValues.length));
+            url.searchParams.set(
+                'per_page',
+                String(Math.max(missingValues.length, 1)),
+            );
+
+            for (const value of missingValues) {
+                url.searchParams.append('ids[]', value);
+                url.searchParams.append('values[]', value);
+            }
+
+            for (const [key, value] of Object.entries(params ?? {})) {
+                if (value !== null && value !== undefined && value !== '') {
+                    url.searchParams.set(key, String(value));
+                }
+            }
+
+            try {
+                const response = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Nao foi possivel carregar as opcoes.');
+                }
+
+                const payload = (await response.json()) as AsyncSelectResponse;
+                const nextOptions = payload.data.map(transformOption);
+                const nextLabels = Object.fromEntries(
+                    nextOptions.map((option) => [option.value, option.label]),
+                );
+
+                setLabelCache((currentLabels) => ({
+                    ...currentLabels,
+                    ...nextLabels,
+                }));
+                setOptionCache((currentOptions) => ({
+                    ...currentOptions,
+                    ...Object.fromEntries(
+                        nextOptions.map((option) => [option.value, option]),
+                    ),
+                }));
+            } catch (caughtError) {
+                if (caughtError instanceof DOMException) {
+                    return;
+                }
+
+                for (const value of missingValues) {
+                    hydratedValuesRef.current.delete(value);
+                }
+            }
+        },
+        [endpoint, params, transformOption],
+    );
+
+    useEffect(() => {
+        const missingValues = selected.filter(
+            (value) =>
+                !labelCache[value] && !hydratedValuesRef.current.has(value),
+        );
+
+        if (missingValues.length === 0) {
+            return;
+        }
+
+        for (const value of missingValues) {
+            hydratedValuesRef.current.add(value);
+        }
+
+        void hydrateSelectedOptions(missingValues);
+    }, [hydrateSelectedOptions, labelCache, selected]);
+
     useEffect(() => {
         if (open && endpoint) {
             const timeout = window.setTimeout(() => void loadOptions(1), 0);
@@ -486,6 +592,12 @@ export function AsyncSelect(props: AsyncSelectProps) {
                         {hasSelection ? (
                             props.multiple ? (
                                 <>
+                                    {fieldLabel && (
+                                        <span className="text-muted-foreground">
+                                            {fieldLabel}
+                                            <span className="px-1">·</span>
+                                        </span>
+                                    )}
                                     {visibleSelectedLabels.map(
                                         (label, index) => (
                                             <Badge
@@ -518,8 +630,22 @@ export function AsyncSelect(props: AsyncSelectProps) {
                                             className="size-6"
                                         />
                                     )}
-                                    <span className="truncate">
-                                        {selectedLabels[0]}
+                                    <span className="min-w-0 truncate">
+                                        {fieldLabel ? (
+                                            <>
+                                                <span className="text-muted-foreground">
+                                                    {fieldLabel}
+                                                </span>
+                                                <span className="text-muted-foreground">
+                                                    {' · '}
+                                                </span>
+                                                <span className="font-medium">
+                                                    {selectedLabels[0]}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            selectedLabels[0]
+                                        )}
                                     </span>
                                 </span>
                             )

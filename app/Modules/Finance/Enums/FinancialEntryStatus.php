@@ -31,7 +31,7 @@ enum FinancialEntryStatus: string implements StatusableEnum
 
     /** @var array<string, array{label: string, color: string, icon: string}> */
     private const array PRESENTERS = [
-        'open' => ['label' => 'Em aberto', 'color' => 'blue', 'icon' => 'Circle'],
+        'open' => ['label' => 'Em aberto', 'color' => 'amber', 'icon' => 'Circle'],
         'overdue' => ['label' => 'Vencido', 'color' => 'red', 'icon' => 'AlertCircle'],
         'partially_paid' => ['label' => 'Pago parcial', 'color' => 'amber', 'icon' => 'CircleDollarSign'],
         'paid' => ['label' => 'Pago', 'color' => 'emerald', 'icon' => 'CheckCircle2'],

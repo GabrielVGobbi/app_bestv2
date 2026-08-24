@@ -103,7 +103,7 @@ class ImportBankStatement
 
         if (! $financialAccount) {
             throw ValidationException::withMessages([
-                'financial_account_id' => __('Conta financeira ativa nÃ£o encontrada.'),
+                'financial_account_id' => __('Conta financeira ativa não encontrada.'),
             ]);
         }
 

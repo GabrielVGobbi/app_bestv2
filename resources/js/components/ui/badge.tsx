@@ -14,13 +14,21 @@ const badgeVariants = cva(
                 secondary:
                     "border-border/60 bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/80",
                 destructive:
-                    "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+                    "border-destructive/25 bg-destructive-soft text-destructive-soft-foreground [a&]:hover:bg-destructive-soft/80",
                 outline:
                     "border-border/80 bg-card text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
                 success:
-                    "border-transparent bg-success text-success-foreground [a&]:hover:bg-success/90",
+                    "border-success/25 bg-success-soft text-success-soft-foreground [a&]:hover:bg-success-soft/80",
                 warning:
-                    "border-transparent bg-warning text-warning-foreground [a&]:hover:bg-warning/90",
+                    "border-warning/25 bg-warning-soft text-warning-soft-foreground [a&]:hover:bg-warning-soft/80",
+                info:
+                    "border-info/25 bg-info-soft text-info-soft-foreground [a&]:hover:bg-info-soft/80",
+                inflow:
+                    "border-inflow/25 bg-inflow-soft text-inflow-soft-foreground [a&]:hover:bg-inflow-soft/80",
+                outflow:
+                    "border-outflow/25 bg-outflow-soft text-outflow-soft-foreground [a&]:hover:bg-outflow-soft/80",
+                muted:
+                    "border-border/70 bg-secondary text-muted-foreground [a&]:hover:bg-secondary/80",
             },
         },
         defaultVariants: {

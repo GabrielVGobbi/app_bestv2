@@ -50,17 +50,30 @@ class FinancePermissionsNavigationTest extends TestCase
         $this->assertIsArray($financeModule);
         $this->assertSame('/financial-entries', $financeModule['defaultHref']);
 
-        $operations = collect($financeModule['items'])->firstWhere('title', 'Operacoes');
-        $settings = collect($financeModule['items'])->firstWhere('title', 'Configuracoes');
+        $operations = collect($financeModule['items'])->firstWhere('title', 'Operações');
+        $settings = collect($financeModule['items'])->firstWhere('title', 'Configurações');
 
         $this->assertIsArray($operations);
         $this->assertIsArray($settings);
-        $this->assertEqualsCanonicalizing(
-            ['Conciliação', 'Lançamentos Financeiros', 'Relatórios'],
+        $this->assertSame(
+            ['Lançamentos Financeiros', 'Relatórios', 'Conciliação'],
             collect($operations['items'])->pluck('title')->all(),
         );
+
+        $entriesGroup = collect($operations['items'])->firstWhere('title', 'Lançamentos Financeiros');
+
+        $this->assertIsArray($entriesGroup);
+        $this->assertSame('/financial-entries', $entriesGroup['href']);
+        $this->assertSame(
+            ['Contas a Receber', 'Contas a Pagar'],
+            collect($entriesGroup['items'] ?? [])->pluck('title')->all(),
+        );
+        $this->assertSame(
+            ['inflow', 'outflow'],
+            collect($entriesGroup['items'] ?? [])->pluck('tone')->all(),
+        );
         $this->assertEqualsCanonicalizing(
-            ['Categorias financeiras', 'Contas financeiras', 'Metodos de pagamento'],
+            ['Categorias financeiras', 'Contas financeiras', 'Métodos de pagamento'],
             collect($settings['items'])->pluck('title')->all(),
         );
     }
@@ -74,17 +87,21 @@ class FinancePermissionsNavigationTest extends TestCase
         $modules = app(NavigationService::class)->modules();
 
         $this->assertNull(collect($modules)->firstWhere('label', 'Financeiro'));
+        $this->assertNull(collect($modules)->firstWhere('label', 'Gestão'));
 
-        $gestao = collect($modules)->firstWhere('label', 'Gestão')
-            ?? collect($modules)->firstWhere('label', 'GestÃ£o')
-            ?? collect($modules)->firstWhere('label', 'GestÃƒÂ£o');
+        $comercial = collect($modules)->firstWhere('label', 'Comercial');
 
-        $this->assertIsArray($gestao);
+        $this->assertIsArray($comercial);
 
-        $cadastros = collect($gestao['items'])->firstWhere('title', 'Cadastros');
+        $visibleTitles = collect($comercial['items'])
+            ->flatMap(fn (array $item): array => [
+                $item['title'] ?? null,
+                ...collect($item['items'] ?? [])->pluck('title')->all(),
+            ])
+            ->filter()
+            ->all();
 
-        $this->assertIsArray($cadastros);
-        $this->assertNotContains('Fornecedores', collect($cadastros['items'])->pluck('title')->all());
+        $this->assertNotContains('Fornecedores', $visibleTitles);
     }
 
     public function test_access_control_preserves_super_role_direct_role_and_denied_permissions(): void

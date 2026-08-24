@@ -31,6 +31,23 @@ export function formatDate(value: string | null): string {
     }).format(new Date(value));
 }
 
+export function formatDateOnly(value: string | null | undefined): string {
+    if (!value) {
+        return '-';
+    }
+
+    const datePart = String(value).slice(0, 10);
+    const [year, month, day] = datePart.split('-').map(Number);
+
+    if (!year || !month || !day) {
+        return '-';
+    }
+
+    return new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+    }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 function originalOrEmpty(value: string | null | undefined): string {
     return value?.trim() ?? '';
 }

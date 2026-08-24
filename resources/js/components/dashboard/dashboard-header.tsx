@@ -32,13 +32,13 @@ export function DashboardHeader({ headerActions, onMobileToggle }: Props) {
         nav.style === 'modules' && nav.modulesMenuPosition === 'header';
 
     return (
-        <header className="bg-header relative z-50 flex h-[60px] shrink-0 items-center border-b border-header-border px-3 text-header-foreground md:px-5">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+        <header className="relative z-50 flex h-[68px] shrink-0 items-center border-b border-header-border bg-header-background px-4 text-header-foreground md:px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
                 <button
                     id="mobile-navigation-trigger"
                     type="button"
                     onClick={onMobileToggle}
-                    className="flex size-9 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted md:hidden"
+                    className="flex size-10 items-center justify-center rounded-lg border border-white/10 text-header-foreground transition-colors hover:bg-white/10 md:hidden"
                     aria-label="Abrir navegação"
                 >
                     <Menu className="size-5" />
@@ -47,7 +47,7 @@ export function DashboardHeader({ headerActions, onMobileToggle }: Props) {
                 <Link
                     href={dashboard()}
                     prefetch
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-muted"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-white/10"
                     aria-label="BestPlay"
                 >
                     <AppLogo showText={false} />
@@ -60,11 +60,11 @@ export function DashboardHeader({ headerActions, onMobileToggle }: Props) {
                 )}
             </div>
 
-            <div className="mx-3 flex w-auto justify-center md:w-[min(34vw,360px)]">
+            <div className="mx-4 flex w-auto justify-center md:w-[min(38vw,420px)]">
                 <GlobalCommandPalette />
             </div>
 
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                 {headerActions}
                 <NotificationBell />
                 <ThemeToggle />
@@ -73,10 +73,10 @@ export function DashboardHeader({ headerActions, onMobileToggle }: Props) {
                     <DropdownMenuTrigger asChild>
                         <Button
                             variant="ghost"
-                            className="relative size-9 rounded-full p-0"
+                            className="relative size-10 rounded-full p-0"
                             aria-label="Abrir menu do usuário"
                         >
-                            <Avatar className="size-8 overflow-hidden rounded-full">
+                            <Avatar className="size-9 overflow-hidden rounded-full">
                                 <AvatarImage
                                     src={auth.user?.avatar}
                                     alt={auth.user?.name}
@@ -85,7 +85,7 @@ export function DashboardHeader({ headerActions, onMobileToggle }: Props) {
                                     {getInitials(auth.user?.name ?? '')}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="absolute end-0 top-0 size-2.5 rounded-full border-2 border-background bg-success" />
+                            <span className="absolute end-0 top-0 size-2.5 rounded-full border-2 border-header-background bg-success" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end">

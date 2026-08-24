@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Reports;
 
-use App\Modules\Finance\Enums\FinancialDirection;
-use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Models\FinancialCategory;
 use App\Modules\Finance\Models\FinancialInstallment;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,12 +21,7 @@ class BuildInstallmentsScheduleReport
 
         $query = FinancialInstallment::query()
             ->with(['financialEntry.category', 'financialEntry.counterparty'])
-            ->where('balance_amount', '>', 0)
-            ->whereNotIn('status', [
-                FinancialEntryStatus::Canceled->value,
-                FinancialEntryStatus::Reversed->value,
-                FinancialEntryStatus::Renegotiated->value,
-            ])
+            ->open()
             ->when(
                 filled($filters['status'] ?? null),
                 fn (Builder $query): Builder => $query->where('status', (string) $filters['status'])
@@ -41,21 +34,18 @@ class BuildInstallmentsScheduleReport
                 filled($filters['due_to'] ?? null),
                 fn (Builder $query): Builder => $query->whereDate('due_date', '<=', (string) $filters['due_to'])
             )
-            ->whereHas('financialEntry', function (Builder $query) use ($filters, $categoryIds): void {
-                $query
-                    ->when(
-                        filled($filters['company_id'] ?? null),
-                        fn (Builder $query): Builder => $query->where('company_id', (int) $filters['company_id'])
-                    )
-                    ->when(
-                        filled($filters['direction'] ?? null),
-                        fn (Builder $query): Builder => $query->where('direction', (string) $filters['direction'])
-                    )
-                    ->when(
-                        $categoryIds !== [],
-                        fn (Builder $query): Builder => $query->whereIn('category_id', $categoryIds)
-                    );
-            });
+            ->when(
+                filled($filters['company_id'] ?? null),
+                fn (Builder $query): Builder => $query->where('company_id', (int) $filters['company_id'])
+            )
+            ->when(
+                filled($filters['direction'] ?? null),
+                fn (Builder $query): Builder => $query->direction((string) $filters['direction'])
+            )
+            ->when(
+                $categoryIds !== [],
+                fn (Builder $query): Builder => $query->whereIn('category_id', $categoryIds)
+            );
 
         $summaryQuery = clone $query;
 
@@ -99,8 +89,8 @@ class BuildInstallmentsScheduleReport
             'balance_amount' => (int) $installment->balance_amount,
             'currency' => $installment->currency,
             'is_overdue' => $installment->isOverdue(),
-            'direction' => $entry?->direction?->value ?? $entry?->direction,
-            'direction_label' => $entry?->direction === FinancialDirection::Payable ? 'A pagar' : 'A receber',
+            'direction' => $installment->direction?->value,
+            'direction_label' => $installment->directionLabel(),
             'counterparty_label' => $entry?->counterparty_label,
             'entry' => $entry ? [
                 'id' => $entry->id,

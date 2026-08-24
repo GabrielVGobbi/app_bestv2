@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Http\Resources;
 
+use App\Modules\Finance\Enums\FinancialAmountComponentCode;
 use App\Modules\Finance\Models\FinancialAmountComponent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -35,17 +36,11 @@ class FinancialAmountComponentResource extends JsonResource
 
     private function codeLabel(): string
     {
-        return match ($this->code?->value ?? $this->code) {
-            'principal' => 'Principal',
-            'discount' => 'Desconto',
-            'tax' => 'Imposto',
-            'interest' => 'Juros',
-            'penalty' => 'Multa',
-            'fee' => 'Taxa',
-            'withholding' => 'Retenção',
-            'adjustment' => 'Ajuste',
-            default => 'Outro',
-        };
+        if ($this->code instanceof FinancialAmountComponentCode) {
+            return $this->code->label();
+        }
+
+        return FinancialAmountComponentCode::tryFrom((string) $this->code)?->label() ?? 'Outro';
     }
 
     private function operationLabel(): string

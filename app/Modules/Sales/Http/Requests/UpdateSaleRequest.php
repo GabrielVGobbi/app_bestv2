@@ -30,7 +30,7 @@ class UpdateSaleRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'discount_amount' => ['sometimes', 'integer', 'min:0'],
             'items' => ['nullable', 'array', 'max:30'],
-            'items.*' => ['array:uuid,type,service_id,playlist_top_id,quantity,unit_amount,track_spotify_url,track_name,track_artists,track_album_name,track_duration_ms,track_isrc,track_image_url,track_metadata'],
+            'items.*' => ['array:uuid,type,service_id,playlist_top_id,quantity,unit_amount,starts_on,ends_on,track_spotify_url,track_name,track_artists,track_album_name,track_duration_ms,track_isrc,track_image_url,track_metadata'],
             'items.*.uuid' => ['nullable', 'string'],
             'items.*.type' => ['required_with:items', Rule::in(['service', 'playlist_slot'])],
             'items.*.service_id' => [
@@ -45,6 +45,8 @@ class UpdateSaleRequest extends FormRequest
             ],
             'items.*.quantity' => ['nullable', 'integer', 'min:1'],
             'items.*.unit_amount' => ['nullable', 'integer', 'min:0'],
+            'items.*.starts_on' => ['nullable', 'date'],
+            'items.*.ends_on' => ['nullable', 'date', 'after_or_equal:items.*.starts_on'],
             'items.*.track_spotify_url' => ['nullable', 'string', 'max:500'],
             'items.*.track_name' => ['nullable', 'string', 'max:255'],
             'items.*.track_artists' => ['nullable', 'array'],
@@ -119,6 +121,10 @@ class UpdateSaleRequest extends FormRequest
         foreach ($this->input('items', []) as $index => $item) {
             if (($item['type'] ?? null) === 'service' && blank($item['service_id'] ?? null)) {
                 $validator->errors()->add("items.{$index}.service_id", __('Informe o serviço vendido.'));
+            }
+
+            if (blank($item['starts_on'] ?? null) !== blank($item['ends_on'] ?? null)) {
+                $validator->errors()->add("items.{$index}.ends_on", __('Informe o período completo (início e fim) ou deixe as duas datas vazias.'));
             }
 
             if (($item['type'] ?? null) !== 'playlist_slot') {

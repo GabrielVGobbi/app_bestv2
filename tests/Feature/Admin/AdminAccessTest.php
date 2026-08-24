@@ -40,7 +40,7 @@ class AdminAccessTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->missing('nav.modules.1')
-                ->where('nav.modules.0.slug', 'gestao')
+                ->where('nav.modules.0.slug', 'comercial')
             );
     }
 
@@ -52,6 +52,7 @@ class AdminAccessTest extends TestCase
             ->get(route('app.dashboard'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
+                ->where('nav.modules.0.slug', 'comercial')
                 ->where('nav.modules.1.slug', 'admin')
                 ->missing('nav.modules.2')
             );

@@ -72,6 +72,61 @@ class FinancialSettlementTest extends TestCase
         $this->assertSame(140000, $account->refresh()->current_balance_amount);
     }
 
+    public function test_settlement_accumulates_discount_interest_and_penalty_on_the_installment(): void
+    {
+        [, $installment, $company] = $this->manualEntry(FinancialDirection::Receivable, 100000);
+        $account = $this->financialAccount($company, 100000);
+
+        $settlement = app(CreateFinancialSettlement::class)->handle($installment, [
+            'financial_account_id' => $account->id,
+            'gross_amount' => 40000,
+            'discount_amount' => 1000,
+            'interest_amount' => 2500,
+            'penalty_amount' => 500,
+        ]);
+
+        $installment->refresh();
+
+        // O saldo anda pelo principal; a conta anda pelo liquido.
+        $this->assertSame(40000, $installment->settled_amount);
+        $this->assertSame(60000, $installment->balance_amount);
+        $this->assertSame(42000, $settlement->net_amount);
+        $this->assertSame(142000, $account->refresh()->current_balance_amount);
+
+        // E a diferenca entre os dois fica auditavel na propria parcela.
+        $this->assertSame(1000, $installment->discount_amount);
+        $this->assertSame(2500, $installment->interest_amount);
+        $this->assertSame(500, $installment->penalty_amount);
+    }
+
+    public function test_reversing_a_settlement_gives_the_accumulated_adjustments_back(): void
+    {
+        [, $installment, $company] = $this->manualEntry(FinancialDirection::Receivable, 100000);
+        $account = $this->financialAccount($company, 100000);
+
+        $settlement = app(CreateFinancialSettlement::class)->handle($installment, [
+            'financial_account_id' => $account->id,
+            'gross_amount' => 40000,
+            'discount_amount' => 1000,
+            'interest_amount' => 2500,
+            'penalty_amount' => 500,
+        ]);
+
+        // Invariante que os acumuladores assumem: uma baixa, uma alocacao.
+        $this->assertCount(1, $settlement->allocations);
+
+        app(ReverseFinancialSettlement::class)->handle($settlement, ['reason' => 'Cobranca indevida']);
+
+        $installment->refresh();
+
+        $this->assertSame(0, $installment->settled_amount);
+        $this->assertSame(100000, $installment->balance_amount);
+        $this->assertSame(0, $installment->discount_amount);
+        $this->assertSame(0, $installment->interest_amount);
+        $this->assertSame(0, $installment->penalty_amount);
+        $this->assertSame(100000, $account->refresh()->current_balance_amount);
+    }
+
     public function test_registering_settlement_records_activity_for_settlement_and_movement(): void
     {
         $user = User::factory()->create();

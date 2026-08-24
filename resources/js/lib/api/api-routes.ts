@@ -56,8 +56,7 @@ export const apiRoutes = {
         show: (id: number | string) => `/api/v1/financial-categories/${id}`,
         store: '/api/v1/financial-categories',
         update: (id: number | string) => `/api/v1/financial-categories/${id}`,
-        destroy: (id: number | string) =>
-            `/api/v1/financial-categories/${id}`,
+        destroy: (id: number | string) => `/api/v1/financial-categories/${id}`,
     },
     financialCounterparties: {
         options: '/api/v1/financial-counterparty-options',
@@ -74,6 +73,12 @@ export const apiRoutes = {
         index: '/api/v1/financial-entries',
         show: (id: number | string) => `/api/v1/financial-entries/${id}`,
         store: '/api/v1/financial-entries',
+    },
+    financialInstallments: {
+        // A direcao vai no path porque `direction` ja e o parametro de ordenacao
+        // da paginacao, e porque o recorte da fila nao pode ser filtro do cliente.
+        index: (direction: 'all' | 'receivable' | 'payable', month?: string) =>
+            `/api/v1/financial-installments/${direction}${month ? `?month=${encodeURIComponent(month)}` : ''}`,
     },
     paymentMethods: {
         index: '/api/v1/payment-methods',

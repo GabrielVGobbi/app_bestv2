@@ -22,14 +22,13 @@ import { InputMoney } from '@/components/ui/input-money';
 import { Textarea } from '@/components/ui/textarea';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { FinancialAccount } from '@/types/app/financial-account';
-import type {
-    FinancialEntry,
-    FinancialInstallment,
-} from '@/types/app/financial-entry';
+import type { FinancialInstallment } from '@/types/app/financial-entry';
 import type { PaymentMethod } from '@/types/app/payment-method';
 
 interface SettlementDialogProps {
-    entry: FinancialEntry;
+    /** A baixa pertence a parcela; do titulo so precisamos da empresa e da moeda. */
+    companyId: number;
+    currency: string;
     installment: FinancialInstallment | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -136,7 +135,8 @@ function firstError(errors: FieldErrors): string {
 }
 
 export function SettlementDialog({
-    entry,
+    companyId,
+    currency,
     installment,
     open,
     onOpenChange,
@@ -288,7 +288,7 @@ export function SettlementDialog({
                                 value={data.payment_method_id || null}
                                 endpoint={apiRoutes.paymentMethods.options}
                                 params={{
-                                    company_id: entry.company_id,
+                                    company_id: companyId,
                                     active: '1',
                                 }}
                                 transformOption={paymentMethodOption}
@@ -325,7 +325,7 @@ export function SettlementDialog({
                                 value={data.financial_account_id || null}
                                 endpoint={apiRoutes.financialAccounts.options}
                                 params={{
-                                    company_id: entry.company_id,
+                                    company_id: companyId,
                                     active: '1',
                                 }}
                                 transformOption={financialAccountOption}
@@ -376,7 +376,7 @@ export function SettlementDialog({
                                 Líquido movimentado
                             </p>
                             <p className="mt-1 text-lg font-semibold">
-                                {money(netAmount, entry.currency)}
+                                {money(netAmount, currency)}
                             </p>
                         </div>
 

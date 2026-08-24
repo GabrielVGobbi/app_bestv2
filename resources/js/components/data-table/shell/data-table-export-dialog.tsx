@@ -16,8 +16,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { httpGet } from '@/lib/http';
-import type { DataTableFilterValue } from '../core/types';
-import type { ExportColumnOption, ExportFormat, StoredExport } from '@/types/export';
+import type {
+    ExportColumnOption,
+    ExportFormat,
+    StoredExport,
+} from '@/types/export';
 import type { CreateExportPayload } from '../hooks/use-export';
 
 interface ExportDialogProps {
@@ -25,7 +28,7 @@ interface ExportDialogProps {
     onClose: () => void;
     modelClass: string;
     columnsEndpoint: string;
-    currentFilters?: Record<string, DataTableFilterValue>;
+    currentFilters?: Record<string, unknown>;
     currentSearch?: string;
     currentSort?: string;
     currentSortDirection?: 'asc' | 'desc';
@@ -55,7 +58,7 @@ export function DataTableExportDialog({
     const [error, setError] = useState<string | null>(null);
 
     const hasActiveFilters = Object.values(currentFilters ?? {}).some(
-        (v) => v !== null && v !== undefined && v !== '',
+        (value) => value !== null && value !== undefined && value !== '',
     );
 
     const { data: columnsData, isLoading: isLoadingColumns } = useQuery({
@@ -105,7 +108,7 @@ export function DataTableExportDialog({
                 modelClass,
                 format,
                 columns: selectedColumns,
-                filters: useCurrentFilters ? (currentFilters as Record<string, unknown>) : undefined,
+                filters: useCurrentFilters ? currentFilters : undefined,
                 search: useCurrentFilters ? currentSearch : undefined,
                 sort: currentSort,
                 sort_direction: currentSortDirection,
@@ -117,7 +120,11 @@ export function DataTableExportDialog({
             onExportStarted?.();
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao iniciar exportação. Tente novamente.');
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Erro ao iniciar exportação. Tente novamente.',
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -149,7 +156,9 @@ export function DataTableExportDialog({
                         <ToggleGroup
                             type="single"
                             value={format}
-                            onValueChange={(v) => v && setFormat(v as ExportFormat)}
+                            onValueChange={(v) =>
+                                v && setFormat(v as ExportFormat)
+                            }
                             variant="outline"
                             className="w-full"
                         >
@@ -176,15 +185,17 @@ export function DataTableExportDialog({
                                     <button
                                         type="button"
                                         onClick={selectAll}
-                                        className="text-muted-foreground hover:text-foreground text-xs"
+                                        className="text-xs text-muted-foreground hover:text-foreground"
                                     >
                                         Selecionar todas
                                     </button>
-                                    <span className="text-muted-foreground text-xs">·</span>
+                                    <span className="text-xs text-muted-foreground">
+                                        ·
+                                    </span>
                                     <button
                                         type="button"
                                         onClick={deselectAll}
-                                        className="text-muted-foreground hover:text-foreground text-xs"
+                                        className="text-xs text-muted-foreground hover:text-foreground"
                                     >
                                         Limpar
                                     </button>
@@ -194,18 +205,28 @@ export function DataTableExportDialog({
 
                         {isLoadingColumns ? (
                             <div className="flex items-center gap-2 py-4">
-                                <Loader2 className="text-muted-foreground size-4 animate-spin" />
-                                <span className="text-muted-foreground text-sm">Carregando colunas...</span>
+                                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                    Carregando colunas...
+                                </span>
                             </div>
                         ) : (
                             <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
                                 {columns.map((col) => (
-                                    <div key={col.key} className="flex items-center gap-2">
+                                    <div
+                                        key={col.key}
+                                        className="flex items-center gap-2"
+                                    >
                                         <Checkbox
                                             id={`col-${col.key}`}
-                                            checked={selectedColumns.includes(col.key)}
+                                            checked={selectedColumns.includes(
+                                                col.key,
+                                            )}
                                             onCheckedChange={(checked) =>
-                                                toggleColumn(col.key, checked === true)
+                                                toggleColumn(
+                                                    col.key,
+                                                    checked === true,
+                                                )
                                             }
                                         />
                                         <Label
@@ -220,14 +241,16 @@ export function DataTableExportDialog({
                         )}
 
                         {selectedColumns.length > 0 && (
-                            <p className="text-muted-foreground text-xs">
-                                {selectedColumns.length} de {columns.length} colunas selecionadas
+                            <p className="text-xs text-muted-foreground">
+                                {selectedColumns.length} de {columns.length}{' '}
+                                colunas selecionadas
                             </p>
                         )}
 
                         {selectedColumns.length === 0 && !isLoadingColumns && (
-                            <p className="text-muted-foreground text-xs">
-                                Nenhuma selecionada — todas as colunas serão exportadas.
+                            <p className="text-xs text-muted-foreground">
+                                Nenhuma selecionada — todas as colunas serão
+                                exportadas.
                             </p>
                         )}
                     </div>
@@ -240,9 +263,14 @@ export function DataTableExportDialog({
                                 <Checkbox
                                     id="use-filters"
                                     checked={useCurrentFilters}
-                                    onCheckedChange={(v) => setUseCurrentFilters(v === true)}
+                                    onCheckedChange={(v) =>
+                                        setUseCurrentFilters(v === true)
+                                    }
                                 />
-                                <Label htmlFor="use-filters" className="cursor-pointer font-normal">
+                                <Label
+                                    htmlFor="use-filters"
+                                    className="cursor-pointer font-normal"
+                                >
                                     Usar filtros ativos da tabela
                                 </Label>
                             </div>
@@ -257,11 +285,22 @@ export function DataTableExportDialog({
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
                         Cancelar
                     </Button>
-                    <Button type="button" onClick={handleSubmit} disabled={isSubmitting || isLoadingColumns}>
-                        {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+                    <Button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || isLoadingColumns}
+                    >
+                        {isSubmitting && (
+                            <Loader2 className="mr-2 size-4 animate-spin" />
+                        )}
                         Exportar
                     </Button>
                 </DialogFooter>

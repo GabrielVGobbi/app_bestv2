@@ -53,8 +53,6 @@ class UpsertSaleItem
                 'quantity' => (int) ($data['quantity'] ?? 1),
                 'discount_amount' => (int) ($data['discount_amount'] ?? 0),
                 'currency' => 'BRL',
-                'starts_on' => null,
-                'ends_on' => null,
                 'status' => $item->exists ? $item->status : SaleItemStatus::Draft,
                 'metadata' => $data['metadata'] ?? null,
                 'created_by_id' => $item->exists ? $item->created_by_id : $user->id,
@@ -92,6 +90,8 @@ class UpsertSaleItem
             'unit_amount' => (int) ($data['unit_amount'] ?? $service->base_price),
             'service_id' => $service->id,
             'playlist_top_id' => null,
+            'starts_on' => null,
+            'ends_on' => null,
             'track_spotify_id' => null,
             'track_spotify_url' => null,
             'track_name' => null,
@@ -133,6 +133,8 @@ class UpsertSaleItem
             'unit_amount' => (int) ($data['unit_amount'] ?? $playlistTop->price),
             'service_id' => null,
             'playlist_top_id' => $playlistTop->id,
+            'starts_on' => blank($data['starts_on'] ?? null) ? null : $data['starts_on'],
+            'ends_on' => blank($data['ends_on'] ?? null) ? null : $data['ends_on'],
             'track_spotify_id' => $trackSpotifyId,
             'track_spotify_url' => $trackSpotifyUrl,
             'track_name' => $data['track_name'],
@@ -171,6 +173,10 @@ class UpsertSaleItem
 
         if ($item->unit_amount < 0 || $item->discount_amount < 0) {
             throw ValidationException::withMessages(['unit_amount' => __('Os valores do item devem ser positivos.')]);
+        }
+
+        if (($item->starts_on === null) !== ($item->ends_on === null)) {
+            throw ValidationException::withMessages(['ends_on' => __('Informe o período completo (início e fim) ou deixe as duas datas vazias.')]);
         }
 
         if ($item->starts_on !== null && $item->ends_on !== null && $item->ends_on->lt($item->starts_on)) {

@@ -334,23 +334,23 @@ class CompanyCrudTest extends TestCase
         $this->assertDatabaseMissing('companies', ['cnpj' => '36569969000125']);
     }
 
-    public function test_companies_navigation_lives_under_admin_cadastros(): void
+    public function test_companies_navigation_lives_under_gestao_cadastros(): void
     {
         $navigation = config('navigation.modules');
 
         $adminModule = collect($navigation)->firstWhere('slug', 'admin');
         $gestaoModule = collect($navigation)->firstWhere('slug', 'gestao');
 
-        $this->assertContains('/companies', $adminModule['route_prefixes']);
-        $this->assertNotContains('/companies', $gestaoModule['route_prefixes']);
+        $this->assertContains('/companies', $gestaoModule['route_prefixes']);
+        $this->assertNotContains('/companies', $adminModule['route_prefixes']);
 
-        $cadastrosSection = collect($adminModule['items'])->firstWhere('slug', 'admin_cadastros_section');
+        $cadastrosSection = collect($gestaoModule['items'])->firstWhere('slug', 'gestao_cadastros_section');
 
         $this->assertNotNull($cadastrosSection);
         $this->assertSame('Cadastros', $cadastrosSection['label']);
         $this->assertSame(
             ['route' => 'companies.index'],
-            collect($cadastrosSection['items'])->firstWhere('slug', 'admin_companies')['href'],
+            collect($cadastrosSection['items'])->firstWhere('slug', 'gestao_companies')['href'],
         );
     }
 

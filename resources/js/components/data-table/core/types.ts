@@ -159,6 +159,7 @@ export interface DataTableExportConfig {
     modelClass: string;
     columnsEndpoint: string;
     enabled?: boolean;
+    fixedFilters?: Record<string, unknown>;
 }
 
 export interface DataTableAction<TData> {
@@ -242,6 +243,7 @@ export interface DataTableProps<TData> {
     gridLines?: DataTableGridLines;
     rowStyle?: DataTableRowStyle;
     initialPerPage?: number;
+    initialFilters?: Record<string, DataTableFilterValue>;
     searchPlaceholder?: string;
     emptyMessage?: string;
     exportConfig?: DataTableExportConfig;
@@ -278,6 +280,8 @@ export interface DataTableShellProps<TData> {
     onSearchChange: (value: string) => void;
     onFilterChange: (id: string, value: DataTableFilterValue) => void;
     onResetFilters: () => void;
+    onResetTable: () => void;
+    canResetTable: boolean;
     onClearSearch: () => void;
     onRefresh: () => void;
     onPageChange: (page: number) => void;

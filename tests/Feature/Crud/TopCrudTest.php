@@ -227,7 +227,7 @@ class TopCrudTest extends TestCase
             ->assertJsonPath('data.0.name', 'TOP ativo');
     }
 
-    public function test_playlist_tops_route_and_navigation_live_under_gestao_cadastros(): void
+    public function test_playlist_tops_route_and_navigation_live_under_comercial_operacao(): void
     {
         $route = Route::getRoutes()->getByName('playlist-tops.index');
 
@@ -235,16 +235,16 @@ class TopCrudTest extends TestCase
         $this->assertSame('playlist-tops', $route->uri());
 
         $navigation = config('navigation.modules');
-        $gestaoModule = collect($navigation)->firstWhere('slug', 'gestao');
+        $comercialModule = collect($navigation)->firstWhere('slug', 'comercial');
 
-        $this->assertContains('/playlist-tops', $gestaoModule['route_prefixes']);
+        $this->assertContains('/playlist-tops', $comercialModule['route_prefixes']);
 
-        $cadastrosSection = collect($gestaoModule['items'])->firstWhere('slug', 'gestao_cadastros_section');
+        $operacaoSection = collect($comercialModule['items'])->firstWhere('slug', 'comercial_operacao_section');
 
-        $this->assertNotNull($cadastrosSection);
+        $this->assertNotNull($operacaoSection);
         $this->assertSame(
             ['route' => 'playlist-tops.index'],
-            collect($cadastrosSection['items'])->firstWhere('slug', 'gestao_playlist_tops')['href'],
+            collect($operacaoSection['items'])->firstWhere('slug', 'comercial_playlist_tops')['href'],
         );
     }
 

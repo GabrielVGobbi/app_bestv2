@@ -14,23 +14,23 @@ interface QuickFilterSelectProps {
     onChange: (value: DataTableFilterValue) => void;
 }
 
-function selectedLabels(filter: DataTableQuickFilter, value: DataTableFilterValue): string {
+function selectedValueLabel(filter: DataTableQuickFilter, value: DataTableFilterValue): string | null {
     const options = filter.options ?? [];
 
     if (Array.isArray(value)) {
         if (value.length === 0) {
-            return filter.placeholder ?? filter.label;
+            return null;
         }
 
         if (value.length === 1) {
             return options.find((option) => String(option.value) === String(value[0]))?.label ?? String(value[0]);
         }
 
-        return `${value.length} selecionados`;
+        return String(value.length);
     }
 
     if (value === null || value === undefined || value === '') {
-        return filter.placeholder ?? filter.label;
+        return null;
     }
 
     return options.find((option) => String(option.value) === String(value))?.label ?? String(value);
@@ -48,6 +48,7 @@ export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelect
     const Icon = filter.icon;
     const selectedValues = Array.isArray(value) ? value.map(String) : value === undefined || value === null ? [] : [String(value)];
     const hasValue = selectedValues.length > 0;
+    const valueLabel = selectedValueLabel(filter, value);
 
     if (filter.type === 'async-select' && filter.asyncSelect) {
         const asyncValue =
@@ -61,6 +62,7 @@ export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelect
                     value={asyncValue}
                     endpoint={filter.asyncSelect.endpoint}
                     params={filter.asyncSelect.params}
+                    fieldLabel={filter.label}
                     placeholder={filter.placeholder ?? filter.label}
                     searchPlaceholder={filter.asyncSelect.searchPlaceholder}
                     emptyMessage={filter.asyncSelect.emptyMessage}
@@ -88,14 +90,25 @@ export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelect
                     type="button"
                     variant="outline"
                     size="sm"
-                    className={cn('justify-start gap-2', hasValue && 'border-primary/50 bg-primary/5')}
+                    className={cn('h-9 max-w-72 justify-start gap-2', hasValue && 'border-primary/50 bg-primary/5')}
                 >
-                    {Icon && <Icon className="size-4" />}
-                    <span className="max-w-36 truncate">{selectedLabels(filter, value)}</span>
+                    {Icon && <Icon className="size-4 shrink-0" />}
+                    <span className="flex min-w-0 items-center gap-1.5">
+                        <span className={cn('truncate', hasValue ? 'text-muted-foreground' : 'text-foreground')}>
+                            {filter.label}
+                        </span>
+                        {hasValue && valueLabel && (
+                            <>
+                                <span className="text-muted-foreground">·</span>
+                                <span className="truncate font-medium">{valueLabel}</span>
+                            </>
+                        )}
+                    </span>
                     {hasValue && filter.clearable !== false && (
                         <span
                             role="button"
                             tabIndex={0}
+                            aria-label={`Limpar filtro ${filter.label}`}
                             className="hover:bg-background/80 rounded-full p-0.5"
                             onClick={(event) => {
                                 event.stopPropagation();

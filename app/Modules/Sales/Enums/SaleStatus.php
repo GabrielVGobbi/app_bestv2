@@ -8,6 +8,7 @@ use App\Modules\Sales\Actions\Status\CancelSale;
 use App\Modules\Sales\Actions\Status\ConfirmSale;
 use App\Modules\Sales\Actions\Status\FinishSaleCampaign;
 use App\Modules\Sales\Actions\Status\QuoteSale;
+use App\Modules\Sales\Actions\Status\RevertSaleToDraft;
 use App\Supports\Contracts\StatusableEnum;
 use App\Supports\Enums\Concerns\HasBadgePresenter;
 
@@ -32,7 +33,7 @@ enum SaleStatus: string implements StatusableEnum
     /** @var array<string, array{label: string, color: string, icon: string}> */
     private const array PRESENTERS = [
         'draft' => ['label' => 'Rascunho', 'color' => 'zinc', 'icon' => 'FilePenLine'],
-        'quoted' => ['label' => 'Orçamento', 'color' => 'blue', 'icon' => 'Send'],
+        'quoted' => ['label' => 'Orçamento', 'color' => 'amber', 'icon' => 'Send'],
         'campaign_started' => ['label' => 'Campanha iniciada', 'color' => 'emerald', 'icon' => 'PlayCircle'],
         'campaign_finished' => ['label' => 'Campanha finalizada', 'color' => 'violet', 'icon' => 'CheckCircle2'],
         'canceled' => ['label' => 'Cancelada', 'color' => 'red', 'icon' => 'XCircle'],
@@ -45,7 +46,7 @@ enum SaleStatus: string implements StatusableEnum
             'permission' => 'sales.update',
             'requires_reason' => false,
             'requires_confirmation' => false,
-            'action' => QuoteSale::class,
+            'action' => RevertSaleToDraft::class,
         ],
         'quoted' => [
             'label' => 'Enviar orçamento',

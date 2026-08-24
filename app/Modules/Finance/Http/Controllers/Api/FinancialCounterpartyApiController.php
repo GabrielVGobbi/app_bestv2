@@ -28,12 +28,21 @@ class FinancialCounterpartyApiController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:50'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'ids' => ['nullable'],
+            'values' => ['nullable'],
         ]);
 
         $companyId = filled($validated['company_id'] ?? null) ? (int) $validated['company_id'] : null;
         $direction = $this->directionOrNull($validated['direction'] ?? null);
         $search = trim((string) ($validated['search'] ?? ''));
         $limit = min(50, max(1, (int) ($validated['limit'] ?? $validated['per_page'] ?? 20)));
+        $lookupValues = $this->lookupTokens($request->input('values', $request->input('ids')));
+
+        if ($lookupValues !== []) {
+            return response()->json([
+                'data' => $this->optionsFromValues($lookupValues, $companyId, $direction)->all(),
+            ]);
+        }
 
         $options = collect();
 
@@ -112,6 +121,95 @@ class FinancialCounterpartyApiController extends Controller
                 'label' => $supplier->name,
                 'description' => trim('Fornecedor'.($supplier->company_name ? " - {$supplier->company_name}" : '')),
             ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lookupTokens(mixed $raw): array
+    {
+        $items = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+        return collect($items)
+            ->map(fn (mixed $item): string => trim((string) $item))
+            ->filter(fn (string $item): bool => $item !== '' && str_contains($item, '|'))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<string>  $values
+     * @return Collection<int, array{value: string, label: string, description: string}>
+     */
+    private function optionsFromValues(array $values, ?int $companyId, ?FinancialDirection $direction): Collection
+    {
+        $options = collect();
+        $clientMorph = (new Client)->getMorphClass();
+        $supplierMorph = (new Supplier)->getMorphClass();
+
+        foreach ($values as $value) {
+            [$type, $id] = explode('|', $value, 2);
+
+            if (! ctype_digit($id)) {
+                continue;
+            }
+
+            $clientMorph = (new Client)->getMorphClass();
+            $supplierMorph = (new Supplier)->getMorphClass();
+
+            if (
+                $type === $clientMorph
+                && ($direction === null || $direction === FinancialDirection::Receivable)
+            ) {
+                $client = Client::query()
+                    ->when(
+                        $companyId !== null,
+                        fn (Builder $query): Builder => $query->where(function (Builder $companyQuery) use ($companyId): void {
+                            $companyQuery
+                                ->whereNull('company_id')
+                                ->orWhere('company_id', $companyId);
+                        })
+                    )
+                    ->find((int) $id);
+
+                if ($client instanceof Client) {
+                    $options->push([
+                        'value' => $client->getMorphClass().'|'.$client->id,
+                        'label' => $client->name,
+                        'description' => trim('Cliente'.($client->company_name ? " - {$client->company_name}" : '')),
+                    ]);
+                }
+
+                continue;
+            }
+
+            if (
+                $type === $supplierMorph
+                && ($direction === null || $direction === FinancialDirection::Payable)
+            ) {
+                $supplier = Supplier::query()
+                    ->when(
+                        $companyId !== null,
+                        fn (Builder $query): Builder => $query->where(function (Builder $companyQuery) use ($companyId): void {
+                            $companyQuery
+                                ->whereNull('company_id')
+                                ->orWhere('company_id', $companyId);
+                        })
+                    )
+                    ->find((int) $id);
+
+                if ($supplier instanceof Supplier) {
+                    $options->push([
+                        'value' => $supplier->getMorphClass().'|'.$supplier->id,
+                        'label' => $supplier->name,
+                        'description' => trim('Fornecedor'.($supplier->company_name ? " - {$supplier->company_name}" : '')),
+                    ]);
+                }
+            }
+        }
+
+        return $options->values();
     }
 
     private function directionOrNull(mixed $value): ?FinancialDirection

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Policies;
 
 use App\Models\User;
+use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Finance\Models\FinancialEntry;
 
 class FinancialEntryPolicy
@@ -39,7 +40,11 @@ class FinancialEntryPolicy
     public function cancel(User $user, FinancialEntry $financialEntry): bool
     {
         return $this->hasPermission($user, 'finance.entries.cancel')
-            && (int) $financialEntry->settled_amount === 0;
+            && (int) $financialEntry->settled_amount === 0
+            && ! in_array($financialEntry->status, [
+                FinancialEntryStatus::Canceled,
+                FinancialEntryStatus::Renegotiated,
+            ], true);
     }
 
     private function hasPermission(User $user, string $slug): bool

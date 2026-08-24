@@ -108,12 +108,14 @@ class FinancialReportTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->getJson(route('api.financial-reports.receivables-open', [
+        $this->getJson(route('api.financial-reports.open-installments', [
+            'direction' => FinancialDirection::Receivable->value,
             'category_id' => $parent->id,
         ]))
             ->assertOk()
             ->assertJsonCount(1, 'data.items')
-            ->assertJsonPath('data.items.0.uuid', $entry->uuid)
+            ->assertJsonPath('data.items.0.entry.uuid', $entry->uuid)
+            ->assertJsonPath('data.items.0.direction', FinancialDirection::Receivable->value)
             ->assertJsonPath('data.items.0.category.full_path', 'Receitas > Campanhas')
             ->assertJsonPath('data.summary.open_amount', 75000);
     }

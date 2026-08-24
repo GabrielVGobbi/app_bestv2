@@ -112,7 +112,7 @@ export default function PaymentMethodsIndex() {
                         actions={actions}
                         actionsConfig={{
                             display: 'inline',
-                            label: 'Acoes',
+                            label: 'Ações',
                             buttonSize: 'icon',
                             showTooltips: true,
                             sticky: true,

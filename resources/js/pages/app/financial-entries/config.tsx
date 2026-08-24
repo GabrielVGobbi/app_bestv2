@@ -6,114 +6,177 @@ import type {
     DataTableFilterConfig,
     DataTableQuickFilter,
 } from '@/components/data-table';
+import { DirectionBadge } from '@/components/direction-badge';
+import { MoneyAmount } from '@/components/money-amount';
 import { StatusBadge } from '@/components/status-badge';
-import { Badge } from '@/components/ui/badge';
 import { apiRoutes } from '@/lib/api/api-routes';
-import type { FinancialEntry } from '@/types/app/financial-entry';
+import { cn, formatDateOnly } from '@/lib/utils';
+import type { FinancialInstallment } from '@/types/app/financial-entry';
 
-function money(value: number, currency = 'BRL'): string {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency,
-    }).format(value / 100);
-}
-
-export const columns: ColumnDef<FinancialEntry>[] = [
-    {
-        id: 'description',
-        accessorKey: 'description',
-        header: 'Lancamento',
-        meta: { label: 'Lancamento' },
-        cell: ({ row }) => (
-            <div className="min-w-0">
-                <p className="truncate font-medium">{row.original.description}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                    {row.original.origin_label} - {row.original.origin_display_name}
-                </p>
-            </div>
-        ),
-    },
-    {
-        id: 'direction',
-        accessorKey: 'direction',
-        header: 'Direcao',
-        meta: { label: 'Direcao' },
-        cell: ({ row }) => (
-            <Badge variant={row.original.direction === 'receivable' ? 'default' : 'secondary'}>
-                {row.original.direction_label}
-            </Badge>
-        ),
-    },
+export const columns: ColumnDef<FinancialInstallment>[] = [
     {
         id: 'counterparty_label',
         accessorKey: 'counterparty_label',
         header: 'Contraparte',
-        meta: { label: 'Contraparte' },
+        size: 190,
+        minSize: 150,
+        meta: { label: 'Contraparte', truncate: true },
         cell: ({ row }) => row.original.counterparty_label ?? 'Sem contraparte',
+    },
+    {
+        id: 'description',
+        accessorKey: 'description',
+        header: 'Título / parcela',
+        size: 320,
+        minSize: 230,
+        meta: { label: 'Título / parcela' },
+        cell: ({ row }) => {
+            const entry = row.original.entry;
+
+            return (
+                <div className="min-w-0">
+                    <p className="truncate font-medium">
+                        {entry?.description ??
+                            row.original.description ??
+                            'Lançamento'}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                        Parcela {row.original.position_label}
+                        {entry ? ` · ${entry.origin_label}` : ''}
+                    </p>
+                </div>
+            );
+        },
+    },
+    {
+        id: 'direction',
+        accessorKey: 'direction',
+        header: 'Direção',
+        size: 126,
+        minSize: 116,
+        meta: { label: 'Direção', align: 'center' },
+        cell: ({ row }) =>
+            row.original.direction ? (
+                <div className="flex justify-center">
+                    <DirectionBadge
+                        direction={row.original.direction}
+                        label={row.original.direction_label}
+                    />
+                </div>
+            ) : (
+                '-'
+            ),
     },
     {
         id: 'due_date',
         accessorKey: 'due_date',
         header: 'Vencimento',
-        meta: { label: 'Vencimento' },
-        cell: ({ row }) => row.original.due_date ?? '-',
+        size: 120,
+        minSize: 112,
+        meta: { label: 'Vencimento', align: 'center' },
+        cell: ({ row }) => (
+            <span
+                className={cn(
+                    'font-tabular',
+                    row.original.is_overdue && 'font-semibold text-destructive',
+                )}
+            >
+                {formatDateOnly(row.original.due_date)}
+            </span>
+        ),
+    },
+    {
+        id: 'competence_date',
+        accessorKey: 'competence_date',
+        header: 'Competência',
+        size: 120,
+        minSize: 112,
+        meta: { label: 'Competência', align: 'center' },
+        cell: ({ row }) => (
+            <span className="font-tabular text-muted-foreground">
+                {formatDateOnly(row.original.competence_date)}
+            </span>
+        ),
     },
     {
         id: 'status',
         accessorKey: 'status',
         header: 'Status',
-        meta: { label: 'Status' },
-        cell: ({ row }) => <StatusBadge presenter={row.original.status_presenter} />,
+        size: 132,
+        minSize: 120,
+        meta: { label: 'Status', align: 'center' },
+        cell: ({ row }) => (
+            <div className="flex justify-center">
+                <StatusBadge presenter={row.original.status_presenter} />
+            </div>
+        ),
     },
     {
-        id: 'net_amount',
-        accessorKey: 'net_amount',
-        header: 'Liquido',
-        meta: { label: 'Liquido' },
-        cell: ({ row }) => money(row.original.net_amount, row.original.currency),
+        id: 'original_amount',
+        accessorKey: 'original_amount',
+        header: 'Valor',
+        size: 136,
+        minSize: 120,
+        meta: { label: 'Valor da parcela', align: 'right', type: 'number' },
+        cell: ({ row }) => (
+            <MoneyAmount
+                value={row.original.original_amount}
+                currency={row.original.currency}
+            />
+        ),
     },
     {
         id: 'balance_amount',
         accessorKey: 'balance_amount',
         header: 'Saldo',
-        meta: { label: 'Saldo' },
-        cell: ({ row }) => money(row.original.balance_amount, row.original.currency),
+        size: 136,
+        minSize: 120,
+        meta: {
+            label: 'Saldo',
+            align: 'right',
+            type: 'number',
+            sticky: 'right',
+        },
+        cell: ({ row }) => (
+            <MoneyAmount
+                value={row.original.balance_amount}
+                currency={row.original.currency}
+                direction={row.original.direction ?? 'neutral'}
+                overdue={row.original.is_overdue}
+                signed
+            />
+        ),
     },
 ];
 
 export const filters: DataTableFilterConfig[] = [
     {
         id: 'description',
-        label: 'Descricao',
+        label: 'Descrição',
         type: 'text',
         operator: 'contains',
-    },
-    {
-        id: 'direction',
-        label: 'Direcao',
-        type: 'select',
-        options: [
-            { label: 'A receber', value: 'receivable' },
-            { label: 'A pagar', value: 'payable' },
-        ],
-    },
-    {
-        id: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-            { label: 'Em aberto', value: 'open' },
-            { label: 'Vencido', value: 'overdue' },
-            { label: 'Pago parcial', value: 'partially_paid' },
-            { label: 'Pago', value: 'paid' },
-            { label: 'Cancelado', value: 'canceled' },
-            { label: 'Estornado', value: 'reversed' },
-            { label: 'Renegociado', value: 'renegotiated' },
-        ],
     },
 ];
 
 export const quickFilters: DataTableQuickFilter[] = [
+    {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        placeholder: 'Status',
+        clearable: true,
+        multiple: true,
+        operator: 'in',
+        options: [
+            { label: 'Em aberto', value: 'open' },
+            { label: 'Vencidas', value: 'overdue' },
+            { label: 'Parciais', value: 'partially_paid' },
+            { label: 'Pagas', value: 'paid' },
+            { label: 'Canceladas', value: 'canceled' },
+            { label: 'Estornadas', value: 'reversed' },
+            { label: 'Renegociadas', value: 'renegotiated' },
+        ],
+    },
     {
         id: 'category_id',
         label: 'Categoria',
@@ -139,13 +202,11 @@ export const quickFilters: DataTableQuickFilter[] = [
 ];
 
 export const dateFilterColumns: DataTableDateColumn[] = [
-    { value: 'due_date', label: 'Vencimento' },
-    { value: 'issue_date', label: 'Emissao' },
-    { value: 'competence_date', label: 'Competencia' },
+    { value: 'competence_date', label: 'Competência' },
     { value: 'created_at', label: 'Criado em' },
 ];
 
 export const exportConfig: DataTableExportConfig = {
-    modelClass: 'App\\Modules\\Finance\\Models\\FinancialEntry',
+    modelClass: 'App\\Modules\\Finance\\Models\\FinancialInstallment',
     columnsEndpoint: apiRoutes.exports.columns,
 };

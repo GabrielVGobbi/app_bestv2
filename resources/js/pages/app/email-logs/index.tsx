@@ -1,28 +1,22 @@
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/react';
 import {
-    AlertTriangle,
     Check,
-    CheckCircle,
     ChevronLeft,
     ChevronRight,
-    Clock,
-    Eye,
     Loader2,
     Mail,
-    MousePointerClick,
     RefreshCw,
     Search,
-    Send,
     Settings2,
     Shield,
     ShieldOff,
     X,
-    XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 
 import { index, resend, updateSettings } from '@/actions/App/Modules/Email/Http/Controllers/EmailLogController';
 import Heading from '@/components/heading';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatDate } from '@/lib/utils';
 import type { EmailLog, EmailSettings, EmailStatus } from '@/types/app/email-log';
+import type { StatusPresenter } from '@/types/status';
 
 // Laravel's raw paginator shape (returned by ->paginate() passed directly to Inertia)
 interface LaravelPaginator<T> {
@@ -47,84 +42,24 @@ interface LaravelPaginator<T> {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-type StatusConfig = { label: string; icon: React.ReactNode; className: string };
-
-const STATUS_CONFIG: Record<EmailStatus, StatusConfig> = {
-    queued: {
-        label: 'Na fila',
-        icon: <Clock className="size-3" />,
-        className: 'bg-amber-100 text-amber-700 border-amber-200',
-    },
-    processing: {
-        label: 'Processando',
-        icon: <Loader2 className="size-3 animate-spin" />,
-        className: 'bg-blue-100 text-blue-700 border-blue-200',
-    },
-    sent: {
-        label: 'Enviado',
-        icon: <Send className="size-3" />,
-        className: 'bg-green-100 text-green-700 border-green-200',
-    },
-    failed: {
-        label: 'Falhou',
-        icon: <X className="size-3" />,
-        className: 'bg-red-100 text-red-700 border-red-200',
-    },
-    bounced: {
-        label: 'Rejeitado',
-        icon: <AlertTriangle className="size-3" />,
-        className: 'bg-orange-100 text-orange-700 border-orange-200',
-    },
-    delivered: {
-        label: 'Entregue',
-        icon: <CheckCircle className="size-3" />,
-        className: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    },
-    delivery_delayed: {
-        label: 'Entrega atrasada',
-        icon: <Clock className="size-3" />,
-        className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    },
-    complained: {
-        label: 'Spam',
-        icon: <AlertTriangle className="size-3" />,
-        className: 'bg-rose-100 text-rose-700 border-rose-200',
-    },
-    opened: {
-        label: 'Aberto',
-        icon: <Eye className="size-3" />,
-        className: 'bg-cyan-100 text-cyan-700 border-cyan-200',
-    },
-    clicked: {
-        label: 'Clicado',
-        icon: <MousePointerClick className="size-3" />,
-        className: 'bg-violet-100 text-violet-700 border-violet-200',
-    },
-    received: {
-        label: 'Recebido',
-        icon: <Mail className="size-3" />,
-        className: 'bg-sky-100 text-sky-700 border-sky-200',
-    },
-    scheduled: {
-        label: 'Agendado',
-        icon: <Clock className="size-3" />,
-        className: 'bg-slate-100 text-slate-700 border-slate-200',
-    },
-    suppressed: {
-        label: 'Suprimido',
-        icon: <ShieldOff className="size-3" />,
-        className: 'bg-stone-100 text-stone-700 border-stone-200',
-    },
+const EMAIL_STATUS_PRESENTERS: Record<EmailStatus, StatusPresenter> = {
+    queued: { value: 'queued', label: 'Na fila', color: 'amber', icon: 'Clock' },
+    processing: { value: 'processing', label: 'Processando', color: 'blue', icon: 'Loader2' },
+    sent: { value: 'sent', label: 'Enviado', color: 'green', icon: 'Send' },
+    failed: { value: 'failed', label: 'Falhou', color: 'red', icon: 'XCircle' },
+    bounced: { value: 'bounced', label: 'Rejeitado', color: 'orange', icon: 'AlertTriangle' },
+    delivered: { value: 'delivered', label: 'Entregue', color: 'emerald', icon: 'CheckCircle2' },
+    delivery_delayed: { value: 'delivery_delayed', label: 'Entrega atrasada', color: 'yellow', icon: 'Clock' },
+    complained: { value: 'complained', label: 'Spam', color: 'rose', icon: 'AlertTriangle' },
+    opened: { value: 'opened', label: 'Aberto', color: 'cyan', icon: 'Eye' },
+    clicked: { value: 'clicked', label: 'Clicado', color: 'violet', icon: 'MousePointerClick' },
+    received: { value: 'received', label: 'Recebido', color: 'sky', icon: 'Mail' },
+    scheduled: { value: 'scheduled', label: 'Agendado', color: 'slate', icon: 'Clock' },
+    suppressed: { value: 'suppressed', label: 'Suprimido', color: 'stone', icon: 'ShieldOff' },
 };
 
-function StatusBadge({ status }: { status: EmailStatus }) {
-    const cfg = STATUS_CONFIG[status];
-    return (
-        <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-medium ${cfg.className}`}>
-            {cfg.icon}
-            {cfg.label}
-        </span>
-    );
+function EmailStatusBadge({ status }: { status: EmailStatus }) {
+    return <StatusBadge presenter={EMAIL_STATUS_PRESENTERS[status]} showIcon />;
 }
 
 // ─── Category Badge ───────────────────────────────────────────────────────────
@@ -258,7 +193,7 @@ function EmailLogDetailSheet({
             <SheetContent className="flex w-full flex-col sm:max-w-lg" side="right">
                 <SheetHeader className="shrink-0 pb-2">
                     <div className="flex flex-wrap items-center gap-2">
-                        <StatusBadge status={log.status} />
+                        <EmailStatusBadge status={log.status} />
                         <CategoryBadge category={log.category} />
                     </div>
                     <SheetTitle className="mt-1 break-all text-base leading-snug">{log.subject}</SheetTitle>
@@ -526,7 +461,7 @@ export default function EmailLogsIndex({ logs, filters, statuses, categories, se
                                             className={i % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
                                         >
                                             <td className="px-4 py-3">
-                                                <StatusBadge status={log.status} />
+                                                <EmailStatusBadge status={log.status} />
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex flex-col">

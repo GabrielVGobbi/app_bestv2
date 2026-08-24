@@ -7,7 +7,7 @@ namespace App\Modules\Finance\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Modules\Finance\Actions\Reports\BuildFinancialDashboardReport;
 use App\Modules\Finance\Actions\Reports\BuildInstallmentsScheduleReport;
-use App\Modules\Finance\Actions\Reports\BuildOpenReceivablesReport;
+use App\Modules\Finance\Actions\Reports\BuildOpenInstallmentsReport;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Enums\FinancialEntryStatus;
 use Illuminate\Http\JsonResponse;
@@ -26,15 +26,25 @@ class FinancialReportApiController extends Controller
         ]);
     }
 
-    public function receivablesOpen(Request $request, BuildOpenReceivablesReport $report): JsonResponse
+    /**
+     * Detalhe de parcelas em aberto, servindo tanto contas a receber quanto a pagar.
+     *
+     * Sem `direction` devolve as duas, o que da a visao consolidada de tudo que
+     * ainda esta em aberto.
+     */
+    public function openInstallments(Request $request, BuildOpenInstallmentsReport $report): JsonResponse
     {
         Gate::authorize('finance.reports.view');
 
+        $validated = $request->validate([
+            'company_id' => ['nullable', 'integer', 'min:1'],
+            'category_id' => ['nullable', 'integer', 'min:1'],
+            'direction' => ['nullable', Rule::in(array_column(FinancialDirection::cases(), 'value'))],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:500'],
+        ]);
+
         return response()->json([
-            'data' => $report->handle([
-                'company_id' => $request->integer('company_id') ?: null,
-                'category_id' => $request->integer('category_id') ?: null,
-            ]),
+            'data' => $report->handle($validated),
         ]);
     }
 

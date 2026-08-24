@@ -26,6 +26,7 @@ export interface DataTableExportConfig {
     modelClass: string;
     columnsEndpoint: string;
     enabled?: boolean;
+    fixedFilters?: Record<string, unknown>;
 }
 
 /** Shape stored in localStorage */

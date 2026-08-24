@@ -29,17 +29,18 @@ interface PageProps {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-function StatusBadge({ isEnabled }: { isEnabled: boolean }) {
+function SlackConnectionBadge({ isEnabled }: { isEnabled: boolean }) {
     if (isEnabled) {
         return (
-            <Badge className="gap-1.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+            <Badge variant="success" className="gap-1.5">
                 <CheckCircle2 className="size-3" />
                 Conectado
             </Badge>
         );
     }
+
     return (
-        <Badge variant="secondary" className="gap-1.5">
+        <Badge variant="muted" className="gap-1.5">
             <AlertCircle className="size-3" />
             Não configurado
         </Badge>
@@ -105,7 +106,7 @@ export default function SlackIndex({ settings, isEnabled, levelOptions }: PagePr
                             Receba alertas, erros e notificações do sistema diretamente no Slack.
                         </p>
                     </div>
-                    <StatusBadge isEnabled={isEnabled} />
+                    <SlackConnectionBadge isEnabled={isEnabled} />
                 </div>
 
                 {/* Configurações principais */}

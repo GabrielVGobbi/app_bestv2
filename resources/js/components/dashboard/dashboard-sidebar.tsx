@@ -17,15 +17,15 @@ const TOOLTIP_CLS =
     'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
 
 const SECTION_LABEL_CLS =
-    'px-3 pb-2 text-xs font-normal text-sidebar-foreground/45';
+    'px-3 pb-2.5 pt-1 text-[11px] font-semibold tracking-[0.08em] text-sidebar-muted uppercase';
 
 const NAV_ITEM_BASE =
-    'group relative flex w-full items-center rounded-lg px-3 py-2 text-[13px] font-medium transition-colors';
+    'group relative flex w-full min-h-10 items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors';
 
 const navItemState = (isActive: boolean) =>
     isActive
-        ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
-        : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground';
+        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+        : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground';
 
 type Props = {
     isCollapsed: boolean;
@@ -119,10 +119,10 @@ function FlatNavItem({
                         sharedClass,
                         childActive
                             ? 'text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                            : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground',
                     )}
                 >
-                    {item.icon && <item.icon size={16} className="shrink-0" />}
+                    {item.icon && <item.icon size={18} className="shrink-0" />}
                     <span
                         className={cn(
                             'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
@@ -165,7 +165,7 @@ function FlatNavItem({
 
     const inner = (
         <>
-            {item.icon && <item.icon size={16} className="shrink-0" />}
+            {item.icon && <item.icon size={18} className="shrink-0" />}
             <span
                 className={cn(
                     'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
@@ -346,7 +346,7 @@ export function DashboardSidebar({
                     'transition-transform duration-300 ease-out',
                     mobileOpen ? 'translate-x-0' : '-translate-x-full',
                     'md:static md:z-auto md:shrink-0 md:translate-x-0 md:transition-[width] md:duration-200',
-                    isCollapsed ? 'md:w-16' : 'md:w-[250px]',
+                    isCollapsed ? 'md:w-16' : 'md:w-[264px]',
                 )}
             >
                 {/* Toggle */}
@@ -366,7 +366,7 @@ export function DashboardSidebar({
                 </button>
 
                 <nav
-                    className="flex h-full flex-col px-3 py-5"
+                    className="flex h-full flex-col px-3.5 py-6"
                     id="nav-sidebar"
                     onClickCapture={closeMobileOnNavClick}
                 >
@@ -394,7 +394,7 @@ export function DashboardSidebar({
                                     >
                                         {item.icon && (
                                             <item.icon
-                                                size={16}
+                                                size={18}
                                                 className="shrink-0"
                                             />
                                         )}

@@ -114,9 +114,18 @@ class CreateFinancialSettlement
                 'balance_after' => $balanceAfter,
             ]);
 
+            /**
+             * O saldo da parcela anda pelo principal (`gross_amount`), enquanto a
+             * conta bancaria anda pelo liquido. Desconto, juros e multa acumulam
+             * aqui para que a diferenca entre os dois seja auditavel na parcela,
+             * em vez de existir apenas dentro da baixa.
+             */
             $installment->forceFill([
                 'settled_amount' => (int) $installment->settled_amount + $grossAmount,
                 'balance_amount' => $balanceAfter,
+                'discount_amount' => (int) $installment->discount_amount + $discountAmount,
+                'interest_amount' => (int) $installment->interest_amount + $interestAmount,
+                'penalty_amount' => (int) $installment->penalty_amount + $penaltyAmount,
                 'settled_at' => $balanceAfter === 0 ? $settledAt : null,
             ])->save();
 
@@ -153,7 +162,7 @@ class CreateFinancialSettlement
 
         if (! $financialAccount) {
             throw ValidationException::withMessages([
-                'financial_account_id' => __('Conta financeira nÃ£o encontrada.'),
+                'financial_account_id' => __('Conta financeira não encontrada.'),
             ]);
         }
 
@@ -165,7 +174,7 @@ class CreateFinancialSettlement
 
         if (! $financialAccount->active) {
             throw ValidationException::withMessages([
-                'financial_account_id' => __('Conta financeira inativa nÃ£o pode ser usada em nova baixa.'),
+                'financial_account_id' => __('Conta financeira inativa não pode ser usada em nova baixa.'),
             ]);
         }
 

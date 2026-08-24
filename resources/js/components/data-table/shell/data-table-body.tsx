@@ -1,10 +1,16 @@
-import type { Row, RowSelectionState } from '@tanstack/react-table';
+import type {
+    Row,
+    RowSelectionState,
+    VisibilityState,
+} from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
+import { isColumnVisible } from '../core/column-visibility';
+import { getStickyRightLayout } from '../core/sticky';
 import type { DataTableAppearance } from '../core/types';
 import { DataTableEmptyState } from './data-table-empty-state';
 import { DataTableTruncatedCell } from './data-table-truncated-cell';
@@ -12,6 +18,7 @@ import { DataTableTruncatedCell } from './data-table-truncated-cell';
 interface DataTableBodyProps<TData> {
     rows: Row<TData>[];
     rowSelection?: RowSelectionState;
+    columnVisibility?: VisibilityState;
     visibleColumnCount: number;
     isLoading: boolean;
     appearance: Required<DataTableAppearance>;
@@ -28,6 +35,7 @@ interface DataTableBodyProps<TData> {
 export function DataTableBody<TData>({
     rows,
     rowSelection = {},
+    columnVisibility = {},
     visibleColumnCount,
     isLoading,
     appearance,
@@ -115,13 +123,26 @@ export function DataTableBody<TData>({
         <tbody>
             {rows.map((row) => {
                 const isSelected = !!rowSelection[row.id];
+                const visibleCells = row
+                    .getAllCells()
+                    .filter((cell) =>
+                        isColumnVisible(cell.column.id, columnVisibility),
+                    );
+                const stickyLayout = getStickyRightLayout(
+                    visibleCells.map((cell) => ({
+                        id: cell.column.id,
+                        size: cell.column.getSize(),
+                        sticky:
+                            cell.column.columnDef.meta?.sticky === 'right',
+                    })),
+                );
 
                 return (
                     <tr
                         key={row.id}
                         data-state={isSelected ? 'selected' : undefined}
                         className={cn(
-                            'transition-colors hover:bg-accent/45',
+                            'transition-colors hover:bg-muted/70',
                             showHorizontalLines && 'border-b',
                             appearance.rowStyle === 'striped' &&
                                 'even:bg-muted/40',
@@ -130,11 +151,15 @@ export function DataTableBody<TData>({
                             isSelected && 'bg-muted/60',
                         )}
                     >
-                        {row.getVisibleCells().map((cell) => {
+                        {visibleCells.map((cell) => {
                             const meta = cell.column.columnDef.meta;
                             const align = meta?.align ?? 'left';
                             const isSticky = meta?.sticky === 'right';
                             const isTruncate = meta?.truncate;
+                            const stickyOffset =
+                                stickyLayout.offsets.get(cell.column.id) ?? 0;
+                            const isLeadingSticky =
+                                stickyLayout.leadingId === cell.column.id;
 
                             const cellContent =
                                 cell.column.id === 'select' ? (
@@ -166,14 +191,16 @@ export function DataTableBody<TData>({
                                         align === 'right' &&
                                             'text-right font-tabular',
                                         isSticky &&
-                                            'sticky right-0 z-[1] border-l bg-card',
+                                            'sticky z-[1] border-l bg-card',
                                     )}
                                     style={{
                                         width: cell.column.getSize(),
                                         ...(isSticky && {
-                                            boxShadow: isScrolled
-                                                ? '-12px 0 16px -4px rgba(0,0,0,0.1)'
-                                                : 'none',
+                                            right: stickyOffset,
+                                            boxShadow:
+                                                isScrolled && isLeadingSticky
+                                                    ? '-12px 0 16px -4px rgba(0,0,0,0.1)'
+                                                    : 'none',
                                         }),
                                     }}
                                 >

@@ -70,7 +70,7 @@ class MusicCatalogTest extends TestCase
             );
     }
 
-    public function test_music_catalog_route_and_navigation_live_under_admin(): void
+    public function test_music_catalog_route_and_navigation_live_under_gestao(): void
     {
         $route = Route::getRoutes()->getByName('playlists.music-catalog.index');
 
@@ -82,21 +82,15 @@ class MusicCatalogTest extends TestCase
         $adminModule = collect($navigation)->firstWhere('slug', 'admin');
         $gestaoModule = collect($navigation)->firstWhere('slug', 'gestao');
 
-        $this->assertContains('/admin/music-catalog', $adminModule['route_prefixes']);
-        $this->assertNotContains('/admin/music-catalog', $gestaoModule['route_prefixes']);
+        $this->assertContains('/admin/music-catalog', $gestaoModule['route_prefixes']);
+        $this->assertNotContains('/admin/music-catalog', $adminModule['route_prefixes']);
 
-        $gestaoItems = collect($gestaoModule['items'])
-            ->flatMap(fn (array $section): array => $section['items'] ?? [])
-            ->pluck('slug');
+        $cadastrosSection = collect($gestaoModule['items'])->firstWhere('slug', 'gestao_cadastros_section');
 
-        $this->assertNotContains('gestao_music_catalog', $gestaoItems);
-
-        $adminCadastrosSection = collect($adminModule['items'])->firstWhere('slug', 'admin_cadastros_section');
-
-        $this->assertNotNull($adminCadastrosSection);
+        $this->assertNotNull($cadastrosSection);
         $this->assertSame(
             ['route' => 'playlists.music-catalog.index'],
-            collect($adminCadastrosSection['items'])->firstWhere('slug', 'admin_music_catalog')['href'],
+            collect($cadastrosSection['items'])->firstWhere('slug', 'gestao_music_catalog')['href'],
         );
     }
 

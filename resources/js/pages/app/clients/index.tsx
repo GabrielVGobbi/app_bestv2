@@ -230,7 +230,7 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
                         }}
                         appearance={{
                             size: 'md',
-                            gridLines: 'none',
+                            gridLines: 'horizontal',
                             rowStyle: 'soft-striped',
                         }}
                         searchPlaceholder="Buscar clientes..."

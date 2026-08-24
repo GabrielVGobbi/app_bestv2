@@ -11,28 +11,88 @@ use App\Modules\Finance\Enums\FinancialAmountOperation;
 use App\Modules\Finance\Enums\FinancialDirection;
 use App\Modules\Finance\Models\FinancialEntry;
 use App\Modules\Sales\Models\Sale;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class CreateReceivableFromSale
 {
     public function __construct(private readonly CreateManualFinancialEntry $createEntry) {}
 
+    /**
+     * Cria o recebivel da venda de forma idempotente.
+     *
+     * A checagem previa resolve o caso comum. O indice unico
+     * `financial_entries_origin_unique` resolve a corrida entre duas confirmacoes
+     * simultaneas da mesma venda: quem perder a disputa recebe o registro que o
+     * vencedor criou, em vez de estourar a excecao.
+     */
     public function handle(Sale $sale): FinancialEntry
     {
         $sale = Sale::query()
             ->with(['client', 'saleItems'])
             ->findOrFail($sale->id);
 
-        $existing = FinancialEntry::query()
-            ->where('company_id', $sale->company_id)
-            ->where('direction', FinancialDirection::Receivable)
-            ->where('originable_type', $sale->getMorphClass())
-            ->where('originable_id', $sale->id)
-            ->first();
+        $existing = $this->findExistingReceivable($sale);
 
         if ($existing instanceof FinancialEntry) {
             return $existing->load(['amountComponents', 'installments']);
         }
 
+        try {
+            return $this->createEntry->handle($this->buildPayload($sale));
+        } catch (UniqueConstraintViolationException $exception) {
+            $concurrent = $this->findExistingReceivable($sale);
+
+            if (! $concurrent instanceof FinancialEntry) {
+                throw $exception;
+            }
+
+            return $concurrent->load(['amountComponents', 'installments']);
+        }
+    }
+
+    private function findExistingReceivable(Sale $sale): ?FinancialEntry
+    {
+        return FinancialEntry::query()
+            ->where('company_id', $sale->company_id)
+            ->where('direction', FinancialDirection::Receivable)
+            ->where('originable_type', $sale->getMorphClass())
+            ->where('originable_id', $sale->id)
+            ->first();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildPayload(Sale $sale): array
+    {
+        $referenceDate = $sale->confirmed_at?->toDateString() ?? now()->toDateString();
+
+        return [
+            'company_id' => $sale->company_id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $sale->client_id,
+            'originable_type' => $sale->getMorphClass(),
+            'originable_id' => $sale->id,
+            'description' => $sale->title ?: "Recebivel da venda {$sale->order_number}",
+            'issue_date' => $referenceDate,
+            'competence_date' => $referenceDate,
+            'due_date' => $referenceDate,
+            'currency' => $sale->currency,
+            'components' => $this->buildComponents($sale),
+            'metadata' => [
+                'source' => 'sales.confirmed',
+                'sale_uuid' => $sale->uuid,
+                'order_number' => $sale->order_number,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildComponents(Sale $sale): array
+    {
         $components = [
             [
                 'code' => FinancialAmountComponentCode::Principal,
@@ -58,24 +118,6 @@ class CreateReceivableFromSale
             ];
         }
 
-        return $this->createEntry->handle([
-            'company_id' => $sale->company_id,
-            'direction' => FinancialDirection::Receivable,
-            'counterparty_type' => Client::class,
-            'counterparty_id' => $sale->client_id,
-            'originable_type' => $sale->getMorphClass(),
-            'originable_id' => $sale->id,
-            'description' => $sale->title ?: "Recebivel da venda {$sale->order_number}",
-            'issue_date' => $sale->confirmed_at?->toDateString() ?? now()->toDateString(),
-            'competence_date' => $sale->confirmed_at?->toDateString() ?? now()->toDateString(),
-            'due_date' => $sale->confirmed_at?->toDateString() ?? now()->toDateString(),
-            'currency' => $sale->currency,
-            'components' => $components,
-            'metadata' => [
-                'source' => 'sales.confirmed',
-                'sale_uuid' => $sale->uuid,
-                'order_number' => $sale->order_number,
-            ],
-        ]);
+        return $components;
     }
 }

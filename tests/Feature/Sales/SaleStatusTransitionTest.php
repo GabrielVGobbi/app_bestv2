@@ -13,6 +13,7 @@ use App\Modules\Sales\Actions\Status\CancelSale;
 use App\Modules\Sales\Actions\Status\ConfirmSale;
 use App\Modules\Sales\Actions\Status\FinishSaleCampaign;
 use App\Modules\Sales\Actions\Status\QuoteSale;
+use App\Modules\Sales\Actions\Status\RevertSaleToDraft;
 use App\Modules\Sales\Enums\SaleItemStatus;
 use App\Modules\Sales\Enums\SaleItemType;
 use App\Modules\Sales\Enums\SaleStatus;
@@ -147,6 +148,125 @@ class SaleStatusTransitionTest extends TestCase
         $this->assertSame(SaleStatus::Quoted, $sale->status);
         $this->assertSame(1750, $sale->subtotal_amount);
         $this->assertSame(1650, $sale->total_amount);
+    }
+
+    public function test_revert_sale_to_draft_from_quoted(): void
+    {
+        $user = $this->userWithPermissions(['sales.update']);
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+        $sale->applySystemStatus(SaleStatus::Quoted);
+        SaleItem::factory()->for($sale)->create();
+
+        $this->actingAs($user);
+
+        app(RevertSaleToDraft::class)->handle($sale);
+
+        $this->assertSame(SaleStatus::Draft, $sale->refresh()->status);
+    }
+
+    public function test_revert_sale_to_draft_is_invalid_from_campaign_started(): void
+    {
+        $user = $this->userWithPermissions(['sales.update']);
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+        $sale->applySystemStatus(SaleStatus::CampaignStarted);
+
+        $this->actingAs($user);
+
+        $this->expectException(ValidationException::class);
+
+        app(RevertSaleToDraft::class)->handle($sale);
+    }
+
+    public function test_revert_to_draft_route_requires_update_permission(): void
+    {
+        $user = $this->userWithPermissions(['sales.update', 'sales.view']);
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+        $sale->applySystemStatus(SaleStatus::Quoted);
+
+        $this->actingAs($user)
+            ->patch(route('sales.revert-to-draft', $sale))
+            ->assertRedirect();
+
+        $this->assertSame(SaleStatus::Draft, $sale->refresh()->status);
+
+        $limitedUser = $this->userWithPermissions(['sales.quote']);
+
+        $this->actingAs($limitedUser)
+            ->patch(route('sales.revert-to-draft', $sale))
+            ->assertForbidden();
+    }
+
+    public function test_confirm_sale_with_item_period_creates_active_slot(): void
+    {
+        $user = $this->userWithPermissions(['sales.confirm']);
+        $playlistTop = PlaylistTop::factory()->create(['slots_quantity' => 1, 'occupied_slots_count' => 0]);
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+        $sale->applySystemStatus(SaleStatus::Quoted);
+        $item = SaleItem::factory()->for($sale)->for($playlistTop)->create([
+            'type' => SaleItemType::PlaylistSlot,
+            'service_id' => null,
+            'playlist_top_id' => $playlistTop->id,
+            'quantity' => 1,
+            'discount_amount' => 0,
+            'track_name' => 'Musica Teste',
+            'track_spotify_id' => '4kwbbhuemSkRWvtN5dkWmb',
+            'track_spotify_url' => 'https://open.spotify.com/track/4kwbbhuemSkRWvtN5dkWmb',
+            'starts_on' => '2026-09-01',
+            'ends_on' => '2026-09-30',
+        ]);
+
+        $this->actingAs($user);
+
+        app(ConfirmSale::class)->handle($sale, confirmed: true);
+
+        $slot = PlaylistSlot::query()->firstOrFail();
+
+        $this->assertSame(PlaylistSlotStatus::Active, $slot->status);
+        $this->assertSame('2026-09-01', $slot->starts_on?->toDateString());
+        $this->assertSame('2026-09-30', $slot->ends_on?->toDateString());
+        $this->assertSame(SaleItemStatus::Active, $item->refresh()->status);
+        $this->assertSame(1, $playlistTop->refresh()->occupied_slots_count);
+    }
+
+    public function test_confirm_sale_with_item_period_blocks_when_capacity_is_exhausted(): void
+    {
+        $user = $this->userWithPermissions(['sales.confirm']);
+        $playlistTop = PlaylistTop::factory()->create(['slots_quantity' => 1, 'occupied_slots_count' => 0]);
+
+        $occupyingSale = Sale::factory()->create(['seller_id' => $user->id]);
+        $occupyingItem = SaleItem::factory()->for($occupyingSale)->for($playlistTop)->create([
+            'type' => SaleItemType::PlaylistSlot,
+            'service_id' => null,
+            'playlist_top_id' => $playlistTop->id,
+            'status' => SaleItemStatus::Active,
+        ]);
+        PlaylistSlot::factory()->for($playlistTop)->for($occupyingItem)->create([
+            'status' => PlaylistSlotStatus::Active,
+            'quantity' => 1,
+            'starts_on' => '2026-09-01',
+            'ends_on' => '2026-09-30',
+        ]);
+
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+        $sale->applySystemStatus(SaleStatus::Quoted);
+        SaleItem::factory()->for($sale)->for($playlistTop)->create([
+            'type' => SaleItemType::PlaylistSlot,
+            'service_id' => null,
+            'playlist_top_id' => $playlistTop->id,
+            'quantity' => 1,
+            'discount_amount' => 0,
+            'track_name' => 'Musica Teste',
+            'track_spotify_id' => '4kwbbhuemSkRWvtN5dkWmb',
+            'track_spotify_url' => 'https://open.spotify.com/track/4kwbbhuemSkRWvtN5dkWmb',
+            'starts_on' => '2026-09-10',
+            'ends_on' => '2026-09-20',
+        ]);
+
+        $this->actingAs($user);
+
+        $this->expectException(ValidationException::class);
+
+        app(ConfirmSale::class)->handle($sale, confirmed: true);
     }
 
     public function test_confirm_sale_materializes_playlist_slot_items(): void

@@ -338,20 +338,20 @@ class ServiceCrudTest extends TestCase
         $this->assertContains('auth:sanctum', $route->gatherMiddleware());
     }
 
-    public function test_services_navigation_lives_under_gestao_cadastros(): void
+    public function test_services_navigation_lives_under_comercial_cadastros(): void
     {
         $navigation = config('navigation.modules');
 
-        $gestaoModule = collect($navigation)->firstWhere('slug', 'gestao');
+        $comercialModule = collect($navigation)->firstWhere('slug', 'comercial');
 
-        $this->assertContains('/services', $gestaoModule['route_prefixes']);
+        $this->assertContains('/services', $comercialModule['route_prefixes']);
 
-        $cadastrosSection = collect($gestaoModule['items'])->firstWhere('slug', 'gestao_cadastros_section');
+        $cadastrosSection = collect($comercialModule['items'])->firstWhere('slug', 'comercial_cadastros_section');
 
         $this->assertNotNull($cadastrosSection);
         $this->assertSame(
             ['route' => 'services.index'],
-            collect($cadastrosSection['items'])->firstWhere('slug', 'gestao_services')['href'],
+            collect($cadastrosSection['items'])->firstWhere('slug', 'comercial_services')['href'],
         );
     }
 

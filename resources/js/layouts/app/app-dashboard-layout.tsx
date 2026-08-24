@@ -51,7 +51,7 @@ export default function AppDashboardLayout({
                 />
 
                 <main
-                    className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto"
+                    className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto bg-canvas"
                     scroll-region=""
                 >
                     {children}

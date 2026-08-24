@@ -9,6 +9,7 @@ export function resolveNavItems(raw: RawNavItem[]): NavItem[] {
             type: item.type ?? (item.items?.length ? 'group' : 'link'),
             href: (item.href ?? '#') as NavItem['href'],
             icon: resolveIcon(item.icon),
+            tone: item.tone,
             items: item.items ? resolveNavItems(item.items) : undefined,
         }));
 }

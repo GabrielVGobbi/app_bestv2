@@ -78,16 +78,23 @@ class NavigationService
             ->filter(fn (array $m) => $m['enabled'] ?? true)
             ->filter(fn (array $m) => $this->passesRoleFilter($m))
             ->filter(fn (array $m) => $this->passesPermissionFilter($m))
-            ->map(fn (array $m) => [
-                'slug' => $m['slug'],
-                'label' => $m['label'],
-                'icon' => $m['icon'] ?? null,
-                'default' => $m['default'] ?? false,
-                'routePrefixes' => $m['route_prefixes'] ?? [],
-                'href' => isset($m['href']) ? $this->resolveHref($m['href']) : null,
-                'defaultHref' => isset($m['default_href']) ? $this->resolveHref($m['default_href']) : null,
-                'items' => $this->processItems($m['items'] ?? []),
-            ])
+            ->map(function (array $m): array {
+                $items = $this->processItems($m['items'] ?? []);
+                $href = isset($m['href']) ? $this->resolveHref($m['href']) : null;
+                $defaultHref = isset($m['default_href']) ? $this->resolveHref($m['default_href']) : null;
+
+                return [
+                    'slug' => $m['slug'],
+                    'label' => $m['label'],
+                    'icon' => $m['icon'] ?? null,
+                    'default' => $m['default'] ?? false,
+                    'routePrefixes' => $m['route_prefixes'] ?? [],
+                    'href' => $href,
+                    'defaultHref' => $this->resolveVisibleDefaultHref($defaultHref, $items) ?? $href,
+                    'items' => $items,
+                ];
+            })
+            ->filter(fn (array $m) => $m['href'] !== null || $m['items'] !== [])
             ->values()
             ->all();
     }
@@ -183,11 +190,54 @@ class NavigationService
             $normalized['href'] = $this->resolveHref($item['href']);
         }
 
+        if (isset($item['tone']) && in_array($item['tone'], ['inflow', 'outflow'], true)) {
+            $normalized['tone'] = $item['tone'];
+        }
+
         if (! empty($item['items'])) {
             $normalized['items'] = $this->processItems($item['items']);
         }
 
         return $normalized;
+    }
+
+    /**
+     * Prefers a default href that the user can actually see in the sidebar.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function resolveVisibleDefaultHref(?string $configured, array $items): ?string
+    {
+        $hrefs = $this->collectHrefs($items);
+
+        if ($configured !== null && in_array($configured, $hrefs, true)) {
+            return $configured;
+        }
+
+        return $hrefs[0] ?? $configured;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     * @return list<string>
+     */
+    private function collectHrefs(array $items): array
+    {
+        $hrefs = [];
+
+        foreach ($items as $item) {
+            if (isset($item['href']) && is_string($item['href'])) {
+                $hrefs[] = $item['href'];
+            }
+
+            if (! empty($item['items']) && is_array($item['items'])) {
+                foreach ($this->collectHrefs($item['items']) as $childHref) {
+                    $hrefs[] = $childHref;
+                }
+            }
+        }
+
+        return $hrefs;
     }
 
     /**

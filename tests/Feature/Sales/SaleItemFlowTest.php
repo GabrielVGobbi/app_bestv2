@@ -6,6 +6,7 @@ namespace Tests\Feature\Sales;
 
 use App\Models\User;
 use App\Modules\Permissions\Models\Permission;
+use App\Modules\Playlists\Models\PlaylistTop;
 use App\Modules\Sales\Actions\Items\RemoveSaleItem;
 use App\Modules\Sales\Actions\Items\SyncSaleTotals;
 use App\Modules\Sales\Enums\SaleStatus;
@@ -59,6 +60,49 @@ class SaleItemFlowTest extends TestCase
         $this->actingAs($user)
             ->delete(route('sales.items.destroy', [$sale, $item]))
             ->assertForbidden();
+    }
+
+    public function test_store_playlist_item_persists_optional_period(): void
+    {
+        $user = $this->userWithPermissions(['sales.update', 'sales.items.create']);
+        $playlistTop = PlaylistTop::factory()->create();
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->post(route('sales.items.store', $sale), [
+                'type' => 'playlist_slot',
+                'playlist_top_id' => $playlistTop->id,
+                'track_name' => 'Musica Teste',
+                'track_spotify_url' => 'https://open.spotify.com/track/4kwbbhuemSkRWvtN5dkWmb',
+                'starts_on' => '2026-09-01',
+                'ends_on' => '2026-09-30',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $item = $sale->saleItems()->sole();
+
+        $this->assertSame('2026-09-01', $item->starts_on?->toDateString());
+        $this->assertSame('2026-09-30', $item->ends_on?->toDateString());
+    }
+
+    public function test_store_playlist_item_rejects_incomplete_period(): void
+    {
+        $user = $this->userWithPermissions(['sales.update', 'sales.items.create']);
+        $playlistTop = PlaylistTop::factory()->create();
+        $sale = Sale::factory()->create(['seller_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->post(route('sales.items.store', $sale), [
+                'type' => 'playlist_slot',
+                'playlist_top_id' => $playlistTop->id,
+                'track_name' => 'Musica Teste',
+                'track_spotify_url' => 'https://open.spotify.com/track/4kwbbhuemSkRWvtN5dkWmb',
+                'starts_on' => '2026-09-01',
+            ])
+            ->assertSessionHasErrors('ends_on');
+
+        $this->assertSame(0, $sale->saleItems()->count());
     }
 
     /**

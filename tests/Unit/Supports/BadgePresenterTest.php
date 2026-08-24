@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Supports;
 
+use App\Modules\Finance\Enums\FinancialEntryStatus;
 use App\Modules\Playlists\Enums\PlaylistSlotStatus;
 use App\Modules\Playlists\Enums\PlaylistStatus;
 use App\Modules\Sales\Enums\SaleItemStatus;
@@ -23,6 +24,33 @@ class BadgePresenterTest extends TestCase
     public static function presenterCases(): array
     {
         return [
+            'financial entry open' => [
+                FinancialEntryStatus::Open,
+                [
+                    'value' => 'open',
+                    'label' => 'Em aberto',
+                    'color' => 'amber',
+                    'icon' => 'Circle',
+                ],
+            ],
+            'financial entry overdue' => [
+                FinancialEntryStatus::Overdue,
+                [
+                    'value' => 'overdue',
+                    'label' => 'Vencido',
+                    'color' => 'red',
+                    'icon' => 'AlertCircle',
+                ],
+            ],
+            'sale quoted pending' => [
+                SaleStatus::Quoted,
+                [
+                    'value' => 'quoted',
+                    'label' => 'Orçamento',
+                    'color' => 'amber',
+                    'icon' => 'Send',
+                ],
+            ],
             'sale campaign started' => [
                 SaleStatus::CampaignStarted,
                 [

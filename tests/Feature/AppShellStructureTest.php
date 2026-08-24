@@ -53,8 +53,11 @@ class AppShellStructureTest extends TestCase
 
         $this->assertStringContainsString('Visão geral', $dashboard);
         $this->assertStringContainsString('data="operationalDashboard"', $dashboard);
+        $this->assertStringContainsString('text-destructive', $dashboard);
+        $this->assertStringContainsString('text-inflow', $dashboard);
         $this->assertStringContainsString('DashboardSkeleton', $dashboard);
         $this->assertStringContainsString('SummaryGroup', $dashboard);
+        $this->assertStringContainsString("from '@/components/ui/card'", $dashboard);
         $this->assertStringNotContainsString('Módulos disponíveis', $dashboard);
         $this->assertStringNotContainsString('PlaceholderPattern', $dashboard);
 
@@ -77,6 +80,9 @@ class AppShellStructureTest extends TestCase
         $this->assertStringContainsString('--color-brand-surface: var(--brand-surface);', $css);
         $this->assertStringContainsString('--color-brand-focus: var(--brand-focus);', $css);
         $this->assertStringContainsString('--color-app-surface: var(--app-surface);', $css);
+        $this->assertStringContainsString('--color-inflow: var(--inflow);', $css);
+        $this->assertStringContainsString('--color-outflow: var(--outflow);', $css);
+        $this->assertStringContainsString('--color-info: var(--info);', $css);
         $this->assertStringContainsString('color-scheme: light;', $css);
         $this->assertStringContainsString('color-scheme: dark;', $css);
         $this->assertStringContainsString('@utility app-surface', $css);
@@ -89,18 +95,35 @@ class AppShellStructureTest extends TestCase
         $this->assertStringNotContainsString('background: #4a90e2;', $css);
     }
 
-    public function test_sidebar_uses_an_adaptive_pink_palette_with_readable_content(): void
+    public function test_sidebar_uses_ink_chrome_with_pink_as_accent_only(): void
     {
         $css = $this->stylesheetFile('app.css');
         $sidebar = $this->frontendFile('components/app-sidebar.tsx');
         $footer = $this->frontendFile('components/nav-footer.tsx');
+        $header = $this->frontendFile('components/dashboard/dashboard-header.tsx');
 
-        $this->assertStringContainsString('--sidebar: #c0084d;', $css);
-        $this->assertStringContainsString('--sidebar: #3b0b21;', $css);
-        $this->assertStringContainsString('--sidebar-foreground: #fff7fb;', $css);
-        $this->assertStringContainsString('--sidebar-foreground: #ffe8f1;', $css);
+        $this->assertStringContainsString('--sidebar: #171717;', $css);
+        $this->assertStringContainsString('--sidebar: #202020;', $css);
+        $this->assertStringContainsString('--sidebar-accent: #3f2430;', $css);
+        $this->assertStringContainsString('--sidebar-accent-foreground: #f6cdd8;', $css);
+        $this->assertStringContainsString('--sidebar-muted: #a1a1aa;', $css);
+        $this->assertStringContainsString('--canvas: #f4f4f5;', $css);
+        $this->assertStringContainsString('--canvas: #101010;', $css);
+        $this->assertStringContainsString('--header-background: #171717;', $css);
+        $this->assertStringContainsString('--primary: #eb0459;', $css);
+        $this->assertStringContainsString('--inflow: #008f5f;', $css);
+        $this->assertStringContainsString('--outflow: #e60023;', $css);
+        $this->assertStringContainsString('--info: #3654d4;', $css);
+        $this->assertStringContainsString('--color-inflow: var(--inflow);', $css);
+        $this->assertStringContainsString('--color-canvas: var(--canvas);', $css);
+        $this->assertStringNotContainsString('--sidebar: #c0084d;', $css);
+        $this->assertStringNotContainsString('--sidebar-accent: #fff0f6;', $css);
         $this->assertStringContainsString('iconClassName="text-sidebar-foreground"', $sidebar);
         $this->assertStringContainsString('text-sidebar-foreground/75', $footer);
+        $this->assertStringContainsString('bg-header-background', $header);
+        $this->assertStringNotContainsString('before:w-[3px]', $this->frontendFile('components/dashboard/dashboard-sidebar.tsx'));
+        $this->assertStringNotContainsString('before:w-[3px]', $this->frontendFile('components/nav-module-items.tsx'));
+        $this->assertStringNotContainsString('before:w-[3px]', $this->frontendFile('components/nav-module-switcher.tsx'));
     }
 
     private function frontendFile(string $path): string

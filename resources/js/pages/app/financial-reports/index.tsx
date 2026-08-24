@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 
 import { show } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
+import { DirectionBadge } from '@/components/direction-badge';
 import Heading from '@/components/heading';
+import { MoneyAmount } from '@/components/money-amount';
 import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { StatusPresenter } from '@/types/status';
@@ -43,6 +45,8 @@ interface InstallmentsScheduleItem {
     due_date: string | null;
     balance_amount: number;
     currency: string;
+    is_overdue: boolean;
+    direction: 'receivable' | 'payable';
     direction_label: string;
     counterparty_label: string | null;
     entry: {
@@ -86,6 +90,44 @@ const cardIcons = {
     monthly_settlements: ChartNoAxesColumn,
     pending_reconciliation: ReceiptText,
 };
+
+const cardTone: Record<(typeof cardOrder)[number], 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted'> = {
+    open_receivables: 'inflow',
+    overdue_receivables: 'destructive',
+    open_payables: 'outflow',
+    overdue_payables: 'destructive',
+    monthly_settlements: 'muted',
+    pending_reconciliation: 'warning',
+};
+
+const cardIconTone: Record<(typeof cardOrder)[number], string> = {
+    open_receivables: 'border-inflow/25 bg-inflow-soft text-inflow-soft-foreground',
+    overdue_receivables: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
+    open_payables: 'border-outflow/25 bg-outflow-soft text-outflow-soft-foreground',
+    overdue_payables: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
+    monthly_settlements: 'border bg-muted/30 text-muted-foreground',
+    pending_reconciliation: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
+};
+
+function moneyAmountTone(tone: 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted'): string {
+    if (tone === 'inflow') {
+        return 'text-inflow';
+    }
+
+    if (tone === 'outflow') {
+        return 'text-outflow';
+    }
+
+    if (tone === 'warning') {
+        return 'text-warning-soft-foreground';
+    }
+
+    if (tone === 'destructive') {
+        return 'text-destructive';
+    }
+
+    return 'text-foreground';
+}
 
 const reportRows = [
     {
@@ -165,14 +207,37 @@ export default function FinancialReportsIndex({
                                 <Card key={key} className="gap-4 py-5">
                                     <CardHeader className="flex-row items-center justify-between gap-3">
                                         <CardTitle>{card.label}</CardTitle>
-                                        <span className="flex size-8 items-center justify-center rounded-md border bg-muted/30 text-muted-foreground">
+                                        <span
+                                            className={`flex size-8 items-center justify-center rounded-md border ${cardIconTone[key]}`}
+                                        >
                                             <Icon className="size-4" />
                                         </span>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-2xl font-semibold tracking-normal">
-                                            {cardValue(key, card)}
-                                        </p>
+                                        {key === 'pending_reconciliation' ? (
+                                            <p
+                                                className={`text-2xl font-semibold tracking-normal tabular-nums ${moneyAmountTone(cardTone[key])}`}
+                                            >
+                                                {cardValue(key, card)}
+                                            </p>
+                                        ) : (
+                                            <MoneyAmount
+                                                value={card.amount}
+                                                className={`text-2xl font-semibold tracking-normal ${moneyAmountTone(cardTone[key])}`}
+                                                direction={
+                                                    cardTone[key] === 'inflow'
+                                                        ? 'receivable'
+                                                        : cardTone[key] ===
+                                                            'outflow'
+                                                          ? 'payable'
+                                                          : 'neutral'
+                                                }
+                                                overdue={
+                                                    cardTone[key] ===
+                                                    'destructive'
+                                                }
+                                            />
+                                        )}
                                     </CardContent>
                                 </Card>
                             );
@@ -201,10 +266,12 @@ export default function FinancialReportsIndex({
                                                 </p>
                                             </div>
                                             <p className="mt-3 text-base font-semibold">
-                                                {money(
-                                                    account.current_balance_amount,
-                                                    account.currency,
-                                                )}
+                                                <MoneyAmount
+                                                    value={
+                                                        account.current_balance_amount
+                                                    }
+                                                    currency={account.currency}
+                                                />
                                             </p>
                                         </div>
                                     ))}
@@ -230,10 +297,12 @@ export default function FinancialReportsIndex({
                                     Saldo aberto
                                 </p>
                                 <p className="text-lg font-semibold">
-                                    {money(
-                                        installmentsSchedule.summary
-                                            .open_amount,
-                                    )}
+                                    <MoneyAmount
+                                        value={
+                                            installmentsSchedule.summary
+                                                .open_amount
+                                        }
+                                    />
                                 </p>
                             </div>
                         </CardHeader>
@@ -274,8 +343,21 @@ export default function FinancialReportsIndex({
                                         ) : (
                                             installmentsSchedule.items.map(
                                                 (item) => (
-                                                    <tr key={item.uuid}>
-                                                        <td className="px-3 py-3">
+                                                    <tr
+                                                        key={item.uuid}
+                                                        className={
+                                                            item.is_overdue
+                                                                ? 'bg-destructive-soft/35'
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        <td
+                                                            className={
+                                                                item.is_overdue
+                                                                    ? 'px-3 py-3 font-medium text-destructive'
+                                                                    : 'px-3 py-3'
+                                                            }
+                                                        >
                                                             {date(
                                                                 item.due_date,
                                                             )}
@@ -287,10 +369,15 @@ export default function FinancialReportsIndex({
                                                                     item.installment_number
                                                                 }
                                                             </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {
-                                                                    item.direction_label
-                                                                }
+                                                            <div className="mt-1">
+                                                                <DirectionBadge
+                                                                    direction={
+                                                                        item.direction
+                                                                    }
+                                                                    label={
+                                                                        item.direction_label
+                                                                    }
+                                                                />
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-3">
@@ -330,9 +417,21 @@ export default function FinancialReportsIndex({
                                                             />
                                                         </td>
                                                         <td className="px-3 py-3 text-right font-medium">
-                                                            {money(
-                                                                item.balance_amount,
-                                                            )}
+                                                            <MoneyAmount
+                                                                value={
+                                                                    item.balance_amount
+                                                                }
+                                                                currency={
+                                                                    item.currency
+                                                                }
+                                                                direction={
+                                                                    item.direction
+                                                                }
+                                                                overdue={
+                                                                    item.is_overdue
+                                                                }
+                                                                signed
+                                                            />
                                                         </td>
                                                     </tr>
                                                 ),

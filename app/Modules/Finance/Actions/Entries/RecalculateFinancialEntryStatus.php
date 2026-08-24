@@ -11,7 +11,13 @@ use Illuminate\Support\Collection;
 
 class RecalculateFinancialEntryStatus
 {
-    public function handle(FinancialEntry $entry): FinancialEntry
+    /**
+     * @param  bool  $eagerLoad  Recarrega componentes, parcelas e contraparte no retorno.
+     *                           Util para quem vai serializar o lancamento em seguida,
+     *                           desperdicio em processamento de lote (ver o comando
+     *                           `finance:recalculate-overdue`).
+     */
+    public function handle(FinancialEntry $entry, bool $eagerLoad = true): FinancialEntry
     {
         $entry->loadMissing('installments');
 
@@ -39,7 +45,11 @@ class RecalculateFinancialEntryStatus
             ])->save();
         }
 
-        return $entry->refresh()->load(['amountComponents', 'installments', 'counterparty']);
+        $entry->refresh();
+
+        return $eagerLoad
+            ? $entry->load(['amountComponents', 'installments', 'counterparty'])
+            : $entry;
     }
 
     /**
@@ -54,6 +64,10 @@ class RecalculateFinancialEntryStatus
         ], true));
 
         if ($activeInstallments->isEmpty()) {
+            if ($installments->isNotEmpty() && $installments->every(fn (FinancialInstallment $installment): bool => $installment->status === FinancialEntryStatus::Canceled)) {
+                return FinancialEntryStatus::Canceled;
+            }
+
             return FinancialEntryStatus::Open;
         }
 

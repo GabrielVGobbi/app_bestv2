@@ -28,13 +28,15 @@ class CreateManualFinancialEntryTest extends TestCase
         $company = Company::factory()->create();
         $client = Client::factory()->create(['company_id' => $company->id]);
 
+        $dueDate = now()->addDays(30)->toDateString();
+
         $entry = app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
             'direction' => FinancialDirection::Receivable,
             'counterparty_type' => Client::class,
             'counterparty_id' => $client->id,
             'description' => 'Venda manual com desconto',
-            'due_date' => '2026-07-15',
+            'due_date' => $dueDate,
             'currency' => 'BRL',
             'components' => [
                 [
@@ -81,13 +83,16 @@ class CreateManualFinancialEntryTest extends TestCase
         $this->assertSame(0, $installment->settled_amount);
         $this->assertSame(90000, $installment->balance_amount);
         $this->assertSame(FinancialEntryStatus::Open, $installment->status);
-        $this->assertSame('2026-07-15', $installment->due_date->toDateString());
+        $this->assertSame($dueDate, $installment->due_date->toDateString());
     }
 
     public function test_creates_manual_entry_with_multiple_installments_matching_net_amount(): void
     {
         $company = Company::factory()->create();
         $client = Client::factory()->create(['company_id' => $company->id]);
+
+        $firstDueDate = now()->addDays(30)->toDateString();
+        $secondDueDate = now()->addDays(60)->toDateString();
 
         $entry = app(CreateManualFinancialEntry::class)->handle([
             'company_id' => $company->id,
@@ -110,12 +115,12 @@ class CreateManualFinancialEntryTest extends TestCase
             'installments' => [
                 [
                     'installment_number' => 1,
-                    'due_date' => '2026-07-15',
+                    'due_date' => $firstDueDate,
                     'amount' => 40000,
                 ],
                 [
                     'installment_number' => 2,
-                    'due_date' => '2026-08-15',
+                    'due_date' => $secondDueDate,
                     'amount' => 50000,
                 ],
             ],
@@ -123,7 +128,7 @@ class CreateManualFinancialEntryTest extends TestCase
 
         $entry->refresh()->load('installments');
 
-        $this->assertSame('2026-07-15', $entry->due_date->toDateString());
+        $this->assertSame($firstDueDate, $entry->due_date->toDateString());
         $this->assertSame(FinancialEntryStatus::Open, $entry->status);
         $this->assertCount(2, $entry->installments);
         $this->assertSame([1, 2], $entry->installments->pluck('installment_number')->all());
@@ -135,6 +140,9 @@ class CreateManualFinancialEntryTest extends TestCase
     {
         $company = Company::factory()->create();
         $client = Client::factory()->create(['company_id' => $company->id]);
+
+        $firstDueDate = now()->addDays(30)->toDateString();
+        $secondDueDate = now()->addDays(60)->toDateString();
 
         $this->expectException(ValidationException::class);
 
@@ -154,12 +162,12 @@ class CreateManualFinancialEntryTest extends TestCase
             'installments' => [
                 [
                     'installment_number' => 1,
-                    'due_date' => '2026-07-15',
+                    'due_date' => $firstDueDate,
                     'amount' => 40000,
                 ],
                 [
                     'installment_number' => 2,
-                    'due_date' => '2026-08-15',
+                    'due_date' => $secondDueDate,
                     'amount' => 50000,
                 ],
             ],
@@ -265,6 +273,96 @@ class CreateManualFinancialEntryTest extends TestCase
         $this->assertSame(112000, $entry->net_amount);
         $this->assertSame(112000, $entry->balance_amount);
         $this->assertSame(112000, $entry->installments->sole()->original_amount);
+    }
+
+    public function test_accepts_fixed_operations_and_flexible_manual_adjustments(): void
+    {
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+
+        $entry = app(CreateManualFinancialEntry::class)->handle([
+            'company_id' => $company->id,
+            'direction' => FinancialDirection::Receivable,
+            'counterparty_type' => Client::class,
+            'counterparty_id' => $client->id,
+            'description' => 'Lançamento com todas as operações permitidas',
+            'components' => [
+                ['code' => FinancialAmountComponentCode::Principal, 'operation' => FinancialAmountOperation::Add, 'amount' => 100000],
+                ['code' => FinancialAmountComponentCode::Tax, 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Interest, 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Penalty, 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Fee, 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Discount, 'operation' => FinancialAmountOperation::Subtract, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Withholding, 'operation' => FinancialAmountOperation::Subtract, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Adjustment, 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Adjustment, 'operation' => FinancialAmountOperation::Subtract, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Other, 'label' => 'Crédito adicional', 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ['code' => FinancialAmountComponentCode::Other, 'label' => 'Abatimento negociado', 'operation' => FinancialAmountOperation::Subtract, 'amount' => 100],
+            ],
+        ]);
+
+        $this->assertCount(11, $entry->amountComponents);
+        $this->assertSame(100600, $entry->gross_amount);
+        $this->assertSame(100200, $entry->net_amount);
+    }
+
+    public function test_rejects_incompatible_fixed_operations_in_direct_action_calls(): void
+    {
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+        $incompatibleOperations = [
+            FinancialAmountComponentCode::Principal->value => FinancialAmountOperation::Subtract,
+            FinancialAmountComponentCode::Tax->value => FinancialAmountOperation::Subtract,
+            FinancialAmountComponentCode::Interest->value => FinancialAmountOperation::Subtract,
+            FinancialAmountComponentCode::Penalty->value => FinancialAmountOperation::Subtract,
+            FinancialAmountComponentCode::Fee->value => FinancialAmountOperation::Subtract,
+            FinancialAmountComponentCode::Discount->value => FinancialAmountOperation::Add,
+            FinancialAmountComponentCode::Withholding->value => FinancialAmountOperation::Add,
+        ];
+
+        foreach ($incompatibleOperations as $code => $operation) {
+            try {
+                app(CreateManualFinancialEntry::class)->handle([
+                    'company_id' => $company->id,
+                    'direction' => FinancialDirection::Receivable,
+                    'counterparty_type' => Client::class,
+                    'counterparty_id' => $client->id,
+                    'description' => 'Lançamento com operação incompatível',
+                    'components' => [
+                        ['code' => FinancialAmountComponentCode::Principal, 'operation' => FinancialAmountOperation::Add, 'amount' => 100000],
+                        ['code' => $code, 'operation' => $operation, 'amount' => 100],
+                    ],
+                ]);
+
+                $this->fail("A operação incompatível para {$code} deveria ser rejeitada.");
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('components.1.operation', $exception->errors());
+            }
+        }
+    }
+
+    public function test_requires_description_for_other_component_in_direct_action_calls(): void
+    {
+        $company = Company::factory()->create();
+        $client = Client::factory()->create(['company_id' => $company->id]);
+
+        try {
+            app(CreateManualFinancialEntry::class)->handle([
+                'company_id' => $company->id,
+                'direction' => FinancialDirection::Receivable,
+                'counterparty_type' => Client::class,
+                'counterparty_id' => $client->id,
+                'description' => 'Lançamento com outro ajuste sem descrição',
+                'components' => [
+                    ['code' => FinancialAmountComponentCode::Principal, 'operation' => FinancialAmountOperation::Add, 'amount' => 100000],
+                    ['code' => FinancialAmountComponentCode::Other, 'label' => '   ', 'operation' => FinancialAmountOperation::Add, 'amount' => 100],
+                ],
+            ]);
+
+            $this->fail('O componente Outro sem descrição deveria ser rejeitado.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('components.1.label', $exception->errors());
+        }
     }
 
     public function test_rejects_zero_or_negative_net_amount(): void

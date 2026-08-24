@@ -149,14 +149,14 @@ export function GlobalCommandPalette() {
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="group flex h-9 w-9 items-center gap-2 rounded-lg border border-border bg-background px-2.5 text-muted-foreground transition-colors hover:border-foreground/15 hover:bg-muted hover:text-foreground md:w-full md:max-w-[340px]"
+                className="group flex h-10 w-10 items-center gap-2.5 rounded-lg border border-white/10 bg-transparent px-3 text-header-foreground/70 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-header-foreground md:w-full md:max-w-[400px]"
                 aria-label="Buscar páginas e ações"
             >
                 <Search className="size-4 shrink-0" />
                 <span className="hidden min-w-0 flex-1 text-left text-sm md:block">
                     Buscar na BestPlay
                 </span>
-                <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground lg:inline-flex">
+                <kbd className="hidden rounded border border-white/10 bg-white/10 px-1.5 py-0.5 text-[11px] text-header-foreground/70 lg:inline-flex">
                     Ctrl K
                 </kbd>
             </button>
