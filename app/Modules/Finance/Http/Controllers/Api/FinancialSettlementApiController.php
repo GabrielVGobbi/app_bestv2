@@ -20,7 +20,7 @@ class FinancialSettlementApiController extends Controller
         StoreFinancialSettlementRequest $request,
         CreateFinancialSettlement $createFinancialSettlement,
     ): FinancialSettlementResource {
-        $settlement = $createFinancialSettlement->handle($financialInstallment, $request->validated());
+        $settlement = $createFinancialSettlement->handle($financialInstallment, $request->validated(), $request->user());
 
         return new FinancialSettlementResource($settlement);
     }
@@ -30,7 +30,7 @@ class FinancialSettlementApiController extends Controller
         ReverseFinancialSettlementRequest $request,
         ReverseFinancialSettlement $reverseFinancialSettlement,
     ): FinancialSettlementResource {
-        $settlement = $reverseFinancialSettlement->handle($financialSettlement, $request->validated());
+        $settlement = $reverseFinancialSettlement->handle($financialSettlement, $request->validated(), $request->user());
 
         return new FinancialSettlementResource($settlement);
     }

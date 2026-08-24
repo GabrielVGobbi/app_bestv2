@@ -35,6 +35,7 @@ interface SettlementDialogProps {
 }
 
 interface SettlementFormData {
+    idempotency_key: string;
     settled_at: string;
     financial_account_id: string;
     payment_method_id: string;
@@ -48,6 +49,10 @@ interface SettlementFormData {
 type FieldErrors = Record<string, string | undefined>;
 
 const todayString = new Date().toISOString().slice(0, 10);
+
+function newIdempotencyKey(): string {
+    return crypto.randomUUID();
+}
 
 function centsToDecimal(cents: number): string {
     return (cents / 100).toFixed(2);
@@ -142,6 +147,7 @@ export function SettlementDialog({
     onOpenChange,
 }: SettlementDialogProps) {
     const form = useForm<SettlementFormData>({
+        idempotency_key: newIdempotencyKey(),
         settled_at: todayString,
         financial_account_id: '',
         payment_method_id: '',
@@ -168,6 +174,7 @@ export function SettlementDialog({
         }
 
         setData({
+            idempotency_key: newIdempotencyKey(),
             settled_at: todayString,
             financial_account_id: '',
             payment_method_id: '',
@@ -218,6 +225,7 @@ export function SettlementDialog({
         }
 
         form.transform(() => ({
+            idempotency_key: data.idempotency_key,
             settled_at: data.settled_at || null,
             financial_account_id: Number(data.financial_account_id),
             payment_method_id: data.payment_method_id

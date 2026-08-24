@@ -34,6 +34,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'penalty_amount',
     'net_amount',
     'origin',
+    'idempotency_key',
+    'idempotency_fingerprint',
     'status',
     'created_by_id',
     'reversed_at',

@@ -21,7 +21,7 @@ class FinancialSettlementController extends Controller
         StoreFinancialSettlementRequest $request,
         CreateFinancialSettlement $createFinancialSettlement,
     ): RedirectResponse {
-        $settlement = $createFinancialSettlement->handle($financialInstallment, $request->validated());
+        $settlement = $createFinancialSettlement->handle($financialInstallment, $request->validated(), $request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Baixa financeira registrada.')]);
 
@@ -33,7 +33,7 @@ class FinancialSettlementController extends Controller
         ReverseFinancialSettlementRequest $request,
         ReverseFinancialSettlement $reverseFinancialSettlement,
     ): RedirectResponse {
-        $settlement = $reverseFinancialSettlement->handle($financialSettlement, $request->validated());
+        $settlement = $reverseFinancialSettlement->handle($financialSettlement, $request->validated(), $request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Baixa financeira estornada.')]);
 

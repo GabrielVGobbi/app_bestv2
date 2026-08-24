@@ -4,36 +4,47 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Reconciliation;
 
+use App\Models\User;
 use App\Modules\Finance\Enums\BankStatementImportStatus;
 use App\Modules\Finance\Models\BankStatementImport;
 use App\Modules\Finance\Models\BankStatementLine;
 use App\Modules\Finance\Models\FinancialAccount;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
+use App\Modules\Finance\Support\MoneyStringParser;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class ImportBankStatement
 {
-    public function __construct(private readonly SuggestReconciliationMatches $suggestMatches) {}
+    public function __construct(
+        private readonly SuggestReconciliationMatches $suggestMatches,
+        private readonly FinancialCompanyAccess $companyAccess,
+        private readonly MoneyStringParser $moneyParser,
+    ) {}
 
     /**
      * @param  array{company_id?: int|null, financial_account_id?: int|null, source?: string|null}  $payload
      */
-    public function handle(UploadedFile $file, array $payload = []): BankStatementImport
+    public function handle(UploadedFile $file, array $payload = [], ?User $actor = null): BankStatementImport
     {
         $contents = (string) file_get_contents($file->getRealPath());
         $source = strtolower((string) ($payload['source'] ?? $file->getClientOriginalExtension() ?: 'csv'));
         $financialAccount = $this->resolveFinancialAccount($payload);
+        if ($actor instanceof User) {
+            $this->companyAccess->authorize($actor, (int) $financialAccount->company_id);
+        }
         $companyId = (int) $financialAccount->company_id;
         $rows = $source === 'ofx' ? $this->parseOfx($contents) : $this->parseCsv($contents);
 
-        return DB::transaction(function () use ($file, $source, $financialAccount, $companyId, $contents, $rows): BankStatementImport {
+        return DB::transaction(function () use ($file, $source, $financialAccount, $companyId, $contents, $rows, $actor): BankStatementImport {
             $import = BankStatementImport::query()->create([
                 'company_id' => $companyId,
                 'financial_account_id' => $financialAccount->id,
-                'created_by_id' => auth()->id(),
+                'created_by_id' => $actor?->getKey(),
                 'source' => $source,
                 'status' => BankStatementImportStatus::Processed,
                 'original_name' => $file->getClientOriginalName(),
@@ -194,29 +205,13 @@ class ImportBankStatement
 
     private function amountToCents(string $value): int
     {
-        $normalized = preg_replace('/[^\d,.\-+]/', '', trim($value)) ?? '';
-
-        if ($normalized === '') {
-            return 0;
+        try {
+            return $this->moneyParser->toCents($value);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages([
+                'file' => __('O extrato possui valor monetário inválido ou com mais de duas casas decimais.'),
+            ]);
         }
-
-        $commaPosition = strrpos($normalized, ',');
-        $dotPosition = strrpos($normalized, '.');
-
-        if ($commaPosition !== false && $dotPosition !== false) {
-            $decimalSeparator = $commaPosition > $dotPosition ? ',' : '.';
-            $thousandsSeparator = $decimalSeparator === ',' ? '.' : ',';
-            $normalized = str_replace($thousandsSeparator, '', $normalized);
-            $normalized = str_replace($decimalSeparator, '.', $normalized);
-        } elseif ($commaPosition !== false) {
-            $normalized = str_replace('.', '', $normalized);
-            $normalized = str_replace(',', '.', $normalized);
-        } elseif (substr_count($normalized, '.') > 1) {
-            $dotPosition = strrpos($normalized, '.');
-            $normalized = str_replace('.', '', substr($normalized, 0, $dotPosition)).substr($normalized, $dotPosition);
-        }
-
-        return (int) round(((float) $normalized) * 100);
     }
 
     /**

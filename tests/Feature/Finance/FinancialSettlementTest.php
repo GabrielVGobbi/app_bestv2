@@ -429,6 +429,7 @@ class FinancialSettlementTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('financial-installments.settlements.store', $installment), [
+                'idempotency_key' => 'web-settlement-test',
                 'financial_account_id' => $account->id,
                 'gross_amount' => 30000,
             ])

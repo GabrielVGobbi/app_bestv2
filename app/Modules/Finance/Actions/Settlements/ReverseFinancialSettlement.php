@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Finance\Actions\Settlements;
 
+use App\Models\User;
 use App\Modules\Finance\Actions\Entries\RecalculateFinancialEntryStatus;
 use App\Modules\Finance\Enums\FinancialMovementDirection;
 use App\Modules\Finance\Enums\FinancialSettlementStatus;
@@ -11,21 +12,31 @@ use App\Modules\Finance\Models\FinancialAccount;
 use App\Modules\Finance\Models\FinancialInstallment;
 use App\Modules\Finance\Models\FinancialMovement;
 use App\Modules\Finance\Models\FinancialSettlement;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ReverseFinancialSettlement
 {
+    public function __construct(
+        private readonly FinancialCompanyAccess $companyAccess,
+        private readonly RecalculateFinancialEntryStatus $recalculateStatus,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function handle(FinancialSettlement $settlement, array $payload = []): FinancialSettlement
+    public function handle(FinancialSettlement $settlement, array $payload = [], ?User $actor = null): FinancialSettlement
     {
-        return DB::transaction(function () use ($settlement, $payload): FinancialSettlement {
+        return DB::transaction(function () use ($settlement, $payload, $actor): FinancialSettlement {
             $settlement = FinancialSettlement::query()
                 ->with(['allocations.installment', 'financialEntry'])
                 ->lockForUpdate()
                 ->findOrFail($settlement->id);
+
+            if ($actor instanceof User) {
+                $this->companyAccess->authorize($actor, (int) $settlement->company_id);
+            }
 
             if (! $settlement->isPosted()) {
                 throw ValidationException::withMessages([
@@ -92,7 +103,7 @@ class ReverseFinancialSettlement
             $settlement->forceFill([
                 'status' => FinancialSettlementStatus::Reversed,
                 'reversed_at' => now(),
-                'reversed_by_id' => auth()->id(),
+                'reversed_by_id' => $actor?->getKey(),
                 'reverse_reason' => blank($payload['reason'] ?? null) ? null : (string) $payload['reason'],
             ])->save();
 
@@ -113,7 +124,7 @@ class ReverseFinancialSettlement
             ]);
 
             if ($entry) {
-                app(RecalculateFinancialEntryStatus::class)->handle($entry);
+                $this->recalculateStatus->handle($entry);
             }
 
             return $settlement->refresh()->load(['financialEntry', 'allocations.installment', 'movements.financialAccount', 'paymentMethod', 'financialAccount']);

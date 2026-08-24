@@ -5,16 +5,23 @@ declare(strict_types=1);
 namespace App\Modules\Finance\Http\Requests\FinancialSettlement;
 
 use App\Modules\Finance\Models\FinancialAccount;
+use App\Modules\Finance\Models\FinancialInstallment;
 use App\Modules\Finance\Models\FinancialSettlement;
 use App\Modules\Finance\Models\PaymentMethod;
+use App\Modules\Finance\Support\FinancialCompanyAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreFinancialSettlementRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(FinancialCompanyAccess $companyAccess): bool
     {
-        return $this->user()?->can('create', FinancialSettlement::class) ?? false;
+        $user = $this->user();
+        $installment = $this->route('financial_installment');
+
+        return $user?->can('create', FinancialSettlement::class) === true
+            && $installment instanceof FinancialInstallment
+            && $companyAccess->canAccess($user, (int) $installment->company_id);
     }
 
     /**
@@ -31,6 +38,7 @@ class StoreFinancialSettlementRequest extends FormRequest
             'interest_amount' => ['nullable', 'integer', 'min:0'],
             'penalty_amount' => ['nullable', 'integer', 'min:0'],
             'origin' => ['nullable', 'string', 'max:32'],
+            'idempotency_key' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9._:-]+$/'],
             'metadata' => ['nullable', 'array'],
         ];
     }
