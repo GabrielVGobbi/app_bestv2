@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
 
 #[Fillable([
     'uuid',
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'reference',
     'line_hash',
     'raw_payload',
+    'protected_payload',
     'reconciled_at',
 ])]
 class BankStatementLine extends Model
@@ -32,6 +34,19 @@ class BankStatementLine extends Model
     use HasActivityLog, HasUuidIdentifier;
 
     protected string $activityLogName = 'finance.statement-lines';
+
+    /** @var list<string> */
+    protected $hidden = ['raw_payload', 'protected_payload'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logExcept(['raw_payload', 'protected_payload'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName($this->activityLogName);
+    }
 
     /** @var array<string, mixed> */
     protected $attributes = [
@@ -69,6 +84,7 @@ class BankStatementLine extends Model
             'posted_at' => 'date',
             'amount' => 'integer',
             'raw_payload' => 'array',
+            'protected_payload' => 'encrypted:array',
             'reconciled_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

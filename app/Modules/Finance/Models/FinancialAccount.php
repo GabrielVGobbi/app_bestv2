@@ -9,6 +9,7 @@ use App\Concerns\Searchable;
 use App\Modules\Companies\Models\Company;
 use App\Modules\Finance\Database\Factories\FinancialAccountFactory;
 use App\Modules\Finance\Enums\FinancialAccountType;
+use App\Supports\Traits\HasActivityLog;
 use App\Supports\Traits\HasUuidIdentifier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,7 +39,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class FinancialAccount extends Model
 {
-    use Exportable, HasFactory, HasUuidIdentifier, Searchable;
+    use Exportable, HasActivityLog, HasFactory, HasUuidIdentifier, Searchable;
+
+    protected string $activityLogName = 'finance.accounts';
 
     /** @var array<string, string> */
     protected array $exportable = [

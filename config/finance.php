@@ -11,4 +11,7 @@ return [
     |
     */
     'global_company_roles' => ['developer', 'admin', 'super-admin'],
+
+    /* Payloads are retained encrypted; deletion is intentionally outside FIN2. */
+    'bank_statement_payload_retention_days' => (int) env('FINANCE_BANK_PAYLOAD_RETENTION_DAYS', 365),
 ];

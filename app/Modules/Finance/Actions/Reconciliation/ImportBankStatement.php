@@ -79,7 +79,8 @@ class ImportBankStatement
                     'amount' => $row['amount'],
                     'reference' => $row['reference'],
                     'line_hash' => $hash,
-                    'raw_payload' => $row['raw_payload'],
+                    'raw_payload' => null,
+                    'protected_payload' => $row['protected_payload'],
                 ]);
 
                 $this->suggestMatches->handle($line);
@@ -128,7 +129,7 @@ class ImportBankStatement
     }
 
     /**
-     * @return array<int, array{posted_at: string, description: string, amount: int, reference: ?string, raw_payload: array<string, mixed>}>
+     * @return array<int, array{posted_at: string, description: string, amount: int, reference: ?string, protected_payload: array<string, mixed>}>
      */
     private function parseCsv(string $contents): array
     {
@@ -159,7 +160,13 @@ class ImportBankStatement
                 'description' => trim((string) ($data['description'] ?? $data['memo'] ?? 'Linha de extrato')),
                 'amount' => $this->amountToCents((string) ($data['amount'] ?? 0)),
                 'reference' => blank($data['reference'] ?? null) ? null : trim((string) $data['reference']),
-                'raw_payload' => $data,
+                'protected_payload' => [
+                    'source' => 'csv',
+                    'date' => $data['date'] ?? $data['posted_at'] ?? null,
+                    'description' => $data['description'] ?? $data['memo'] ?? null,
+                    'amount' => $data['amount'] ?? null,
+                    'reference' => $data['reference'] ?? null,
+                ],
             ];
         }
 
@@ -167,7 +174,7 @@ class ImportBankStatement
     }
 
     /**
-     * @return array<int, array{posted_at: string, description: string, amount: int, reference: ?string, raw_payload: array<string, mixed>}>
+     * @return array<int, array{posted_at: string, description: string, amount: int, reference: ?string, protected_payload: array<string, mixed>}>
      */
     private function parseOfx(string $contents): array
     {
@@ -185,8 +192,12 @@ class ImportBankStatement
                 'description' => trim($description),
                 'amount' => $this->amountToCents($amount),
                 'reference' => blank($reference) ? null : trim((string) $reference),
-                'raw_payload' => [
-                    'ofx_block' => trim((string) $block),
+                'protected_payload' => [
+                    'source' => 'ofx',
+                    'posted_at' => $postedAt,
+                    'description' => $description,
+                    'amount' => $amount,
+                    'reference' => $reference,
                 ],
             ];
         }
