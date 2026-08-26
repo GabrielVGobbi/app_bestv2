@@ -177,7 +177,7 @@ class PlaylistController extends Controller
             return;
         }
 
-        if ($playlist->spotify_last_synced_at !== null) {
+        if ($trigger !== 'created' && $playlist->spotify_last_synced_at !== null) {
             return;
         }
 

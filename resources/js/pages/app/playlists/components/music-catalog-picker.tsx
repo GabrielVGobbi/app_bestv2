@@ -33,6 +33,7 @@ interface Props {
     selectedSubgenreIds: number[];
     errors: Record<string, string>;
     canCreate?: boolean;
+    required?: boolean;
     onGenresChange: (genres: MusicGenre[]) => void;
     onSubgenresChange: (subgenres: MusicSubgenre[]) => void;
     onGenreChange: (genreId: string) => void;
@@ -44,6 +45,7 @@ interface MusicGenrePickerProps {
     selectedGenreId: string;
     error?: string;
     canCreate?: boolean;
+    required?: boolean;
     showSubgenreCount?: boolean;
     onGenresChange: (genres: MusicGenre[]) => void;
     onGenreChange: (genreId: string) => void;
@@ -256,6 +258,7 @@ export function MusicGenrePicker({
     selectedGenreId,
     error,
     canCreate = false,
+    required = false,
     showSubgenreCount = true,
     onGenresChange,
     onGenreChange,
@@ -275,7 +278,12 @@ export function MusicGenrePicker({
 
     return (
         <div className="space-y-2">
-            <Label htmlFor="field-music-genre">Gênero musical</Label>
+            <Label htmlFor="field-music-genre">
+                Gênero musical
+                {required ? (
+                    <span className="text-destructive"> *</span>
+                ) : null}
+            </Label>
             <div className="flex gap-2">
                 <AsyncSelect
                     className="min-w-0 flex-1"
@@ -614,6 +622,7 @@ export function MusicCatalogPicker({
     selectedSubgenreIds,
     errors,
     canCreate = false,
+    required = false,
     onGenresChange,
     onSubgenresChange,
     onGenreChange,
@@ -693,6 +702,7 @@ export function MusicCatalogPicker({
                 selectedGenreId={selectedGenreId}
                 error={errors.music_genre_id}
                 canCreate={canCreate}
+                required={required}
                 onGenresChange={onGenresChange}
                 onGenreChange={selectGenre}
             />

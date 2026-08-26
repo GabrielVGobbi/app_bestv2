@@ -3,12 +3,10 @@ import {
     AlertTriangle,
     ArrowLeft,
     CheckCircle2,
-    Loader2,
     Save,
-    Search,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -18,9 +16,7 @@ import {
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import previewSpotifyPlaylist from '@/actions/App/Modules/Playlists/Http/Controllers/SpotifyPlaylistPreviewController';
 import Header from '@/components/dashboard/header';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -29,9 +25,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
+import SpotifyPlaylistImporter from '@/pages/app/playlists/components/spotify-playlist-importer';
 import PlaylistFormFields from '@/pages/app/playlists/partials/playlist-form-fields';
 import { csrfCookie } from '@/routes/sanctum';
 import type {
@@ -43,6 +39,8 @@ import type {
 interface Props {
     formOptions: PlaylistFormOptions;
 }
+
+type CreateOrigin = 'spotify' | 'manual';
 
 interface CreateFormSectionProps {
     title: string;
@@ -92,6 +90,23 @@ function CreateFormSection({
     );
 }
 
+function draftFromPreview(preview: SpotifyPlaylistPreview): Partial<Playlist> {
+    return {
+        name: preview.name ?? '',
+        spotify_playlist_id: preview.spotify_playlist_id,
+        spotify_url: preview.spotify_url,
+        spotify_name: preview.name,
+        spotify_description: preview.description,
+        spotify_public: preview.public,
+        spotify_image_url: preview.image_url,
+        spotify_snapshot_id: preview.spotify_snapshot_id,
+        spotify_owner_id: preview.spotify_owner_id,
+        spotify_owner_name: preview.spotify_owner_name,
+        spotify_tracks_total: preview.spotify_tracks_total,
+        followers_count: preview.followers_count,
+    };
+}
+
 export default function CreatePlaylist({ formOptions }: Props) {
     setLayoutProps({
         breadcrumbs: [
@@ -100,9 +115,13 @@ export default function CreatePlaylist({ formOptions }: Props) {
         ],
     });
 
+    const [origin, setOrigin] = useState<CreateOrigin>('spotify');
     const [spotifyInput, setSpotifyInput] = useState('');
     const [spotifyPreview, setSpotifyPreview] =
         useState<SpotifyPlaylistPreview | null>(null);
+    const [spotifyFieldError, setSpotifyFieldError] = useState<string | null>(
+        null,
+    );
     const [spotifyPreviewIssue, setSpotifyPreviewIssue] =
         useState<SpotifyPreviewIssue | null>(null);
     const [playlistDraft, setPlaylistDraft] = useState<
@@ -117,12 +136,40 @@ export default function CreatePlaylist({ formOptions }: Props) {
         spotify_input: spotifyInput,
     });
 
-    async function submitSpotifyPreview(
-        event: FormEvent<HTMLFormElement>,
-    ): Promise<void> {
-        event.preventDefault();
+    const isSpotifyOrigin = origin === 'spotify';
+    const showCommercialForm = !isSpotifyOrigin || spotifyPreview !== null;
+
+    function handleOriginChange(value: string): void {
+        if (value !== 'spotify' && value !== 'manual') {
+            return;
+        }
+
+        setOrigin(value);
+        setSpotifyFieldError(null);
+
+        if (value === 'manual' && !spotifyPreview) {
+            setFormKey('manual');
+        }
+    }
+
+    function handleSpotifyInputChange(value: string): void {
+        setSpotifyInput(value);
+        setSpotifyPreviewData('spotify_input', value);
+        setSpotifyFieldError(null);
+    }
+
+    async function searchSpotifyPlaylist(input: string): Promise<void> {
+        const spotifyValue = input.trim();
+
+        if (spotifyValue === '') {
+            return;
+        }
+
         setSpotifyPreview(null);
+        setSpotifyFieldError(null);
         setSpotifyPreviewIssue(null);
+        setSpotifyInput(spotifyValue);
+        setSpotifyPreviewData('spotify_input', spotifyValue);
 
         try {
             await refreshCsrfCookie();
@@ -142,27 +189,27 @@ export default function CreatePlaylist({ formOptions }: Props) {
                 const body = response as { data?: SpotifyPlaylistPreview };
 
                 if (!body.data) {
-                    setSpotifyPreviewIssue({
-                        title: 'Não foi possível buscar a playlist',
-                        message:
-                            'O Spotify não retornou dados para esta playlist.',
-                    });
+                    setSpotifyFieldError(
+                        'O Spotify não retornou dados para esta playlist.',
+                    );
 
                     return;
                 }
 
                 setSpotifyPreview(body.data);
+                setPlaylistDraft(draftFromPreview(body.data));
+                setFormKey(
+                    `spotify-${body.data.spotify_playlist_id}-${Date.now()}`,
+                );
             },
             onError: (errors) => {
                 const message = errors.spotify_input;
 
-                setSpotifyPreviewIssue({
-                    title: 'Não foi possível buscar a playlist',
-                    message:
-                        typeof message === 'string'
-                            ? message
-                            : 'Informe um link ou ID válido de playlist.',
-                });
+                setSpotifyFieldError(
+                    typeof message === 'string'
+                        ? message
+                        : 'Informe um link ou ID válido de playlist.',
+                );
             },
             onHttpException: (response) => {
                 const body = response.data as
@@ -202,37 +249,13 @@ export default function CreatePlaylist({ formOptions }: Props) {
                     return;
                 }
 
-                setSpotifyPreviewIssue({
-                    title: 'Não foi possível consultar o Spotify',
-                    message:
-                        body?.message ??
+                setSpotifyFieldError(
+                    body?.message ??
                         body?.data?.message ??
                         'Não foi possível consultar o Spotify agora.',
-                    tone: 'danger',
-                });
+                );
             },
         });
-    }
-    function applySpotifyPreview(): void {
-        if (!spotifyPreview) {
-            return;
-        }
-
-        setPlaylistDraft({
-            name: spotifyPreview.name ?? '',
-            spotify_playlist_id: spotifyPreview.spotify_playlist_id,
-            spotify_url: spotifyPreview.spotify_url,
-            spotify_snapshot_id: spotifyPreview.spotify_snapshot_id,
-            spotify_owner_id: spotifyPreview.spotify_owner_id,
-            spotify_owner_name: spotifyPreview.spotify_owner_name,
-            spotify_tracks_total: spotifyPreview.spotify_tracks_total,
-            spotify_last_synced_at: new Date().toISOString(),
-            followers_count: spotifyPreview.followers_count,
-        });
-        setFormKey(
-            `spotify-${spotifyPreview.spotify_playlist_id}-${Date.now()}`,
-        );
-        toast.success('Dados aplicados ao formulÃ¡rio.');
     }
 
     return (
@@ -254,7 +277,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                     <div>
                         <h1 className="text-xl font-semibold">Nova Playlist</h1>
                         <p className="text-sm text-muted-foreground">
-                            Cadastrar canal musical comercializÃ¡vel
+                            Cadastrar canal musical comercializável
                         </p>
                     </div>
                 </div>
@@ -345,7 +368,9 @@ export default function CreatePlaylist({ formOptions }: Props) {
                             ) : (
                                 <Button
                                     type="button"
-                                    onClick={() => setSpotifyPreviewIssue(null)}
+                                    onClick={() =>
+                                        setSpotifyPreviewIssue(null)
+                                    }
                                 >
                                     Entendi
                                 </Button>
@@ -357,160 +382,116 @@ export default function CreatePlaylist({ formOptions }: Props) {
 
             <div className="page-wrapper-lg p-4 sm:p-6">
                 <CreateFormSection
-                    title="Buscar pelo Spotify"
-                    description="Cole o link público ou o ID da playlist para preencher os dados principais."
+                    title="Origem da playlist"
+                    description="Importe pelo Spotify para preencher capa e métricas, ou cadastre manualmente."
                 >
-                    <Card className="overflow-hidden py-0 shadow-xs">
-                        <CardContent className="space-y-4 p-4 sm:p-6">
-                            <form
-                                className="grid gap-3 sm:grid-cols-[1fr_auto]"
-                                onSubmit={submitSpotifyPreview}
-                            >
-                                <div className="space-y-2">
-                                    <Label htmlFor="spotify-preview-input">
-                                        Link ou ID da playlist
-                                    </Label>
-                                    <Input
-                                        id="spotify-preview-input"
-                                        name="spotify_input"
-                                        value={spotifyInput}
-                                        onChange={(event) => {
-                                            setSpotifyInput(event.target.value);
-                                            setSpotifyPreviewData(
-                                                'spotify_input',
-                                                event.target.value,
-                                            );
-                                        }}
-                                        placeholder="https://open.spotify.com/playlist/... ou 37i9dQZF..."
-                                        autoComplete="off"
-                                        required
-                                    />
-                                </div>
-                                <div className="flex items-end">
-                                    <Button
-                                        type="submit"
-                                        className="w-full sm:w-auto"
-                                        disabled={previewProcessing}
-                                    >
-                                        {previewProcessing ? (
-                                            <Loader2 className="animate-spin" />
-                                        ) : (
-                                            <Search />
-                                        )}
-                                        Buscar dados
-                                    </Button>
-                                </div>
-                            </form>
-
-                            {spotifyPreview ? (
-                                <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="space-y-1">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <CheckCircle2 className="size-4 text-emerald-600" />
-                                            <p className="font-medium">
-                                                {spotifyPreview.name ??
-                                                    'Playlist Spotify'}
-                                            </p>
-                                            {spotifyPreview.is_partial ? (
-                                                <Badge variant="outline">
-                                                    Dados básicos
-                                                </Badge>
-                                            ) : null}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">
-                                            {spotifyPreview.spotify_owner_name ??
-                                                'Dono não informado'}
-                                            {' · '}
-                                            {spotifyPreview.followers_count?.toLocaleString(
-                                                'pt-BR',
-                                            ) ?? 'Não disponível'}{' '}
-                                            seguidores
-                                            {' · '}
-                                            {spotifyPreview.spotify_tracks_total?.toLocaleString(
-                                                'pt-BR',
-                                            ) ?? 'Não disponível'}{' '}
-                                            faixas
-                                        </p>
-                                        {spotifyPreview.is_partial ? (
-                                            <p className="text-xs text-muted-foreground">
-                                                O Spotify liberou apenas os
-                                                dados básicos pelo embed
-                                                oficial.
-                                            </p>
-                                        ) : null}
-                                        <p className="font-mono text-xs text-muted-foreground">
-                                            {spotifyPreview.spotify_playlist_id}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={applySpotifyPreview}
-                                    >
-                                        Aplicar ao formulário
-                                    </Button>
-                                </div>
-                            ) : null}
-                        </CardContent>
-                    </Card>
+                    <ToggleGroup
+                        type="single"
+                        value={origin}
+                        onValueChange={handleOriginChange}
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                    >
+                        <ToggleGroupItem
+                            value="spotify"
+                            aria-label="Importar do Spotify"
+                            className="px-4"
+                        >
+                            Importar do Spotify
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value="manual"
+                            aria-label="Cadastro manual"
+                            className="px-4"
+                        >
+                            Cadastro manual
+                        </ToggleGroupItem>
+                    </ToggleGroup>
                 </CreateFormSection>
 
-                <Form
-                    action={store.url()}
-                    method="post"
-                    options={{ preserveScroll: true }}
-                    onError={() =>
-                        toast.error('Verifique os campos obrigatórios.')
-                    }
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <div>
-                            <PlaylistFormFields
-                                key={formKey}
-                                playlist={playlistDraft}
-                                options={formOptions}
-                                errors={errors}
-                                layout="section-cards"
-                            />
+                {isSpotifyOrigin ? (
+                    <CreateFormSection
+                        title="Buscar no Spotify"
+                        description="Cole o link público ou o ID. Os dados principais entram sozinhos no formulário."
+                    >
+                        <SpotifyPlaylistImporter
+                            value={spotifyInput}
+                            processing={previewProcessing}
+                            preview={spotifyPreview}
+                            error={spotifyFieldError}
+                            onChange={handleSpotifyInputChange}
+                            onSearch={searchSpotifyPlaylist}
+                        />
+                    </CreateFormSection>
+                ) : null}
 
-                            <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
-                                <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <p className="text-xs text-muted-foreground">
-                                        Campos marcados com{' '}
-                                        <span className="text-destructive">
-                                            *
-                                        </span>{' '}
-                                        são obrigatórios.
-                                    </p>
-                                    <div className="flex items-center justify-end gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                            disabled={processing}
-                                        >
-                                            <Link href={index.url()}>
-                                                Cancelar
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            size="sm"
-                                            disabled={processing}
-                                        >
-                                            <Save />
-                                            {processing
-                                                ? 'Salvando...'
-                                                : 'Salvar'}
-                                        </Button>
+                {showCommercialForm ? (
+                    <Form
+                        action={store.url()}
+                        method="post"
+                        options={{ preserveScroll: true }}
+                        onError={() =>
+                            toast.error('Verifique os campos obrigatórios.')
+                        }
+                        className="flex h-full flex-col"
+                    >
+                        {({ errors, processing }) => (
+                            <div>
+                                <PlaylistFormFields
+                                    key={formKey}
+                                    playlist={playlistDraft}
+                                    options={formOptions}
+                                    errors={errors}
+                                    layout="section-cards"
+                                    spotifyImported={
+                                        isSpotifyOrigin &&
+                                        spotifyPreview !== null
+                                    }
+                                />
+
+                                <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                                    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="text-xs text-muted-foreground">
+                                            Campos marcados com{' '}
+                                            <span className="text-destructive">
+                                                *
+                                            </span>{' '}
+                                            são obrigatórios.
+                                        </p>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                                disabled={processing}
+                                            >
+                                                <Link href={index.url()}>
+                                                    Cancelar
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                size="sm"
+                                                disabled={processing}
+                                            >
+                                                <Save />
+                                                {processing
+                                                    ? 'Salvando...'
+                                                    : 'Salvar'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </Form>
+                        )}
+                    </Form>
+                ) : (
+                    <p className="py-8 text-sm text-muted-foreground md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                        Cole o link para puxar capa e métricas, ou use o
+                        cadastro manual.
+                    </p>
+                )}
             </div>
         </>
     );

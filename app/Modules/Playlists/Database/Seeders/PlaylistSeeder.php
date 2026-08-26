@@ -12,6 +12,8 @@ use App\Modules\Playlists\Models\PlaylistTop;
 use App\Modules\Playlists\Models\Top;
 use App\Modules\Uploads\Models\Uploaded;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class PlaylistSeeder extends Seeder
 {
@@ -33,7 +35,13 @@ class PlaylistSeeder extends Seeder
             $genre->subgenres()->syncWithoutDetaching($subgenreIds);
 
             $coverUploadData = $playlistData['spotify_cover_upload'];
-            unset($playlistData['music_genre_slug'], $playlistData['subgenre_slugs'], $playlistData['spotify_cover_upload']);
+            $coverAsset = $playlistData['spotify_cover_asset'] ?? null;
+            unset(
+                $playlistData['music_genre_slug'],
+                $playlistData['subgenre_slugs'],
+                $playlistData['spotify_cover_upload'],
+                $playlistData['spotify_cover_asset'],
+            );
 
             $playlist = Playlist::query()
                 ->withTrashed()
@@ -51,7 +59,10 @@ class PlaylistSeeder extends Seeder
 
             $playlist->subgenres()->sync($subgenreIds);
 
-            if (is_array($coverUploadData)) {
+            if (is_string($coverAsset) && $coverAsset !== '') {
+                $coverUpload = $this->seedSpotifyCoverFromAsset($playlist, $coverAsset);
+                $playlist->forceFill(['spotify_cover_upload_id' => $coverUpload->id])->save();
+            } elseif (is_array($coverUploadData)) {
                 $coverUpload = $this->seedSpotifyCoverUpload($playlist, $coverUploadData);
                 $playlist->forceFill(['spotify_cover_upload_id' => $coverUpload->id])->save();
             }
@@ -117,6 +128,59 @@ class PlaylistSeeder extends Seeder
         return $coverUpload;
     }
 
+    private function seedSpotifyCoverFromAsset(Playlist $playlist, string $assetFileName): Uploaded
+    {
+        $sourcePath = database_path('seeders/assets/playlist-covers/'.$assetFileName);
+
+        if (! is_file($sourcePath)) {
+            throw new RuntimeException("Arquivo de capa ausente: {$assetFileName}");
+        }
+
+        $contents = file_get_contents($sourcePath);
+
+        if ($contents === false) {
+            throw new RuntimeException("Não foi possível ler a capa: {$assetFileName}");
+        }
+
+        $extension = pathinfo($assetFileName, PATHINFO_EXTENSION) ?: 'jpg';
+        $disk = (string) config('uploads.disk', 'local');
+        $path = sprintf('uploads/playlist/%s/spotify-covers/seed/%s', $playlist->uuid, $assetFileName);
+
+        Storage::disk($disk)->put($path, $contents);
+
+        $coverUpload = Uploaded::query()
+            ->withTrashed()
+            ->updateOrCreate(
+                ['path' => $path],
+                [
+                    'user_id' => null,
+                    'uploader_id' => null,
+                    'parentable_type' => Playlist::class,
+                    'parentable_id' => $playlist->id,
+                    'name' => 'Capa Spotify',
+                    'file_name' => $assetFileName,
+                    'original_name' => 'spotify-cover.'.$extension,
+                    'mime_type' => 'image/jpeg',
+                    'extension' => $extension,
+                    'disk' => $disk,
+                    'file_hash' => hash('sha256', $contents),
+                    'size' => strlen($contents),
+                    'tag' => 'spotify-cover',
+                    'collection' => 'images',
+                    'is_cover' => true,
+                    'is_favorite' => false,
+                    'source' => 'spotify',
+                    'uploaded_images' => null,
+                ],
+            );
+
+        if ($coverUpload->trashed()) {
+            $coverUpload->restore();
+        }
+
+        return $coverUpload;
+    }
+
     /**
      * @return array<int, array{
      *     uuid: string,
@@ -142,7 +206,8 @@ class PlaylistSeeder extends Seeder
      *     estimated_reach: ?int,
      *     external_metadata: ?array<string, string>,
      *     notes: ?string,
-     *     spotify_cover_upload: ?array<string, mixed>
+     *     spotify_cover_upload: ?array<string, mixed>,
+     *     spotify_cover_asset: ?string
      * }>
      */
     private function playlists(): array
@@ -221,6 +286,114 @@ class PlaylistSeeder extends Seeder
                     'source' => 'spotify',
                     'uploaded_images' => null,
                 ],
+            ],
+            [
+                'uuid' => 'c8f3a1d4-7e2b-4c91-9a55-2d8f6b1e4c70',
+                'music_genre_slug' => 'indie',
+                'subgenre_slugs' => ['lo-fi'],
+                'name' => 'Estudando / Trabalhando',
+                'slug' => 'estudando-trabalhando',
+                'status' => PlaylistStatus::Active,
+                'partner_name' => 'Curadoria BestPlay',
+                'spotify_playlist_id' => '6TDC4Xu4LxuAVS3OvfQSkw',
+                'spotify_url' => 'https://open.spotify.com/playlist/6TDC4Xu4LxuAVS3OvfQSkw',
+                'spotify_name' => 'Estudando / Trabalhando',
+                'spotify_description' => null,
+                'spotify_public' => true,
+                'spotify_image_url' => 'https://mosaic.scdn.co/640/ab67616d00001e0224ec4c21ab7fafcd54036691ab67616d00001e0229b94c1a0668cc1cb6d61b95ab67616d00001e02966f02ecbe9cc4f203ad3c55ab67616d00001e02af634982d9b15de3c77f7dd9',
+                'spotify_cover_upload_id' => null,
+                'spotify_snapshot_id' => 'AAAAB93T3n+WPIY6QHNvuv8+mszfETCp',
+                'spotify_owner_id' => 'gabrielvgobbi',
+                'spotify_owner_name' => 'gabrielvgobbi',
+                'spotify_tracks_total' => 5,
+                'youtube_url' => null,
+                'followers_count' => 0,
+                'estimated_reach' => null,
+                'external_metadata' => null,
+                'notes' => null,
+                'spotify_cover_upload' => null,
+                'spotify_cover_asset' => '6TDC4Xu4LxuAVS3OvfQSkw.jpg',
+            ],
+            [
+                'uuid' => 'a7e9b2c1-5d44-4f08-8b33-1c6a9e0f2d81',
+                'music_genre_slug' => 'pop',
+                'subgenre_slugs' => ['pop-internacional'],
+                'name' => 'Playlist compartilhada',
+                'slug' => 'playlist-compartilhada',
+                'status' => PlaylistStatus::Active,
+                'partner_name' => 'Curadoria BestPlay',
+                'spotify_playlist_id' => '1ezfKhGgDGFzXZLTwRWUHc',
+                'spotify_url' => 'https://open.spotify.com/playlist/1ezfKhGgDGFzXZLTwRWUHc',
+                'spotify_name' => null,
+                'spotify_description' => null,
+                'spotify_public' => null,
+                'spotify_image_url' => null,
+                'spotify_cover_upload_id' => null,
+                'spotify_snapshot_id' => null,
+                'spotify_owner_id' => null,
+                'spotify_owner_name' => null,
+                'spotify_tracks_total' => null,
+                'youtube_url' => null,
+                'followers_count' => 0,
+                'estimated_reach' => null,
+                'external_metadata' => null,
+                'notes' => 'Cadastrada pelo link compartilhado. O Spotify não liberou metadados públicos para esta credencial.',
+                'spotify_cover_upload' => null,
+                'spotify_cover_asset' => null,
+            ],
+            [
+                'uuid' => 'b4d1c8e7-3a90-4e12-9f66-0e5b7d2a8c93',
+                'music_genre_slug' => 'eletronica',
+                'subgenre_slugs' => ['edm'],
+                'name' => 'No céu tem supino',
+                'slug' => 'no-ceu-tem-supino',
+                'status' => PlaylistStatus::Active,
+                'partner_name' => 'Curadoria BestPlay',
+                'spotify_playlist_id' => '4gPDsOsNtnfzlJNCzt6qLX',
+                'spotify_url' => 'https://open.spotify.com/playlist/4gPDsOsNtnfzlJNCzt6qLX',
+                'spotify_name' => 'No céu tem supino 🏅🏋️🙏',
+                'spotify_description' => null,
+                'spotify_public' => true,
+                'spotify_image_url' => 'https://mosaic.scdn.co/640/ab67616d00001e020f4e6125fb1be367bee6c9f5ab67616d00001e0214bd9a6b6aff4fbf9b166986ab67616d00001e022803df6496300a18cbadc589ab67616d00001e02a43273c6be8d0667d3732391',
+                'spotify_cover_upload_id' => null,
+                'spotify_snapshot_id' => 'AAAACuwBEOr6GKKYT/1ARyop33fnlpQd',
+                'spotify_owner_id' => 'gabrielvgobbi',
+                'spotify_owner_name' => 'gabrielvgobbi',
+                'spotify_tracks_total' => 9,
+                'youtube_url' => null,
+                'followers_count' => 0,
+                'estimated_reach' => null,
+                'external_metadata' => null,
+                'notes' => null,
+                'spotify_cover_upload' => null,
+                'spotify_cover_asset' => '4gPDsOsNtnfzlJNCzt6qLX.jpg',
+            ],
+            [
+                'uuid' => 'd2f6e0a9-8c17-4b25-a144-3f9c1e7b5d04',
+                'music_genre_slug' => 'pop',
+                'subgenre_slugs' => ['pop-nacional'],
+                'name' => 'Para ouvir no carro',
+                'slug' => 'para-ouvir-no-carro',
+                'status' => PlaylistStatus::Active,
+                'partner_name' => 'Curadoria BestPlay',
+                'spotify_playlist_id' => '0oBDLzQcjnIvZcOXT2YTAk',
+                'spotify_url' => 'https://open.spotify.com/playlist/0oBDLzQcjnIvZcOXT2YTAk',
+                'spotify_name' => 'Para ouvir no carro',
+                'spotify_description' => null,
+                'spotify_public' => true,
+                'spotify_image_url' => 'https://mosaic.scdn.co/640/ab67616d00001e02003f81b1f4246362638e682dab67616d00001e028265a736a1eb838ad5a0b921ab67616d00001e029a7e719f37e9264656b95997ab67616d00001e02f36a4e2e1687e678f29328cb',
+                'spotify_cover_upload_id' => null,
+                'spotify_snapshot_id' => 'AAAADF7sKfu/vtfJrQFVf01nW1TMDWvL',
+                'spotify_owner_id' => 'gabrielvgobbi',
+                'spotify_owner_name' => 'gabrielvgobbi',
+                'spotify_tracks_total' => 8,
+                'youtube_url' => null,
+                'followers_count' => 0,
+                'estimated_reach' => null,
+                'external_metadata' => null,
+                'notes' => null,
+                'spotify_cover_upload' => null,
+                'spotify_cover_asset' => '0oBDLzQcjnIvZcOXT2YTAk.jpg',
             ],
         ];
     }

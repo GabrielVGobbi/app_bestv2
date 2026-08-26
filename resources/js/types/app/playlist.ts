@@ -151,12 +151,15 @@ export interface SpotifyPlaylistPreview {
     spotify_playlist_id: string;
     spotify_url: string;
     name: string | null;
+    description: string | null;
     followers_count: number | null;
     spotify_owner_id: string | null;
     spotify_owner_name: string | null;
     spotify_tracks_total: number | null;
     spotify_snapshot_id: string | null;
     public: boolean | null;
+    images: Array<{ url?: string | null; width?: number | null; height?: number | null }>;
+    image_url: string | null;
     source: 'web_api' | 'oembed';
     is_partial: boolean;
 }

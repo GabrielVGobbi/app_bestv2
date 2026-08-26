@@ -136,8 +136,14 @@ class StorePlaylistRequest extends FormRequest
     /** @return array<string, mixed> */
     public function playlistPayload(): array
     {
+        $except = ['subgenre_ids'];
+
+        if (! $this->route('playlist')) {
+            $except[] = 'spotify_last_synced_at';
+        }
+
         return collect($this->validated())
-            ->except('subgenre_ids')
+            ->except($except)
             ->all();
     }
 
@@ -172,6 +178,7 @@ class StorePlaylistRequest extends FormRequest
             'followers_count' => $this->normalizeNullableInteger($this->input('followers_count')),
             'estimated_reach' => $this->normalizeNullableInteger($this->input('estimated_reach')),
             'external_metadata' => $this->normalizeMetadata($this->input('external_metadata')),
+            ...(! $playlist instanceof Playlist ? ['spotify_last_synced_at' => null] : []),
         ]);
     }
 

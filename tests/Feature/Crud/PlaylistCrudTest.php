@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Crud;
 
+use App\Jobs\SyncPlaylistFromSpotifyJob;
 use App\Models\User;
 use App\Modules\Permissions\Models\Permission;
 use App\Modules\Playlists\Database\Seeders\PlaylistSeeder;
@@ -15,7 +16,9 @@ use App\Modules\Playlists\Models\PlaylistTop;
 use App\Modules\Playlists\Models\Top;
 use App\Modules\Uploads\Models\Uploaded;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -33,9 +36,9 @@ class PlaylistCrudTest extends TestCase
 
         $this->assertSame(12, MusicGenre::query()->count());
         $this->assertGreaterThanOrEqual(60, MusicSubgenre::query()->count());
-        $this->assertSame(2, Playlist::query()->count());
+        $this->assertSame(6, Playlist::query()->count());
         $this->assertSame(5, Top::query()->count());
-        $this->assertSame(10, PlaylistTop::query()->count());
+        $this->assertSame(30, PlaylistTop::query()->count());
         $this->assertDatabaseHas('music_genres', ['slug' => 'pop']);
         $this->assertDatabaseHas('music_genres', ['slug' => 'rock']);
         $this->assertDatabaseHas('music_subgenres', ['slug' => 'indie-pop']);
@@ -116,6 +119,34 @@ class PlaylistCrudTest extends TestCase
 
         $this->assertCount(5, $runningPlaylistTops);
         $this->assertSame(249900, $runningPlaylistTops->get('top-1')->price);
+
+        $seededSpotifyPlaylists = Playlist::query()
+            ->with('spotifyCoverUpload')
+            ->whereIn('spotify_playlist_id', [
+                '6TDC4Xu4LxuAVS3OvfQSkw',
+                '1ezfKhGgDGFzXZLTwRWUHc',
+                '4gPDsOsNtnfzlJNCzt6qLX',
+                '0oBDLzQcjnIvZcOXT2YTAk',
+            ])
+            ->get()
+            ->keyBy('spotify_playlist_id');
+
+        $this->assertCount(4, $seededSpotifyPlaylists);
+        $this->assertSame('Estudando / Trabalhando', $seededSpotifyPlaylists->get('6TDC4Xu4LxuAVS3OvfQSkw')?->name);
+        $this->assertSame('Playlist compartilhada', $seededSpotifyPlaylists->get('1ezfKhGgDGFzXZLTwRWUHc')?->name);
+        $this->assertSame('No céu tem supino', $seededSpotifyPlaylists->get('4gPDsOsNtnfzlJNCzt6qLX')?->name);
+        $this->assertSame('Para ouvir no carro', $seededSpotifyPlaylists->get('0oBDLzQcjnIvZcOXT2YTAk')?->name);
+
+        $this->assertInstanceOf(Uploaded::class, $seededSpotifyPlaylists->get('6TDC4Xu4LxuAVS3OvfQSkw')?->spotifyCoverUpload);
+        $this->assertInstanceOf(Uploaded::class, $seededSpotifyPlaylists->get('4gPDsOsNtnfzlJNCzt6qLX')?->spotifyCoverUpload);
+        $this->assertInstanceOf(Uploaded::class, $seededSpotifyPlaylists->get('0oBDLzQcjnIvZcOXT2YTAk')?->spotifyCoverUpload);
+        $this->assertNull($seededSpotifyPlaylists->get('1ezfKhGgDGFzXZLTwRWUHc')?->spotify_cover_upload_id);
+
+        $estudandoCover = $seededSpotifyPlaylists->get('6TDC4Xu4LxuAVS3OvfQSkw')?->spotifyCoverUpload;
+        $this->assertNotNull($estudandoCover);
+        $this->assertTrue(Storage::disk($estudandoCover->disk)->exists($estudandoCover->path));
+        $this->assertSame('spotify-cover', $estudandoCover->tag);
+        $this->assertTrue($estudandoCover->is_cover);
     }
 
     public function test_authorized_user_can_view_playlist_pages(): void
@@ -185,6 +216,8 @@ class PlaylistCrudTest extends TestCase
         ]);
         $genre->subgenres()->attach($subgenre);
 
+        Queue::fake();
+
         $this->actingAs($user)
             ->post(route('playlists.store'), [
                 'name' => 'Brasil Acústico',
@@ -216,9 +249,13 @@ class PlaylistCrudTest extends TestCase
         $this->assertSame('bestplay', $playlist->spotify_owner_id);
         $this->assertSame('BestPlay Curadoria', $playlist->spotify_owner_name);
         $this->assertSame(83, $playlist->spotify_tracks_total);
-        $this->assertSame('2026-06-12 10:30:00', $playlist->spotify_last_synced_at?->format('Y-m-d H:i:s'));
+        $this->assertNull($playlist->spotify_last_synced_at);
         $this->assertSame('old_bestplay', $playlist->external_metadata['source']);
         $this->assertTrue($playlist->subgenres()->whereKey($subgenre->id)->exists());
+        Queue::assertPushed(
+            SyncPlaylistFromSpotifyJob::class,
+            fn (SyncPlaylistFromSpotifyJob $job): bool => $job->playlistId === $playlist->id && $job->trigger === 'created',
+        );
 
         $this->actingAs($user)
             ->put(route('playlists.update', $playlist), [

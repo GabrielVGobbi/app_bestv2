@@ -22,6 +22,7 @@ interface Props {
     options: PlaylistFormOptions;
     errors: Record<string, string>;
     layout?: PlaylistFormLayout;
+    spotifyImported?: boolean;
 }
 
 type PlaylistFormLayout = 'stacked' | 'section-cards';
@@ -35,6 +36,18 @@ interface PlaylistFormSectionProps {
 
 function numberValue(value: number | null | undefined): string {
     return value === null || value === undefined ? '' : String(value);
+}
+
+function booleanValue(value: boolean | null | undefined): string {
+    if (value === true) {
+        return '1';
+    }
+
+    if (value === false) {
+        return '0';
+    }
+
+    return '';
 }
 
 function PlaylistFormSection({
@@ -69,7 +82,7 @@ function PlaylistFormSection({
 const spotifyPlaylistBaseUrl = 'https://open.spotify.com/playlist/';
 const youtubeBaseUrl = 'https://www.youtube.com/';
 
-function extractSpotifyPlaylistId(value: string): string {
+export function extractSpotifyPlaylistId(value: string): string {
     const input = value.trim();
 
     if (!input) {
@@ -288,6 +301,7 @@ export default function PlaylistFormFields({
     options,
     errors,
     layout = 'stacked',
+    spotifyImported = false,
 }: Props) {
     const { auth } = usePage().props;
     const [genreId, setGenreId] = useState(
@@ -335,8 +349,8 @@ export default function PlaylistFormFields({
             }
         >
             <PlaylistFormSection
-                title="Dados da playlist"
-                description="Cadastro comercial da playlist, separado de vendas, TOPs e vagas."
+                title="Identidade comercial"
+                description="Nome de venda e parceiro. O nome do Spotify fica separado e não sobrescreve este cadastro."
                 layout={layout}
             >
                 <input type="hidden" name="music_genre_id" value={genreId} />
@@ -362,8 +376,23 @@ export default function PlaylistFormFields({
                 />
                 <input
                     type="hidden"
-                    name="spotify_last_synced_at"
-                    value={playlist?.spotify_last_synced_at ?? ''}
+                    name="spotify_name"
+                    value={playlist?.spotify_name ?? ''}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_description"
+                    value={playlist?.spotify_description ?? ''}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_public"
+                    value={booleanValue(playlist?.spotify_public)}
+                />
+                <input
+                    type="hidden"
+                    name="spotify_image_url"
+                    value={playlist?.spotify_image_url ?? ''}
                 />
                 {!showLegacyData && playlist?.external_metadata ? (
                     <input
@@ -381,13 +410,14 @@ export default function PlaylistFormFields({
                     />
                 ))}
 
-                <div className="max-w-2xl">
+                <div className="grid max-w-2xl gap-4 sm:grid-cols-2">
                     <FormField
                         id="field-name"
                         label="Nome"
                         variant="stacked"
                         required
                         error={errors.name}
+                        className="sm:col-span-2"
                     >
                         <Input
                             id="field-name"
@@ -400,12 +430,28 @@ export default function PlaylistFormFields({
                             aria-invalid={!!errors.name}
                         />
                     </FormField>
+                    <FormField
+                        id="field-partner-name"
+                        label="Parceiro"
+                        variant="stacked"
+                        error={errors.partner_name}
+                        className="sm:col-span-2"
+                    >
+                        <Input
+                            id="field-partner-name"
+                            name="partner_name"
+                            type="text"
+                            defaultValue={playlist?.partner_name ?? ''}
+                            autoComplete="off"
+                            aria-invalid={!!errors.partner_name}
+                        />
+                    </FormField>
                 </div>
             </PlaylistFormSection>
 
             <PlaylistFormSection
-                title="Gênero e subgêneros"
-                description="Organize a playlist pela árvore musical e crie novas tags sem sair do formulário."
+                title="Classificação"
+                description="Gênero obrigatório e subgêneros para organizar o inventário comercial."
                 layout={layout}
             >
                 <MusicCatalogPicker
@@ -415,6 +461,7 @@ export default function PlaylistFormFields({
                     selectedSubgenreIds={selectedSubgenreIds}
                     errors={errors}
                     canCreate={options.can_create_music_catalog}
+                    required
                     onGenresChange={setGenres}
                     onSubgenresChange={setSubgenres}
                     onGenreChange={changeGenre}
@@ -423,59 +470,56 @@ export default function PlaylistFormFields({
             </PlaylistFormSection>
 
             <PlaylistFormSection
-                title="Links e métricas"
-                description="Referências públicas e números comerciais usados na triagem."
+                title="Métricas e links extras"
+                description={
+                    spotifyImported
+                        ? 'Alcance comercial e YouTube. O Spotify já veio do import acima.'
+                        : 'Referências públicas e números usados na triagem comercial.'
+                }
                 layout={layout}
             >
                 <div className="space-y-3 rounded-md border bg-muted/20 p-3 sm:p-4">
-                    <FormField
-                        id="field-spotify-url"
-                        label="Link Spotify"
-                        variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
-                        error={errors.spotify_url}
-                    >
-                        <input
-                            type="hidden"
-                            name="spotify_url"
-                            value={spotifyUrl}
-                        />
-                        <LockedSuffixLinkInput
-                            id="field-spotify-url"
-                            brand="spotify"
-                            prefix="open.spotify.com/playlist/"
-                            value={spotifyPlaylistId}
-                            placeholder="5bNqE1YOKGpbylAsxAiNtC"
-                            invalid={!!errors.spotify_url}
-                            normalize={extractSpotifyPlaylistId}
-                            onChange={setSpotifyPlaylistId}
-                        />
-                    </FormField>
-
+                    <input
+                        type="hidden"
+                        name="spotify_url"
+                        value={spotifyUrl}
+                    />
                     <input
                         type="hidden"
                         name="spotify_playlist_id"
                         value={spotifyPlaylistId}
                     />
-
-                    <FormField
-                        id="field-spotify-playlist-id"
-                        label="ID público Spotify"
-                        variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
-                        error={errors.spotify_playlist_id}
-                    >
-                        <LockedSuffixLinkInput
-                            id="field-spotify-playlist-id"
-                            brand="spotify"
-                            prefix="ID"
-                            value={spotifyPlaylistId}
-                            placeholder="Gerado automaticamente pelo link"
-                            disabled
-                            invalid={!!errors.spotify_playlist_id}
-                            normalize={extractSpotifyPlaylistId}
+                    {spotifyImported ? (
+                        <input
+                            type="hidden"
+                            name="followers_count"
+                            value={numberValue(playlist?.followers_count)}
                         />
-                    </FormField>
+                    ) : (
+                        <FormField
+                            id="field-spotify-url"
+                            label="Link Spotify"
+                            variant="inline"
+                            className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                            error={
+                                errors.spotify_url ?? errors.spotify_playlist_id
+                            }
+                        >
+                            <LockedSuffixLinkInput
+                                id="field-spotify-url"
+                                brand="spotify"
+                                prefix="open.spotify.com/playlist/"
+                                value={spotifyPlaylistId}
+                                placeholder="5bNqE1YOKGpbylAsxAiNtC"
+                                invalid={
+                                    !!errors.spotify_url ||
+                                    !!errors.spotify_playlist_id
+                                }
+                                normalize={extractSpotifyPlaylistId}
+                                onChange={setSpotifyPlaylistId}
+                            />
+                        </FormField>
+                    )}
 
                     <FormField
                         id="field-youtube-url"
@@ -501,24 +545,26 @@ export default function PlaylistFormFields({
                         />
                     </FormField>
 
-                    <FormField
-                        id="field-followers"
-                        label="Seguidores"
-                        variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
-                        error={errors.followers_count}
-                    >
-                        <Input
+                    {spotifyImported ? null : (
+                        <FormField
                             id="field-followers"
-                            name="followers_count"
-                            type="number"
-                            min={0}
-                            defaultValue={numberValue(
-                                playlist?.followers_count,
-                            )}
-                            aria-invalid={!!errors.followers_count}
-                        />
-                    </FormField>
+                            label="Seguidores"
+                            variant="inline"
+                            className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                            error={errors.followers_count}
+                        >
+                            <Input
+                                id="field-followers"
+                                name="followers_count"
+                                type="number"
+                                min={0}
+                                defaultValue={numberValue(
+                                    playlist?.followers_count,
+                                )}
+                                aria-invalid={!!errors.followers_count}
+                            />
+                        </FormField>
+                    )}
 
                     <FormField
                         id="field-estimated-reach"

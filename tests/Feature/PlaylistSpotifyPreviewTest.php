@@ -60,6 +60,14 @@ class PlaylistSpotifyPreviewTest extends TestCase
                 ],
                 'snapshot_id' => 'snapshot-123',
                 'public' => true,
+                'description' => 'Playlist editorial do Spotify.',
+                'images' => [
+                    [
+                        'url' => 'https://i.scdn.co/image/cover-preview',
+                        'width' => 640,
+                        'height' => 640,
+                    ],
+                ],
             ]),
         ]);
 
@@ -77,6 +85,8 @@ class PlaylistSpotifyPreviewTest extends TestCase
             ->assertJsonPath('data.spotify_tracks_total', 83)
             ->assertJsonPath('data.spotify_snapshot_id', 'snapshot-123')
             ->assertJsonPath('data.public', true)
+            ->assertJsonPath('data.description', 'Playlist editorial do Spotify.')
+            ->assertJsonPath('data.image_url', 'https://i.scdn.co/image/cover-preview')
             ->assertJsonPath('data.source', 'web_api')
             ->assertJsonPath('data.is_partial', false);
     }
