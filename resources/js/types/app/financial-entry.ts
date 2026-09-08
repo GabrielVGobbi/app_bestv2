@@ -192,6 +192,7 @@ export interface FinancialEntry {
     id: number;
     uuid: string;
     company_id: number;
+    company_name: string | null;
     created_by_id: number | null;
     direction: FinancialDirection;
     direction_label: string;

@@ -13,6 +13,7 @@ use App\Modules\Permissions\Database\Seeders\PermissionsSeeder;
 use App\Modules\Permissions\Database\Seeders\RolesSeeder;
 use App\Modules\Playlists\Database\Seeders\PlaylistSeeder;
 use App\Modules\Playlists\Database\Seeders\TopSeeder;
+use App\Modules\Sales\Database\Seeders\SaleDemoSeeder;
 use App\Modules\Services\Database\Seeders\ServiceSeeder;
 use App\Modules\Suppliers\Database\Seeders\SupplierSeeder;
 use Illuminate\Database\Seeder;
@@ -39,7 +40,8 @@ class DatabaseSeeder extends Seeder
             PlaylistSeeder::class,
             // PlaylistDeliveryTaskDemoSeeder::class,
 
-            // FinancialEntryDemoSeeder::class,
+            SaleDemoSeeder::class,
+            FinancialEntryDemoSeeder::class,
         ]);
     }
 }

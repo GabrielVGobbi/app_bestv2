@@ -83,9 +83,7 @@ class PlaylistMetricsController extends Controller
                     'spotify_sync_priority' => $playlist->spotify_sync_priority,
                     'next_spotify_sync_at' => $playlist->next_spotify_sync_at?->toIso8601String(),
                     'spotify_sync_failures_count' => $playlist->spotify_sync_failures_count,
-                    'cover_url' => $playlist->spotifyCoverUpload
-                        ? route('uploads.preview', ['upload' => $playlist->spotifyCoverUpload->id])
-                        : $playlist->spotify_image_url,
+                    'cover_url' => $playlist->coverImageUrl(),
                 ];
             })
             ->sortByDesc('followers_count')

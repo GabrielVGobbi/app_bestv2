@@ -25,8 +25,8 @@ class ResendWebhookHandler implements WebhookHandlerInterface
     {
         $secret = config('services.resend.webhook_secret');
 
-        if (! $secret) {
-            return true; // Signature verification skipped (not configured)
+        if (! is_string($secret) || ! str_starts_with($secret, 'whsec_')) {
+            return false;
         }
 
         $svixId = $request->header('svix-id');
@@ -37,8 +37,17 @@ class ResendWebhookHandler implements WebhookHandlerInterface
             return false;
         }
 
+        if (! ctype_digit($svixTimestamp) || abs(now()->timestamp - (int) $svixTimestamp) > 300) {
+            return false;
+        }
+
+        $secretBytes = base64_decode(substr($secret, 6), true);
+
+        if ($secretBytes === false || $secretBytes === '') {
+            return false;
+        }
+
         $signedContent = "{$svixId}.{$svixTimestamp}.{$request->getContent()}";
-        $secretBytes = base64_decode(str_replace('whsec_', '', $secret));
         $computedSignature = 'v1,'.base64_encode(hash_hmac('sha256', $signedContent, $secretBytes, true));
 
         foreach (explode(' ', $svixSignature) as $sig) {

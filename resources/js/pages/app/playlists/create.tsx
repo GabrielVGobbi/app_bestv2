@@ -449,7 +449,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                                     }
                                 />
 
-                                <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                                <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
                                     <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                                         <p className="text-xs text-muted-foreground">
                                             Campos marcados com{' '}

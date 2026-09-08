@@ -1,42 +1,28 @@
 ---
 name: frontend-design
-description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+description: Design or refine BestPlay interfaces while preserving the existing visual identity and reusable components.
 license: Complete terms in LICENSE.txt
 ---
 
-This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
+# BestPlay interface design
 
-The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
+Use [DESIGN.md](../../../DESIGN.md) and the affected page's actual components/tokens for visual decisions. BestPlay uses Geist, ink navigation, a quiet gray canvas, white surfaces, and pink accents. Explain relevant differences between the design document and current code before changing the design.
 
-## Design Thinking
+For an existing screen, preserve its density, typography, spacing, borders, radius, and interaction conventions. A localized fix does not call for a new visual direction. For an explicitly requested redesign, choose a direction that serves the workflow and implement the requested scope.
 
-Before coding, understand the context and commit to a BOLD aesthetic direction:
-- **Purpose**: What problem does this interface solve? Who uses it?
-- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
-- **Constraints**: Technical requirements (framework, performance, accessibility).
-- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+Reuse layouts, cards, tables, buttons, dialogs, dropdowns, badges, inputs, and empty/loading states in `resources/js/components`. Preserve keyboard access, visible focus, labels, responsive behavior, and the feature's destructive-action confirmation. Use restrained motion with reduced-motion support when motion helps the interaction.
 
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+## Brazilian form fields
 
-Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
-- Production-grade and functional
-- Visually striking and memorable
-- Cohesive with a clear aesthetic point-of-view
-- Meticulously refined in every detail
+Reuse these components instead of duplicating masks or substituting plain inputs for these field types:
 
-## Frontend Aesthetics Guidelines
+| Field | Component / import |
+| --- | --- |
+| Phone | `InputPhone` from `@/components/ui/input-phone` |
+| CPF/CNPJ | `InputDocument` from `@/components/ui/input-document`, with the appropriate `kind` |
+| Date | `DatePicker` from `@/components/ui/date-picker` |
+| Money | `InputMoney` from `@/components/ui/input-money` |
 
-Focus on:
-- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
-- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
-- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
-- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
-- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
+Check their props and existing usage for controlled/uncontrolled forms and submitted values. Reuse `@/lib/masks` for existing phone, document, postal-code, and digit helpers. Preserve pt-BR display and backend date/money formats.
 
-NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
-
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
-
-**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
-
-Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+For utility or theme changes, consult [tailwindcss-development](../tailwindcss-development/SKILL.md). For submission or navigation behavior, consult [inertia-react-development](../inertia-react-development/SKILL.md). Inspect the affected UI at relevant sizes and exercise its changed interaction before claiming it is verified.

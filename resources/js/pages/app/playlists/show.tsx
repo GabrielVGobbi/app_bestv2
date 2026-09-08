@@ -47,6 +47,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import {
+    PanelTable,
+    PanelTableBody,
+    PanelTableHead,
+    PanelTableRow,
+} from '@/components/ui/panel-table';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -290,25 +296,29 @@ function PlaylistTopsPanel({
                         Nenhum TOP vinculado a esta playlist.
                     </div>
                 ) : (
-                    <div className="overflow-hidden rounded-md border">
-                        <div className="hidden grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem] gap-3 border-b bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground lg:grid">
-                            <span>TOP</span>
-                            <span className="text-right">Capacidade</span>
-                            <span className="text-right">Ocupadas</span>
-                            <span className="text-right">Disponíveis</span>
-                            <span className="text-right">Valor</span>
-                            <span className="text-right">Score</span>
-                            <span className="sr-only">Ações</span>
-                        </div>
-                        <ul className="divide-y">
+                    <PanelTable>
+                        <PanelTableHead
+                            className="grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem]"
+                            columns={[
+                                { label: 'TOP' },
+                                { label: 'Capacidade', align: 'right' },
+                                { label: 'Ocupadas', align: 'right' },
+                                { label: 'Disponíveis', align: 'right' },
+                                { label: 'Valor', align: 'right' },
+                                { label: 'Score', align: 'right' },
+                                { label: 'Ações', srOnly: true },
+                            ]}
+                        />
+                        <PanelTableBody as="ul">
                             {playlistTops.map((playlistTop) => {
                                 const topName =
                                     playlistTop.top?.name ?? 'TOP removido';
 
                                 return (
-                                    <li
+                                    <PanelTableRow
+                                        as="li"
                                         key={playlistTop.uuid}
-                                        className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem] lg:items-center"
+                                        className="lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem]"
                                     >
                                         <div className="min-w-0">
                                             <h3 className="truncate text-sm font-semibold">
@@ -391,11 +401,11 @@ function PlaylistTopsPanel({
                                                 </Button>
                                             ) : null}
                                         </div>
-                                    </li>
+                                    </PanelTableRow>
                                 );
                             })}
-                        </ul>
-                    </div>
+                        </PanelTableBody>
+                    </PanelTable>
                 )}
             </CardContent>
 
@@ -856,7 +866,7 @@ export default function ShowPlaylist({
 
                     <main className="min-w-0">
                         <Tabs defaultValue="summary" className="gap-4">
-                            <TabsList className="w-full justify-start overflow-x-auto sm:w-fit">
+                            <TabsList variant="line">
                                 <TabsTrigger value="summary">
                                     Resumo
                                 </TabsTrigger>

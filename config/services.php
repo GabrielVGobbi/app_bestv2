@@ -16,6 +16,7 @@ return [
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
+        'webhook_token' => env('POSTMARK_WEBHOOK_TOKEN'),
     ],
 
     'resend' => [
@@ -27,6 +28,7 @@ return [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+        'webhook_topic_arn' => env('SES_WEBHOOK_TOPIC_ARN'),
     ],
 
     'slack' => [

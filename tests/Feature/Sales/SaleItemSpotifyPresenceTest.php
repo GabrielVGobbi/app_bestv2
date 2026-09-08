@@ -269,6 +269,22 @@ class SaleItemSpotifyPresenceTest extends TestCase
                 ->where('permissions.can_verify_spotify_playlist', false));
     }
 
+    public function test_sale_show_exposes_playlist_cover_on_playlist_slot_items(): void
+    {
+        [$sale] = $this->saleWithPlaylistItem([], [
+            'spotify_image_url' => 'https://i.scdn.co/image/playlist-cover',
+        ]);
+
+        $this->actingAs($this->userWithPermissions(['sales.view']))
+            ->get(route('sales.show', $sale))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('app/sales/show')
+                ->where('saleData.data.sale_items.0.playlist_top.playlist_name', 'Corrida 10km')
+                ->where('saleData.data.sale_items.0.playlist_top.cover_image_url', 'https://i.scdn.co/image/playlist-cover')
+                ->where('saleData.data.sale_items.0.track_image_url', null));
+    }
+
     public function test_sync_all_checks_every_playlist_item_in_sale(): void
     {
         $this->fakeSpotifyPlaylistTracks([

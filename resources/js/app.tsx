@@ -10,6 +10,10 @@ import AppDashboardLayout from '@/layouts/app-dashboard-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
+if (import.meta.env.DEV) {
+    void import('react-grab');
+}
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 const queryClient = new QueryClient();
 

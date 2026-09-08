@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Email\Enums\EmailStatus;
 use App\Modules\Email\Jobs\ProcessEmailJob;
 use App\Modules\Email\Models\EmailLog;
+use App\Modules\Permissions\Models\Role;
 use App\Supports\AppSettings;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -21,9 +22,10 @@ class EmailLogControllerTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
+        $this->user->roles()->attach(Role::factory()->create(['slug' => 'admin']));
     }
 
-    public function test_index_renders_for_authenticated_users(): void
+    public function test_index_renders_for_administrators(): void
     {
         EmailLog::factory(3)->create();
 
@@ -42,6 +44,20 @@ class EmailLogControllerTest extends TestCase
     public function test_index_requires_authentication(): void
     {
         $this->get('/email-logs')->assertRedirect('/login');
+    }
+
+    public function test_regular_users_cannot_read_resend_or_configure_email_logs(): void
+    {
+        Queue::fake();
+        $log = EmailLog::factory()->create(['status' => EmailStatus::Failed]);
+        $this->actingAs(User::factory()->create());
+
+        $this->get('/email-logs')->assertForbidden();
+        $this->post("/email-logs/{$log->uuid}/resend")->assertForbidden();
+        $this->patch('/email-logs/settings', ['enabled' => false])->assertForbidden();
+
+        Queue::assertNothingPushed();
+        $this->assertSame(EmailStatus::Failed, $log->fresh()->status);
     }
 
     public function test_index_filters_by_status(): void

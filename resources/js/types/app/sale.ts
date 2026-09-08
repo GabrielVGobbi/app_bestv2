@@ -84,6 +84,7 @@ export interface SaleItem {
         uuid: string;
         name: string | null;
         playlist_name: string | null;
+        cover_image_url?: string | null;
     } | null;
     sellable?: PlaylistSlot | null;
     created_at?: string;

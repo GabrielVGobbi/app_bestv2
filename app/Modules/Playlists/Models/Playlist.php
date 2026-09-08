@@ -165,6 +165,18 @@ class Playlist extends Model
         return $this->belongsTo(Uploaded::class, 'spotify_cover_upload_id');
     }
 
+    /**
+     * Preview URL of the uploaded cover, falling back to the Spotify image.
+     */
+    public function coverImageUrl(): ?string
+    {
+        if ($this->spotify_cover_upload_id !== null) {
+            return route('uploads.preview', ['upload' => $this->spotify_cover_upload_id]);
+        }
+
+        return $this->spotify_image_url;
+    }
+
     public function scopeWithCatalog(Builder $query): Builder
     {
         return $query->with(['genre', 'subgenres', 'spotifyCoverUpload']);

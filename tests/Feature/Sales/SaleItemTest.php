@@ -116,8 +116,8 @@ class SaleItemTest extends TestCase
         $this->assertSame('https://open.spotify.com/track/4kwbbhuemSkRWvtN5dkWmb', $item->track_spotify_url);
         $this->assertSame(220000, $item->unit_amount);
         $this->assertSame(200000, $item->total_amount);
-        $this->assertNull($item->starts_on);
-        $this->assertNull($item->ends_on);
+        $this->assertSame('2026-07-01', $item->starts_on?->toDateString());
+        $this->assertSame('2026-07-31', $item->ends_on?->toDateString());
     }
 
     public function test_item_discount_cannot_exceed_gross_amount(): void

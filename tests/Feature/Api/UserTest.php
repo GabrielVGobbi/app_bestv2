@@ -17,7 +17,7 @@ class UserTest extends TestCase
 
     public function test_users_list_is_paginated(): void
     {
-        $actor = User::factory()->create(['created_at' => '2026-01-01 12:00:00']);
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test', 'created_at' => '2026-01-01 12:00:00']);
         User::factory(20)->create();
 
         $response = $this
@@ -34,7 +34,7 @@ class UserTest extends TestCase
 
     public function test_users_list_respects_per_page(): void
     {
-        $actor = User::factory()->create(['created_at' => '2026-01-01 12:00:00']);
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test', 'created_at' => '2026-01-01 12:00:00']);
         User::factory(10)->create();
 
         $response = $this
@@ -48,7 +48,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_searched_by_name(): void
     {
-        $actor = User::factory()->create(['created_at' => '2026-01-01 12:00:00']);
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test', 'created_at' => '2026-01-01 12:00:00']);
         User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         User::factory()->create(['name' => 'Jane Smith', 'email' => 'jane@example.com']);
 
@@ -63,7 +63,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_searched_by_email(): void
     {
-        $actor = User::factory()->create(['created_at' => '2026-01-01 12:00:00']);
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test', 'created_at' => '2026-01-01 12:00:00']);
         User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         User::factory()->create(['name' => 'Jane Smith', 'email' => 'jane@example.com']);
 
@@ -78,7 +78,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_filtered_by_role(): void
     {
-        $actor = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test']);
         $commercialRole = Role::factory()->create(['slug' => 'commercial']);
         $financeRole = Role::factory()->create(['slug' => 'finance']);
         $commercialUser = User::factory()->create(['name' => 'Commercial User']);
@@ -98,7 +98,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_filtered_by_allowed_columns(): void
     {
-        $actor = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test']);
         User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         User::factory()->create(['name' => 'Jane Smith', 'email' => 'jane@example.com']);
 
@@ -113,7 +113,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_filtered_with_contains_operator(): void
     {
-        $actor = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test']);
         User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         User::factory()->create(['name' => 'Jane Smith', 'email' => 'jane@example.com']);
 
@@ -156,7 +156,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_filtered_with_between_operator(): void
     {
-        $actor = User::factory()->create(['created_at' => '2026-01-01 12:00:00']);
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test', 'created_at' => '2026-01-01 12:00:00']);
         User::factory()->create(['name' => 'Old User', 'created_at' => '2026-04-01 12:00:00']);
         User::factory()->create(['name' => 'Current User', 'created_at' => '2026-05-02 12:00:00']);
         User::factory()->create(['name' => 'Future User', 'created_at' => '2026-06-01 12:00:00']);
@@ -182,7 +182,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_filtered_with_gte_and_lte_operators(): void
     {
-        $actor = User::factory()->create(['created_at' => '2026-01-01 12:00:00']);
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test', 'created_at' => '2026-01-01 12:00:00']);
         User::factory()->create(['name' => 'Alpha User', 'created_at' => '2026-05-01 12:00:00']);
         User::factory()->create(['name' => 'Beta User', 'created_at' => '2026-05-10 12:00:00']);
         User::factory()->create(['name' => 'Gamma User', 'created_at' => '2026-05-20 12:00:00']);
@@ -218,7 +218,7 @@ class UserTest extends TestCase
 
     public function test_users_can_be_filtered_with_null_operators(): void
     {
-        $actor = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test']);
         User::factory()->create(['name' => 'Verified User', 'email_verified_at' => now()]);
         User::factory()->unverified()->create(['name' => 'Unverified User']);
 
@@ -248,7 +248,7 @@ class UserTest extends TestCase
 
     public function test_users_ignore_filters_that_are_not_allowed_by_the_model(): void
     {
-        $actor = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test']);
         User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
         User::factory()->create(['name' => 'Jane Smith', 'email' => 'jane@example.com']);
 
@@ -275,7 +275,7 @@ class UserTest extends TestCase
 
     public function test_users_ignore_sort_columns_that_are_not_allowed_by_the_model(): void
     {
-        $actor = User::factory()->create();
+        $actor = User::factory()->create(['name' => 'Test Actor', 'email' => 'actor@example.test']);
 
         $response = $this
             ->actingAs($actor)

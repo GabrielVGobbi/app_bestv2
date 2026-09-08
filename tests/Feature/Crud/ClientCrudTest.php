@@ -398,6 +398,41 @@ class ClientCrudTest extends TestCase
         $this->assertSame($responsible->id, $client->refresh()->responsible_user_id);
     }
 
+    public function test_authenticated_user_can_quick_update_client_notes(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['notes' => null]);
+
+        $this->actingAs($user)
+            ->from(route('clients.show', $client))
+            ->patch(route('clients.quick-update', $client), [
+                'field' => 'notes',
+                'value' => 'Cliente prefere contato no WhatsApp.',
+            ])
+            ->assertRedirect(route('clients.show', $client));
+
+        $this->assertSame(
+            'Cliente prefere contato no WhatsApp.',
+            $client->refresh()->notes,
+        );
+    }
+
+    public function test_authenticated_user_can_clear_client_notes_via_quick_update(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::factory()->create(['notes' => 'Observação antiga']);
+
+        $this->actingAs($user)
+            ->from(route('clients.show', $client))
+            ->patch(route('clients.quick-update', $client), [
+                'field' => 'notes',
+                'value' => '',
+            ])
+            ->assertRedirect(route('clients.show', $client));
+
+        $this->assertNull($client->refresh()->notes);
+    }
+
     public function test_client_quick_update_rejects_unsupported_fields(): void
     {
         $user = User::factory()->create();

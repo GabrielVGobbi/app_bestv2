@@ -2,7 +2,7 @@ import { Form, Head, router, setLayoutProps } from '@inertiajs/react';
 import type { InfiniteData } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Edit, Eye, Plus, ShieldCheck, Trash2, UserCheck } from 'lucide-react';
+import { Edit, Eye, Plus, Trash2, UserCheck } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
@@ -52,7 +52,7 @@ const columns: ColumnDef<User>[] = [
         id: 'email',
         accessorKey: 'email',
         header: 'Email',
-        meta: { label: 'Email', truncate: true }
+        meta: { label: 'Email', truncate: true },
     },
     {
         id: 'email_verified_at',
@@ -241,17 +241,6 @@ export default function Index() {
                 onClick: (rows, clearSelection) => {
                     clearSelectionRef.current = clearSelection;
                     setBulkDeleteUsers(rows);
-                },
-            },
-            {
-                id: 'bulk-verify',
-                label: 'Marcar verificado',
-                icon: <ShieldCheck className="size-4" />,
-                disabled: (rows) =>
-                    rows.every((u) => u.email_verified_at !== null),
-                onClick: (_rows, clearSelection) => {
-                    // TODO: chamar endpoint bulk verify
-                    clearSelection();
                 },
             },
         ],

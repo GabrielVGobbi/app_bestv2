@@ -63,6 +63,7 @@ class SaleItemResource extends JsonResource
                 'uuid' => $this->playlistTop->uuid,
                 'name' => $this->playlistTop->top?->name,
                 'playlist_name' => $this->playlistTop->playlist?->name,
+                'cover_image_url' => $this->playlistTop->playlist?->coverImageUrl(),
             ]),
             'sellable' => $this->whenLoaded('sellable', fn (): mixed => $this->sellable instanceof PlaylistSlot
                 ? (new PlaylistSlotResource($this->sellable->loadMissing('playlistTop.playlist', 'playlistTop.top')))->resolve($request)

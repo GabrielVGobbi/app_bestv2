@@ -1,44 +1,32 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     ClipboardList,
-    FileText,
     History,
-    Mail,
     MapPin,
     MessageSquareText,
-    Phone,
-    SquarePen,
-    UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 
 import {
-    destroy,
-    edit,
     index,
     show,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { AddressManager } from '@/components/addresses/address-manager';
-import Header from '@/components/dashboard/header';
-import DeleteButton from '@/components/delete-button';
 import { Button } from '@/components/ui/button';
-import { CopyableText } from '@/components/ui/copyable-text';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatCpfCnpj, formatDate, formatPhone, cn } from '@/lib/utils';
+import { formatCpfCnpj, cn } from '@/lib/utils';
 import { ActivityTimeline } from '@/modules/timeline';
 import type { ClientResource } from '@/types/app/client';
+
+import { ClientNotesDialog } from './components/client-notes-dialog';
+import { ClientProfileHeader } from './components/client-profile-header';
+import { ClientProfileSidebar } from './components/client-profile-sidebar';
 import { ClientQuickUpdatePanel } from './components/client-quick-update-panel';
 import type { ClientQuickUpdateColumn } from './components/client-quick-update-panel';
-import { ClientStatusMenu } from './components/client-status-menu';
 import {
-    ClientStatusBadge,
-    DefaultAddressSummary,
     FieldGrid,
     Section,
-    SidebarContactRow,
-    SidebarMetaRow,
     TechnicalIdsDisclosure,
     isBlank,
 } from './partials/client-show-helpers';
@@ -87,11 +75,9 @@ const tabTriggerClass = cn(
 
 export default function ShowClient({ clientData, timelineSubject }: Props) {
     const client = clientData.data;
-    const responsibleUser = client.responsible_user;
     const addresses = client.addresses ?? [];
-    const defaultAddress = addresses.find((address) => address.is_default);
     const canUpdate = client.permissions.can_update;
-    const editUrl = edit.url(client.uuid);
+    const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
     setLayoutProps({
         breadcrumbs: [
@@ -104,18 +90,6 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
     });
 
     const clientName = String(client.name ?? client.uuid);
-    const subtitle = !isBlank(client.company_name)
-        ? client.company_name
-        : !isBlank(client.email)
-          ? client.email
-          : null;
-
-    const initials = clientName
-        .split(' ')
-        .map((namePart) => namePart[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
 
     const profileItems: DetailItem[] = [
         { label: 'Empresa', value: client.company_name },
@@ -145,146 +119,19 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
         <>
             <Head title={clientName} />
 
-            <Header>
-                <div className="flex min-w-0 items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8 shrink-0"
-                        asChild
-                    >
-                        <Link href={index.url()} aria-label="Voltar para clientes">
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="truncate text-xl font-semibold">
-                                {clientName}
-                            </h1>
-                           
-                        </div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-                            {subtitle ? (
-                                <span className="truncate">{subtitle}</span>
-                            ) : null}
-                            {subtitle ? (
-                                <span className="text-border" aria-hidden>
-                                    ·
-                                </span>
-                            ) : null}
-                            <CopyableText
-                                value={client.uuid}
-                                label="ID"
-                                className="text-xs text-muted-foreground"
-                            >
-                                <span className="underline-offset-2 group-hover/copyable:underline">
-                                    Copiar ID
-                                </span>
-                            </CopyableText>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    {canUpdate ? (
-                        <>
-                            <Button variant="outline" size="action" asChild>
-                                <Link href={editUrl}>
-                                    <SquarePen className="size-4" />
-                                    Editar
-                                </Link>
-                            </Button>
-
-                            <Separator
-                                orientation="vertical"
-                                className="mx-1 h-6"
-                            />
-                        </>
-                    ) : null}
-
-                    <DeleteButton
-                        url={destroy.url(client.uuid)}
-                        resourceName={clientName}
-                        resourceType="cliente"
-                        redirectTo={index.url()}
-                        size="action"
-                    />
-                </div>
-            </Header>
+            <ClientProfileHeader
+                client={client}
+                backHref={index.url()}
+                backAriaLabel="Voltar para clientes"
+                showEditAction
+            />
 
             <div className="page-wrapper-lg">
                 <div className="grid gap-4 p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-                    <aside className="lg:sticky lg:top-4 lg:self-start">
-                        <div className="rounded-lg border bg-card">
-                            <div className="p-5">
-                                <div className="flex h-20 items-center justify-center rounded-lg bg-secondary text-2xl font-semibold text-primary">
-                                    {initials}
-                                </div>
-
-                                <div className="mt-5 space-y-0.5">
-                                    <SidebarContactRow
-                                        icon={FileText}
-                                        label="Documento"
-                                        value={formatCpfCnpj(client.document)}
-                                        copyable
-                                        emptyHref={canUpdate ? editUrl : undefined}
-                                        emptyLabel={
-                                            canUpdate
-                                                ? 'Adicionar documento'
-                                                : undefined
-                                        }
-                                    />
-                                    <SidebarContactRow
-                                        icon={Mail}
-                                        label="Email"
-                                        value={client.email}
-                                        copyable
-                                        emptyHref={canUpdate ? editUrl : undefined}
-                                        emptyLabel={
-                                            canUpdate
-                                                ? 'Adicionar email'
-                                                : undefined
-                                        }
-                                    />
-                                    <SidebarContactRow
-                                        icon={Phone}
-                                        label="Telefone"
-                                        value={formatPhone(client.phone)}
-                                        copyable
-                                        emptyHref={canUpdate ? editUrl : undefined}
-                                        emptyLabel={
-                                            canUpdate
-                                                ? 'Adicionar telefone'
-                                                : undefined
-                                        }
-                                    />
-                                </div>
-
-                                <Separator className="my-4" />
-
-                                <div className="space-y-0.5">
-                                    <SidebarMetaRow
-                                        icon={UserRound}
-                                        label="Responsável"
-                                        value={
-                                            responsibleUser?.name ??
-                                            responsibleUser?.email
-                                        }
-                                    />
-                                    <DefaultAddressSummary
-                                        address={defaultAddress}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
-                                <p>Criado · {formatDate(client.created_at)}</p>
-                                <p className="mt-1">
-                                    Atualizado · {formatDate(client.updated_at)}
-                                </p>
-                            </div>
-                        </div>
-                    </aside>
+                    <ClientProfileSidebar
+                        client={client}
+                        showEmptyContactLinks
+                    />
 
                     <main className="min-w-0">
                         <Tabs
@@ -360,15 +207,15 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                 <Section
                                     title="Observações"
                                     action={
-                                        canUpdate ? (
+                                        canUpdate && !isBlank(client.notes) ? (
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                asChild
+                                                onClick={() =>
+                                                    setIsNotesDialogOpen(true)
+                                                }
                                             >
-                                                <Link href={editUrl}>
-                                                    Editar
-                                                </Link>
+                                                Editar
                                             </Button>
                                         ) : null
                                     }
@@ -382,11 +229,13 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    asChild
+                                                    onClick={() =>
+                                                        setIsNotesDialogOpen(
+                                                            true,
+                                                        )
+                                                    }
                                                 >
-                                                    <Link href={editUrl}>
-                                                        Adicionar observação
-                                                    </Link>
+                                                    Adicionar observação
                                                 </Button>
                                             ) : null}
                                         </div>
@@ -419,6 +268,14 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                     </main>
                 </div>
             </div>
+
+            {canUpdate ? (
+                <ClientNotesDialog
+                    client={client}
+                    open={isNotesDialogOpen}
+                    onOpenChange={setIsNotesDialogOpen}
+                />
+            ) : null}
         </>
     );
 }

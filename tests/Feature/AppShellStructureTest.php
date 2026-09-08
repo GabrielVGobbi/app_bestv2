@@ -13,7 +13,7 @@ class AppShellStructureTest extends TestCase
         $layout = $this->frontendFile('layouts/app/app-dashboard-layout.tsx');
         $sidebar = $this->frontendFile('components/dashboard/dashboard-sidebar.tsx');
         $header = $this->frontendFile('components/dashboard/dashboard-header.tsx');
-        $pageHeader = $this->frontendFile('components/dashboard/header.tsx');
+        $pageHeader = $this->frontendFile('components/content-header.tsx');
         $tableHeader = $this->frontendFile('components/data-table/shell/data-table-header.tsx');
 
         $this->assertStringContainsString("router.on('navigate'", $layout);
@@ -26,20 +26,20 @@ class AppShellStructureTest extends TestCase
         $this->assertStringContainsString('mobileOpen?: boolean', $sidebar);
         $this->assertStringContainsString('fixed inset-0 z-40 bg-black/50', $sidebar);
         $this->assertStringContainsString('md:static md:z-auto md:shrink-0 md:translate-x-0', $sidebar);
-        $this->assertStringContainsString("isCollapsed ? 'md:w-16' : 'md:w-[250px]'", $sidebar);
+        $this->assertStringContainsString("aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}", $sidebar);
         $this->assertStringContainsString("event.key === 'Escape'", $sidebar);
         $this->assertStringContainsString("document.body.style.overflow = 'hidden'", $sidebar);
 
         $this->assertStringContainsString('onMobileToggle?: () => void', $header);
         $this->assertStringContainsString('aria-label="Abrir navegação"', $header);
         $this->assertStringContainsString('GlobalCommandPalette', $header);
-        $this->assertStringContainsString('h-[60px]', $header);
+        $this->assertStringContainsString('bg-header-background', $header);
 
         $this->assertStringContainsString('min-h-16', $pageHeader);
         $this->assertStringContainsString('border-b border-border bg-background', $pageHeader);
 
-        $this->assertStringContainsString('bg-table-background', $tableHeader);
-        $this->assertStringContainsString('text-table-text', $tableHeader);
+        $this->assertStringContainsString('bg-data-table-head', $tableHeader);
+        $this->assertStringContainsString('text-sidebar-foreground', $tableHeader);
     }
 
     public function test_shared_frontend_surfaces_follow_the_professional_visual_system(): void
@@ -65,7 +65,7 @@ class AppShellStructureTest extends TestCase
         $this->assertStringContainsString('max-w-[25rem]', $authLayout);
         $this->assertStringNotContainsString('Área segura', $authLayout);
 
-        $this->assertStringContainsString('shadow-[var(--shadow-app-panel)]', $card);
+        $this->assertStringContainsString('border-app-line', $card);
         $this->assertStringContainsString('transition-[background,color,box-shadow,opacity,transform]', $button);
         $this->assertStringContainsString("text ?? 'BestPlay'", $logo);
         $this->assertStringContainsString('border-app-line', $table);
@@ -104,8 +104,8 @@ class AppShellStructureTest extends TestCase
 
         $this->assertStringContainsString('--sidebar: #171717;', $css);
         $this->assertStringContainsString('--sidebar: #202020;', $css);
-        $this->assertStringContainsString('--sidebar-accent: #3f2430;', $css);
-        $this->assertStringContainsString('--sidebar-accent-foreground: #f6cdd8;', $css);
+        $this->assertStringContainsString('--sidebar-accent: #52283a;', $css);
+        $this->assertStringContainsString('--sidebar-accent-foreground: #ffe4ee;', $css);
         $this->assertStringContainsString('--sidebar-muted: #a1a1aa;', $css);
         $this->assertStringContainsString('--canvas: #f4f4f5;', $css);
         $this->assertStringContainsString('--canvas: #101010;', $css);

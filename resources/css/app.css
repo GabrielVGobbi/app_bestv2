@@ -431,24 +431,6 @@
         background: var(--canvas);
     }
 
-    .app-workspace::before {
-        position: fixed;
-        z-index: -1;
-        inset: 0;
-        content: '';
-        pointer-events: none;
-        opacity: 0.2;
-        background-image: radial-gradient(
-            color-mix(in oklab, var(--foreground) 9%, transparent) 0.7px,
-            transparent 0.7px
-        );
-        background-size: 7px 7px;
-    }
-
-    .dark .app-workspace::before {
-        opacity: 0.08;
-    }
-
     .auth-workspace {
         background: var(--background);
     }

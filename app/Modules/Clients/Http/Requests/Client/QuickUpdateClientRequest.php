@@ -12,7 +12,7 @@ use Illuminate\Validation\Validator;
 class QuickUpdateClientRequest extends FormRequest
 {
     /** @var array<int, string> */
-    private const ALLOWED_FIELDS = ['name', 'responsible_user_id'];
+    private const ALLOWED_FIELDS = ['name', 'notes', 'responsible_user_id'];
 
     public function authorize(): bool
     {
@@ -51,6 +51,7 @@ class QuickUpdateClientRequest extends FormRequest
 
                 match ($this->input('field')) {
                     'name' => $this->validateName($validator),
+                    'notes' => $this->validateNotes($validator),
                     'responsible_user_id' => $this->validateResponsibleUser($validator),
                     default => null,
                 };
@@ -59,21 +60,25 @@ class QuickUpdateClientRequest extends FormRequest
     }
 
     /**
-     * @return array{name?: string, responsible_user_id?: int|null}
+     * @return array{name?: string, notes?: string|null, responsible_user_id?: int|null}
      */
     public function updatePayload(): array
     {
-        if ($this->input('field') === 'name') {
-            return ['name' => trim((string) $this->input('value'))];
-        }
-
         $value = $this->input('value');
 
-        return [
-            'responsible_user_id' => $value === null || $value === ''
-                ? null
-                : (int) $value,
-        ];
+        return match ($this->input('field')) {
+            'name' => ['name' => trim((string) $value)],
+            'notes' => [
+                'notes' => ! is_string($value) || trim($value) === ''
+                    ? null
+                    : trim($value),
+            ],
+            default => [
+                'responsible_user_id' => $value === null || $value === ''
+                    ? null
+                    : (int) $value,
+            ],
+        };
     }
 
     private function validateName(Validator $validator): void
@@ -88,6 +93,19 @@ class QuickUpdateClientRequest extends FormRequest
 
         if (mb_strlen(trim($value)) > 255) {
             $validator->errors()->add('value', 'O nome do cliente não pode ter mais que 255 caracteres.');
+        }
+    }
+
+    private function validateNotes(Validator $validator): void
+    {
+        $value = $this->input('value');
+
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        if (! is_string($value)) {
+            $validator->errors()->add('value', 'As observações devem ser um texto.');
         }
     }
 

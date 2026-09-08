@@ -22,11 +22,13 @@ class PostmarkWebhookHandler implements WebhookHandlerInterface
     {
         $token = config('services.postmark.webhook_token');
 
-        if (! $token) {
-            return true; // Signature verification skipped
+        if (! is_string($token) || $token === '') {
+            return false;
         }
 
-        return $request->header('X-Postmark-Webhook-Token') === $token;
+        $providedToken = $request->header('X-Postmark-Webhook-Token');
+
+        return is_string($providedToken) && hash_equals($token, $providedToken);
     }
 
     public function handle(Request $request): void

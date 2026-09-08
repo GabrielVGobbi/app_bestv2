@@ -1,11 +1,7 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import {
-    CalendarDays,
-    CircleDollarSign,
-    Filter,
     ReceiptText,
     RotateCcw,
-    Table2,
     WalletCards,
     X,
 } from 'lucide-react';
@@ -20,12 +16,19 @@ import { ContentHeader } from '@/components/content-header';
 import { DirectionBadge } from '@/components/direction-badge';
 import { MoneyAmount } from '@/components/money-amount';
 import { StatusBadge } from '@/components/status-badge';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { cn, formatDate, formatDateOnly } from '@/lib/utils';
 import { ActivityTimeline } from '@/modules/timeline';
 import { FileAttachments } from '@/modules/uploads';
 import type {
+    FinancialEntry,
     FinancialEntryResource,
     FinancialInstallment,
     FinancialMovement,
@@ -38,40 +41,6 @@ import { SettlementReversalDialog } from './components/settlement-reversal-dialo
 
 interface Props {
     entryData: FinancialEntryResource;
-}
-
-function formatDateTime(value: string | null): string {
-    if (!value) {
-        return '-';
-    }
-
-    return new Intl.DateTimeFormat('pt-BR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    }).format(new Date(value));
-}
-
-function movementLabel(movement: FinancialMovement): string {
-    return movement.direction === 'inflow' ? 'Entrada' : 'Saída';
-}
-
-function Info({
-    label,
-    value,
-    children,
-}: {
-    label: string;
-    value?: string | null;
-    children?: ReactNode;
-}) {
-    return (
-        <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {label}
-            </p>
-            {children ?? <p className="text-sm">{value || '-'}</p>}
-        </div>
-    );
 }
 
 type InstallmentStatusFilter =
@@ -106,15 +75,19 @@ const installmentDateFilters: Array<{
     label: string;
     value: InstallmentDateFilter;
 }> = [
-    { label: 'Todas datas', value: 'all' },
+    { label: 'Todas as datas', value: 'all' },
     { label: 'Vencidas', value: 'overdue' },
     { label: 'Hoje', value: 'today' },
-    { label: '7 dias', value: 'next7' },
-    { label: '30 dias', value: 'next30' },
+    { label: 'Próximos 7 dias', value: 'next7' },
+    { label: 'Próximos 30 dias', value: 'next30' },
     { label: 'Sem data', value: 'without_due_date' },
 ];
 
 const EMPTY_INSTALLMENTS: FinancialInstallment[] = [];
+
+function movementLabel(movement: FinancialMovement): string {
+    return movement.direction === 'inflow' ? 'Entrada' : 'Saída';
+}
 
 function parseLocalDate(value: string | null): Date | null {
     if (!value) {
@@ -202,6 +175,141 @@ function matchesInstallmentDateFilter(
     return dueDate >= today && dueDate <= limit;
 }
 
+function PageSection({
+    title,
+    actions,
+    children,
+}: {
+    title: string;
+    actions?: ReactNode;
+    children: ReactNode;
+}) {
+    return (
+        <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold tracking-tight">
+                    {title}
+                </h2>
+                {actions}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function MetaItem({
+    label,
+    value,
+    alert = false,
+    children,
+}: {
+    label: string;
+    value?: string | null;
+    alert?: boolean;
+    children?: ReactNode;
+}) {
+    return (
+        <div className="min-w-0">
+            <dt className="text-[13px] text-muted-foreground">{label}</dt>
+            <dd
+                className={cn(
+                    'mt-0.5 text-sm font-medium',
+                    alert && 'text-destructive',
+                )}
+            >
+                {children ?? (value || '-')}
+            </dd>
+        </div>
+    );
+}
+
+function AmountRow({
+    label,
+    children,
+    emphasis = false,
+}: {
+    label: string;
+    children: ReactNode;
+    emphasis?: boolean;
+}) {
+    return (
+        <div
+            className={cn(
+                'flex items-baseline justify-between gap-8',
+                emphasis && 'border-t border-border/70 pt-2',
+            )}
+        >
+            <span
+                className={cn(
+                    'text-sm',
+                    emphasis
+                        ? 'font-medium text-foreground'
+                        : 'text-muted-foreground',
+                )}
+            >
+                {label}
+            </span>
+            {children}
+        </div>
+    );
+}
+
+function FilterPills<T extends string>({
+    options,
+    value,
+    onChange,
+    ariaLabel,
+}: {
+    options: Array<{ label: string; value: T }>;
+    value: T;
+    onChange: (value: T) => void;
+    ariaLabel: string;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label={ariaLabel}
+            className="flex flex-wrap gap-1"
+        >
+            {options.map((option) => {
+                const isActive = option.value === value;
+
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => onChange(option.value)}
+                        className={cn(
+                            'h-7 rounded-md px-2.5 text-xs font-medium transition-colors',
+                            isActive
+                                ? 'bg-foreground text-background'
+                                : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                        )}
+                    >
+                        {option.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+function OriginValue({ entry }: { entry: FinancialEntry }) {
+    if (entry.origin_url) {
+        return (
+            <Link
+                href={entry.origin_url}
+                className="hover:text-foreground hover:underline"
+            >
+                {entry.origin_display_name}
+            </Link>
+        );
+    }
+
+    return entry.origin_display_name;
+}
+
 export default function ShowFinancialEntry({ entryData }: Props) {
     const entry = entryData.data;
     const components = entry.amount_components ?? [];
@@ -252,8 +360,8 @@ export default function ShowFinancialEntry({ entryData }: Props) {
 
             <ContentHeader
                 title={entry.description}
-                description={`${entry.direction_label} - ${entry.origin_label}`}
                 backHref={index.url()}
+                className="border-border/60 bg-canvas/90"
                 actions={
                     <>
                         {entry.permissions.can_cancel ? (
@@ -264,7 +372,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 onClick={() => setCancelDialogOpen(true)}
                             >
                                 <X className="size-4" />
-                                Cancelar lançamento
+                                Cancelar
                             </Button>
                         ) : null}
                         {entry.permissions.can_settle &&
@@ -285,734 +393,581 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                 }
             />
 
-            <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[1fr_22rem]">
-                    <div className="space-y-4">
-                        <Card>
-                            <CardHeader className="flex-row items-center justify-between gap-3">
-                                <CardTitle>Resumo</CardTitle>
-                                <StatusBadge
-                                    presenter={entry.status_presenter}
+            <div className="page-wrapper-lg space-y-8">
+                <section className="flex flex-col gap-6 border-b border-border/70 pb-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="min-w-0 space-y-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <DirectionBadge
+                                direction={entry.direction}
+                                label={entry.direction_label}
+                            />
+                            <StatusBadge
+                                presenter={entry.status_presenter}
+                            />
+                        </div>
+
+                        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+                            <MetaItem
+                                label="Contraparte"
+                                value={
+                                    entry.counterparty_label ??
+                                    'Sem contraparte'
+                                }
+                            />
+                            <MetaItem label="Origem">
+                                <OriginValue entry={entry} />
+                            </MetaItem>
+                            <MetaItem
+                                label="Empresa"
+                                value={entry.company_name}
+                            />
+                            <MetaItem
+                                label="Vencimento"
+                                alert={entry.status === 'overdue'}
+                                value={formatDateOnly(entry.due_date)}
+                            />
+                            <MetaItem
+                                label="Competência"
+                                value={formatDateOnly(entry.competence_date)}
+                            />
+                            <MetaItem
+                                label="Categoria"
+                                value={entry.category?.full_path ?? null}
+                            />
+                        </dl>
+                    </div>
+
+                    <div className="w-full shrink-0 space-y-3 lg:w-64">
+                        <div className="lg:text-right">
+                            <p className="text-[13px] text-muted-foreground">
+                                Saldo
+                            </p>
+                            <MoneyAmount
+                                value={entry.balance_amount}
+                                currency={entry.currency}
+                                direction={entry.direction}
+                                overdue={entry.status === 'overdue'}
+                                signed
+                                className="text-[1.75rem] leading-none font-semibold tracking-tight"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <AmountRow label="Bruto">
+                                <MoneyAmount
+                                    value={entry.gross_amount}
+                                    currency={entry.currency}
+                                    direction={entry.direction}
                                 />
-                            </CardHeader>
-                            <CardContent className="grid gap-4 sm:grid-cols-3">
-                                <Info label="Direção">
-                                    <DirectionBadge
-                                        direction={entry.direction}
-                                        label={entry.direction_label}
+                            </AmountRow>
+                            {entry.addition_amount > 0 ? (
+                                <AmountRow label="Acréscimos">
+                                    <MoneyAmount
+                                        value={entry.addition_amount}
+                                        currency={entry.currency}
                                     />
-                                </Info>
-                                <Info
-                                    label="Contraparte"
-                                    value={
-                                        entry.counterparty_label ??
-                                        'Sem contraparte'
-                                    }
+                                </AmountRow>
+                            ) : null}
+                            {entry.deduction_amount > 0 ? (
+                                <AmountRow label="Deduções">
+                                    <MoneyAmount
+                                        value={entry.deduction_amount}
+                                        currency={entry.currency}
+                                    />
+                                </AmountRow>
+                            ) : null}
+                            <AmountRow label="Líquido">
+                                <MoneyAmount
+                                    value={entry.net_amount}
+                                    currency={entry.currency}
+                                    direction={entry.direction}
+                                    signed
                                 />
-                                <Info
-                                    label="Origem"
-                                    value={entry.origin_display_name}
+                            </AmountRow>
+                            <AmountRow label="Liquidado">
+                                <MoneyAmount
+                                    value={entry.settled_amount}
+                                    currency={entry.currency}
                                 />
-                                <Info label="Vencimento">
-                                    <p
-                                        className={
-                                            entry.status === 'overdue'
-                                                ? 'text-sm font-medium text-destructive'
-                                                : 'text-sm'
+                            </AmountRow>
+                        </div>
+                    </div>
+                </section>
+
+                {components.length > 0 ? (
+                    <PageSection title="Composição">
+                        <ul className="divide-y border-y">
+                            {components.map((component) => (
+                                <li
+                                    key={component.uuid}
+                                    className="flex items-center justify-between gap-4 py-2.5"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-medium">
+                                            {component.label ??
+                                                component.code_label}
+                                        </p>
+                                        <p className="text-[13px] text-muted-foreground">
+                                            {component.operation_label}
+                                        </p>
+                                    </div>
+                                    <MoneyAmount
+                                        value={component.amount}
+                                        currency={entry.currency}
+                                        direction={
+                                            component.operation === 'subtract'
+                                                ? 'outflow'
+                                                : 'inflow'
                                         }
+                                        signed
+                                        className="text-sm font-semibold"
+                                    />
+                                </li>
+                            ))}
+                        </ul>
+                    </PageSection>
+                ) : null}
+
+                <PageSection
+                    title="Parcelas"
+                    actions={
+                        <p className="text-[13px] text-muted-foreground">
+                            {filteredInstallments.length} de{' '}
+                            {installments.length}
+                        </p>
+                    }
+                >
+                    {installments.length > 0 ? (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <FilterPills
+                                ariaLabel="Filtrar parcelas por status"
+                                options={installmentStatusFilters}
+                                value={installmentStatusFilter}
+                                onChange={setInstallmentStatusFilter}
+                            />
+                            <div className="flex items-center gap-2">
+                                <Select
+                                    value={installmentDateFilter}
+                                    onValueChange={(value) =>
+                                        setInstallmentDateFilter(
+                                            value as InstallmentDateFilter,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger
+                                        size="sm"
+                                        aria-label="Filtrar parcelas por data"
+                                        className="min-w-40"
                                     >
-                                        {entry.due_date || '-'}
-                                    </p>
-                                </Info>
-                                <Info
-                                    label="Categoria"
-                                    value={entry.category?.full_path ?? null}
-                                />
-                                <Info
-                                    label="Empresa"
-                                    value={`#${entry.company_id}`}
-                                />
-                                <Info label="Líquido">
-                                    <MoneyAmount
-                                        value={entry.net_amount}
-                                        currency={entry.currency}
-                                        direction={entry.direction}
-                                        overdue={entry.status === 'overdue'}
-                                        signed
-                                        className="text-sm font-semibold"
-                                    />
-                                </Info>
-                                <Info label="Saldo">
-                                    <MoneyAmount
-                                        value={entry.balance_amount}
-                                        currency={entry.currency}
-                                        direction={entry.direction}
-                                        overdue={entry.status === 'overdue'}
-                                        signed
-                                        className="text-sm font-semibold"
-                                    />
-                                </Info>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Componentes de valor</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                {components.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhum componente registrado.
-                                    </div>
-                                ) : (
-                                    components.map((component) => (
-                                        <div
-                                            key={component.uuid}
-                                            className="flex items-center justify-between rounded-md border p-3"
-                                        >
-                                            <div>
-                                                <p className="text-sm font-medium">
-                                                    {component.label ??
-                                                        component.code_label}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {component.operation_label}
-                                                </p>
-                                            </div>
-                                            <span className="text-sm font-semibold">
-                                                <MoneyAmount
-                                                    value={component.amount}
-                                                    currency={entry.currency}
-                                                    direction={
-                                                        component.operation ===
-                                                        'subtract'
-                                                            ? 'outflow'
-                                                            : 'inflow'
-                                                    }
-                                                    signed
-                                                />
-                                            </span>
-                                        </div>
-                                    ))
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="gap-4">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Table2 className="size-4 text-muted-foreground" />
-                                        <CardTitle>Parcelas</CardTitle>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Badge variant="outline">
-                                            {filteredInstallments.length} de{' '}
-                                            {installments.length}
-                                        </Badge>
-                                        {hasInstallmentFilters ? (
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => {
-                                                    setInstallmentStatusFilter(
-                                                        'all',
-                                                    );
-                                                    setInstallmentDateFilter(
-                                                        'all',
-                                                    );
-                                                }}
-                                            >
-                                                <X className="size-4" />
-                                                Limpar
-                                            </Button>
-                                        ) : null}
-                                    </div>
-                                </div>
-
-                                {installments.length > 0 ? (
-                                    <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                                <Filter className="size-3.5" />
-                                                Status
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {installmentStatusFilters.map(
-                                                    (filter) => (
-                                                        <Button
-                                                            key={filter.value}
-                                                            type="button"
-                                                            size="sm"
-                                                            variant={
-                                                                installmentStatusFilter ===
-                                                                filter.value
-                                                                    ? 'secondary'
-                                                                    : 'outline'
-                                                            }
-                                                            aria-pressed={
-                                                                installmentStatusFilter ===
-                                                                filter.value
-                                                            }
-                                                            onClick={() =>
-                                                                setInstallmentStatusFilter(
-                                                                    filter.value,
-                                                                )
-                                                            }
-                                                        >
-                                                            {filter.label}
-                                                        </Button>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                                <CalendarDays className="size-3.5" />
-                                                Datas rápidas
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {installmentDateFilters.map(
-                                                    (filter) => (
-                                                        <Button
-                                                            key={filter.value}
-                                                            type="button"
-                                                            size="sm"
-                                                            variant={
-                                                                installmentDateFilter ===
-                                                                filter.value
-                                                                    ? 'secondary'
-                                                                    : 'outline'
-                                                            }
-                                                            aria-pressed={
-                                                                installmentDateFilter ===
-                                                                filter.value
-                                                            }
-                                                            onClick={() =>
-                                                                setInstallmentDateFilter(
-                                                                    filter.value,
-                                                                )
-                                                            }
-                                                        >
-                                                            {filter.label}
-                                                        </Button>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent align="end">
+                                        {installmentDateFilters.map(
+                                            (filter) => (
+                                                <SelectItem
+                                                    key={filter.value}
+                                                    value={filter.value}
+                                                >
+                                                    {filter.label}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {hasInstallmentFilters ? (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setInstallmentStatusFilter('all');
+                                            setInstallmentDateFilter('all');
+                                        }}
+                                    >
+                                        Limpar
+                                    </Button>
                                 ) : null}
-                            </CardHeader>
-                            <CardContent>
-                                {installments.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma parcela registrada.
-                                    </div>
-                                ) : filteredInstallments.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma parcela encontrada para os
-                                        filtros selecionados.
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto rounded-md border">
-                                        <table className="w-full min-w-[860px] text-sm">
-                                            <thead className="bg-muted/50 text-left text-xs tracking-wide text-muted-foreground uppercase">
-                                                <tr>
-                                                    <th className="px-3 py-2 font-medium">
-                                                        Parcela
-                                                    </th>
-                                                    <th className="px-3 py-2 font-medium">
-                                                        Status
-                                                    </th>
-                                                    <th className="px-3 py-2 font-medium">
-                                                        Vencimento
-                                                    </th>
-                                                    <th className="px-3 py-2 font-medium">
-                                                        Competência
-                                                    </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
-                                                        Original
-                                                    </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
-                                                        Liquidado
-                                                    </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
-                                                        Saldo
-                                                    </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
-                                                        Ações
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y">
-                                                {filteredInstallments.map(
-                                                    (installment) => (
-                                                        <tr
-                                                            key={
-                                                                installment.uuid
-                                                            }
-                                                            className={
-                                                                installment.is_overdue
-                                                                    ? 'bg-destructive-soft/40 odd:bg-destructive-soft/55'
-                                                                    : 'bg-card odd:bg-muted/20'
-                                                            }
-                                                        >
-                                                            <td className="px-3 py-3 font-medium">
-                                                                #
-                                                                {
-                                                                    installment.installment_number
-                                                                }
-                                                            </td>
-                                                            <td className="px-3 py-3">
-                                                                <StatusBadge
-                                                                    presenter={
-                                                                        installment.status_presenter
-                                                                    }
-                                                                />
-                                                            </td>
-                                                            <td
-                                                                className={
-                                                                    installment.is_overdue
-                                                                        ? 'px-3 py-3 font-medium text-destructive'
-                                                                        : 'px-3 py-3'
-                                                                }
-                                                            >
-                                                                {installment.due_date ??
-                                                                    '-'}
-                                                            </td>
-                                                            <td className="px-3 py-3">
-                                                                {installment.competence_date ??
-                                                                    '-'}
-                                                            </td>
-                                                            <td className="px-3 py-3 text-right font-medium">
-                                                                <MoneyAmount
-                                                                    value={
-                                                                        installment.original_amount
-                                                                    }
-                                                                    currency={
-                                                                        installment.currency
-                                                                    }
-                                                                    direction={
-                                                                        entry.direction
-                                                                    }
-                                                                />
-                                                            </td>
-                                                            <td className="px-3 py-3 text-right text-muted-foreground">
-                                                                <MoneyAmount
-                                                                    value={
-                                                                        installment.settled_amount
-                                                                    }
-                                                                    currency={
-                                                                        installment.currency
-                                                                    }
-                                                                    className="text-muted-foreground"
-                                                                />
-                                                            </td>
-                                                            <td className="px-3 py-3 text-right font-semibold">
-                                                                <MoneyAmount
-                                                                    value={
-                                                                        installment.balance_amount
-                                                                    }
-                                                                    currency={
-                                                                        installment.currency
-                                                                    }
-                                                                    direction={
-                                                                        entry.direction
-                                                                    }
-                                                                    overdue={
-                                                                        installment.is_overdue
-                                                                    }
-                                                                    signed
-                                                                />
-                                                            </td>
-                                                            <td className="px-3 py-3">
-                                                                <div className="flex justify-end">
-                                                                    {installment
-                                                                        .permissions
-                                                                        .can_settle ? (
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() =>
-                                                                                setSettlementInstallment(
-                                                                                    installment,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <ReceiptText className="size-4" />
-                                                                            Baixar
-                                                                        </Button>
-                                                                    ) : (
-                                                                        <span className="text-xs text-muted-foreground">
-                                                                            -
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
+                    ) : null}
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Baixas</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {settlements.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma baixa registrada.
-                                    </div>
-                                ) : (
-                                    settlements.map((settlement) => {
-                                        const allocations =
-                                            settlement.allocations ?? [];
-                                        const movements =
-                                            settlement.movements ?? [];
-                                        const components =
-                                            settlement.components ?? [];
-
-                                        return (
-                                            <div
-                                                key={settlement.uuid}
-                                                className="space-y-3 rounded-md border p-3"
+                    {installments.length === 0 ? (
+                        <p className="py-6 text-sm text-muted-foreground">
+                            Nenhuma parcela registrada.
+                        </p>
+                    ) : filteredInstallments.length === 0 ? (
+                        <p className="py-6 text-sm text-muted-foreground">
+                            Nenhuma parcela encontrada para os filtros
+                            selecionados.
+                        </p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[860px] text-sm">
+                                <thead className="border-b text-left text-[13px] text-muted-foreground">
+                                    <tr>
+                                        <th className="py-2 pr-3 font-medium">
+                                            Parcela
+                                        </th>
+                                        <th className="px-3 py-2 font-medium">
+                                            Status
+                                        </th>
+                                        <th className="px-3 py-2 font-medium">
+                                            Vencimento
+                                        </th>
+                                        <th className="px-3 py-2 font-medium">
+                                            Competência
+                                        </th>
+                                        <th className="px-3 py-2 text-right font-medium">
+                                            Original
+                                        </th>
+                                        <th className="px-3 py-2 text-right font-medium">
+                                            Liquidado
+                                        </th>
+                                        <th className="px-3 py-2 text-right font-medium">
+                                            Saldo
+                                        </th>
+                                        <th className="py-2 pl-3 text-right font-medium">
+                                            <span className="sr-only">
+                                                Ações
+                                            </span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {filteredInstallments.map(
+                                        (installment) => (
+                                            <tr
+                                                key={installment.uuid}
+                                                className={
+                                                    installment.is_overdue
+                                                        ? 'bg-destructive-soft/35'
+                                                        : undefined
+                                                }
                                             >
-                                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                                    <div className="space-y-1">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <StatusBadge
-                                                                presenter={
-                                                                    settlement.status_presenter
-                                                                }
-                                                            />
-                                                            <span className="text-sm font-medium">
-                                                                {formatDateTime(
-                                                                    settlement.settled_at,
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {settlement
-                                                                .payment_method
-                                                                ?.name ??
-                                                                'Sem método'}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {settlement
-                                                                .financial_account
-                                                                ?.display_name ??
-                                                                'Conta não informada'}
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="text-right">
-                                                            <p className="text-sm font-semibold">
-                                                                <MoneyAmount
-                                                                    value={
-                                                                        settlement.net_amount
-                                                                    }
-                                                                    currency={
-                                                                        entry.currency
-                                                                    }
-                                                                    direction={
-                                                                        settlement.direction
-                                                                    }
-                                                                    signed
-                                                                />
-                                                            </p>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                Bruto{' '}
-                                                                <MoneyAmount
-                                                                    value={
-                                                                        settlement.gross_amount
-                                                                    }
-                                                                    currency={
-                                                                        entry.currency
-                                                                    }
-                                                                    className="text-muted-foreground"
-                                                                />
-                                                            </p>
-                                                        </div>
-                                                        {settlement.permissions
-                                                            .can_reverse ? (
+                                                <td className="py-2.5 pr-3 font-medium">
+                                                    #
+                                                    {
+                                                        installment.installment_number
+                                                    }
+                                                </td>
+                                                <td className="px-3 py-2.5">
+                                                    <StatusBadge
+                                                        presenter={
+                                                            installment.status_presenter
+                                                        }
+                                                    />
+                                                </td>
+                                                <td
+                                                    className={cn(
+                                                        'px-3 py-2.5',
+                                                        installment.is_overdue &&
+                                                            'font-medium text-destructive',
+                                                    )}
+                                                >
+                                                    {formatDateOnly(
+                                                        installment.due_date,
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-muted-foreground">
+                                                    {formatDateOnly(
+                                                        installment.competence_date,
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-right font-medium">
+                                                    <MoneyAmount
+                                                        value={
+                                                            installment.original_amount
+                                                        }
+                                                        currency={
+                                                            installment.currency
+                                                        }
+                                                        direction={
+                                                            entry.direction
+                                                        }
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-2.5 text-right">
+                                                    <MoneyAmount
+                                                        value={
+                                                            installment.settled_amount
+                                                        }
+                                                        currency={
+                                                            installment.currency
+                                                        }
+                                                        className="text-muted-foreground"
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-2.5 text-right font-semibold">
+                                                    <MoneyAmount
+                                                        value={
+                                                            installment.balance_amount
+                                                        }
+                                                        currency={
+                                                            installment.currency
+                                                        }
+                                                        direction={
+                                                            entry.direction
+                                                        }
+                                                        overdue={
+                                                            installment.is_overdue
+                                                        }
+                                                        signed
+                                                    />
+                                                </td>
+                                                <td className="py-2.5 pl-3">
+                                                    <div className="flex justify-end">
+                                                        {installment
+                                                            .permissions
+                                                            .can_settle ? (
                                                             <Button
                                                                 type="button"
                                                                 size="sm"
                                                                 variant="outline"
                                                                 onClick={() =>
-                                                                    setReversalSettlement(
-                                                                        settlement,
+                                                                    setSettlementInstallment(
+                                                                        installment,
                                                                     )
                                                                 }
                                                             >
-                                                                <RotateCcw className="size-4" />
-                                                                Estornar
+                                                                <ReceiptText className="size-4" />
+                                                                Baixar
                                                             </Button>
-                                                        ) : null}
+                                                        ) : (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                -
+                                                            </span>
+                                                        )}
                                                     </div>
+                                                </td>
+                                            </tr>
+                                        ),
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </PageSection>
+
+                <PageSection title="Baixas">
+                    {settlements.length === 0 ? (
+                        <p className="py-6 text-sm text-muted-foreground">
+                            Nenhuma baixa registrada.
+                        </p>
+                    ) : (
+                        <ul className="divide-y border-y">
+                            {settlements.map((settlement) => {
+                                const allocations =
+                                    settlement.allocations ?? [];
+                                const movements = settlement.movements ?? [];
+                                const settlementComponents =
+                                    settlement.components ?? [];
+
+                                return (
+                                    <li
+                                        key={settlement.uuid}
+                                        className="space-y-3 py-4"
+                                    >
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                            <div className="space-y-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <StatusBadge
+                                                        presenter={
+                                                            settlement.status_presenter
+                                                        }
+                                                    />
+                                                    <span className="text-sm font-medium">
+                                                        {formatDate(
+                                                            settlement.settled_at,
+                                                        )}
+                                                    </span>
                                                 </div>
+                                                <p className="text-[13px] text-muted-foreground">
+                                                    {settlement.payment_method
+                                                        ?.name ?? 'Sem método'}
+                                                    {' · '}
+                                                    {settlement
+                                                        .financial_account
+                                                        ?.display_name ??
+                                                        'Conta não informada'}
+                                                </p>
+                                            </div>
 
-                                                {components.length > 0 ? (
-                                                    <div className="space-y-2 border-t pt-3">
-                                                        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                                            Composição realizada
-                                                        </p>
-                                                        {components.map(
-                                                            (component) => (
-                                                                <div
-                                                                    key={
-                                                                        component.uuid
-                                                                    }
-                                                                    className="flex items-center justify-between gap-3 text-sm"
-                                                                >
-                                                                    <span className="text-muted-foreground">
-                                                                        {component.label ??
-                                                                            component.code_label}
-                                                                        {component.nature ===
-                                                                        'informational'
-                                                                            ? ' (informativo)'
-                                                                            : ''}
-                                                                    </span>
-                                                                    <span className="font-medium">
-                                                                        {component.nature ===
-                                                                        'deduction'
-                                                                            ? '− '
-                                                                            : component.nature ===
-                                                                                'addition'
-                                                                              ? '+ '
-                                                                              : ''}
-                                                                        <MoneyAmount
-                                                                            value={
-                                                                                component.amount
-                                                                            }
-                                                                            currency={
-                                                                                entry.currency
-                                                                            }
-                                                                        />
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                ) : null}
-
-                                                {allocations.length > 0 ? (
-                                                    <div className="grid gap-2 sm:grid-cols-2">
-                                                        {allocations.map(
-                                                            (allocation) => (
-                                                                <div
-                                                                    key={
-                                                                        allocation.id
-                                                                    }
-                                                                    className="rounded-md bg-muted/40 px-3 py-2 text-sm"
-                                                                >
-                                                                    <p className="font-medium">
-                                                                        Parcela
-                                                                        #
-                                                                        {
-                                                                            allocation.installment_id
-                                                                        }
-                                                                    </p>
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        Valor{' '}
-                                                                        <MoneyAmount
-                                                                            value={
-                                                                                allocation.amount
-                                                                            }
-                                                                            currency={
-                                                                                entry.currency
-                                                                            }
-                                                                            className="text-muted-foreground"
-                                                                        />
-                                                                    </p>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                ) : null}
-
-                                                {movements.length > 0 ? (
-                                                    <div className="space-y-2 border-t pt-3">
-                                                        {movements.map(
-                                                            (movement) => (
-                                                                <div
-                                                                    key={
-                                                                        movement.uuid
-                                                                    }
-                                                                    className="flex items-center justify-between gap-3 text-sm"
-                                                                >
-                                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                                        <WalletCards className="size-4" />
-                                                                        <span className="flex flex-col">
-                                                                            <span>
-                                                                                {movementLabel(
-                                                                                    movement,
-                                                                                )}
-                                                                            </span>
-                                                                            <span className="text-xs">
-                                                                                {movement
-                                                                                    .financial_account
-                                                                                    ?.display_name ??
-                                                                                    'Conta não informada'}
-                                                                            </span>
-                                                                        </span>
-                                                                    </div>
-                                                                    <span className="font-medium">
-                                                                        <MoneyAmount
-                                                                            value={
-                                                                                movement.amount
-                                                                            }
-                                                                            currency={
-                                                                                entry.currency
-                                                                            }
-                                                                            direction={
-                                                                                movement.direction
-                                                                            }
-                                                                            signed
-                                                                        />
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-right">
+                                                    <MoneyAmount
+                                                        value={
+                                                            settlement.net_amount
+                                                        }
+                                                        currency={
+                                                            entry.currency
+                                                        }
+                                                        direction={
+                                                            settlement.direction
+                                                        }
+                                                        signed
+                                                        className="text-sm font-semibold"
+                                                    />
+                                                    <p className="text-[13px] text-muted-foreground">
+                                                        Bruto{' '}
+                                                        <MoneyAmount
+                                                            value={
+                                                                settlement.gross_amount
+                                                            }
+                                                            currency={
+                                                                entry.currency
+                                                            }
+                                                            className="text-muted-foreground"
+                                                        />
+                                                    </p>
+                                                </div>
+                                                {settlement.permissions
+                                                    .can_reverse ? (
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                            setReversalSettlement(
+                                                                settlement,
+                                                            )
+                                                        }
+                                                    >
+                                                        <RotateCcw className="size-4" />
+                                                        Estornar
+                                                    </Button>
                                                 ) : null}
                                             </div>
-                                        );
-                                    })
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
+                                        </div>
 
-                    <aside className="space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Valores</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="text-sm text-muted-foreground">
-                                        Bruto
-                                    </span>
-                                    <span className="font-medium">
-                                        <MoneyAmount
-                                            value={entry.gross_amount}
-                                            currency={entry.currency}
-                                            direction={entry.direction}
-                                        />
-                                    </span>
-                                </div>
-                                {entry.addition_amount > 0 ? (
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-sm text-muted-foreground">
-                                            Acréscimos
-                                        </span>
-                                        <MoneyAmount
-                                            value={entry.addition_amount}
-                                            currency={entry.currency}
-                                        />
-                                    </div>
-                                ) : null}
-                                {entry.deduction_amount > 0 ? (
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-sm text-muted-foreground">
-                                            Deduções
-                                        </span>
-                                        <MoneyAmount
-                                            value={entry.deduction_amount}
-                                            currency={entry.currency}
-                                        />
-                                    </div>
-                                ) : null}
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="text-sm text-muted-foreground">
-                                        Líquido
-                                    </span>
-                                    <span className="font-medium">
-                                        <MoneyAmount
-                                            value={entry.net_amount}
-                                            currency={entry.currency}
-                                            direction={entry.direction}
-                                            signed
-                                        />
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="text-sm text-muted-foreground">
-                                        Liquidado
-                                    </span>
-                                    <span className="font-medium">
-                                        <MoneyAmount
-                                            value={entry.settled_amount}
-                                            currency={entry.currency}
-                                        />
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
-                                    <span className="text-sm font-medium">
-                                        Saldo
-                                    </span>
-                                    <span className="font-semibold">
-                                        <MoneyAmount
-                                            value={entry.balance_amount}
-                                            currency={entry.currency}
-                                            direction={entry.direction}
-                                            overdue={entry.status === 'overdue'}
-                                            signed
-                                        />
-                                    </span>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        {settlementComponents.length > 0 ? (
+                                            <div className="space-y-1.5">
+                                                {settlementComponents.map(
+                                                    (component) => (
+                                                        <div
+                                                            key={
+                                                                component.uuid
+                                                            }
+                                                            className="flex items-center justify-between gap-3 text-sm"
+                                                        >
+                                                            <span className="text-muted-foreground">
+                                                                {component.label ??
+                                                                    component.code_label}
+                                                                {component.nature ===
+                                                                'informational'
+                                                                    ? ' (informativo)'
+                                                                    : ''}
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                {component.nature ===
+                                                                'deduction'
+                                                                    ? '− '
+                                                                    : component.nature ===
+                                                                        'addition'
+                                                                      ? '+ '
+                                                                      : ''}
+                                                                <MoneyAmount
+                                                                    value={
+                                                                        component.amount
+                                                                    }
+                                                                    currency={
+                                                                        entry.currency
+                                                                    }
+                                                                />
+                                                            </span>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        ) : null}
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Contexto</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3 text-sm">
-                                <div className="flex items-start gap-3">
-                                    <CalendarDays className="mt-0.5 size-4 text-muted-foreground" />
-                                    <span>
-                                        Competência:{' '}
-                                        {entry.competence_date ?? '-'}
-                                    </span>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <CircleDollarSign className="mt-0.5 size-4 text-muted-foreground" />
-                                    <Badge variant="outline">
-                                        {entry.currency}
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        {allocations.length > 0 ? (
+                                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+                                                {allocations.map(
+                                                    (allocation) => (
+                                                        <span
+                                                            key={allocation.id}
+                                                        >
+                                                            Parcela #
+                                                            {
+                                                                allocation.installment_id
+                                                            }{' '}
+                                                            <MoneyAmount
+                                                                value={
+                                                                    allocation.amount
+                                                                }
+                                                                currency={
+                                                                    entry.currency
+                                                                }
+                                                                className="text-muted-foreground"
+                                                            />
+                                                        </span>
+                                                    ),
+                                                )}
+                                            </div>
+                                        ) : null}
 
-                        <FileAttachments
-                            modelType="financial-entry"
-                            modelId={entry.uuid}
-                            defaultTag="document"
-                            title="Anexos"
-                            description="Documentos, contratos e comprovantes do lançamento."
-                            readOnly={!entry.permissions.can_manage_attachments}
-                            listMaxHeight={320}
-                        />
+                                        {movements.length > 0 ? (
+                                            <div className="space-y-1.5">
+                                                {movements.map((movement) => (
+                                                    <div
+                                                        key={movement.uuid}
+                                                        className="flex items-center justify-between gap-3 text-sm"
+                                                    >
+                                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                                            <WalletCards className="size-4" />
+                                                            <span>
+                                                                {movementLabel(
+                                                                    movement,
+                                                                )}
+                                                                {' · '}
+                                                                {movement
+                                                                    .financial_account
+                                                                    ?.display_name ??
+                                                                    'Conta não informada'}
+                                                            </span>
+                                                        </div>
+                                                        <MoneyAmount
+                                                            value={
+                                                                movement.amount
+                                                            }
+                                                            currency={
+                                                                entry.currency
+                                                            }
+                                                            direction={
+                                                                movement.direction
+                                                            }
+                                                            signed
+                                                            className="font-medium"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </PageSection>
 
-                        <ActivityTimeline
-                            modelType="financial-entry"
-                            modelId={entry.uuid}
-                            title="Timeline"
-                            allowAttachments
-                            pageSize={20}
-                        />
-                    </aside>
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <FileAttachments
+                        modelType="financial-entry"
+                        modelId={entry.uuid}
+                        defaultTag="document"
+                        title="Anexos"
+                        description={null}
+                        variant="toggle"
+                        readOnly={!entry.permissions.can_manage_attachments}
+                        listMaxHeight={280}
+                    />
+
+                    <ActivityTimeline
+                        modelType="financial-entry"
+                        modelId={entry.uuid}
+                        title="Atividade"
+                        allowAttachments
+                        pageSize={20}
+                    />
                 </div>
             </div>
 

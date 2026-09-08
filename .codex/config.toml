@@ -1,7 +1,7 @@
 [mcp_servers.laravel-boost]
 command = "php"
 args = ["artisan", "boost:mcp"]
-cwd = "D:\\laragon\\www\\Projetos\\.a____LARAVEL\\start_kit\\start_kit"
+cwd = "D:\\laragon\\www\\ProV2\\best_play\\app2_best_play"
 
 [mcp_servers.laravel-boost.tools.search-docs]
 approval_mode = "approve"

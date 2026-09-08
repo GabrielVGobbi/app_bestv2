@@ -23,6 +23,7 @@ class FinancialEntryApiController extends Controller
 
         return ApiDisplay::for(FinancialEntry::class, FinancialEntryResource::class)
             ->usingQuery($companyAccess->scope(FinancialEntry::query(), $request->user())->with([
+                'company',
                 'category' => fn ($query) => $query
                     ->with('parent')
                     ->withCount(['children', 'financialEntries']),
@@ -36,6 +37,7 @@ class FinancialEntryApiController extends Controller
         $entry = $createManualFinancialEntry->handle($request->validated(), $request->user());
 
         return new FinancialEntryResource($entry->load([
+            'company',
             'category' => fn ($query) => $query
                 ->with('parent')
                 ->withCount(['children', 'financialEntries']),
@@ -50,6 +52,7 @@ class FinancialEntryApiController extends Controller
         Gate::authorize('view', $financialEntry);
 
         return new FinancialEntryResource($financialEntry->load([
+            'company',
             'category' => fn ($query) => $query
                 ->with('parent')
                 ->withCount(['children', 'financialEntries']),

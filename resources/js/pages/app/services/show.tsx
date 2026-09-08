@@ -160,7 +160,7 @@ export default function ShowService({ serviceData, permissions }: Props) {
 
                     <main className="min-w-0">
                         <Tabs defaultValue="summary" className="gap-4">
-                            <TabsList className="w-full justify-start overflow-x-auto sm:w-fit">
+                            <TabsList variant="line">
                                 <TabsTrigger value="summary">Resumo</TabsTrigger>
                                 <TabsTrigger value="config">Configurações</TabsTrigger>
                                 <TabsTrigger value="metadata">Metadata</TabsTrigger>

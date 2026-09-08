@@ -51,11 +51,11 @@ class CrudGeneratorServiceTest extends TestCase
         $this->assertStringContainsString("void queryClient.invalidateQueries({ queryKey: ['spec-clients'] });", $indexPage);
         $this->assertStringContainsString('dateFilterColumns={dateFilterColumns}', $indexPage);
         $this->assertStringContainsString('className="page-wrapper-sm"', $createPage);
-        $this->assertStringContainsString("toast.error('Verifique os campos obrigatorios.')", $createPage);
+        $this->assertStringContainsString("toast.error('Verifique os campos obrigatórios.')", $createPage);
         $this->assertStringContainsString("import Header from '@/components/dashboard/header';", $showPage);
         $this->assertStringContainsString('<DeleteButton', $showPage);
         $this->assertStringContainsString('resourceName={String(specClient.name ?? specClient.uuid)}', $showPage);
-        $this->assertStringContainsString('className="page-wrapper-lg flex flex-col gap-6"', $showPage);
+        $this->assertStringContainsString('className="page-wrapper-lg"', $showPage);
         $this->assertStringContainsString("import FormField from '@/components/ui/forms/form-field';", $fieldsPage);
         $this->assertStringContainsString('id="field-name"', $fieldsPage);
 

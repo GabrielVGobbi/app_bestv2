@@ -84,6 +84,7 @@ class FinancialEntryController extends Controller
         return Inertia::render('app/financial-entries/show', [
             'entryData' => new FinancialEntryResource(
                 $financialEntry->load([
+                    'company',
                     'category',
                     'counterparty',
                     'amountComponents',

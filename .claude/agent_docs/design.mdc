@@ -1,4 +1,3 @@
----
-alwaysApply: true
----
-I want a system with an elegant and modern design that conveys sophistication and intuitive usability. The interface should be clean, responsive, and visually pleasing, with attention to visual details such as typography, harmonious color palette, smooth transitions, and custom icons. The user experience needs to be fluid, with subtle animations and a well-organized layout that values both aesthetics and functionality. I want the system to visually impress from the first access, striking a balance between innovation and simplicity. Inspiration can come from current UI/UX trends, such as Neumorphism, Glassmorphism, or interfaces with a minimalist futuristic look. Each visual component should be designed to deliver beauty and efficiency, reinforcing a strong and specific visual identity.
+# BestPlay — design
+
+For visual changes, use the [frontend design skill](../../.agents/skills/frontend-design/SKILL.md). It routes to the existing design system, Brazilian form components, and Tailwind guidance.

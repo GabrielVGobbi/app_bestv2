@@ -17,6 +17,6 @@ class EmailWebhookController extends Controller
     {
         $this->webhookService->handle($provider, $request);
 
-        return response()->noContent();
+        return $provider === 'postmark' ? response('', 200) : response()->noContent();
     }
 }

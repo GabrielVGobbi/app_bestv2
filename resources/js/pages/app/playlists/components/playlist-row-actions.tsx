@@ -26,6 +26,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getErrorMessage, httpPatch, toApiError } from '@/lib/http';
 import type { Playlist } from '@/types/app/playlist';
 
@@ -135,105 +140,151 @@ export function PlaylistRowActions({
         });
     }
 
+    const canRestoreArchived = canRestore && isArchived;
+    const canArchive = canDelete && !isArchived;
+    const hasOverflowActions =
+        hasSpotifyGroup || canRestoreArchived || canArchive;
+
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Ações de ${playlist.name}`}
-                >
-                    {syncing ? (
-                        <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                        <MoreHorizontal className="size-4" />
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem asChild>
-                    <Link href={show.url(playlist.uuid)} prefetch>
-                        <Eye className="size-4" />
-                        Visualizar
-                    </Link>
-                </DropdownMenuItem>
-                {canUpdate ? (
-                    <DropdownMenuItem asChild>
-                        <Link href={edit.url(playlist.uuid)} prefetch>
-                            <Pencil className="size-4" />
-                            Editar
+        <div className="flex items-center justify-end gap-0.5">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
+                        <Link
+                            href={show.url(playlist.uuid)}
+                            prefetch
+                            aria-label={`Visualizar ${playlist.name}`}
+                        >
+                            <Eye className="size-4" />
                         </Link>
-                    </DropdownMenuItem>
-                ) : null}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Visualizar</TooltipContent>
+            </Tooltip>
 
-                {hasSpotifyGroup ? (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            disabled={!url}
-                            onSelect={() => {
-                                if (!url) {
-                                    return;
-                                }
+            {canUpdate ? (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            asChild
+                        >
+                            <Link
+                                href={edit.url(playlist.uuid)}
+                                prefetch
+                                aria-label={`Editar ${playlist.name}`}
+                            >
+                                <Pencil className="size-4" />
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Editar</TooltipContent>
+                </Tooltip>
+            ) : null}
 
-                                window.open(url, '_blank', 'noopener,noreferrer');
-                            }}
-                        >
-                            <SpotifyIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
-                            Abrir Spotify
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            disabled={!url}
-                            onSelect={(event) => {
-                                event.preventDefault();
-                                void copySpotifyLink();
-                            }}
-                        >
-                            <Copy className="size-4" />
-                            Copiar link
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            disabled={!canRunSync || syncing}
-                            onSelect={(event) => {
-                                event.preventDefault();
-                                void syncSpotify();
-                            }}
+            {hasOverflowActions ? (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label={`Mais ações de ${playlist.name}`}
                         >
                             {syncing ? (
                                 <Loader2 className="size-4 animate-spin" />
                             ) : (
-                                <RefreshCw className="size-4" />
+                                <MoreHorizontal className="size-4" />
                             )}
-                            Sincronizar
-                        </DropdownMenuItem>
-                    </>
-                ) : null}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                        {hasSpotifyGroup ? (
+                            <>
+                                <DropdownMenuItem
+                                    disabled={!url}
+                                    onSelect={() => {
+                                        if (!url) {
+                                            return;
+                                        }
 
-                {canRestore && isArchived ? (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => restorePlaylist()}>
-                            <RotateCcw className="size-4" />
-                            Restaurar
-                        </DropdownMenuItem>
-                    </>
-                ) : null}
+                                        window.open(
+                                            url,
+                                            '_blank',
+                                            'noopener,noreferrer',
+                                        );
+                                    }}
+                                >
+                                    <SpotifyIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
+                                    Abrir Spotify
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    disabled={!url}
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        void copySpotifyLink();
+                                    }}
+                                >
+                                    <Copy className="size-4" />
+                                    Copiar link
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    disabled={!canRunSync || syncing}
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        void syncSpotify();
+                                    }}
+                                >
+                                    {syncing ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="size-4" />
+                                    )}
+                                    Sincronizar
+                                </DropdownMenuItem>
+                            </>
+                        ) : null}
 
-                {canDelete && !isArchived ? (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => onArchive(playlist)}
-                        >
-                            <Trash2 className="size-4" />
-                            Arquivar
-                        </DropdownMenuItem>
-                    </>
-                ) : null}
-            </DropdownMenuContent>
-        </DropdownMenu>
+                        {canRestoreArchived ? (
+                            <>
+                                {hasSpotifyGroup ? (
+                                    <DropdownMenuSeparator />
+                                ) : null}
+                                <DropdownMenuItem
+                                    onSelect={() => restorePlaylist()}
+                                >
+                                    <RotateCcw className="size-4" />
+                                    Restaurar
+                                </DropdownMenuItem>
+                            </>
+                        ) : null}
+
+                        {canArchive ? (
+                            <>
+                                {hasSpotifyGroup || canRestoreArchived ? (
+                                    <DropdownMenuSeparator />
+                                ) : null}
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() => onArchive(playlist)}
+                                >
+                                    <Trash2 className="size-4" />
+                                    Arquivar
+                                </DropdownMenuItem>
+                            </>
+                        ) : null}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ) : null}
+        </div>
     );
 }
 

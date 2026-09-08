@@ -27,6 +27,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+    PanelTable,
+    PanelTableBody,
+    PanelTableHead,
+    PanelTableRow,
+} from '@/components/ui/panel-table';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -239,7 +245,7 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                 <div className="space-y-4 p-4">
                     <form
                         onSubmit={submit}
-                        className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[minmax(12rem,1fr)_10rem_12rem_10rem_auto]"
+                        className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_auto]"
                     >
                         <div className="space-y-2">
                             <Label htmlFor="metrics-search">Buscar</Label>
@@ -260,7 +266,10 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                 name="period_days"
                                 defaultValue={String(filters.period_days)}
                             >
-                                <SelectTrigger id="metrics-period">
+                                <SelectTrigger
+                                    id="metrics-period"
+                                    className="w-full"
+                                >
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -281,7 +290,10 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                         : 'all'
                                 }
                             >
-                                <SelectTrigger id="metrics-genre">
+                                <SelectTrigger
+                                    id="metrics-genre"
+                                    className="w-full"
+                                >
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -303,7 +315,10 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                 name="status"
                                 defaultValue={filters.status || 'all'}
                             >
-                                <SelectTrigger id="metrics-status">
+                                <SelectTrigger
+                                    id="metrics-status"
+                                    className="w-full"
+                                >
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -318,8 +333,8 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex items-end">
-                            <Button type="submit" className="w-full">
+                        <div className="flex items-end sm:col-span-2 xl:col-span-1">
+                            <Button type="submit" className="h-9 w-full">
                                 Aplicar
                             </Button>
                         </div>
@@ -463,20 +478,24 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                             <CardTitle>Comparativo por playlist</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-hidden rounded-md border">
-                                <div className="hidden grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(6rem,0.55fr))] gap-3 border-b bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground lg:grid">
-                                    <span>Playlist</span>
-                                    <span className="text-right">Seguidores</span>
-                                    <span className="text-right">Delta</span>
-                                    <span className="text-right">Faixas</span>
-                                    <span>Status</span>
-                                    <span>Última sync</span>
-                                </div>
-                                <ul className="divide-y">
+                            <PanelTable>
+                                <PanelTableHead
+                                    className="grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(6rem,0.55fr))]"
+                                    columns={[
+                                        { label: 'Playlist' },
+                                        { label: 'Seguidores', align: 'right' },
+                                        { label: 'Delta', align: 'right' },
+                                        { label: 'Faixas', align: 'right' },
+                                        { label: 'Status' },
+                                        { label: 'Última sync' },
+                                    ]}
+                                />
+                                <PanelTableBody as="ul">
                                     {dashboard.rows.map((row) => (
-                                        <li
+                                        <PanelTableRow
+                                            as="li"
                                             key={row.playlist_uuid}
-                                            className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(6rem,0.55fr))] lg:items-center"
+                                            className="lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(6rem,0.55fr))]"
                                         >
                                             <div className="flex min-w-0 items-center gap-3">
                                                 {row.cover_url ? (
@@ -546,10 +565,10 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                                     </p>
                                                 )}
                                             </div>
-                                        </li>
+                                        </PanelTableRow>
                                     ))}
-                                </ul>
-                            </div>
+                                </PanelTableBody>
+                            </PanelTable>
                         </CardContent>
                     </Card>
 

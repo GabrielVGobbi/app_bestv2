@@ -22,6 +22,7 @@ class FinancialEntryResource extends JsonResource
             'id' => $this->id,
             'uuid' => $this->uuid,
             'company_id' => $this->company_id,
+            'company_name' => $this->companyDisplayName(),
             'created_by_id' => $this->created_by_id,
             'direction' => $this->direction?->value ?? $this->direction,
             'direction_label' => $this->directionLabel(),
@@ -64,6 +65,25 @@ class FinancialEntryResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    private function companyDisplayName(): ?string
+    {
+        $company = $this->whenLoaded('company');
+
+        if (! $company || $company instanceof MissingValue) {
+            return null;
+        }
+
+        if (filled($company->nickname)) {
+            return (string) $company->nickname;
+        }
+
+        if (filled($company->name)) {
+            return (string) $company->name;
+        }
+
+        return null;
     }
 
     private function directionLabel(): string

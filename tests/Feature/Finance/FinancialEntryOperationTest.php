@@ -67,7 +67,12 @@ class FinancialEntryOperationTest extends TestCase
                 ->component('app/financial-entries/show')
                 ->has('entryData.data')
                 ->has('entryData.data.category')
-                ->missing('entryData.data.category.data'));
+                ->has('entryData.data.company_name')
+                ->missing('entryData.data.category.data')
+                ->where(
+                    'entryData.data.company_name',
+                    $entry->company?->nickname ?: $entry->company?->name,
+                ));
     }
 
     public function test_financial_entry_request_rejects_component_domain_invariants_on_specific_fields(): void

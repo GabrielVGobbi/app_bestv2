@@ -7,6 +7,8 @@ namespace Tests\Feature\Admin;
 use App\Models\User;
 use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class DevToolsTest extends TestCase
@@ -157,6 +159,10 @@ class DevToolsTest extends TestCase
     {
         $user = $this->developer();
 
+        foreach (['cache:clear', 'config:clear', 'route:clear', 'view:clear'] as $command) {
+            Artisan::partialMock()->shouldReceive('call')->once()->with($command)->andReturn(0);
+        }
+
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.cache.clear'));
 
         $response->assertRedirect();
@@ -171,6 +177,7 @@ class DevToolsTest extends TestCase
         $user = $this->developer();
 
         foreach (['cache', 'config', 'route', 'view'] as $type) {
+            Artisan::partialMock()->shouldReceive('call')->once()->with($type.':clear')->andReturn(0);
             $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.cache.clear-specific'), ['type' => $type]);
             $response->assertRedirect();
         }
@@ -193,9 +200,15 @@ class DevToolsTest extends TestCase
     {
         $user = $this->developer();
 
+        foreach (['config:cache', 'route:cache', 'view:cache'] as $command) {
+            Artisan::partialMock()->shouldReceive('call')->once()->with($command)->andReturn(0);
+        }
+
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.optimize'));
 
         $response->assertRedirect();
+        $this->assertFileDoesNotExist(app()->getCachedConfigPath());
+        $this->assertFileDoesNotExist(app()->getCachedRoutesPath());
     }
 
     // -------------------------------------------------------------------------
@@ -205,6 +218,10 @@ class DevToolsTest extends TestCase
     public function test_env_variable_can_be_updated(): void
     {
         $user = $this->developer();
+        $envPath = base_path('.env');
+        File::partialMock()->shouldReceive('exists')->once()->with($envPath)->andReturnTrue();
+        File::shouldReceive('get')->once()->with($envPath)->andReturn('APP_NAME=BestPlay');
+        File::shouldReceive('put')->once()->with($envPath, "APP_NAME=BestPlay\nTEST_VAR=hello")->andReturn(36);
 
         $response = $this->actingAs($user)->post(route('admin.dev.dev-tools.env.update'), [
             'key' => 'TEST_VAR',

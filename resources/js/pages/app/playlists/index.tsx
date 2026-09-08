@@ -327,7 +327,7 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                             label: 'Ações',
                             buttonSize: 'icon',
                             showTooltips: false,
-                            columnSize: 64,
+                            columnSize: 136,
                         }}
                         infiniteScrollConfig={{
                             fitViewport: true,

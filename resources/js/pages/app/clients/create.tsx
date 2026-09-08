@@ -82,7 +82,7 @@ export default function CreateClient({ formOptions }: Props) {
                                     </Card>
                                 </div>
 
-                                <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+                                <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
                                     <div className="flex items-center justify-between gap-3 py-3">
                                         <p className="text-xs text-muted-foreground">
                                             Campos marcados com{' '}

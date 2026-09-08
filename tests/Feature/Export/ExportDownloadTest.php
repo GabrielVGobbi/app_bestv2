@@ -4,6 +4,7 @@ namespace Tests\Feature\Export;
 
 use App\Models\Export;
 use App\Models\User;
+use App\Modules\Permissions\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -36,6 +37,8 @@ class ExportDownloadTest extends TestCase
             ->get("/exports/{$export->uuid}/download");
 
         $response->assertOk();
+        $response->assertDownload('export.csv');
+        $this->assertSame('name,email', $response->streamedContent());
     }
 
     public function test_download_returns_403_for_non_owner(): void
@@ -81,5 +84,20 @@ class ExportDownloadTest extends TestCase
         $response = $this->get("/exports/{$export->uuid}/download");
 
         $response->assertRedirect('/login');
+    }
+
+    public function test_administrator_cannot_download_another_users_export(): void
+    {
+        $this->user->roles()->attach(Role::factory()->create(['slug' => 'admin']));
+        $export = Export::factory()->completed()->create();
+
+        $this->actingAs($this->user)->get(route('exports.download', $export))->assertForbidden();
+    }
+
+    public function test_download_returns_not_found_when_file_is_missing(): void
+    {
+        $export = Export::factory()->completed()->create(['user_id' => $this->user->id]);
+
+        $this->actingAs($this->user)->get(route('exports.download', $export))->assertNotFound();
     }
 }

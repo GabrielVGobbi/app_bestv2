@@ -213,7 +213,7 @@ class SaleController extends Controller
                     'uuid' => $playlist->uuid,
                     'name' => $playlist->name,
                     'spotify_image_url' => $playlist->spotify_image_url,
-                    'cover_image_url' => $this->playlistCoverImageUrl($playlist),
+                    'cover_image_url' => $playlist->coverImageUrl(),
                 ])
                 ->all(),
             'playlist_tops' => PlaylistTop::query()
@@ -231,7 +231,7 @@ class SaleController extends Controller
                     'top_name' => $playlistTop->top?->name,
                     'name' => trim(($playlistTop->playlist?->name ?? 'Playlist').' - '.($playlistTop->top?->name ?? 'TOP')),
                     'spotify_image_url' => $playlistTop->playlist?->spotify_image_url,
-                    'cover_image_url' => $playlistTop->playlist ? $this->playlistCoverImageUrl($playlistTop->playlist) : null,
+                    'cover_image_url' => $playlistTop->playlist?->coverImageUrl(),
                     'slots_quantity' => $playlistTop->slots_quantity,
                     'occupied_slots_count' => $playlistTop->occupied_slots_count,
                     'price' => $playlistTop->price,
@@ -239,15 +239,6 @@ class SaleController extends Controller
                 ])
                 ->all(),
         ];
-    }
-
-    private function playlistCoverImageUrl(Playlist $playlist): ?string
-    {
-        if ($playlist->spotifyCoverUpload !== null) {
-            return route('uploads.preview', ['upload' => $playlist->spotifyCoverUpload->id]);
-        }
-
-        return $playlist->spotify_image_url;
     }
 
     /** @return array<string, mixed> */

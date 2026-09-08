@@ -25,7 +25,6 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(functio
     Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 
     Route::get('exportacoes', [ExportController::class, 'index'])->name('exports.index');
-    Route::get('exports/{export}/download', [ExportController::class, 'download'])->name('exports.download');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
