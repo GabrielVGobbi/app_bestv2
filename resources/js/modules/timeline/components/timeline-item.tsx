@@ -1,4 +1,7 @@
-import type { CommentPayload, TimelineItem as TimelineItemType } from '../api/types';
+import type {
+    CommentPayload,
+    TimelineItem as TimelineItemType,
+} from '../api/types';
 import { TimelineActivityItem } from './timeline-activity-item';
 import { TimelineCommentItem } from './timeline-comment-item';
 
@@ -6,8 +9,14 @@ interface TimelineItemProps {
     item: TimelineItemType;
     readOnly?: boolean;
     allowAttachments?: boolean;
-    onReply: (commentId: number, payload: CommentPayload) => Promise<void> | void;
-    onUpdate: (commentId: number, payload: CommentPayload) => Promise<void> | void;
+    onReply: (
+        commentId: number,
+        payload: CommentPayload,
+    ) => Promise<void> | void;
+    onUpdate: (
+        commentId: number,
+        payload: CommentPayload,
+    ) => Promise<void> | void;
     onDelete: (commentId: number) => Promise<void> | void;
 }
 

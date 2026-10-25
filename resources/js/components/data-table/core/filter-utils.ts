@@ -2,7 +2,7 @@ import type { DataTableFilterOption, DataTableFilterValue } from './types';
 
 /**
  * Returns true when a filter value is non-empty (i.e. the filter is active).
- * Single source of truth — replaces scattered hasValue / hasFilterValue /
+ * Single source of truth: replaces scattered hasValue / hasFilterValue /
  * isEmptyFilterValue helpers across the data-table system.
  */
 export function isActiveFilterValue(value: DataTableFilterValue): boolean {
@@ -15,7 +15,9 @@ export function isActiveFilterValue(value: DataTableFilterValue): boolean {
     }
 
     if (typeof value === 'object') {
-        return Boolean(value.from || value.to);
+        return [value.from, value.to].some(
+            (bound) => bound !== undefined && bound !== null && bound !== '',
+        );
     }
 
     return true;

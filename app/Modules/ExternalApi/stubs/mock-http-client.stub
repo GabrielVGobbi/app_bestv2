@@ -1,0 +1,31 @@
+<?php
+
+namespace {{ namespace }}\Http;
+
+use App\Modules\ExternalApi\Core\Contracts\MockHttpClientInterface;
+use App\Modules\ExternalApi\Core\DTOs\BaseResponse;
+use {{ namespace }}\Mocks\{{ class }}MockData;
+
+class {{ class }}MockHttpClient extends {{ class }}HttpClient implements MockHttpClientInterface
+{
+    public function get(string $endpoint, array $params = []): BaseResponse
+    {
+        return new BaseResponse({{ class }}MockData::sample());
+    }
+
+    public function post(string $endpoint, array $data = []): BaseResponse
+    {
+        return new BaseResponse({{ class }}MockData::sample(), 201);
+    }
+
+    public function put(string $endpoint, array $data = []): BaseResponse
+    {
+        return new BaseResponse({{ class }}MockData::sample());
+    }
+
+    public function delete(string $endpoint): BaseResponse
+    {
+        return new BaseResponse(['deleted' => true]);
+    }
+}
+

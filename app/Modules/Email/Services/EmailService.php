@@ -8,10 +8,12 @@ use App\Modules\Email\Contracts\EmailServiceInterface;
 use App\Modules\Email\DTOs\SendEmailDTO;
 use App\Modules\Email\Enums\EmailStatus;
 use App\Modules\Email\Jobs\ProcessEmailJob;
-use App\Modules\Email\Mail\DynamicMailable;
 use App\Modules\Email\Models\EmailLog;
 use App\Supports\AppSettings;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Throwable;
 
 class EmailService implements EmailServiceInterface
 {
@@ -19,24 +21,15 @@ class EmailService implements EmailServiceInterface
 
     public function queue(SendEmailDTO $dto): ?EmailLog
     {
-        if (! $this->isEnabled($dto)) {
-            return null;
-        }
-
-        $dto = $this->applyOverride($dto);
-
-        $log = $this->findOrCreateLog($dto);
-
-        if ($log === null) {
-            return null; // duplicate detected
-        }
-
-        ProcessEmailJob::dispatch($log);
-
-        return $log;
+        return $this->submit($dto, false);
     }
 
     public function sendNow(SendEmailDTO $dto): ?EmailLog
+    {
+        return $this->submit($dto, true);
+    }
+
+    private function submit(SendEmailDTO $dto, bool $synchronous): ?EmailLog
     {
         if (! $this->isEnabled($dto)) {
             return null;
@@ -44,29 +37,32 @@ class EmailService implements EmailServiceInterface
 
         $dto = $this->applyOverride($dto);
 
-        $log = $this->createLog($dto);
+        $log = DB::transaction(function () use ($dto, $synchronous): ?EmailLog {
+            $log = $this->findOrCreateLog($dto);
 
-        $log->update(['status' => EmailStatus::Processing, 'attempts' => 1]);
+            if ($log === null) {
+                return null;
+            }
 
-        try {
-            $mailable = (new DynamicMailable(
-                emailTemplate: $dto->template,
-                variables: $dto->variables,
-                replyToAddress: $dto->replyTo,
-            ))->subject($dto->subject)
-                ->from(config('mail.from.address'), config('mail.from.name'));
+            $job = new ProcessEmailJob($log);
+            DB::afterCommit(function () use ($job, $synchronous): void {
+                if (! $synchronous || $job->delay !== null) {
+                    dispatch($job->afterCommit());
 
-            $mailer = config('mail.default');
-            $sentMessage = Mail::mailer($mailer)
-                ->to($dto->to, $dto->toName)
-                ->send($mailable);
+                    return;
+                }
 
-            $log->markAsSent($this->messageIdResolver->resolve($sentMessage, $mailer));
-        } catch (\Throwable $e) {
-            $log->markAsFailed($e->getMessage());
-        }
+                try {
+                    $job->handle($this->messageIdResolver);
+                } catch (Throwable $exception) {
+                    $job->failed($exception);
+                }
+            });
 
-        return $log;
+            return $log;
+        }, attempts: 3);
+
+        return $log?->fresh();
     }
 
     private function isEnabled(SendEmailDTO $dto): bool
@@ -94,44 +90,17 @@ class EmailService implements EmailServiceInterface
     }
 
     /**
-     * Returns null if a non-failed email with the same idempotency key already exists.
-     * Resets a failed log with the same key back to queued for retry.
+     * The unique key arbitrates creation; only a proven pre-transport failure may be retried.
      */
     private function findOrCreateLog(SendEmailDTO $dto): ?EmailLog
     {
         $key = $this->resolveIdempotencyKey($dto);
 
-        $existing = EmailLog::where('idempotency_key', $key)->first();
-
-        if (! $existing) {
-            return $this->createLog($dto, $key);
-        }
-
-        // Already delivered or in-flight — skip duplicate send
-        if (in_array($existing->status->value, [
-            EmailStatus::Queued->value,
-            EmailStatus::Processing->value,
-            EmailStatus::Sent->value,
-            EmailStatus::Delivered->value,
-        ], true)) {
-            return null;
-        }
-
-        // Failed log with same key: reset and retry
-        $existing->update([
-            'status' => EmailStatus::Queued,
-            'error_message' => null,
-            'failed_at' => null,
-        ]);
-
-        return $existing->fresh();
-    }
-
-    private function createLog(SendEmailDTO $dto, ?string $idempotencyKey = null): EmailLog
-    {
-        return EmailLog::create([
+        $attributes = [
             'to_email' => $dto->to,
             'to_name' => $dto->toName,
+            'reply_to' => $dto->replyTo,
+            'scheduled_at' => $dto->scheduledAt,
             'from_email' => config('mail.from.address'),
             'from_name' => config('mail.from.name'),
             'subject' => $dto->subject,
@@ -141,9 +110,23 @@ class EmailService implements EmailServiceInterface
             'status' => EmailStatus::Queued,
             'notifiable_type' => $dto->notifiableType,
             'notifiable_id' => $dto->notifiableId,
-            'idempotency_key' => $idempotencyKey ?? $this->resolveIdempotencyKey($dto),
             'mailer' => config('mail.default'),
-        ]);
+            'dispatch_token' => (string) Str::uuid(),
+            'retry_safe' => false,
+        ];
+
+        try {
+            $log = EmailLog::query()->firstOrCreate(['idempotency_key' => $key], $attributes);
+        } catch (UniqueConstraintViolationException $exception) {
+            // A current read sees the winner even under a pre-existing REPEATABLE READ snapshot.
+            $log = EmailLog::query()->where('idempotency_key', $key)->lockForUpdate()->first();
+
+            if ($log === null) {
+                throw $exception;
+            }
+        }
+
+        return $log->wasRecentlyCreated ? $log : $log->queueAgain();
     }
 
     private function resolveIdempotencyKey(SendEmailDTO $dto): string

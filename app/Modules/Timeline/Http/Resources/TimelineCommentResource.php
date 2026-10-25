@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Timeline\Http\Resources;
 
+use App\Modules\Timeline\Models\TimelineComment;
+use App\Modules\Timeline\Services\TimelineHtmlSanitizer;
 use App\Modules\Uploads\Http\Resources\UploadedResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Gate;
 
+/** @mixin TimelineComment */
 class TimelineCommentResource extends JsonResource
 {
     /**
@@ -20,7 +23,9 @@ class TimelineCommentResource extends JsonResource
             'type' => 'comment',
             'id' => $this->id,
             'uuid' => $this->uuid,
-            'body' => $this->body,
+            'body' => $this->body_format === 'html'
+                ? app(TimelineHtmlSanitizer::class)->clean($this->body)
+                : $this->body,
             'body_format' => $this->body_format,
             'author' => [
                 'id' => $this->author?->id,

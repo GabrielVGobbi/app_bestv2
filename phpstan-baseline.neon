@@ -1,0 +1,1019 @@
+# Progressive debt only; see docs/stabilization/ci-003-baseline.json.
+# Do not regenerate to accept new errors. New adapters have no baseline entries.
+parameters:
+    ignoreErrors:
+        -
+            message: "#^Unsafe\\ usage\\ of\\ new\\ static\\(\\)\\.$#"
+            identifier: "new.static"
+            count: 4
+            path: "app/Concerns/Exportable.php"
+        -
+            message: "#^Property\\ App\\\\Models\\\\User::\\$exportable\\ \\(array<string,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Exportable.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::\\$exportable\\ \\(array<string,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Exportable.php"
+        -
+            message: "#^Property\\ Tests\\\\Feature\\\\Export\\\\UnscopedApiExportUser::\\$exportable\\ \\(array\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Exportable.php"
+        -
+            message: "#^Property\\ Tests\\\\Feature\\\\Export\\\\UnscopedWorkerExportUser::\\$exportable\\ \\(array\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Exportable.php"
+        -
+            message: "#^Trait\\ App\\\\Concerns\\\\HasRichText\\ is\\ used\\ zero\\ times\\ and\\ is\\ not\\ analysed\\.$#"
+            identifier: "trait.unused"
+            count: 1
+            path: "app/Concerns/HasRichText.php"
+        -
+            message: "#^Method\\ App\\\\Actions\\\\Fortify\\\\CreateNewUser::passwordRules\\(\\)\\ should\\ return\\ array<int,\\ array<mixed>\\|Illuminate\\\\Contracts\\\\Validation\\\\ValidationRule\\|string>\\ but\\ returns\\ array<int,\\ Illuminate\\\\Validation\\\\Rules\\\\Password\\|string>\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Concerns/PasswordValidationRules.php"
+        -
+            message: "#^Method\\ App\\\\Actions\\\\Fortify\\\\ResetUserPassword::passwordRules\\(\\)\\ should\\ return\\ array<int,\\ array<mixed>\\|Illuminate\\\\Contracts\\\\Validation\\\\ValidationRule\\|string>\\ but\\ returns\\ array<int,\\ Illuminate\\\\Validation\\\\Rules\\\\Password\\|string>\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Concerns/PasswordValidationRules.php"
+        -
+            message: "#^Method\\ App\\\\Http\\\\Requests\\\\Settings\\\\PasswordUpdateRequest::passwordRules\\(\\)\\ should\\ return\\ array<int,\\ array<mixed>\\|Illuminate\\\\Contracts\\\\Validation\\\\ValidationRule\\|string>\\ but\\ returns\\ array<int,\\ Illuminate\\\\Validation\\\\Rules\\\\Password\\|string>\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Concerns/PasswordValidationRules.php"
+        -
+            message: "#^Method\\ App\\\\Http\\\\Requests\\\\Settings\\\\ProfileDeleteRequest::passwordRules\\(\\)\\ should\\ return\\ array<int,\\ array<mixed>\\|Illuminate\\\\Contracts\\\\Validation\\\\ValidationRule\\|string>\\ but\\ returns\\ array<int,\\ Illuminate\\\\Validation\\\\Rules\\\\Password\\|string>\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Concerns/PasswordValidationRules.php"
+        -
+            message: "#^Property\\ App\\\\Models\\\\User::\\$defaultSortColumn\\ \\(string\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Models\\\\User::\\$defaultSortDirection\\ \\(string\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Models\\\\User::\\$filterable\\ \\(array<int,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Models\\\\User::\\$searchable\\ \\(array<int,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Models\\\\User::\\$sortable\\ \\(array<int,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::\\$defaultSortColumn\\ \\(string\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::\\$defaultSortDirection\\ \\(string\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::\\$filterable\\ \\(array<int,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::\\$searchable\\ \\(array<int,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::\\$sortable\\ \\(array<int,\\ string>\\)\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.property"
+            count: 1
+            path: "app/Concerns/Searchable.php"
+        -
+            message: "#^Call\\ to\\ function\\ is_string\\(\\)\\ with\\ string\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 3
+            path: "app/Console/Commands/RecoverEmailDelivery.php"
+        -
+            message: "#^Call\\ to\\ function\\ is_string\\(\\)\\ with\\ string\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 1
+            path: "app/Console/Commands/ReprocessEmailWebhooks.php"
+        -
+            message: "#^Using\\ nullsafe\\ method\\ call\\ on\\ non\\-nullable\\ type\\ App\\\\Modules\\\\Notifications\\\\Enums\\\\NotificationCategory\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Using\\ nullsafe\\ method\\ call\\ on\\ non\\-nullable\\ type\\ App\\\\Modules\\\\Notifications\\\\Enums\\\\NotificationType\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Using\\ nullsafe\\ property\\ access\\ on\\ non\\-nullable\\ type\\ App\\\\Modules\\\\Notifications\\\\Enums\\\\NotificationCategory\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Using\\ nullsafe\\ property\\ access\\ on\\ non\\-nullable\\ type\\ App\\\\Modules\\\\Notifications\\\\Enums\\\\NotificationType\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::\\$id\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::\\$name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::\\$uuid\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Events/NotificationCreated.php"
+        -
+            message: "#^Parameter\\ \\#1\\ \\$array\\ \\(list<array\\{key:\\ string,\\ label:\\ string\\}>\\)\\ of\\ array_values\\ is\\ already\\ a\\ list,\\ call\\ has\\ no\\ effect\\.$#"
+            identifier: "arrayValues.list"
+            count: 1
+            path: "app/Http/Controllers/Api/ExportApiController.php"
+        -
+            message: "#^Call\\ to\\ function\\ method_exists\\(\\)\\ with\\ Illuminate\\\\Auth\\\\SessionGuard\\ and\\ 'hashPasswordForCook…'\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 1
+            path: "app/Http/Controllers/ForcePasswordChangeController.php"
+        -
+            message: "#^Call\\ to\\ function\\ method_exists\\(\\)\\ with\\ Illuminate\\\\Auth\\\\SessionGuard\\ and\\ 'hashPasswordForCook…'\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 1
+            path: "app/Http/Controllers/Settings/SecurityController.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Database\\\\Eloquent\\\\Builder::search\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "app/Http/Requests/PaginationRequest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ App\\\\Http\\\\Resources\\\\ExportResource::isExpired\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$completed_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$error_message\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$expires_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$file_name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$file_size\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$format\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$model_class\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$processed_records\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$status\\.$#"
+            identifier: "property.notFound"
+            count: 3
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$total_records\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\ExportResource::\\$uuid\\.$#"
+            identifier: "property.notFound"
+            count: 2
+            path: "app/Http/Resources/ExportResource.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ App\\\\Http\\\\Resources\\\\NotificationResource::isRead\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$action_status\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$actions\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$body\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$category\\.$#"
+            identifier: "property.notFound"
+            count: 2
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$data\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$id\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$link\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$read_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$sender\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$title\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$type\\.$#"
+            identifier: "property.notFound"
+            count: 2
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\NotificationResource::\\$uuid\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/NotificationResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$description\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$group\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$id\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$slug\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\PermissionResource::\\$updated_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/PermissionResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\RoleResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/RoleResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\RoleResource::\\$description\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/RoleResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\RoleResource::\\$id\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/RoleResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\RoleResource::\\$name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/RoleResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\RoleResource::\\$slug\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/RoleResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Http\\\\Resources\\\\RoleResource::\\$updated_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Http/Resources/RoleResource.php"
+        -
+            message: "#^Negated\\ boolean\\ expression\\ is\\ always\\ false\\.$#"
+            identifier: "booleanNot.alwaysFalse"
+            count: 1
+            path: "app/Listeners/LogUserLogout.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::isExpired\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$completed_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$error_message\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$expires_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$export_type\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$file_name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$file_size\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$status\\.$#"
+            identifier: "property.notFound"
+            count: 3
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$tables\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Backup\\\\Http\\\\Resources\\\\DatabaseExportResource::\\$uuid\\.$#"
+            identifier: "property.notFound"
+            count: 2
+            path: "app/Modules/Backup/Http/Resources/DatabaseExportResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Clients\\\\Http\\\\Resources\\\\ClientResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Clients/Http/Resources/ClientResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Clients\\\\Http\\\\Resources\\\\ClientResource::\\$email\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Clients/Http/Resources/ClientResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Clients\\\\Http\\\\Resources\\\\ClientResource::\\$id\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Clients/Http/Resources/ClientResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Clients\\\\Http\\\\Resources\\\\ClientResource::\\$name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Clients/Http/Resources/ClientResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Clients\\\\Http\\\\Resources\\\\ClientResource::\\$updated_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Clients/Http/Resources/ClientResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Clients\\\\Http\\\\Resources\\\\ClientResource::\\$uuid\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Clients/Http/Resources/ClientResource.php"
+        -
+            message: "#^Method\\ Illuminate\\\\Contracts\\\\Mail\\\\Mailer::to\\(\\)\\ invoked\\ with\\ 2\\ parameters,\\ 1\\ required\\.$#"
+            identifier: "arguments.count"
+            count: 1
+            path: "app/Modules/Email/Jobs/ProcessEmailJob.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Database\\\\ConnectionInterface::getDriverName\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "app/Modules/Email/Services/EmailWebhookEventRecorder.php"
+        -
+            message: "#^Offset\\ 2\\ on\\ array\\{non\\-falsy\\-string,\\ non\\-falsy\\-string,\\ ''\\|numeric\\-string,\\ non\\-falsy\\-string\\}\\ on\\ left\\ side\\ of\\ \\?\\?\\ always\\ exists\\ and\\ is\\ not\\ nullable\\.$#"
+            identifier: "nullCoalesce.offset"
+            count: 1
+            path: "app/Modules/Email/Services/EmailWebhookEventRecorder.php"
+        -
+            message: "#^Strict\\ comparison\\ using\\ ===\\ between\\ string\\ and\\ null\\ will\\ always\\ evaluate\\ to\\ false\\.$#"
+            identifier: "identical.alwaysFalse"
+            count: 1
+            path: "app/Modules/ExternalApi/Core/Support/RetryPolicy.php"
+        -
+            message: "#^Trait\\ App\\\\Modules\\\\ExternalApi\\\\Core\\\\Traits\\\\HandlesPagination\\ is\\ used\\ zero\\ times\\ and\\ is\\ not\\ analysed\\.$#"
+            identifier: "trait.unused"
+            count: 1
+            path: "app/Modules/ExternalApi/Core/Traits/HandlesPagination.php"
+        -
+            message: "#^Trait\\ App\\\\Modules\\\\ExternalApi\\\\Core\\\\Traits\\\\HandlesRateLimit\\ is\\ used\\ zero\\ times\\ and\\ is\\ not\\ analysed\\.$#"
+            identifier: "trait.unused"
+            count: 1
+            path: "app/Modules/ExternalApi/Core/Traits/HandlesRateLimit.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\ExternalApi\\\\Modules\\\\Asaas\\\\Services\\\\CustomerService::\\$configuration\\ is\\ never\\ read,\\ only\\ written\\.$#"
+            identifier: "property.onlyWritten"
+            count: 1
+            path: "app/Modules/ExternalApi/Modules/Asaas/Services/CustomerService.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\ExternalApi\\\\Modules\\\\Asaas\\\\Services\\\\PaymentService::\\$configuration\\ is\\ never\\ read,\\ only\\ written\\.$#"
+            identifier: "property.onlyWritten"
+            count: 1
+            path: "app/Modules/ExternalApi/Modules/Asaas/Services/PaymentService.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\ExternalApi\\\\Modules\\\\Iugu\\\\Services\\\\CustomerService::\\$configuration\\ is\\ never\\ read,\\ only\\ written\\.$#"
+            identifier: "property.onlyWritten"
+            count: 1
+            path: "app/Modules/ExternalApi/Modules/Iugu/Services/CustomerService.php"
+        -
+            message: "#^Property\\ App\\\\Modules\\\\ExternalApi\\\\Modules\\\\Iugu\\\\Services\\\\PaymentService::\\$configuration\\ is\\ never\\ read,\\ only\\ written\\.$#"
+            identifier: "property.onlyWritten"
+            count: 1
+            path: "app/Modules/ExternalApi/Modules/Iugu/Services/PaymentService.php"
+        -
+            message: "#^Parameter\\ \\#2\\ \\$role\\ of\\ method\\ App\\\\Modules\\\\Permissions\\\\Services\\\\AuthorityService::roleIsDelegable\\(\\)\\ expects\\ App\\\\Modules\\\\Permissions\\\\Models\\\\Role,\\ Illuminate\\\\Database\\\\Eloquent\\\\Model\\ given\\.$#"
+            identifier: "argument.type"
+            count: 2
+            path: "app/Modules/Permissions/Services/AuthorityService.php"
+        -
+            message: "#^Parameter\\ \\#2\\ \\$target\\ of\\ method\\ App\\\\Modules\\\\Permissions\\\\Services\\\\AuthorityService::assertTarget\\(\\)\\ expects\\ App\\\\Models\\\\User,\\ Illuminate\\\\Database\\\\Eloquent\\\\Model\\ given\\.$#"
+            identifier: "argument.type"
+            count: 1
+            path: "app/Modules/Permissions/Services/AuthorityService.php"
+        -
+            message: "#^Parameter\\ \\#2\\ \\$value\\ of\\ method\\ Illuminate\\\\Support\\\\Collection<int,App\\\\Modules\\\\Permissions\\\\Models\\\\Role>::containsStrict\\(\\)\\ expects\\ App\\\\Modules\\\\Permissions\\\\Models\\\\Role\\|null,\\ string\\ given\\.$#"
+            identifier: "argument.type"
+            count: 1
+            path: "app/Modules/Permissions/Services/AuthorityService.php"
+        -
+            message: "#^Called\\ 'count'\\ on\\ Laravel\\ collection,\\ but\\ could\\ have\\ been\\ retrieved\\ as\\ a\\ query\\.$#"
+            identifier: "larastan.noUnnecessaryCollectionCall"
+            count: 1
+            path: "app/Modules/SeederGenerator/Services/SeederGeneratorService.php"
+        -
+            message: "#^Using\\ nullsafe\\ property\\ access\\ \"\\?\\->description\"\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ unnecessary\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Modules/Timeline/Services/ActivityFormatterService.php"
+        -
+            message: "#^Using\\ nullsafe\\ property\\ access\\ \"\\?\\->icon\"\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ unnecessary\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Modules/Timeline/Services/ActivityFormatterService.php"
+        -
+            message: "#^Using\\ nullsafe\\ property\\ access\\ \"\\?\\->severity\"\\ on\\ left\\ side\\ of\\ \\?\\?\\ is\\ unnecessary\\.\\ Use\\ \\->\\ instead\\.$#"
+            identifier: "nullsafe.neverNull"
+            count: 1
+            path: "app/Modules/Timeline/Services/ActivityFormatterService.php"
+        -
+            message: "#^Call\\ to\\ function\\ is_array\\(\\)\\ with\\ array\\{fields:\\ array<int,\\ string>,\\ labels:\\ array<string,\\ string>,\\ hidden:\\ array<int,\\ string>\\}\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 1
+            path: "app/Modules/Timeline/Traits/HasTimeline.php"
+        -
+            message: "#^Call\\ to\\ function\\ property_exists\\(\\)\\ with\\ \\$this\\(App\\\\Modules\\\\Clients\\\\Models\\\\Client\\)\\ and\\ 'timelineActivity'\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 1
+            path: "app/Modules/Timeline/Traits/HasTimeline.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::isImage\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$collection\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$created_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$extension\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$file_name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$icon\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$id\\.$#"
+            identifier: "property.notFound"
+            count: 3
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$is_cover\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$is_favorite\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$mime_type\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$original_name\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$size\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$size_human\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$source\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$tag\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$updated_at\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ App\\\\Modules\\\\Uploads\\\\Http\\\\Resources\\\\UploadedResource::\\$uploader\\.$#"
+            identifier: "property.notFound"
+            count: 2
+            path: "app/Modules/Uploads/Http/Resources/UploadedResource.php"
+        -
+            message: "#^Parameter\\ \\#1\\ \\$upload\\ of\\ method\\ App\\\\Modules\\\\Uploads\\\\Services\\\\UploadService::delete\\(\\)\\ expects\\ App\\\\Modules\\\\Uploads\\\\Models\\\\Uploaded,\\ Illuminate\\\\Database\\\\Eloquent\\\\Model\\ given\\.$#"
+            identifier: "argument.type"
+            count: 1
+            path: "app/Modules/Uploads/Traits/HasUploads.php"
+        -
+            message: "#^Instanceof\\ between\\ Illuminate\\\\Http\\\\UploadedFile\\ and\\ Illuminate\\\\Http\\\\UploadedFile\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "instanceof.alwaysTrue"
+            count: 1
+            path: "app/Modules/Uploads/Traits/HasUploads.php"
+        -
+            message: "#^Match\\ expression\\ does\\ not\\ handle\\ remaining\\ value:\\ string$#"
+            identifier: "match.unhandled"
+            count: 1
+            path: "app/Services/DevToolsService.php"
+        -
+            message: "#^Offset\\ 'global'\\ does\\ not\\ exist\\ on\\ array\\{modules:\\ array<int,\\ mixed>,\\ footer:\\ array<int,\\ mixed>\\}\\.$#"
+            identifier: "offsetAccess.notFound"
+            count: 1
+            path: "app/Services/NavigationService.php"
+        -
+            message: "#^Method\\ App\\\\Supports\\\\ActivityActions\\\\ActivityActionLogger::log\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\|null\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/ActivityActions/ActivityActionLogger.php"
+        -
+            message: "#^Method\\ App\\\\Supports\\\\ActivityActions\\\\ActivityActionRegistry::all\\(\\)\\ should\\ return\\ Illuminate\\\\Support\\\\Collection<string,\\ App\\\\Supports\\\\ActivityActions\\\\ActivityActionDefinition>\\ but\\ returns\\ Illuminate\\\\Support\\\\Collection<int,\\ App\\\\Supports\\\\ActivityActions\\\\ActivityActionDefinition>\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/ActivityActions/ActivityActionRegistry.php"
+        -
+            message: "#^Function\\ minusculo\\ not\\ found\\.$#"
+            identifier: "function.notFound"
+            count: 1
+            path: "app/Supports/Helpers.php"
+        -
+            message: "#^Match\\ expression\\ does\\ not\\ handle\\ remaining\\ value:\\ true$#"
+            identifier: "match.unhandled"
+            count: 1
+            path: "app/Supports/TheOneResponse.php"
+        -
+            message: "#^Unsafe\\ usage\\ of\\ new\\ static\\(\\)\\.$#"
+            identifier: "new.static"
+            count: 4
+            path: "app/Supports/TheOneResponse.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::generateUniqueSlug\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 2
+            path: "app/Supports/Traits/GenerateUniqueSlugTrait.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::getSlugColumn\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 2
+            path: "app/Supports/Traits/GenerateUniqueSlugTrait.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::getSlugValueForGeneration\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 2
+            path: "app/Supports/Traits/GenerateUniqueSlugTrait.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::shouldGenerateSlug\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 2
+            path: "app/Supports/Traits/GenerateUniqueSlugTrait.php"
+        -
+            message: "#^Parameter\\ \\#1\\ \\$modelOrId\\ of\\ method\\ Spatie\\\\Activitylog\\\\ActivityLogger::causedBy\\(\\)\\ expects\\ Illuminate\\\\Database\\\\Eloquent\\\\Model\\|int\\|string\\|null,\\ Illuminate\\\\Contracts\\\\Auth\\\\Authenticatable\\|null\\ given\\.$#"
+            identifier: "argument.type"
+            count: 4
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Call\\ to\\ function\\ property_exists\\(\\)\\ with\\ \\$this\\(App\\\\Modules\\\\Clients\\\\Models\\\\Client\\)\\ and\\ 'activityLogName'\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "function.alreadyNarrowedType"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Method\\ App\\\\Models\\\\User::logApproved\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Method\\ App\\\\Models\\\\User::logEvent\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Method\\ App\\\\Models\\\\User::logRejected\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Method\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::logApproved\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Method\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::logEvent\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Method\\ App\\\\Modules\\\\Clients\\\\Models\\\\Client::logRejected\\(\\)\\ should\\ return\\ Spatie\\\\Activitylog\\\\Models\\\\Activity\\ but\\ returns\\ Spatie\\\\Activitylog\\\\Contracts\\\\Activity\\|null\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "app/Supports/Traits/HasActivityLog.php"
+        -
+            message: "#^Match\\ expression\\ does\\ not\\ handle\\ remaining\\ value:\\ string$#"
+            identifier: "match.unhandled"
+            count: 3
+            path: "database/migrations/2026_04_27_151109_create_pulse_tables.php"
+        -
+            message: "#^Negated\\ boolean\\ expression\\ is\\ always\\ false\\.$#"
+            identifier: "booleanNot.alwaysFalse"
+            count: 1
+            path: "tests/AuthorityHttpEnvironment.php"
+        -
+            message: "#^If\\ condition\\ is\\ always\\ true\\.$#"
+            identifier: "if.alwaysTrue"
+            count: 1
+            path: "tests/AuthorityHttpEnvironment.php"
+        -
+            message: "#^Left\\ side\\ of\\ \\&\\&\\ is\\ always\\ true\\.$#"
+            identifier: "booleanAnd.leftAlwaysTrue"
+            count: 1
+            path: "tests/DisposableMysql.php"
+        -
+            message: "#^If\\ condition\\ is\\ always\\ true\\.$#"
+            identifier: "if.alwaysTrue"
+            count: 2
+            path: "tests/DisposableMysql.php"
+        -
+            message: "#^If\\ condition\\ is\\ always\\ true\\.$#"
+            identifier: "if.alwaysTrue"
+            count: 1
+            path: "tests/Feature/Admin/DevToolsTest.php"
+        -
+            message: "#^Call\\ to\\ method\\ PHPUnit\\\\Framework\\\\Assert::assertIsArray\\(\\)\\ with\\ array<string,\\ string\\|null>\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "method.alreadyNarrowedType"
+            count: 1
+            path: "tests/Feature/Admin/DevToolsTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Mockery\\\\ExpectationInterface\\|Mockery\\\\HigherOrderMessage::once\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "tests/Feature/Admin/DevToolsTest.php"
+        -
+            message: "#^Left\\ side\\ of\\ \\&\\&\\ is\\ always\\ true\\.$#"
+            identifier: "booleanAnd.leftAlwaysTrue"
+            count: 1
+            path: "tests/Feature/AuthorityHttpIntegrationTest.php"
+        -
+            message: "#^Comparison\\ operation\\ \">\"\\ between\\ int<1024,\\ 65535>\\ and\\ 65535\\ is\\ always\\ false\\.$#"
+            identifier: "greater.alwaysFalse"
+            count: 1
+            path: "tests/Feature/AuthorityHttpIntegrationTest.php"
+        -
+            message: "#^If\\ condition\\ is\\ always\\ true\\.$#"
+            identifier: "if.alwaysTrue"
+            count: 1
+            path: "tests/Feature/AuthorityHttpIntegrationTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Mockery\\\\ExpectationInterface\\|Mockery\\\\HigherOrderMessage::once\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "tests/Feature/AuthoritySecurityTest.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::\\$slug\\.$#"
+            identifier: "property.notFound"
+            count: 6
+            path: "tests/Feature/AuthoritySecurityTest.php"
+        -
+            message: "#^Left\\ side\\ of\\ \\&\\&\\ is\\ always\\ true\\.$#"
+            identifier: "booleanAnd.leftAlwaysTrue"
+            count: 3
+            path: "tests/Feature/DevToolsHttpIntegrationTest.php"
+        -
+            message: "#^Comparison\\ operation\\ \">\"\\ between\\ int<1024,\\ 65535>\\ and\\ 65535\\ is\\ always\\ false\\.$#"
+            identifier: "greater.alwaysFalse"
+            count: 1
+            path: "tests/Feature/DevToolsHttpIntegrationTest.php"
+        -
+            message: "#^If\\ condition\\ is\\ always\\ true\\.$#"
+            identifier: "if.alwaysTrue"
+            count: 3
+            path: "tests/Feature/DevToolsHttpIntegrationTest.php"
+        -
+            message: "#^Match\\ expression\\ does\\ not\\ handle\\ remaining\\ value:\\ string$#"
+            identifier: "match.unhandled"
+            count: 1
+            path: "tests/Feature/Email/EmailAtomicDeliveryTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Contracts\\\\Mail\\\\Mailer::getSymfonyTransport\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "tests/Feature/Email/EmailDispatchCommitTest.php"
+        -
+            message: "#^Call\\ to\\ method\\ PHPUnit\\\\Framework\\\\Assert::assertNotNull\\(\\)\\ with\\ null\\ will\\ always\\ evaluate\\ to\\ false\\.$#"
+            identifier: "method.impossibleType"
+            count: 1
+            path: "tests/Feature/Email/EmailPersistedContractTest.php"
+        -
+            message: "#^Cannot\\ call\\ method\\ equalTo\\(\\)\\ on\\ array\\|DateInterval\\|DateTimeInterface\\|int\\.$#"
+            identifier: "method.nonObject"
+            count: 4
+            path: "tests/Feature/Email/EmailPersistedContractTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Contracts\\\\Mail\\\\Mailer::getSymfonyTransport\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 2
+            path: "tests/Feature/Email/EmailPersistedContractTest.php"
+        -
+            message: "#^Call\\ to\\ method\\ PHPUnit\\\\Framework\\\\Assert::assertIsArray\\(\\)\\ with\\ array<string,\\ mixed>\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "method.alreadyNarrowedType"
+            count: 1
+            path: "tests/Feature/Email/SesTransportIntegrationTest.php"
+        -
+            message: "#^Call\\ to\\ method\\ PHPUnit\\\\Framework\\\\Assert::assertTrue\\(\\)\\ with\\ true\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "method.alreadyNarrowedType"
+            count: 1
+            path: "tests/Feature/ExceptionReportingTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Mockery\\\\ExpectationInterface\\|Mockery\\\\HigherOrderMessage::once\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "tests/Feature/ExceptionReportingTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ static\\ method\\ Illuminate\\\\Support\\\\Facades\\\\Artisan::shouldHaveReceived\\(\\)\\.$#"
+            identifier: "staticMethod.notFound"
+            count: 1
+            path: "tests/Feature/SeederGenerator/SeederGeneratorControllerTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ static\\ method\\ Illuminate\\\\Support\\\\Facades\\\\Artisan::shouldNotHaveReceived\\(\\)\\.$#"
+            identifier: "staticMethod.notFound"
+            count: 7
+            path: "tests/Feature/SeederGenerator/SeederGeneratorControllerTest.php"
+        -
+            message: "#^Method\\ App\\\\Modules\\\\SeederGenerator\\\\Services\\\\SeederGeneratorService::saveSeeder\\(\\)\\ invoked\\ with\\ 2\\ parameters,\\ 1\\ required\\.$#"
+            identifier: "arguments.count"
+            count: 1
+            path: "tests/Feature/SeederGenerator/SeederGeneratorMysqlTest.php"
+        -
+            message: "#^Parameter\\ \\#1\\ \\$array\\ \\(array\\{\\}\\)\\ to\\ function\\ array_values\\ is\\ empty,\\ call\\ has\\ no\\ effect\\.$#"
+            identifier: "arrayValues.empty"
+            count: 2
+            path: "tests/Feature/SeederGenerator/SeederGeneratorMysqlTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ method\\ Illuminate\\\\Contracts\\\\Mail\\\\Mailer::getSymfonyTransport\\(\\)\\.$#"
+            identifier: "method.notFound"
+            count: 1
+            path: "tests/Feature/TestIsolationTest.php"
+        -
+            message: "#^Access\\ to\\ an\\ undefined\\ property\\ Illuminate\\\\Database\\\\Eloquent\\\\Model::\\$uuid\\.$#"
+            identifier: "property.notFound"
+            count: 1
+            path: "tests/Feature/UploadAuthorizationTest.php"
+        -
+            message: "#^Empty\\ array\\ passed\\ to\\ foreach\\.$#"
+            identifier: "foreach.emptyArray"
+            count: 1
+            path: "tests/Feature/UploadDownloadTest.php"
+        -
+            message: "#^Offset\\ 0\\ does\\ not\\ exist\\ on\\ array\\{\\}\\.$#"
+            identifier: "offsetAccess.notFound"
+            count: 1
+            path: "tests/Feature/UploadDownloadTest.php"
+        -
+            message: "#^Parameter\\ \\&\\$consumed\\ by\\-ref\\ type\\ of\\ method\\ Tests\\\\Feature\\\\UploadPreviewReadCounter::filter\\(\\)\\ expects\\ int,\\ \\(float\\|int\\)\\ given\\.$#"
+            identifier: "parameterByRef.type"
+            count: 1
+            path: "tests/Feature/UploadDownloadTest.php"
+        -
+            message: "#^Method\\ Illuminate\\\\Filesystem\\\\FilesystemAdapter@anonymous[^\\r\\n]*/tests/Feature/UploadDownloadTest\\.php:522::readStream\\(\\)\\ should\\ return\\ resource\\|null\\ but\\ returns\\ false\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "tests/Feature/UploadDownloadTest.php"
+        -
+            message: "#^Method\\ Illuminate\\\\Filesystem\\\\FilesystemAdapter@anonymous[^\\r\\n]*/tests/Feature/UploadDownloadTest\\.php:522::readStream\\(\\)\\ never\\ returns\\ null\\ so\\ it\\ can\\ be\\ removed\\ from\\ the\\ return\\ type\\.$#"
+            identifier: "return.unusedType"
+            count: 1
+            path: "tests/Feature/UploadDownloadTest.php"
+        -
+            message: "#^Method\\ Tests\\\\Fixtures\\\\Email\\\\SnsMessageFixture::bindResolver\\(\\)\\ should\\ return\\ App\\\\Modules\\\\Email\\\\Webhooks\\\\SesWebhookHandler\\ but\\ returns\\ Mockery\\\\LegacyMockInterface\\.$#"
+            identifier: "return.type"
+            count: 1
+            path: "tests/Fixtures/Email/SnsMessageFixture.php"
+        -
+            message: "#^Property\\ Illuminate\\\\Foundation\\\\Testing\\\\TestCase::\\$traitsUsedByTest\\ \\(array<class\\-string,\\ int>\\)\\ does\\ not\\ accept\\ array<string,\\ string>\\.$#"
+            identifier: "assign.propertyType"
+            count: 1
+            path: "tests/TestCase.php"
+        -
+            message: "#^Parameter\\ \\$validation\\ of\\ class\\ App\\\\Modules\\\\CrudGenerator\\\\DTOs\\\\CrudField\\ constructor\\ expects\\ array<int,\\ string>,\\ array<int,\\ int>\\ given\\.$#"
+            identifier: "argument.type"
+            count: 1
+            path: "tests/Unit/CrudGenerator/CrudGeneratorServiceTest.php"
+        -
+            message: "#^Instantiated\\ class\\ App\\\\Modules\\\\LiteralClients\\\\Http\\\\Requests\\\\LiteralClient\\\\StoreLiteralClientRequest\\ not\\ found\\.$#"
+            identifier: "class.notFound"
+            count: 1
+            path: "tests/Unit/CrudGenerator/CrudGeneratorServiceTest.php"
+        -
+            message: "#^Instantiated\\ class\\ App\\\\Modules\\\\LiteralClients\\\\Http\\\\Requests\\\\LiteralClient\\\\UpdateLiteralClientRequest\\ not\\ found\\.$#"
+            identifier: "class.notFound"
+            count: 1
+            path: "tests/Unit/CrudGenerator/CrudGeneratorServiceTest.php"
+        -
+            message: "#^Match\\ expression\\ does\\ not\\ handle\\ remaining\\ value:\\ string$#"
+            identifier: "match.unhandled"
+            count: 2
+            path: "tests/Unit/CrudGenerator/CrudGeneratorServiceTest.php"
+        -
+            message: "#^Call\\ to\\ method\\ PHPUnit\\\\Framework\\\\Assert::assertTrue\\(\\)\\ with\\ true\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "method.alreadyNarrowedType"
+            count: 1
+            path: "tests/Unit/ExampleTest.php"
+        -
+            message: "#^Call\\ to\\ method\\ PHPUnit\\\\Framework\\\\Assert::assertIsArray\\(\\)\\ with\\ array<string,\\ string>\\ will\\ always\\ evaluate\\ to\\ true\\.$#"
+            identifier: "method.alreadyNarrowedType"
+            count: 1
+            path: "tests/Unit/Export/ExportableTraitTest.php"
+        -
+            message: "#^Match\\ expression\\ does\\ not\\ handle\\ remaining\\ value:\\ string$#"
+            identifier: "match.unhandled"
+            count: 1
+            path: "tests/Unit/HttpTransportSecurityTest.php"
+        -
+            message: "#^Method\\ App\\\\Modules\\\\SeederGenerator\\\\Services\\\\SeederGeneratorService::saveSeeder\\(\\)\\ invoked\\ with\\ 2\\ parameters,\\ 1\\ required\\.$#"
+            identifier: "arguments.count"
+            count: 6
+            path: "tests/Unit/SeederGenerator/SeederGeneratorServiceTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ static\\ method\\ Illuminate\\\\Support\\\\Facades\\\\Artisan::shouldHaveReceived\\(\\)\\.$#"
+            identifier: "staticMethod.notFound"
+            count: 1
+            path: "tests/Unit/SeederGenerator/SeederGeneratorServiceTest.php"
+        -
+            message: "#^Call\\ to\\ an\\ undefined\\ static\\ method\\ Illuminate\\\\Support\\\\Facades\\\\Artisan::shouldNotHaveReceived\\(\\)\\.$#"
+            identifier: "staticMethod.notFound"
+            count: 7
+            path: "tests/Unit/SeederGenerator/SeederGeneratorServiceTest.php"
+        -
+            message: "#^Left\\ side\\ of\\ \\&\\&\\ is\\ always\\ true\\.$#"
+            identifier: "booleanAnd.leftAlwaysTrue"
+            count: 1
+            path: "tests/authority-http-server.php"
+        -
+            message: "#^Strict\\ comparison\\ using\\ ===\\ between\\ array<SimpleXMLElement>\\|null\\ and\\ false\\ will\\ always\\ evaluate\\ to\\ false\\.$#"
+            identifier: "identical.alwaysFalse"
+            count: 3
+            path: "tests/ci.php"
+        -
+            message: "#^Negated\\ boolean\\ expression\\ is\\ always\\ true\\.$#"
+            identifier: "booleanNot.alwaysTrue"
+            count: 1
+            path: "tests/seeder-generator-worker.php"
+        -
+            message: "#^Left\\ side\\ of\\ \\|\\|\\ is\\ always\\ false\\.$#"
+            identifier: "booleanOr.leftAlwaysFalse"
+            count: 1
+            path: "tests/seeder-generator-worker.php"
+        -
+            message: "#^Dead\\ catch\\ \\-\\ Illuminate\\\\Validation\\\\ValidationException\\ is\\ never\\ thrown\\ in\\ the\\ try\\ block\\.$#"
+            identifier: "catch.neverThrown"
+            count: 1
+            path: "tests/seeder-generator-worker.php"
+        -
+            message: "#^Unreachable\\ statement\\ \\-\\ code\\ above\\ always\\ terminates\\.$#"
+            identifier: "deadCode.unreachable"
+            count: 1
+            path: "tests/seeder-generator-worker.php"
+        -
+            message: "#^If\\ condition\\ is\\ always\\ false\\.$#"
+            identifier: "if.alwaysFalse"
+            count: 1
+            path: "tests/seeder-generator-worker.php"

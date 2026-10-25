@@ -1,547 +1,678 @@
-import { Link, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import type { MouseEvent } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, ChevronRight, ChevronsUpDown, Circle } from 'lucide-react';
+import { motion } from 'motion/react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type {
+    ComponentProps,
+    CSSProperties,
+    MouseEvent,
+    ReactElement,
+    ReactNode,
+} from 'react';
 import AppLogo from '@/components/app-logo';
-import AppLogoIcon from '@/components/app-logo-icon';
-import { NavModuleItems } from '@/components/nav-module-items';
-import { NavModuleSwitcher } from '@/components/nav-module-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
+    DropdownContent,
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
+import { SIDEBAR_MENU_POPUP } from '@/components/ui/fluid/lib/sidebar-menu-grid';
+import { spring } from '@/components/ui/fluid/lib/springs';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    useSidebar,
+} from '@/components/ui/fluid/sidebar';
+import { Tooltip } from '@/components/ui/fluid/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useNavModule } from '@/contexts/nav-module-context';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
+import {
+    resetSidebarPreferences,
+    setSidebarGroupOpen,
+    useSidebarGroupOpen,
+} from '@/hooks/use-sidebar-preferences';
 import { resolveNavItems, resolveNavModules } from '@/lib/resolve-nav-items';
 import { cn, toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes/app';
 import type { NavItem } from '@/types';
 
-// Tooltip class shared across all sidebar tooltips.
-// - delay-200: prevents tooltip from appearing during the 200ms collapse animation.
-// - group-hover:delay-500: tooltip appears 500ms after hover (avoids flash on quick moves).
-const TOOLTIP_CLS =
-    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
-
-const SECTION_LABEL_CLS =
-    'px-3 pb-1 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase';
-
-const NAV_ITEM_BASE =
-    'group relative flex w-full items-center rounded-lg px-3 py-2 text-[13px] font-medium transition-colors';
-
-const navItemState = (isActive: boolean) =>
-    isActive
-        ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
-        : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground';
-
 type Props = {
-    isCollapsed: boolean;
-    onToggle: () => void;
+    /** Exibe a logo no topo do sidebar (variante sidebar-logo). */
     showLogo?: boolean;
-    mobileOpen?: boolean;
-    onMobileClose?: () => void;
+    className?: string;
 };
 
-// ---------------------------------------------------------------------------
-// Module Switcher — lista de módulos (tela inicial)
-// ---------------------------------------------------------------------------
+function isExternal(item: NavItem): boolean {
+    return toUrl(item.href).startsWith('http');
+}
 
-// ---------------------------------------------------------------------------
-// Module Items View — itens do módulo ativo com cabeçalho + back
-// ---------------------------------------------------------------------------
-
-function ModuleItemsView() {
-    const { activeModule } = useNavModule();
-
-    return (
-        <div className="space-y-3">
-            {/* Itens do módulo — key isola o re-mount por módulo sem arrastar o header */}
-            <div
-                key={activeModule.slug}
-                className="animate-in duration-100 fade-in"
-            >
-                <NavModuleItems variant="sidebar" />
-            </div>
-        </div>
+function hasActiveDescendant(
+    items: NavItem[],
+    isActive: (href: NavItem['href']) => boolean,
+): boolean {
+    return items.some(
+        (child) =>
+            isActive(child.href) ||
+            hasActiveDescendant(child.items ?? [], isActive),
     );
 }
 
-// ---------------------------------------------------------------------------
-// Flat variant — lista única sem módulos
-// ---------------------------------------------------------------------------
+/** Links de um grupo, achatados: o Fluid tem um único nível de submenu. */
+function flattenLinks(items: NavItem[]): NavItem[] {
+    return items.flatMap((item) =>
+        item.items?.length ? flattenLinks(item.items) : [item],
+    );
+}
 
-function FlatNavItem({
-    item,
-    isCollapsed,
-    depth = 0,
+/** Sidebar recolhida no desktop: faixa só de ícones (no drawer mobile, nunca). */
+const CompactContext = createContext(false);
+
+// Linha da faixa: ícone centralizado; o rótulo continua para leitores de tela.
+const RAIL_ROW = 'justify-center px-0 [&>span]:sr-only';
+const RAIL_GUTTER = {
+    '--row-gutter': '0px',
+    '--row-gutter-hover': '0px',
+} as CSSProperties;
+const RAIL_SEPARATOR = 'mx-auto my-2 h-px w-5 shrink-0 bg-sidebar-border';
+
+// Linha de 36px (8 + 20 + 8), recuo de 12px e 10px entre ícone e texto.
+const ROW = 'h-9 gap-2.5 pl-3';
+
+function useRowProps() {
+    return useContext(CompactContext)
+        ? { className: cn(ROW, RAIL_ROW), style: RAIL_GUTTER }
+        : { className: ROW };
+}
+
+/** Grupo no ritmo do shell: 12px nas laterais; o intervalo entre grupos vem do nav. */
+function NavGroup({
+    className,
+    ...props
+}: ComponentProps<typeof SidebarGroup>) {
+    return <SidebarGroup className={cn('px-3 py-0', className)} {...props} />;
+}
+
+/** Na faixa de ícones, o nome da linha aparece num tooltip à direita. */
+function RailTooltip({
+    title,
+    children,
 }: {
-    item: NavItem;
-    isCollapsed: boolean;
-    depth?: number;
+    title: string;
+    children: ReactElement;
 }) {
-    const { isCurrentUrl } = useCurrentUrl();
-    const hasChildren = !!item.items?.length;
-    const anyChildActive = (items: NavItem[]): boolean =>
-        items.some(
-            (c) =>
-                (!!c.href && isCurrentUrl(c.href as string)) ||
-                (c.items ? anyChildActive(c.items) : false),
-        );
-    const childActive = hasChildren && anyChildActive(item.items!);
-    const [open, setOpen] = useState(childActive);
-
-    if (item.type === 'section') {
-        return (
-            <div className={cn('space-y-0.5', !isCollapsed && 'pt-3')}>
-                {!isCollapsed && (
-                    <div className={SECTION_LABEL_CLS}>{item.title}</div>
-                )}
-                {item.items?.map((child) => (
-                    <FlatNavItem
-                        key={child.title}
-                        item={child}
-                        isCollapsed={isCollapsed}
-                        depth={depth}
-                    />
-                ))}
-            </div>
-        );
-    }
-
-    if (!item.href && !item.items?.length) {
-        return null;
-    }
-
-    const sharedClass = cn(
-        NAV_ITEM_BASE,
-        isCollapsed ? 'justify-center p-2' : 'gap-2.5',
-        depth > 0 && !isCollapsed && 'pl-4',
-    );
-
-    if (hasChildren) {
-        return (
-            <div>
-                <button
-                    onClick={() => setOpen((v) => !v)}
-                    className={cn(
-                        sharedClass,
-                        childActive
-                            ? 'text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-                    )}
-                >
-                    {item.icon && <item.icon size={16} className="shrink-0" />}
-                    <span
-                        className={cn(
-                            'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                            isCollapsed
-                                ? 'max-w-0 opacity-0'
-                                : 'max-w-40 opacity-100',
-                        )}
-                    >
-                        {item.title}
-                    </span>
-                    {!isCollapsed && (
-                        <ChevronRight
-                            size={12}
-                            className={cn(
-                                'ml-auto shrink-0 transition-transform duration-200',
-                                open && 'rotate-90',
-                            )}
-                        />
-                    )}
-                </button>
-                {open && !isCollapsed && (
-                    <div className="mt-0.5 ml-2 space-y-0.5 border-l border-sidebar-border pl-3">
-                        {item.items!.map((child) => (
-                            <FlatNavItem
-                                key={child.title}
-                                item={child}
-                                isCollapsed={isCollapsed}
-                                depth={depth + 1}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    const isActive = isCurrentUrl(item.href as string);
-    const isExternal =
-        typeof item.href === 'string' && item.href.startsWith('http');
-
-    const inner = (
-        <>
-            {item.icon && <item.icon size={16} className="shrink-0" />}
-            <span
-                className={cn(
-                    'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                    isCollapsed ? 'max-w-0 opacity-0' : 'max-w-40 opacity-100',
-                )}
-            >
-                {item.title}
-            </span>
-            {/* Tooltip colapsado */}
-            <div className={cn(TOOLTIP_CLS, !isCollapsed && 'hidden')}>
-                {item.title}
-            </div>
-        </>
-    );
-
-    const cls = cn(sharedClass, navItemState(isActive));
-
-    if (isExternal) {
-        return (
-            <a
-                href={item.href as string}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cls}
-            >
-                {inner}
-            </a>
-        );
-    }
-
-    return (
-        <Link href={item.href ?? '#'} prefetch className={cls}>
-            {inner}
-        </Link>
-    );
-}
-
-function FlatSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
-    const { nav } = usePage().props;
-    const modules = useMemo(
-        () => resolveNavModules(nav.modules),
-        [nav.modules],
-    );
-
-    return (
-        <div className="space-y-4">
-            {modules.map((m) => {
-                // Módulo sem items + com href → link direto sem label de seção
-                if (m.items.length === 0 && m.href) {
-                    return (
-                        <FlatNavItem
-                            key={m.slug}
-                            item={{
-                                title: m.label,
-                                href: m.href,
-                                icon: m.icon ?? undefined,
-                            }}
-                            isCollapsed={isCollapsed}
-                        />
-                    );
-                }
-
-                if (m.items.length === 0) {
-                    return null;
-                }
-
-                return (
-                    <div key={m.slug} className="space-y-0.5">
-                        {!isCollapsed && (
-                            <p className={cn(SECTION_LABEL_CLS, 'mb-1')}>
-                                {m.label}
-                            </p>
-                        )}
-                        {m.items.map((item) => (
-                            <FlatNavItem
-                                key={item.title}
-                                item={item}
-                                isCollapsed={isCollapsed}
-                            />
-                        ))}
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Modules sidebar content — requer NavModuleProvider na árvore
-// ---------------------------------------------------------------------------
-
-function ModulesSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
-    const { sidebarView } = useNavModule();
-    const { nav } = usePage().props;
-
-    if (nav.modulesMenuPosition === 'header') {
-        return <ModuleItemsView />;
-    }
-
-    return sidebarView === 'modules' ? (
-        <div
-            key="modules"
-            className="animate-in duration-150 fade-in slide-in-from-bottom-1"
-        >
-            <NavModuleSwitcher isCollapsed={isCollapsed} />
-        </div>
+    return useContext(CompactContext) ? (
+        <Tooltip content={title} side="right" sideOffset={10}>
+            {children}
+        </Tooltip>
     ) : (
-        <ModuleItemsView />
+        children
     );
 }
 
-// ---------------------------------------------------------------------------
-// DashboardSidebar
-// ---------------------------------------------------------------------------
+function NavLinkButton({ item }: { item: NavItem }) {
+    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const compact = useContext(CompactContext);
+    const rowProps = useRowProps();
+    const external = isExternal(item);
 
-export function DashboardSidebar({
-    isCollapsed,
-    onToggle,
-    showLogo = false,
-    mobileOpen = false,
-    onMobileClose,
-}: Props) {
-    const { auth, nav } = usePage().props;
-    const { isCurrentUrl } = useCurrentUrl();
-    const getInitials = useInitials();
+    return (
+        <RailTooltip title={item.title}>
+            <SidebarMenuButton
+                icon={item.icon ?? (compact ? Circle : undefined)}
+                isActive={!external && isCurrentOrParentUrl(item.href)}
+                {...rowProps}
+                render={
+                    external ? (
+                        <a
+                            href={toUrl(item.href)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        />
+                    ) : (
+                        <Link href={item.href} prefetch />
+                    )
+                }
+            >
+                {item.title}
+            </SidebarMenuButton>
+        </RailTooltip>
+    );
+}
 
-    // Memoize resolved items — nav props are stable within a page and only
-    // change on Inertia navigations, so useMemo avoids re-computing every render.
-    const globalItems = useMemo(
-        () => resolveNavItems(nav.global),
-        [nav.global],
+/** Chevron do Fluid: gira 90° aberto e só aparece no hover da própria linha. */
+function RowChevron({ open }: { open: boolean }) {
+    return (
+        <span className="-mr-0.5 ml-auto flex size-6 shrink-0 items-center justify-center">
+            <motion.span
+                className="inline-flex"
+                animate={{ rotate: open ? 90 : 0 }}
+                transition={spring.fast}
+            >
+                <ChevronRight
+                    size={16}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                    className={
+                        open
+                            ? 'text-muted-foreground opacity-0 transition-opacity duration-80 group-focus-within/parent-row:opacity-100 group-hover/parent-row:opacity-100'
+                            : 'text-muted-foreground'
+                    }
+                />
+            </motion.span>
+        </span>
     );
-    const footerItems = useMemo(
-        () => resolveNavItems(nav.footer),
-        [nav.footer],
+}
+
+function NavParentRow({ item }: { item: NavItem }) {
+    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { url } = usePage();
+    const children = flattenLinks(item.items ?? []);
+    const childActive = hasActiveDescendant(children, isCurrentOrParentUrl);
+    const [expanded, setExpanded] = useState({ url, open: childActive });
+    // Uma navegação reabre o grupo que contém a rota ativa.
+    const open = expanded.url === url ? expanded.open : childActive;
+
+    // Na faixa, o grupo vira um separador seguido dos links (sem submenu).
+    if (useContext(CompactContext)) {
+        return (
+            <>
+                <li
+                    role="separator"
+                    aria-label={item.title}
+                    className={RAIL_SEPARATOR}
+                />
+                {children.map((child) => (
+                    <SidebarMenuItem key={child.title}>
+                        <NavLinkButton item={child} />
+                    </SidebarMenuItem>
+                ))}
+            </>
+        );
+    }
+
+    return (
+        <SidebarMenuItem>
+            <SidebarMenuButton
+                className={cn(ROW, 'group/parent-row')}
+                icon={item.icon ?? undefined}
+                aria-expanded={open}
+                onClick={() => setExpanded({ url, open: !open })}
+                style={
+                    {
+                        '--row-gutter': 'var(--row-gutter-hover)',
+                    } as CSSProperties
+                }
+            >
+                {item.title}
+                <RowChevron open={open} />
+            </SidebarMenuButton>
+            <SidebarMenuSub open={open}>
+                {children.map((child) => (
+                    <SidebarMenuSubItem key={child.title}>
+                        <SidebarMenuSubButton
+                            icon={child.icon ?? undefined}
+                            isActive={
+                                !isExternal(child) &&
+                                isCurrentOrParentUrl(child.href)
+                            }
+                            render={
+                                isExternal(child) ? (
+                                    <a
+                                        href={toUrl(child.href)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    />
+                                ) : (
+                                    <Link href={child.href} prefetch />
+                                )
+                            }
+                        >
+                            {child.title}
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                ))}
+            </SidebarMenuSub>
+        </SidebarMenuItem>
     );
-    const closeMobileOnNavClick = (event: MouseEvent<HTMLElement>) => {
-        if (!mobileOpen) {
-            return;
+}
+
+function NavRows({ items }: { items: NavItem[] }) {
+    return (
+        <SidebarMenu className="gap-0.5">
+            {items.map((item) =>
+                item.items?.length ? (
+                    <NavParentRow key={item.title} item={item} />
+                ) : (
+                    <SidebarMenuItem key={item.title}>
+                        <NavLinkButton item={item} />
+                    </SidebarMenuItem>
+                ),
+            )}
+        </SidebarMenu>
+    );
+}
+
+/** Sequências de links viram uma lista; seções, um grupo com rótulo. */
+function chunkBySection(items: NavItem[]): (NavItem | NavItem[])[] {
+    return items.reduce<(NavItem | NavItem[])[]>((chunks, item) => {
+        const last = chunks[chunks.length - 1];
+
+        if (item.type === 'section') {
+            chunks.push(item);
+        } else if (Array.isArray(last)) {
+            last.push(item);
+        } else {
+            chunks.push([item]);
         }
 
-        if ((event.target as HTMLElement).closest('a[href]')) {
-            onMobileClose?.();
+        return chunks;
+    }, []);
+}
+
+/**
+ * Itens de um módulo. No nível raiz cada seção é um grupo recolhível; dentro
+ * de um módulo (modo flat) as seções ficam como rótulos estáticos.
+ */
+function NavSections({
+    items,
+    nested = false,
+}: {
+    items: NavItem[];
+    nested?: boolean;
+}) {
+    const compact = useContext(CompactContext);
+
+    return chunkBySection(items).map((chunk) => {
+        if (Array.isArray(chunk)) {
+            return nested ? (
+                <NavRows key={chunk[0].title} items={chunk} />
+            ) : (
+                <NavGroup key={chunk[0].title}>
+                    <NavRows items={chunk} />
+                </NavGroup>
+            );
+        }
+
+        // shortcut: seções aninhadas viram linhas da seção pai; o config atual não aninha.
+        const rows = (chunk.items ?? []).flatMap((child) =>
+            child.type === 'section' ? (child.items ?? []) : [child],
+        );
+
+        // Faixa de ícones: a seção vira separador (no flat, o separador já é do módulo).
+        if (compact) {
+            return nested ? (
+                <NavRows key={chunk.title} items={rows} />
+            ) : (
+                <NavGroup key={chunk.title}>
+                    <div
+                        role="separator"
+                        aria-label={chunk.title}
+                        className={RAIL_SEPARATOR}
+                    />
+                    <NavRows items={rows} />
+                </NavGroup>
+            );
+        }
+
+        return nested ? (
+            <NavGroup key={chunk.title} className="p-0">
+                <SidebarGroupLabel>{chunk.title}</SidebarGroupLabel>
+                <NavRows items={rows} />
+            </NavGroup>
+        ) : (
+            <CollapsibleSection key={chunk.title} title={chunk.title}>
+                <NavRows items={rows} />
+            </CollapsibleSection>
+        );
+    });
+}
+
+/** Seção recolhível pelo título; aberta ou fechada fica salva entre recarregamentos. */
+function CollapsibleSection({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactNode;
+}) {
+    const open = useSidebarGroupOpen(title);
+
+    return (
+        <NavGroup
+            collapsible
+            open={open}
+            onOpenChange={(next) => setSidebarGroupOpen(title, next)}
+        >
+            <SidebarGroupLabel>{title}</SidebarGroupLabel>
+            {children}
+        </NavGroup>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Modo módulos: requer NavModuleProvider na árvore
+// ---------------------------------------------------------------------------
+
+function ModuleSwitcher() {
+    const { modules, activeModule, sidebarView, selectModule } = useNavModule();
+    const { isCurrentUrl } = useCurrentUrl();
+    const compact = useContext(CompactContext);
+    const rowProps = useRowProps();
+
+    return (
+        <NavGroup>
+            {!compact && <SidebarGroupLabel>Módulos</SidebarGroupLabel>}
+            <SidebarMenu className="gap-0.5">
+                {modules.map((mod) => {
+                    // Módulo sem items + com href → link direto (não drill-down)
+                    const isLinkModule = mod.items.length === 0 && !!mod.href;
+                    const icon = mod.icon ?? (compact ? Circle : undefined);
+
+                    return (
+                        <SidebarMenuItem key={mod.slug}>
+                            <RailTooltip title={mod.label}>
+                                {isLinkModule ? (
+                                    <SidebarMenuButton
+                                        icon={icon}
+                                        isActive={isCurrentUrl(
+                                            mod.href as string,
+                                        )}
+                                        {...rowProps}
+                                        render={
+                                            <Link
+                                                href={mod.href as string}
+                                                prefetch
+                                            />
+                                        }
+                                    >
+                                        {mod.label}
+                                    </SidebarMenuButton>
+                                ) : (
+                                    <SidebarMenuButton
+                                        icon={icon}
+                                        isActive={
+                                            sidebarView === 'items' &&
+                                            mod.slug === activeModule.slug
+                                        }
+                                        {...rowProps}
+                                        onClick={() => selectModule(mod.slug)}
+                                    >
+                                        {mod.label}
+                                    </SidebarMenuButton>
+                                )}
+                            </RailTooltip>
+                        </SidebarMenuItem>
+                    );
+                })}
+            </SidebarMenu>
+        </NavGroup>
+    );
+}
+
+function ModulesSidebarContent() {
+    const { nav } = usePage().props;
+    const { activeModule, sidebarView, showModuleList } = useNavModule();
+    const rowProps = useRowProps();
+    const items = activeModule?.items ?? [];
+
+    // Com módulos no header, a sidebar mostra direto os itens do módulo ativo.
+    if (nav.modulesMenuPosition === 'header') {
+        return <NavSections items={items} />;
+    }
+
+    if (sidebarView === 'modules') {
+        return <ModuleSwitcher />;
+    }
+
+    return (
+        <>
+            <NavGroup>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <RailTooltip title="Voltar aos módulos">
+                            <SidebarMenuButton
+                                icon={ArrowLeft}
+                                aria-label={`Voltar aos módulos (${activeModule.label})`}
+                                {...rowProps}
+                                onClick={showModuleList}
+                            >
+                                {activeModule.label}
+                            </SidebarMenuButton>
+                        </RailTooltip>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </NavGroup>
+            <NavSections key={activeModule.slug} items={items} />
+        </>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Modo flat: todos os módulos como grupos recolhíveis
+// ---------------------------------------------------------------------------
+
+function FlatSidebarContent() {
+    const { nav } = usePage().props;
+    const compact = useContext(CompactContext);
+
+    return resolveNavModules(nav.modules).map((module) => {
+        // Módulo sem items + com href → link direto sem rótulo de grupo
+        if (module.items.length === 0 && module.href) {
+            return (
+                <NavGroup key={module.slug}>
+                    <NavRows
+                        items={[
+                            {
+                                title: module.label,
+                                href: module.href,
+                                icon: module.icon ?? undefined,
+                            },
+                        ]}
+                    />
+                </NavGroup>
+            );
+        }
+
+        if (module.items.length === 0) {
+            return null;
+        }
+
+        return compact ? (
+            <NavGroup key={module.slug}>
+                <div
+                    role="separator"
+                    aria-label={module.label}
+                    className={RAIL_SEPARATOR}
+                />
+                <NavSections items={module.items} nested />
+            </NavGroup>
+        ) : (
+            <NavGroup key={module.slug} collapsible>
+                <SidebarGroupLabel>{module.label}</SidebarGroupLabel>
+                <NavSections items={module.items} nested />
+            </NavGroup>
+        );
+    });
+}
+
+function UserFooter() {
+    const { auth } = usePage().props;
+    const getInitials = useInitials();
+    const compact = useContext(CompactContext);
+
+    return (
+        <SidebarMenu aria-label="Conta">
+            <SidebarMenuItem>
+                <DropdownMenu>
+                    <RailTooltip title={auth.user?.name ?? 'Conta'}>
+                        <DropdownTrigger
+                            render={
+                                <SidebarMenuButton
+                                    aria-label="Abrir menu do usuário"
+                                    // Faixa: só o avatar, centralizado.
+                                    className={cn(
+                                        ROW,
+                                        compact &&
+                                            'justify-center px-0 [&>span]:justify-center',
+                                    )}
+                                    style={compact ? RAIL_GUTTER : undefined}
+                                >
+                                    <Avatar className="-mr-0.5 -ml-0.5 size-5 shrink-0 overflow-hidden rounded-full">
+                                        <AvatarImage
+                                            src={auth.user?.avatar}
+                                            alt=""
+                                        />
+                                        <AvatarFallback className="rounded-full bg-primary-soft text-2xs leading-3 font-semibold text-primary-soft-foreground">
+                                            {getInitials(auth.user?.name ?? '')}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span
+                                        className={
+                                            compact
+                                                ? 'sr-only'
+                                                : 'min-w-0 truncate'
+                                        }
+                                    >
+                                        {auth.user?.name}
+                                    </span>
+                                    {!compact && (
+                                        <span className="-mr-0.5 ml-auto flex size-6 shrink-0 items-center justify-center">
+                                            <ChevronsUpDown
+                                                size={16}
+                                                strokeWidth={1.5}
+                                                aria-hidden="true"
+                                                className="text-muted-foreground"
+                                            />
+                                        </span>
+                                    )}
+                                </SidebarMenuButton>
+                            }
+                        />
+                    </RailTooltip>
+                    {/* Grade do Fluid: o menu alinha os ícones ao eixo da linha. */}
+                    <DropdownContent
+                        className={SIDEBAR_MENU_POPUP}
+                        side="top"
+                        align="start"
+                        sideOffset={6}
+                    >
+                        {auth.user && (
+                            <UserMenuContent
+                                user={auth.user}
+                                onResetSidebar={resetSidebarPreferences}
+                            />
+                        )}
+                    </DropdownContent>
+                </DropdownMenu>
+            </SidebarMenuItem>
+        </SidebarMenu>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// DashboardSidebar: Fluid Functionalism nas cores do shell (.app-sidebar);
+// recolhida, vira a faixa de ícones de 80px.
+// ---------------------------------------------------------------------------
+
+export function DashboardSidebar({ showLogo = false, className }: Props) {
+    const { nav } = usePage().props;
+    const { isMobile, setOpenMobile, open } = useSidebar();
+    const compact = !open && !isMobile;
+    const globalItems = resolveNavItems(nav.global);
+    const footerItems = resolveNavItems(nav.footer);
+
+    useEffect(
+        () => router.on('navigate', () => setOpenMobile(false)),
+        [setOpenMobile],
+    );
+
+    useEffect(() => {
+        const desktop = window.matchMedia('(min-width: 768px)');
+        const closeOnDesktop = () => {
+            if (desktop.matches) {
+                setOpenMobile(false);
+            }
+        };
+
+        desktop.addEventListener('change', closeOnDesktop);
+
+        return () => desktop.removeEventListener('change', closeOnDesktop);
+    }, [setOpenMobile]);
+
+    const closeDrawerOnLink = (event: MouseEvent<HTMLElement>) => {
+        if (isMobile && (event.target as HTMLElement).closest('a[href]')) {
+            setOpenMobile(false);
         }
     };
 
     return (
-        <>
-            <div
-                className={cn(
-                    'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden',
-                    mobileOpen
-                        ? 'opacity-100'
-                        : 'pointer-events-none opacity-0',
-                )}
-                onClick={onMobileClose}
-            />
-
-            <aside
-                className={cn(
-                    'fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-[18px_0_50px_-42px_rgb(0_0_0/70%)] backdrop-blur-md select-none',
-                    'transition-transform duration-300 ease-out',
-                    mobileOpen ? 'translate-x-0' : '-translate-x-full',
-                    'md:static md:z-auto md:shrink-0 md:translate-x-0 md:transition-[width] md:duration-200',
-                    isCollapsed ? 'md:w-16' : 'md:w-60',
-                )}
-            >
-                {/* Toggle */}
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    className="absolute top-1/2 -right-3 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md transition-[background,color,transform] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
-                    aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-                >
-                    <ChevronLeft
-                        size={15}
-                        className={cn(
-                            'transition-transform duration-200 ease-out',
-                            isCollapsed && 'rotate-180',
-                        )}
-                    />
-                </button>
-
-                <nav
-                    className="flex h-full flex-col px-3 py-5"
-                    id="nav-sidebar"
-                    onClickCapture={closeMobileOnNavClick}
-                >
+        <Sidebar
+            variant="sidebar"
+            className={cn('app-sidebar bg-sidebar', className)}
+        >
+            {/* display: contents leva os tokens também ao drawer mobile (portal). */}
+            <div className="app-sidebar contents">
+                <CompactContext.Provider value={compact}>
                     {showLogo && (
-                        <div
-                            className={cn(
-                                'mb-10 flex shrink-0 items-center',
-                                isCollapsed ? 'justify-center' : 'px-2',
-                            )}
-                        >
+                        <SidebarHeader className="px-3 pt-5 pb-7">
                             <Link
                                 href={dashboard()}
                                 prefetch
-                                className="flex items-center rounded-md text-sidebar-foreground outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                            >
-                                {isCollapsed ? (
-                                    <AppLogoIcon className="size-8" />
-                                ) : (
-                                    <AppLogo />
+                                aria-label="Ir ao dashboard"
+                                className={cn(
+                                    'flex h-10 items-center rounded-[8px] text-sidebar-foreground outline-none focus-visible:ring-1 focus-visible:ring-(--focus-ring)',
+                                    compact ? 'justify-center' : 'px-1',
                                 )}
+                            >
+                                <AppLogo showText={!compact} />
                             </Link>
-                        </div>
+                        </SidebarHeader>
                     )}
 
-                    {/* Conteúdo principal — scrollável */}
-                    <div className="min-h-0 sidebar-scrollbar flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1">
-                        {/* Itens globais — sempre visíveis acima dos módulos */}
-                        {globalItems.length > 0 && (
-                            <div className="space-y-0.5">
-                                {globalItems.map((item) => (
-                                    <Link
-                                        key={item.title}
-                                        href={item.href as string}
-                                        prefetch
-                                        className={cn(
-                                            NAV_ITEM_BASE,
-                                            isCollapsed
-                                                ? 'justify-center p-2'
-                                                : 'gap-2.5',
-                                            navItemState(
-                                                isCurrentUrl(
-                                                    item.href as string,
-                                                ),
-                                            ),
-                                        )}
-                                    >
-                                        {item.icon && (
-                                            <item.icon
-                                                size={16}
-                                                className="shrink-0"
-                                            />
-                                        )}
-                                        <span
-                                            className={cn(
-                                                'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                                                isCollapsed
-                                                    ? 'max-w-0 opacity-0'
-                                                    : 'max-w-40 opacity-100',
-                                            )}
-                                        >
-                                            {item.title}
-                                        </span>
-                                        {/* Tooltip colapsado */}
-                                        <div
-                                            className={cn(
-                                                TOOLTIP_CLS,
-                                                !isCollapsed && 'hidden',
-                                            )}
-                                        >
-                                            {item.title}
-                                        </div>
-                                    </Link>
-                                ))}
-                                <div className="mx-3 border-t border-sidebar-border" />
-                            </div>
+                    <SidebarContent onClickCapture={closeDrawerOnLink}>
+                        <nav
+                            aria-label="Navegação principal"
+                            className={cn(
+                                'flex flex-col',
+                                compact ? 'gap-2' : 'gap-6',
+                            )}
+                        >
+                            {globalItems.length > 0 && (
+                                <NavGroup>
+                                    <NavRows items={globalItems} />
+                                </NavGroup>
+                            )}
+                            {nav.style === 'modules' ? (
+                                <ModulesSidebarContent />
+                            ) : (
+                                <FlatSidebarContent />
+                            )}
+                        </nav>
+                    </SidebarContent>
+
+                    <SidebarFooter
+                        className="gap-3 px-3 pt-4 pb-5"
+                        onClickCapture={closeDrawerOnLink}
+                    >
+                        {footerItems.length > 0 && (
+                            <NavRows items={footerItems} />
                         )}
-
-                        {nav.style === 'modules' ? (
-                            <ModulesSidebarContent isCollapsed={isCollapsed} />
-                        ) : (
-                            <FlatSidebarContent isCollapsed={isCollapsed} />
-                        )}
-                    </div>
-
-                    {/* Rodapé fixo — footer links + usuário */}
-                    <div className="shrink-0 space-y-1">
-                        {/* Links externos */}
-                        {footerItems.length > 0 && !isCollapsed && (
-                            <div className="space-y-0.5">
-                                <div className="mx-3 border-t border-sidebar-border" />
-                                <div className="pt-2">
-                                    {footerItems.map((item) => (
-                                        <a
-                                            key={item.title}
-                                            href={toUrl(item.href)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                                        >
-                                            {item.icon && (
-                                                <item.icon
-                                                    size={15}
-                                                    className="shrink-0"
-                                                />
-                                            )}
-                                            <span className="truncate">
-                                                {item.title}
-                                            </span>
-                                        </a>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* User section */}
-                        <div className="group relative">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button
-                                        type="button"
-                                        className={cn(
-                                            'flex w-full items-center rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-[13px] font-medium text-white/95 transition-colors hover:border-white/15 hover:bg-white/10 data-[state=open]:border-white/15 data-[state=open]:bg-white/10',
-                                            isCollapsed
-                                                ? 'justify-center'
-                                                : 'gap-2.5',
-                                        )}
-                                    >
-                                        <Avatar className="size-7 shrink-0 overflow-hidden rounded-full">
-                                            <AvatarImage
-                                                src={auth.user?.avatar}
-                                                alt={auth.user?.name}
-                                            />
-                                            <AvatarFallback className="rounded-full bg-sidebar-primary text-[10px] font-bold text-white">
-                                                {getInitials(
-                                                    auth.user?.name ?? '',
-                                                )}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div
-                                            className={cn(
-                                                'overflow-hidden text-left transition-[opacity,max-width] duration-200 ease-out',
-                                                isCollapsed
-                                                    ? 'max-w-0 opacity-0'
-                                                    : 'max-w-40 opacity-100',
-                                            )}
-                                        >
-                                            <p className="truncate text-[13px] font-semibold text-white/95">
-                                                {auth.user?.name}
-                                            </p>
-                                            <p className="truncate text-[11px] text-white/60">
-                                                {auth.user?.email}
-                                            </p>
-                                        </div>
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    className="w-56"
-                                    align={isCollapsed ? 'center' : 'start'}
-                                    side="top"
-                                >
-                                    {auth.user && (
-                                        <UserMenuContent user={auth.user} />
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* Tooltip usuário colapsado */}
-                            <div
-                                className={cn(
-                                    TOOLTIP_CLS,
-                                    !isCollapsed && 'hidden',
-                                )}
-                            >
-                                {auth.user?.name}
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-            </aside>
-        </>
+                        <UserFooter />
+                    </SidebarFooter>
+                </CompactContext.Provider>
+            </div>
+        </Sidebar>
     );
 }

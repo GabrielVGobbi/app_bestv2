@@ -1,6 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     BadgeCheck,
     Building2,
     CalendarDays,
@@ -38,10 +37,12 @@ import {
     quote,
 } from '@/actions/App/Modules/Sales/Http/Controllers/SaleLifecycleController';
 import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn, formatDate, formatMoney } from '@/lib/utils';
 import type {
@@ -157,7 +158,7 @@ function DetailLine({
     return (
         <div className={cn('min-w-0', className)}>
             <dt className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                {Icon ? <Icon className="size-3.5" /> : null}
+                {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
                 {label}
             </dt>
             <dd className="mt-1 min-w-0 text-sm font-medium break-words">
@@ -183,7 +184,6 @@ function LifecycleActions({
                     {({ processing }) => (
                         <Button
                             type="submit"
-                            size="sm"
                             variant="outline"
                             disabled={processing}
                         >
@@ -203,11 +203,7 @@ function LifecycleActions({
                                 name="status_confirmed"
                                 value="1"
                             />
-                            <Button
-                                type="submit"
-                                size="sm"
-                                disabled={processing}
-                            >
+                            <Button type="submit" disabled={processing}>
                                 <CheckCircle2 className="size-4" />
                                 Confirmar
                             </Button>
@@ -227,7 +223,6 @@ function LifecycleActions({
                             />
                             <Button
                                 type="submit"
-                                size="sm"
                                 variant="outline"
                                 disabled={processing}
                             >
@@ -256,18 +251,18 @@ function LifecycleActions({
                             {sale.status === 'campaign_started' ? (
                                 <Input
                                     name="status_reason"
+                                    aria-label="Motivo do cancelamento"
                                     placeholder="Motivo do cancelamento"
-                                    className="h-8 w-56"
+                                    className="h-9 w-56"
                                 />
                             ) : null}
                             <Button
                                 type="submit"
-                                size="sm"
                                 variant="destructive"
                                 disabled={processing}
                             >
                                 <XCircle className="size-4" />
-                                Cancelar
+                                Cancelar venda
                             </Button>
                             <InputError message={errors.status_reason} />
                         </>
@@ -284,7 +279,7 @@ function ItemOriginVisual({ item }: { item: SaleItem }) {
             <img
                 src={item.track_image_url}
                 alt={item.track_name ?? item.description}
-                className="size-12 rounded-md border object-cover"
+                className="size-12 rounded-md border border-border object-cover"
                 loading="lazy"
             />
         );
@@ -295,13 +290,13 @@ function ItemOriginVisual({ item }: { item: SaleItem }) {
     return (
         <span
             className={cn(
-                'flex size-12 shrink-0 items-center justify-center rounded-md border',
+                'flex size-12 shrink-0 items-center justify-center rounded-md',
                 item.type === 'playlist_slot'
-                    ? 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300'
-                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                    ? 'bg-primary-soft text-primary-soft-foreground'
+                    : 'bg-muted text-muted-foreground',
             )}
         >
-            <Icon className="size-5" />
+            <Icon className="size-5" aria-hidden="true" />
         </span>
     );
 }
@@ -313,7 +308,7 @@ function ItemDeliveryDetails({ item }: { item: SaleItem }) {
         <div className="space-y-2">
             <div className="flex min-w-0 items-start gap-2">
                 <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 text-sm">
+                <span className="min-w-0 text-sm tabular-nums">
                     {formatPeriod(item.starts_on, item.ends_on)}
                 </span>
             </div>
@@ -347,7 +342,7 @@ function ItemMusicDetails({ item }: { item: SaleItem }) {
         item.track_spotify_id ?? item.track_spotify_url ?? 'Não informado';
 
     return (
-        <div className="mt-3 grid gap-2 rounded-md bg-muted/35 p-3 text-xs text-muted-foreground sm:grid-cols-2">
+        <div className="mt-3 grid gap-2 rounded-md bg-muted p-3 text-xs text-muted-foreground sm:grid-cols-2">
             <div className="flex min-w-0 items-center gap-2">
                 <Disc3 className="size-3.5 shrink-0" />
                 <span className="truncate">{valueOrDash(item.track_name)}</span>
@@ -360,7 +355,9 @@ function ItemMusicDetails({ item }: { item: SaleItem }) {
             </div>
             <div className="flex min-w-0 items-center gap-2">
                 <Clock3 className="size-3.5 shrink-0" />
-                <span>{formatDuration(item.track_duration_ms)}</span>
+                <span className="tabular-nums">
+                    {formatDuration(item.track_duration_ms)}
+                </span>
             </div>
             <div className="flex min-w-0 items-center gap-2">
                 <Hash className="size-3.5 shrink-0" />
@@ -406,7 +403,9 @@ function SpotifyPresenceCell({
             <StatusBadge presenter={presence.status_presenter} />
             <div className="space-y-1 text-xs text-muted-foreground">
                 {presence.track_position ? (
-                    <p>Posição #{presence.track_position}</p>
+                    <p className="tabular-nums">
+                        Posição #{presence.track_position}
+                    </p>
                 ) : null}
                 {presence.match_type ? (
                     <p>
@@ -417,7 +416,7 @@ function SpotifyPresenceCell({
                     </p>
                 ) : null}
                 {presence.error ? (
-                    <p className="line-clamp-2 text-red-600 dark:text-red-300">
+                    <p className="line-clamp-2 text-destructive-soft-foreground">
                         {presence.error}
                     </p>
                 ) : null}
@@ -428,7 +427,10 @@ function SpotifyPresenceCell({
                         sale: sale.uuid,
                         saleItem: item.uuid,
                     })}
-                    options={{ preserveScroll: true, only: ['saleData', 'permissions', 'flash'] }}
+                    options={{
+                        preserveScroll: true,
+                        only: ['saleData', 'permissions', 'flash'],
+                    }}
                     disableWhileProcessing
                 >
                     {({ processing }) => (
@@ -436,7 +438,6 @@ function SpotifyPresenceCell({
                             type="submit"
                             size="sm"
                             variant="outline"
-                            className="h-8 px-2 text-xs"
                             disabled={processing}
                         >
                             <RefreshCw
@@ -479,17 +480,17 @@ function ServiceStructureTable({
         permissions.can_verify_spotify_playlist && playlistItemsCount > 0;
 
     return (
-        <section className="overflow-hidden rounded-lg border bg-card">
-            <header className="flex flex-col gap-4 border-b bg-muted/20 px-4 py-4 sm:px-5 lg:flex-row lg:items-start lg:justify-between">
+        <Card className="gap-0 overflow-hidden py-0">
+            <header className="flex flex-col gap-4 border-b border-border bg-muted px-4 py-4 sm:px-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
-                        <ReceiptText className="size-5" />
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary-soft-foreground">
+                        <ReceiptText className="size-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
                         <h2 className="text-base font-semibold">
                             Estrutura de serviços
                         </h2>
-                        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                        <p className="mt-1 max-w-2xl text-[13px] text-muted-foreground">
                             Composição comercial da venda, com origem, período,
                             entrega e valores congelados por item.
                         </p>
@@ -502,7 +503,7 @@ function ServiceStructureTable({
                             <dt className="text-xs text-muted-foreground">
                                 Serviços
                             </dt>
-                            <dd className="font-semibold">
+                            <dd className="font-semibold tabular-nums">
                                 {serviceItemsCount}
                             </dd>
                         </div>
@@ -510,7 +511,7 @@ function ServiceStructureTable({
                             <dt className="text-xs text-muted-foreground">
                                 Playlists
                             </dt>
-                            <dd className="font-semibold">
+                            <dd className="font-semibold tabular-nums">
                                 {playlistItemsCount}
                             </dd>
                         </div>
@@ -518,7 +519,9 @@ function ServiceStructureTable({
                             <dt className="text-xs text-muted-foreground">
                                 Qtd.
                             </dt>
-                            <dd className="font-semibold">{totalQuantity}</dd>
+                            <dd className="font-semibold tabular-nums">
+                                {totalQuantity}
+                            </dd>
                         </div>
                     </dl>
 
@@ -526,7 +529,10 @@ function ServiceStructureTable({
                         {canVerifySpotify ? (
                             <Form
                                 action={syncSale({ sale: sale.uuid })}
-                                options={{ preserveScroll: true, only: ['saleData', 'permissions', 'flash'] }}
+                                options={{
+                                    preserveScroll: true,
+                                    only: ['saleData', 'permissions', 'flash'],
+                                }}
                                 disableWhileProcessing
                             >
                                 {({ processing }) => (
@@ -563,7 +569,7 @@ function ServiceStructureTable({
             {items.length > 0 ? (
                 <>
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1120px] table-fixed text-sm">
+                        <table className="w-full min-w-[1120px] table-fixed text-[13px]">
                             <colgroup>
                                 <col className="w-[30%]" />
                                 <col className="w-[18%]" />
@@ -573,46 +579,43 @@ function ServiceStructureTable({
                                 <col className="w-[8%]" />
                                 <col className="w-[10%]" />
                             </colgroup>
-                            <thead className="bg-muted/35 text-xs text-muted-foreground">
-                                <tr className="border-b">
-                                    <th className="px-4 py-3 text-left font-medium">
+                            <thead className="bg-muted text-xs font-semibold text-muted-foreground">
+                                <tr className="border-b border-border">
+                                    <th className="px-4 py-3 text-left">
                                         Serviço / origem
                                     </th>
-                                    <th className="px-4 py-3 text-left font-medium">
+                                    <th className="px-4 py-3 text-left">
                                         Entrega
                                     </th>
-                                    <th className="px-4 py-3 text-left font-medium">
+                                    <th className="px-4 py-3 text-left">
                                         Spotify na playlist
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th className="px-4 py-3 text-right">
                                         Qtd.
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th className="px-4 py-3 text-right">
                                         Unitário
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th className="px-4 py-3 text-right">
                                         Desconto
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th className="px-4 py-3 text-right">
                                         Total
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-separator">
                                 {items.map((item) => (
                                     <tr
                                         key={item.uuid}
-                                        className="align-top transition-colors hover:bg-muted/20"
+                                        className="align-top transition-colors hover:bg-accent"
                                     >
                                         <td className="px-4 py-4">
                                             <div className="flex min-w-0 gap-3">
                                                 <ItemOriginVisual item={item} />
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="rounded-md"
-                                                        >
+                                                        <Badge variant="outline">
                                                             {itemTypeLabel(
                                                                 item.type,
                                                             )}
@@ -623,7 +626,7 @@ function ServiceStructureTable({
                                                             }
                                                         />
                                                     </div>
-                                                    <p className="mt-2 line-clamp-2 font-semibold">
+                                                    <p className="mt-2 line-clamp-2 text-sm font-semibold">
                                                         {item.description ||
                                                             itemPrimaryReference(
                                                                 item,
@@ -634,7 +637,7 @@ function ServiceStructureTable({
                                                             item,
                                                         )}
                                                     </p>
-                                                    <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                                                    <div className="mt-2 flex flex-wrap gap-1.5 text-2xs text-muted-foreground tabular-nums">
                                                         <span className="rounded-md bg-muted px-1.5 py-0.5">
                                                             Item #{item.id}
                                                         </span>
@@ -710,7 +713,7 @@ function ServiceStructureTable({
                         </table>
                     </div>
 
-                    <footer className="grid gap-px border-t bg-border sm:grid-cols-3">
+                    <footer className="grid gap-px border-t border-border bg-separator sm:grid-cols-3">
                         <div className="bg-card px-4 py-3">
                             <span className="text-xs text-muted-foreground">
                                 Subtotal
@@ -738,56 +741,47 @@ function ServiceStructureTable({
                     </footer>
                 </>
             ) : (
-                <div className="p-4">
-                    <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
-                        <ListPlus className="mx-auto size-8 text-muted-foreground" />
-                        <p className="mt-3 text-sm font-medium">
-                            Nenhum serviço adicionado nesta venda.
-                        </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            A composição aparecerá aqui assim que a venda tiver
-                            itens comerciais.
-                        </p>
-                    </div>
-                </div>
+                <EmptyState
+                    icon={ListPlus}
+                    title="Nenhum serviço adicionado nesta venda"
+                    description="A composição aparecerá aqui assim que a venda tiver itens comerciais."
+                    action={
+                        canEdit ? (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={edit.url(sale.uuid)}>
+                                    <Pencil className="size-4" />
+                                    Editar composição
+                                </Link>
+                            </Button>
+                        ) : undefined
+                    }
+                />
             )}
-        </section>
+        </Card>
     );
 }
 
-function SaleHero({ sale, items }: { sale: Sale; items: SaleItem[] }) {
+function SaleSummary({ sale, items }: { sale: Sale; items: SaleItem[] }) {
     return (
-        <section className="overflow-hidden rounded-lg border bg-card">
-            <div className="border-b bg-muted/30 px-4 py-5 sm:px-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 space-y-3">
-                        <div className="min-w-0">
-                            <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
-                                {sale.order_number}
-                            </h1>
-                            <span className="text-xs text-muted-foreground">
-                                Criada em {formatDate(sale.created_at)}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-2 sm:grid-cols-1">
-                        <div className="rounded-lg border bg-background px-4 py-3">
-                            <span className="text-xs font-medium text-muted-foreground">
-                                Total
-                            </span>
-                            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                                {moneyOrRestricted(sale.total_amount)}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {itemCountLabel(items.length)} Serviços
-                            </p>
-                        </div>
-                    </div>
+        <Card className="gap-0 overflow-hidden py-0">
+            <CardContent className="flex flex-col gap-4 border-b border-border px-4 py-5 sm:px-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                    <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Total fechado
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+                        {moneyOrRestricted(sale.total_amount)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        {itemCountLabel(items.length)} na composição
+                    </p>
                 </div>
-            </div>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                    Criada em {formatDate(sale.created_at)}
+                </p>
+            </CardContent>
 
-            <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
+            <dl className="grid gap-px bg-separator sm:grid-cols-2 xl:grid-cols-4">
                 <div className="bg-card p-4">
                     <DetailLine
                         label="Cliente"
@@ -814,10 +808,11 @@ function SaleHero({ sale, items }: { sale: Sale; items: SaleItem[] }) {
                         label="Última atualização"
                         value={formatDate(sale.updated_at)}
                         icon={Clock3}
+                        className="tabular-nums"
                     />
                 </div>
-            </div>
-        </section>
+            </dl>
+        </Card>
     );
 }
 
@@ -836,36 +831,16 @@ export default function ShowSale({ saleData, permissions }: Props) {
         <>
             <Head title={sale.order_number} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-xl font-semibold">
-                                {sale.order_number}
-                            </h1>
-                            <StatusBadge presenter={sale.status_presenter} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            {sale.title ??
-                                sale.client?.name ??
-                                'Venda sem título'}
-                        </p>
-                    </div>
-                </div>
+            <Header
+                title={sale.order_number}
+                subtitle={sale.title ?? sale.client?.name ?? 'Venda sem título'}
+                backHref={index.url()}
+            >
                 <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge presenter={sale.status_presenter} showIcon />
                     {permissions.can_update &&
                     ['draft', 'quoted'].includes(sale.status) ? (
-                        <Button variant="outline" size="sm" asChild>
+                        <Button variant="outline" asChild>
                             <Link href={edit.url(sale.uuid)}>
                                 <Pencil className="size-4" />
                                 Editar
@@ -878,7 +853,7 @@ export default function ShowSale({ saleData, permissions }: Props) {
 
             <div className="page-wrapper-lg">
                 <div className="space-y-4 p-4">
-                    <SaleHero sale={sale} items={items} />
+                    <SaleSummary sale={sale} items={items} />
                     <ServiceStructureTable
                         sale={sale}
                         items={items}

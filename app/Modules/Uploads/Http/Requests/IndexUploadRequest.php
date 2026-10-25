@@ -26,6 +26,7 @@ class IndexUploadRequest extends FormRequest
             'parentable_id' => ['required'],
             'tag' => ['nullable', 'string', 'max:50'],
             'collection' => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
             'page' => ['nullable', 'integer', 'min:1'],
         ];

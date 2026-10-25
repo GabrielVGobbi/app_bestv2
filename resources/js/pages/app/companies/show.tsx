@@ -1,5 +1,5 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Building2, CalendarDays, FileText } from 'lucide-react';
+import { Head, setLayoutProps } from '@inertiajs/react';
+import { Building2, CalendarDays, FileText } from 'lucide-react';
 
 import {
     destroy,
@@ -8,7 +8,6 @@ import {
 } from '@/actions/App/Modules/Companies/Http/Controllers/CompanyController';
 import Header from '@/components/dashboard/header';
 import DeleteButton from '@/components/delete-button';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { maskCnpj } from '@/lib/masks';
@@ -55,7 +54,7 @@ function InfoField({ label, value }: { label: string; value: string }) {
     return (
         <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-0.5 break-words text-sm">{value}</p>
+            <p className="mt-0.5 text-sm break-words">{value}</p>
         </div>
     );
 }
@@ -81,24 +80,12 @@ export default function ShowCompany({ companyData, permissions }: Props) {
         <>
             <Head title={companyName} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">{companyName}</h1>
-                        <p className="text-sm text-muted-foreground">{company.uuid}</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
+            <Header
+                title={companyName}
+                subtitle={company.nickname}
+                backHref={index.url()}
+            >
+                <div className="flex flex-wrap items-center gap-2">
                     <CompanySubNav
                         companyUuid={company.uuid}
                         currentPage="show"
@@ -106,7 +93,10 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                     />
                     {permissions.can_manage ? (
                         <>
-                            <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
                             <DeleteButton
                                 url={destroy.url(company.uuid)}
                                 resourceName={companyName}
@@ -121,10 +111,18 @@ export default function ShowCompany({ companyData, permissions }: Props) {
             <div className="page-wrapper-lg">
                 <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
-                        <div className="rounded-lg border bg-card">
-                            <div className="p-5">
-                                <div className="flex h-28 items-center justify-center rounded-lg bg-secondary text-3xl font-semibold text-primary">
-                                    {initials}
+                        <Card className="gap-0 py-0">
+                            <CardContent className="p-5">
+                                <div className="flex h-28 items-center justify-center overflow-hidden rounded-lg bg-primary-soft text-3xl font-semibold text-primary-soft-foreground">
+                                    {company.logo_url ? (
+                                        <img
+                                            src={company.logo_url}
+                                            alt={`Logo ${companyName}`}
+                                            className="size-full object-contain p-3"
+                                        />
+                                    ) : (
+                                        initials
+                                    )}
                                 </div>
 
                                 <div className="mt-4 space-y-1">
@@ -138,13 +136,19 @@ export default function ShowCompany({ companyData, permissions }: Props) {
 
                                 <div className="mt-5 space-y-2 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
-                                        <Building2 className="size-4 shrink-0" />
-                                        <span className="truncate">
+                                        <Building2
+                                            className="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="truncate tabular-nums">
                                             {maskCnpj(company.cnpj)}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <FileText className="size-4 shrink-0" />
+                                        <FileText
+                                            className="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
                                         <span className="truncate">
                                             {metadataValue(
                                                 company.fiscal_metadata,
@@ -153,18 +157,24 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                                         </span>
                                     </div>
                                 </div>
-                            </div>
+                            </CardContent>
 
-                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
+                            <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground tabular-nums">
                                 <div className="flex items-center gap-2">
-                                    <CalendarDays className="size-3.5" />
-                                    <span>Criado {formatDate(company.created_at)}</span>
+                                    <CalendarDays
+                                        className="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    <span>
+                                        Criado {formatDate(company.created_at)}
+                                    </span>
                                 </div>
                                 <p className="mt-1">
-                                    Ultima edicao {formatDate(company.updated_at)}
+                                    Última edição{' '}
+                                    {formatDate(company.updated_at)}
                                 </p>
                             </div>
-                        </div>
+                        </Card>
                     </aside>
 
                     <main className="min-w-0 space-y-4">
@@ -174,13 +184,16 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-2">
                                 <InfoField label="Nome" value={company.name} />
-                                <InfoField label="Apelido" value={company.nickname} />
+                                <InfoField
+                                    label="Apelido"
+                                    value={company.nickname}
+                                />
                                 <InfoField
                                     label="CNPJ"
                                     value={maskCnpj(company.cnpj)}
                                 />
                                 <InfoField
-                                    label="Razao social"
+                                    label="Razão social"
                                     value={metadataValue(
                                         company.fiscal_metadata,
                                         'razaoSocial',
@@ -194,7 +207,7 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                                     )}
                                 />
                                 <InfoField
-                                    label="Inscricao municipal"
+                                    label="Inscrição municipal"
                                     value={metadataValue(
                                         company.fiscal_metadata,
                                         'inscricaoMunicipal',
@@ -208,7 +221,7 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                                 <CardTitle>Metadados fiscais</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <pre className="max-h-[520px] overflow-auto rounded-md border bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground">
+                                <pre className="max-h-[520px] overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-relaxed text-muted-foreground">
                                     {formatMetadata(company.fiscal_metadata)}
                                 </pre>
                             </CardContent>

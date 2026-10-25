@@ -2,6 +2,7 @@ import { ImagePlus, RefreshCw, Trash2, UploadCloud } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Company } from '@/types/app/company';
@@ -11,20 +12,8 @@ interface Props {
     error?: string;
 }
 
-const avatarColorClasses: Record<string, string> = {
-    rose: 'border-rose-200 bg-rose-50 text-rose-700',
-    amber: 'border-amber-200 bg-amber-50 text-amber-700',
-    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    sky: 'border-sky-200 bg-sky-50 text-sky-700',
-    violet: 'border-violet-200 bg-violet-50 text-violet-700',
-    slate: 'border-slate-200 bg-slate-50 text-slate-700',
-};
-
 function makeInitials(value: string | null | undefined): string {
-    const words = (value ?? '')
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
+    const words = (value ?? '').trim().split(/\s+/).filter(Boolean);
 
     if (words.length === 0) {
         return 'EM';
@@ -47,16 +36,17 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
     const existingLogoUrl = removeLogo ? null : (company?.logo_url ?? null);
     const visiblePreviewUrl = previewUrl ?? existingLogoUrl;
     const hasStoredLogo = Boolean(company?.logo_url || company?.logo_path);
-    const hasPreview = Boolean(visiblePreviewUrl);
-    const initials = company?.logo_initials ?? makeInitials(company?.nickname ?? company?.name);
-    const colorClass =
-        avatarColorClasses[company?.logo_color ?? ''] ?? avatarColorClasses.rose;
+    const initials =
+        company?.logo_initials ??
+        makeInitials(company?.nickname ?? company?.name);
     const helperText = useMemo(() => {
         if (fileName) {
             return fileName;
         }
 
-        return hasStoredLogo && !removeLogo ? 'Imagem atual' : 'Mockup automático';
+        return hasStoredLogo && !removeLogo
+            ? 'Imagem atual'
+            : 'Mockup automático';
     }, [fileName, hasStoredLogo, removeLogo]);
 
     useEffect(() => {
@@ -117,13 +107,24 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
 
     return (
         <div className="space-y-2">
-            <input ref={inputRef} type="file" name="logo" accept="image/*" className="hidden" onChange={handleInputChange} />
-            <input type="hidden" name="remove_logo" value={removeLogo ? '1' : '0'} />
+            <input
+                ref={inputRef}
+                type="file"
+                name="logo"
+                accept="image/*"
+                className="hidden"
+                onChange={handleInputChange}
+            />
+            <input
+                type="hidden"
+                name="remove_logo"
+                value={removeLogo ? '1' : '0'}
+            />
 
             <div
                 className={cn(
-                    'group rounded-lg border border-dashed bg-background p-4 transition-colors',
-                    isDragging && 'border-primary bg-primary/5',
+                    'rounded-lg border border-dashed border-input bg-card p-4 transition-colors hover:bg-accent',
+                    isDragging && 'border-primary bg-accent',
                     error && 'border-destructive',
                 )}
                 onDragEnter={(event) => {
@@ -137,14 +138,20 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
                 <div className="flex items-start gap-4">
                     <div
                         className={cn(
-                            'flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border text-lg font-semibold',
-                            !hasPreview && colorClass,
+                            'flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg text-lg font-semibold',
+                            visiblePreviewUrl
+                                ? 'bg-muted'
+                                : 'bg-primary-soft text-primary-soft-foreground',
                         )}
                     >
                         {visiblePreviewUrl ? (
                             <img
                                 src={visiblePreviewUrl}
-                                alt={company?.name ? `Logo ${company.name}` : 'Logo da empresa'}
+                                alt={
+                                    company?.name
+                                        ? `Logo ${company.name}`
+                                        : 'Logo da empresa'
+                                }
                                 className="size-full object-cover"
                             />
                         ) : (
@@ -155,7 +162,10 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
                     <div className="min-w-0 flex-1 space-y-3">
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 text-sm font-semibold">
-                                <UploadCloud className="size-4 text-primary" />
+                                <UploadCloud
+                                    className="size-4 text-muted-foreground"
+                                    aria-hidden="true"
+                                />
                                 Imagem da empresa
                             </div>
                             <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -175,7 +185,9 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
                                 ) : (
                                     <ImagePlus className="size-4" />
                                 )}
-                                {hasStoredLogo || previewUrl ? 'Trocar' : 'Adicionar'}
+                                {hasStoredLogo || previewUrl
+                                    ? 'Trocar'
+                                    : 'Adicionar'}
                             </Button>
 
                             {(hasStoredLogo || previewUrl) && (
@@ -183,7 +195,7 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="text-muted-foreground hover:text-destructive"
+                                    className="text-muted-foreground hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                                     onClick={clearLogo}
                                 >
                                     <Trash2 className="size-4" />
@@ -195,7 +207,7 @@ export default function CompanyLogoDropzone({ company, error }: Props) {
                 </div>
             </div>
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            <InputError message={error} />
         </div>
     );
 }

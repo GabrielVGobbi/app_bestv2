@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Home, RefreshCw } from 'lucide-react';
 
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import { home } from '@/routes';
 
@@ -14,7 +14,8 @@ interface ErrorConfig {
 const errorConfig: Record<number, ErrorConfig> = {
     400: {
         title: 'Requisição inválida',
-        description: 'A requisição enviada não pôde ser processada. Verifique os dados e tente novamente.',
+        description:
+            'A requisição enviada não pôde ser processada. Verifique os dados e tente novamente.',
     },
     401: {
         title: 'Não autorizado',
@@ -30,21 +31,25 @@ const errorConfig: Record<number, ErrorConfig> = {
     },
     419: {
         title: 'Sessão expirada',
-        description: 'Sua sessão expirou por inatividade. Faça login novamente para continuar.',
+        description:
+            'Sua sessão expirou por inatividade. Faça login novamente para continuar.',
         showRefresh: true,
     },
     429: {
         title: 'Muitas requisições',
-        description: 'Você fez muitas requisições em pouco tempo. Aguarde um momento e tente novamente.',
+        description:
+            'Você fez muitas requisições em pouco tempo. Aguarde um momento e tente novamente.',
     },
     500: {
         title: 'Erro interno',
-        description: 'Algo inesperado aconteceu no servidor. Nossa equipe foi notificada.',
+        description:
+            'Algo inesperado aconteceu no servidor. Nossa equipe foi notificada.',
         showRefresh: true,
     },
     503: {
         title: 'Em manutenção',
-        description: 'O serviço está temporariamente indisponível. Voltaremos em breve.',
+        description:
+            'O serviço está temporariamente indisponível. Voltaremos em breve.',
         showRefresh: true,
     },
 };
@@ -60,7 +65,7 @@ export default function Error({ status }: { status: number }) {
 
     return (
         <>
-            <Head title={`${status} — ${config.title}`} />
+            <Head title={`${status}: ${config.title}`} />
 
             <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6">
                 {/* Background decoration */}
@@ -73,8 +78,11 @@ export default function Error({ status }: { status: number }) {
 
                 <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
                     {/* Logo */}
-                    <Link href={home.url()} className="flex items-center gap-2 opacity-80 transition-opacity hover:opacity-100">
-                        <AppLogoIcon className="size-8 fill-current text-foreground" />
+                    <Link
+                        href={home.url()}
+                        className="flex items-center gap-2 opacity-80 transition-opacity hover:opacity-100"
+                    >
+                        <AppLogo showText={false} className="text-foreground" />
                     </Link>
 
                     {/* Error code */}
@@ -110,7 +118,10 @@ export default function Error({ status }: { status: number }) {
                         </Button>
 
                         {config.showRefresh && (
-                            <Button variant="ghost" onClick={() => window.location.reload()}>
+                            <Button
+                                variant="ghost"
+                                onClick={() => window.location.reload()}
+                            >
                                 <RefreshCw className="size-4" />
                                 Tentar novamente
                             </Button>

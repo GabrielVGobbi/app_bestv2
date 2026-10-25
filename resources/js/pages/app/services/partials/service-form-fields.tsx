@@ -1,24 +1,24 @@
-import { ChevronDown, Settings2 } from 'lucide-react';
+import { ChevronDown, Settings2, Truck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import FormField from '@/components/ui/forms/form-field';
-import FormSection from '@/components/ui/forms/form-section';
-import { Input } from '@/components/ui/input';
-import { InputMoney } from '@/components/ui/input-money';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import FormSection from '@/components/ui/forms/form-section';
+import { Input } from '@/components/ui/input';
+import { InputMoney } from '@/components/ui/input-money';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type {
     Service,
@@ -59,9 +59,9 @@ function hasMetadata(metadata: ServiceMetadata | null | undefined): boolean {
 
     return Boolean(
         metadata.requires_period ||
-            metadata.requires_asset_reference ||
-            metadata.delivery_mode ||
-            metadata.default_notes,
+        metadata.requires_asset_reference ||
+        metadata.delivery_mode ||
+        metadata.default_notes,
     );
 }
 
@@ -71,7 +71,8 @@ function hasMetadataErrors(errors: Record<string, string>): boolean {
 
 export default function ServiceFormFields({ service, errors }: Props) {
     const metadata = service?.metadata ?? {};
-    const shouldOpenConfig = hasMetadata(service?.metadata) || hasMetadataErrors(errors);
+    const shouldOpenConfig =
+        hasMetadata(service?.metadata) || hasMetadataErrors(errors);
     const [isConfigOpen, setIsConfigOpen] = useState(shouldOpenConfig);
     const [requiresPeriod, setRequiresPeriod] = useState(
         metadata.requires_period ?? false,
@@ -82,16 +83,21 @@ export default function ServiceFormFields({ service, errors }: Props) {
     const [deliveryMode, setDeliveryMode] = useState<ServiceDeliveryMode>(
         metadata.delivery_mode ?? 'manual',
     );
-    const [basePrice, setBasePrice] = useState(centsToDecimal(service?.base_price));
+    const [basePrice, setBasePrice] = useState(
+        centsToDecimal(service?.base_price),
+    );
 
-    const basePriceCents = useMemo(() => centsFromDecimal(basePrice), [basePrice]);
+    const basePriceCents = useMemo(
+        () => centsFromDecimal(basePrice),
+        [basePrice],
+    );
     const shouldSubmitMetadata = isConfigOpen || hasMetadata(service?.metadata);
 
     return (
         <div className="space-y-8">
             <FormSection
                 title="Dados comerciais"
-                description=""
+                description="Nome, preço e descrição do item do catálogo."
             >
                 <input type="hidden" name="base_price" value={basePriceCents} />
                 <input type="hidden" name="currency" value="BRL" />
@@ -102,13 +108,7 @@ export default function ServiceFormFields({ service, errors }: Props) {
                 />
 
                 <div className="grid gap-4">
-                    <FormField
-                        id="field-name"
-                        label="Nome"
-                        variant="stacked"
-                        required
-                        error={errors.name}
-                    >
+                    <FormField label="Nome" required error={errors.name}>
                         <Input
                             id="field-name"
                             name="name"
@@ -117,52 +117,46 @@ export default function ServiceFormFields({ service, errors }: Props) {
                             required
                             minLength={3}
                             autoComplete="off"
-                            aria-invalid={!!errors.name}
                         />
                     </FormField>
 
                     <FormField
-                        id="field-base-price"
-                        label="Preço Base (opcional)"
-                        variant="stacked"
+                        label="Preço base"
+                        description="Opcional"
                         error={errors.base_price}
                     >
                         <InputMoney
                             id="field-base-price"
                             value={basePrice}
                             onChange={setBasePrice}
-                            aria-invalid={!!errors.base_price}
                         />
                     </FormField>
 
-                    <FormField
-                        id="field-description"
-                        label="Descricao"
-                        variant="stacked"
-                        error={errors.description}
-                    >
-                        <textarea
+                    <FormField label="Descrição" error={errors.description}>
+                        <Textarea
                             id="field-description"
                             name="description"
                             defaultValue={service?.description ?? ''}
                             rows={4}
-                            className="border-input bg-background placeholder:text-muted-foreground flex min-h-24 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none transition-[border-color,box-shadow,color] focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/15"
-                            aria-invalid={!!errors.description}
                         />
                     </FormField>
                 </div>
             </FormSection>
 
             <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-                <section className="rounded-md border bg-muted/20">
+                <section className="rounded-lg border border-border bg-muted">
                     <CollapsibleTrigger asChild>
                         <button
                             type="button"
-                            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                            className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-expanded={isConfigOpen}
                         >
                             <span className="flex min-w-0 items-center gap-3">
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
-                                    <Settings2 className="size-4" />
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary-soft-foreground">
+                                    <Settings2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                 </span>
                                 <span className="min-w-0">
                                     <span className="block text-sm font-semibold">
@@ -178,12 +172,13 @@ export default function ServiceFormFields({ service, errors }: Props) {
                                     'size-4 shrink-0 text-muted-foreground transition-transform',
                                     isConfigOpen && 'rotate-180',
                                 )}
+                                aria-hidden="true"
                             />
                         </button>
                     </CollapsibleTrigger>
 
                     <CollapsibleContent>
-                        <div className="border-t bg-background px-4 py-4">
+                        <div className="rounded-b-lg border-t border-border bg-card px-4 py-4">
                             {shouldSubmitMetadata ? (
                                 <>
                                     <input
@@ -207,13 +202,13 @@ export default function ServiceFormFields({ service, errors }: Props) {
                             ) : null}
 
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="flex min-h-20 items-center justify-between gap-4 rounded-md border px-4 py-3">
+                                <div className="flex min-h-20 items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
                                     <div className="space-y-1">
                                         <Label htmlFor="field-requires-period">
-                                            Exige periodo
+                                            Exige período
                                         </Label>
                                         <p className="text-xs text-muted-foreground">
-                                            Item deve pedir inicio e fim.
+                                            Item deve pedir início e fim.
                                         </p>
                                     </div>
                                     <Switch
@@ -223,7 +218,7 @@ export default function ServiceFormFields({ service, errors }: Props) {
                                     />
                                 </div>
 
-                                <div className="flex min-h-20 items-center justify-between gap-4 rounded-md border px-4 py-3">
+                                <div className="flex min-h-20 items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
                                     <div className="space-y-1">
                                         <Label htmlFor="field-requires-asset-reference">
                                             Exige ativo
@@ -235,14 +230,15 @@ export default function ServiceFormFields({ service, errors }: Props) {
                                     <Switch
                                         id="field-requires-asset-reference"
                                         checked={requiresAssetReference}
-                                        onCheckedChange={setRequiresAssetReference}
+                                        onCheckedChange={
+                                            setRequiresAssetReference
+                                        }
                                     />
                                 </div>
 
                                 <FormField
                                     id="field-delivery-mode"
                                     label="Modo de entrega"
-                                    variant="stacked"
                                     error={errors['metadata.delivery_mode']}
                                 >
                                     <Select
@@ -256,26 +252,27 @@ export default function ServiceFormFields({ service, errors }: Props) {
                                         <SelectTrigger
                                             id="field-delivery-mode"
                                             className="w-full"
-                                        >
-                                            <SelectValue placeholder="Selecione" />
-                                        </SelectTrigger>
+                                            icon={Truck}
+                                            placeholder="Selecione"
+                                        />
                                         <SelectContent>
-                                            {deliveryModes.map((option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
+                                            {deliveryModes.map(
+                                                (option, index) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        index={index}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </FormField>
 
                                 <FormField
-                                    id="field-default-notes"
-                                    label="Observação padrao"
-                                    variant="stacked"
+                                    label="Observação padrão"
                                     error={errors['metadata.default_notes']}
                                 >
                                     <Input
@@ -286,11 +283,10 @@ export default function ServiceFormFields({ service, errors }: Props) {
                                                 : undefined
                                         }
                                         type="text"
-                                        defaultValue={metadata.default_notes ?? ''}
-                                        autoComplete="off"
-                                        aria-invalid={
-                                            !!errors['metadata.default_notes']
+                                        defaultValue={
+                                            metadata.default_notes ?? ''
                                         }
+                                        autoComplete="off"
                                     />
                                 </FormField>
                             </div>

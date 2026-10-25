@@ -19,7 +19,11 @@ export function useIntersectionLoadMore(args: {
 
             observer.current = new IntersectionObserver(
                 ([entry]) => {
-                    if (entry?.isIntersecting && args.hasMore && !args.isFetchingMore) {
+                    if (
+                        entry?.isIntersecting &&
+                        args.hasMore &&
+                        !args.isFetchingMore
+                    ) {
                         args.onLoadMore();
                     }
                 },

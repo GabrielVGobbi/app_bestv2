@@ -1,0 +1,27 @@
+<?php
+
+namespace {{ namespace }}\DTOs;
+
+use App\Modules\ExternalApi\Core\Support\ArrayData;
+
+class SampleResource
+{
+    public function __construct(
+        public readonly string $id,
+        public readonly string $name,
+    ) {}
+
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            id: ArrayData::string($data, 'id'),
+            name: ArrayData::string($data, 'name'),
+        );
+    }
+
+    public function toArray(): array
+    {
+        return get_object_vars($this);
+    }
+}
+

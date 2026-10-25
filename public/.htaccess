@@ -23,3 +23,14 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+<IfModule mod_filter.c>
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/css text/javascript application/javascript
+    </IfModule>
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Vite changes the URL when an asset changes; authenticated responses keep their own cache policy.
+    Header set Cache-Control "public, max-age=31536000, immutable" "expr=%{REQUEST_STATUS} == 200 && %{REQUEST_URI} =~ m#^/build/assets/[^/]+-[A-Za-z0-9_-]{8}\.(css|js|woff2|svg|png|jpe?g|webp|gif|ico)$#"
+</IfModule>

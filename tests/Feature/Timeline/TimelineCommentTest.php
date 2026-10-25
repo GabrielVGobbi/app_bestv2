@@ -6,9 +6,12 @@ namespace Tests\Feature\Timeline;
 
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Permissions\Models\Permission;
 use App\Modules\Timeline\Models\TimelineComment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
+use Tests\TestEnvironment;
 
 class TimelineCommentTest extends TestCase
 {
@@ -17,6 +20,7 @@ class TimelineCommentTest extends TestCase
     public function test_authenticated_user_can_create_comment_for_client(): void
     {
         $user = User::factory()->create();
+        $this->grantClientRead($user);
         $client = Client::factory()->create();
 
         $this->actingAs($user, 'sanctum')
@@ -44,6 +48,7 @@ class TimelineCommentTest extends TestCase
     public function test_timeline_index_returns_client_comments(): void
     {
         $user = User::factory()->create();
+        $this->grantClientRead($user);
         $client = Client::factory()->create();
         $comment = TimelineComment::query()->create([
             'commentable_type' => Client::class,
@@ -72,6 +77,7 @@ class TimelineCommentTest extends TestCase
     {
         $author = User::factory()->create();
         $replier = User::factory()->create();
+        $this->grantClientRead($replier);
         $client = Client::factory()->create();
         $comment = TimelineComment::query()->create([
             'commentable_type' => Client::class,
@@ -102,6 +108,7 @@ class TimelineCommentTest extends TestCase
     public function test_reply_to_reply_is_forbidden(): void
     {
         $author = User::factory()->create();
+        $this->grantClientRead($author);
         $client = Client::factory()->create();
         $root = TimelineComment::query()->create([
             'commentable_type' => Client::class,
@@ -154,6 +161,7 @@ class TimelineCommentTest extends TestCase
     public function test_authenticated_user_can_create_html_comment_with_sanitized_body(): void
     {
         $user = User::factory()->create();
+        $this->grantClientRead($user);
         $client = Client::factory()->create();
 
         $this->actingAs($user, 'sanctum')
@@ -205,6 +213,7 @@ class TimelineCommentTest extends TestCase
     {
         $author = User::factory()->create();
         $otherUser = User::factory()->create();
+        $this->grantClientRead($otherUser);
         $client = Client::factory()->create();
         $comment = TimelineComment::query()->create([
             'commentable_type' => Client::class,
@@ -263,5 +272,89 @@ class TimelineCommentTest extends TestCase
     public function test_timeline_comment_upload_alias_is_registered(): void
     {
         $this->assertSame(TimelineComment::class, config('uploads.aliases.timeline-comment'));
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function promotedUnsafeDescendants(): array
+    {
+        return [
+            'promoted image event' => [
+                '<div><img src="/__timeline_missing" onerror="window.__sec010Executed=(window.__sec010Executed||0)+1"><p><strong>SEC010 safe</strong></p></div>',
+                '<p><strong>SEC010 safe</strong></p>',
+            ],
+            'nested promoted javascript link' => [
+                '<section><div><a href="javascript:window.__sec010Executed=(window.__sec010Executed||0)+1">SEC010 link</a><p><em>SEC010 emphasis</em></p></div></section>',
+                '<a>SEC010 link</a><p><em>SEC010 emphasis</em></p>',
+            ],
+        ];
+    }
+
+    #[DataProvider('promotedUnsafeDescendants')]
+    public function test_create_sanitizes_promoted_descendants_before_storage_and_response(string $unsafe, string $expected): void
+    {
+        TestEnvironment::assertSafeDatabase($this->app->make('config'));
+        $user = User::factory()->create();
+        $this->grantClientRead($user);
+        $client = Client::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/timeline/client/{$client->id}/comments", ['body_format' => 'html', 'body' => $unsafe])
+            ->assertCreated()
+            ->assertJsonPath('data.body_format', 'html')
+            ->assertJsonPath('data.body', $expected);
+
+        $this->assertSame($expected, TimelineComment::findOrFail($response->json('data.id'))->body);
+    }
+
+    #[DataProvider('promotedUnsafeDescendants')]
+    public function test_update_sanitizes_promoted_descendants_before_storage_and_response(string $unsafe, string $expected): void
+    {
+        TestEnvironment::assertSafeDatabase($this->app->make('config'));
+        $user = User::factory()->create();
+        $client = Client::factory()->create();
+        $comment = TimelineComment::query()->create([
+            'commentable_type' => Client::class, 'commentable_id' => $client->id,
+            'user_id' => $user->id, 'body' => 'Original plain comment.', 'body_format' => 'plain',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson("/api/v1/timeline/comments/{$comment->id}", ['body_format' => 'html', 'body' => $unsafe])
+            ->assertOk()
+            ->assertJsonPath('data.body_format', 'html')
+            ->assertJsonPath('data.body', $expected);
+
+        $this->assertSame($expected, $comment->fresh()->body);
+    }
+
+    #[DataProvider('promotedUnsafeDescendants')]
+    public function test_reply_sanitizes_promoted_descendants_before_storage_and_response(string $unsafe, string $expected): void
+    {
+        TestEnvironment::assertSafeDatabase($this->app->make('config'));
+        $user = User::factory()->create();
+        $this->grantClientRead($user);
+        $client = Client::factory()->create();
+        $root = TimelineComment::query()->create([
+            'commentable_type' => Client::class, 'commentable_id' => $client->id,
+            'user_id' => $user->id, 'body' => 'Original root.', 'body_format' => 'plain',
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/timeline/comments/{$root->id}/replies", ['body_format' => 'html', 'body' => $unsafe])
+            ->assertCreated()
+            ->assertJsonPath('data.body_format', 'html')
+            ->assertJsonPath('data.body', $expected);
+
+        $reply = TimelineComment::findOrFail($response->json('data.id'));
+        $this->assertSame($root->id, $reply->parent_id);
+        $this->assertSame($expected, $reply->body);
+    }
+
+    private function grantClientRead(User $user): void
+    {
+        $permission = Permission::query()->firstOrCreate(
+            ['slug' => 'view-clients'],
+            ['name' => 'View Clients', 'group' => 'clients'],
+        );
+        $user->permissions()->syncWithoutDetaching([$permission->getKey()]);
     }
 }

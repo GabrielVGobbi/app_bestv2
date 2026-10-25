@@ -2,7 +2,6 @@ import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
-    ChevronDown,
     Copy,
     ExternalLink,
     Eye,
@@ -13,6 +12,7 @@ import {
     RefreshCw,
     RotateCcw,
     Trash2,
+    X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -26,6 +26,7 @@ import {
     show,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import syncSpotifyPlaylist from '@/actions/App/Modules/Playlists/Http/Controllers/SpotifyPlaylistSyncController';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -33,7 +34,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,16 +45,15 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import {
+    DropdownContent,
+    DropdownLabel,
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    DropdownSeparator,
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
+import { MenuItem } from '@/components/ui/fluid/menu-item';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { getErrorMessage, httpPatch, toApiError } from '@/lib/http';
-import { cn } from '@/lib/utils';
 import type {
     MusicSubgenre,
     Playlist,
@@ -188,71 +187,58 @@ function SpotifyActionsMenu({
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label="Ações do Spotify"
-                    disabled={!hasSpotifyReference}
-                    className={cn(
-                        'text-emerald-700 hover:text-emerald-800 dark:text-emerald-400',
-                        hasSpotifyReference &&
-                            'border-emerald-200 hover:bg-emerald-50 dark:border-emerald-900/80 dark:hover:bg-emerald-950/30',
-                    )}
-                >
-                    {syncing ? (
-                        <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                        <SpotifyIcon className="size-4" />
-                    )}
-                    <ChevronDown className="absolute right-0.5 bottom-0.5 size-2.5 opacity-60" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                    <SpotifyIcon className="size-4 text-emerald-600" />
+            <DropdownTrigger
+                render={
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-[6px]"
+                        aria-label={`Ações do Spotify para ${playlist.name}`}
+                        disabled={!hasSpotifyReference}
+                    >
+                        {syncing ? (
+                            <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                            <SpotifyIcon className="size-4" />
+                        )}
+                    </Button>
+                }
+            />
+            <DropdownContent align="end" className="w-60">
+                <DropdownLabel className="flex items-center gap-2">
+                    <SpotifyIcon className="size-4" />
                     Spotify
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
+                </DropdownLabel>
+                <DropdownSeparator />
+                <MenuItem
+                    index={0}
+                    icon={Copy}
+                    label="Copiar link"
                     disabled={!url}
-                    onSelect={(event) => {
-                        event.preventDefault();
-                        void copySpotifyLink();
-                    }}
-                >
-                    <Copy className="size-4" />
-                    Copiar link
-                </DropdownMenuItem>
-                <DropdownMenuItem
+                    onSelect={() => void copySpotifyLink()}
+                />
+                <MenuItem
+                    index={1}
+                    icon={ExternalLink}
+                    label="Abrir Spotify"
                     disabled={!url}
-                    onSelect={() => url && openExternal(url)}
-                >
-                    <ExternalLink className="size-4" />
-                    Abrir Spotify
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
+                    onSelect={() => openExternal(url)}
+                />
+                <DropdownSeparator />
+                <MenuItem
+                    index={2}
+                    icon={RefreshCw}
+                    label="Sincronizar Spotify"
                     disabled={!canRunSync || syncing}
-                    onSelect={(event) => {
-                        event.preventDefault();
-                        void syncSpotify();
-                    }}
-                >
-                    {syncing ? (
-                        <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                        <RefreshCw className="size-4" />
-                    )}
-                    Sincronizar Spotify
-                </DropdownMenuItem>
+                    onSelect={() => void syncSpotify()}
+                />
                 {!playlist.spotify_playlist_id ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                    <p className="px-3 py-1.5 text-xs text-muted-foreground">
                         Vincule o ID público para sincronizar.
                     </p>
                 ) : null}
-            </DropdownMenuContent>
+            </DropdownContent>
         </DropdownMenu>
     );
 }
@@ -301,7 +287,10 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                                         className="size-full object-cover"
                                     />
                                 ) : (
-                                    <Music2 className="size-5" />
+                                    <Music2
+                                        className="size-5"
+                                        aria-hidden="true"
+                                    />
                                 )}
                             </div>
                             <div className="min-w-0">
@@ -336,9 +325,13 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                 id: 'followers_count',
                 accessorKey: 'followers_count',
                 header: 'Seguidores',
-                cell: ({ row }) =>
-                    row.original.followers_count?.toLocaleString('pt-BR') ??
-                    '-',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.followers_count?.toLocaleString(
+                            'pt-BR',
+                        ) ?? '-'}
+                    </span>
+                ),
                 meta: { label: 'Seguidores' },
             },
             {
@@ -350,8 +343,27 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                 ),
                 meta: { label: 'Status' },
             },
+            {
+                // O contrato de ações de linha não renderiza componentes; o menu do Spotify vive numa coluna própria.
+                id: 'spotify',
+                header: 'Spotify',
+                size: 88,
+                enableSorting: false,
+                cell: ({ row }) => (
+                    <SpotifyActionsMenu
+                        playlist={row.original}
+                        canSync={permissions.can_update}
+                        onSynced={() => {
+                            void queryClient.invalidateQueries({
+                                queryKey: ['playlists'],
+                            });
+                        }}
+                    />
+                ),
+                meta: { label: 'Spotify', align: 'center' },
+            },
         ],
-        [],
+        [permissions.can_update, queryClient],
     );
 
     const tableFilters = useMemo<DataTableFilterConfig[]>(
@@ -400,20 +412,6 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                 showLabel: false,
                 tooltip: 'Visualizar',
             },
-            {
-                label: 'Spotify',
-                render: (playlist) => (
-                    <SpotifyActionsMenu
-                        playlist={playlist}
-                        canSync={permissions.can_update}
-                        onSynced={() => {
-                            void queryClient.invalidateQueries({
-                                queryKey: ['playlists'],
-                            });
-                        }}
-                    />
-                ),
-            },
         ];
 
         if (permissions.can_update) {
@@ -459,7 +457,6 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
         permissions.can_delete,
         permissions.can_restore,
         permissions.can_update,
-        queryClient,
     ]);
 
     function deletePlaylist(): void {
@@ -477,23 +474,22 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
         <>
             <Head title="Playlists" />
 
+            <Header
+                title="Playlists"
+                subtitle="Cadastro comercial de canais musicais e métricas operacionais"
+            >
+                {permissions.can_create ? (
+                    <Button asChild>
+                        <Link prefetch href={create.url()}>
+                            <Plus className="size-4" aria-hidden="true" />
+                            Nova playlist
+                        </Link>
+                    </Button>
+                ) : null}
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Playlists"
-                            description="Cadastro comercial de canais musicais e métricas operacionais."
-                        />
-                        {permissions.can_create ? (
-                            <Button asChild>
-                                <Link prefetch href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Nova Playlist
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
                     <Dialog
                         open={playlistToDelete !== null}
                         onOpenChange={(open) =>
@@ -514,12 +510,17 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                                     variant="outline"
                                     onClick={() => setPlaylistToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
                                     onClick={deletePlaylist}
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Arquivar
                                 </Button>
                             </DialogFooter>
@@ -560,7 +561,7 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar playlists..."
+                        searchPlaceholder="Buscar playlists"
                     />
                 </div>
             </div>

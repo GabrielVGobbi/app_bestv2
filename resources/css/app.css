@@ -1,332 +1,466 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@source '../js';
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@font-face {
+    font-family: 'Geist';
+    src: url('../fonts/Geist-Variable.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../fonts/GeistMono-Variable.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
 @theme {
+    /* Bundled fonts work without an external font service. */
     --font-sans:
-        'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif,
+        'Geist', 'Segoe UI Variable', 'Segoe UI', 'Helvetica Neue', Arial,
+        ui-sans-serif, system-ui, -apple-system, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
     --font-mono:
-        'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Mono', monospace;
-    --font-brand: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+        'Geist Mono', ui-monospace, 'Cascadia Code', 'SFMono-Regular', Menlo,
+        Monaco, Consolas, 'Liberation Mono', monospace;
+    --font-brand:
+        'Geist', 'Segoe UI Variable Display', 'Segoe UI', 'Helvetica Neue',
+        Arial, ui-sans-serif, system-ui, sans-serif;
 
-    --radius: 0.75rem;
-    --radius-xs: 0.375rem;
-    --radius-sm: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 0.875rem;
-    --radius-xl: 1rem;
-    --radius-2xl: 1.25rem;
+    /* ── Radius, DESIGN.md: xs=8px, sm=10px, md=14px, lg=pill ─── */
+    --radius: 0.875rem; /* 14px : base (inputs, buttons)   */
+    --radius-xs: 0.5rem; /* 8px  : badges, tags             */
+    --radius-sm: 0.625rem; /* 10px : small elements           */
+    --radius-md: 0.875rem; /* 14px : inputs, buttons, cards   */
+    --radius-lg: 1rem; /* 16px : modals, large cards      */
+    --radius-xl: 1.25rem; /* 20px : large surfaces           */
+    --radius-2xl: 1.5rem; /* pill : DESIGN.md radius.lg      */
+
+    --text-2xs: 0.6875rem;
+    --text-2xs--line-height: 1rem;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
-
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
-    --color-card-background: var(--card-background);
-
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
-
     --color-primary: var(--primary);
-    --color-primary-light: var(--primary-light);
+    --color-primary-hover: var(--primary-hover);
     --color-primary-foreground: var(--primary-foreground);
-
+    --color-primary-soft: var(--primary-soft);
+    --color-primary-soft-foreground: var(--primary-soft-foreground);
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
-
     --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
-
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
-
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
-
+    --color-destructive-soft: var(--destructive-soft);
+    --color-destructive-soft-foreground: var(--destructive-soft-foreground);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
-
+    --color-success-soft: var(--success-soft);
+    --color-success-soft-foreground: var(--success-soft-foreground);
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
-
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-soft-foreground: var(--warning-soft-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-soft: var(--info-soft);
+    --color-info-soft-foreground: var(--info-soft-foreground);
     --color-border: var(--border);
+    --color-separator: var(--separator);
     --color-input: var(--input);
+    --color-input-surface: var(--input-surface);
     --color-ring: var(--ring);
-
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
-
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
     --color-sidebar-accent: var(--sidebar-accent);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+    --color-header-border: var(--header-border);
+    --color-module-active: var(--module-active);
 
-    --color-brand-pink: var(--brand-pink);
-    --color-brand-red: var(--brand-red);
-    --color-brand-blue: var(--brand-blue);
-    --color-brand-teal: var(--brand-pink);
-    --color-brand-surface: var(--brand-surface);
-    --color-brand-surface-strong: var(--brand-surface-strong);
-    --color-brand-muted: var(--brand-muted);
-    --color-brand-focus: var(--brand-focus);
-    --color-brand-danger: var(--brand-danger);
-    --color-runey-orange: var(--orange);
+    /* Fluid Functionalism (components/ui/fluid): camadas de estado e a escada
+       de oito elevações. Os valores ficam em :root e .dark abaixo. */
+    --color-hover: var(--hover);
+    --color-active: var(--active);
+    --color-surface-1: var(--surface-1);
+    --color-surface-2: var(--surface-2);
+    --color-surface-3: var(--surface-3);
+    --color-surface-4: var(--surface-4);
+    --color-surface-5: var(--surface-5);
+    --color-surface-6: var(--surface-6);
+    --color-surface-7: var(--surface-7);
+    --color-surface-8: var(--surface-8);
+    --shadow-surface-1: var(--shadow-1);
+    --shadow-surface-2: var(--shadow-2);
+    --shadow-surface-3: var(--shadow-3);
+    --shadow-surface-4: var(--shadow-4);
+    --shadow-surface-5: var(--shadow-5);
+    --shadow-surface-6: var(--shadow-6);
+    --shadow-surface-7: var(--shadow-7);
+    --shadow-surface-8: var(--shadow-8);
 
-    --color-app-surface: var(--app-surface);
-    --color-app-surface-raised: var(--app-surface-raised);
-    --color-app-surface-foreground: var(--app-surface-foreground);
-    --color-app-line: var(--app-line);
-
-    --shadow-app-panel: 0 18px 48px -36px rgb(27 21 32 / 28%);
-    --shadow-app-floating: 0 24px 56px -32px rgb(27 21 32 / 38%);
-    --shadow-app-header: 0 12px 32px -28px rgb(27 21 32 / 32%);
-
-    --z-header: 30;
-    --z-sidebar: 40;
-    --z-overlay: 50;
-    --z-modal: 60;
-
+    --spacing-header: 4rem;
     --container-8xl: 88rem;
     --container-9xl: 96rem;
     --container-10xl: 100rem;
-
-    --spacing-header: 3.75rem;
-    --color-header-background: var(--header-background);
-    --color-header-foreground: var(--header-foreground);
-    --color-header-border: var(--header-border);
-
-    --color-table-background: var(--table-background);
-    --color-table-text: var(--table-text);
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   TEMA CLARO
+
+   Neutros e acento derivam de --brand-hue, sobrescrito no <html> pelo
+   Blade a partir de config/branding.php. Status têm hue fixo.
+───────────────────────────────────────────────────────────────── */
 :root {
     color-scheme: light;
+    --brand-hue: 215;
 
-    --background: #f5f6fa;
-    --foreground: #101828;
-    --card: #ffffff;
-    --card-foreground: #101828;
-    --popover: #ffffff;
-    --popover-foreground: #101828;
+    --background: oklch(0.975 0.004 var(--brand-hue));
+    --foreground: oklch(0.22 0.02 var(--brand-hue));
+    --card: oklch(1 0 0);
+    --card-foreground: var(--foreground);
+    --popover: oklch(1 0 0);
+    --popover-foreground: var(--foreground);
+    --muted: oklch(0.955 0.005 var(--brand-hue));
+    --muted-foreground: oklch(0.46 0.02 var(--brand-hue));
+    --secondary: oklch(0.93 0.008 var(--brand-hue));
+    --secondary-foreground: var(--foreground);
+    --accent: oklch(0.91 0.01 var(--brand-hue));
+    --accent-foreground: var(--foreground);
 
-    --primary: #eb0459;
-    --primary-light: #ff6699;
-    --primary-foreground: #ffffff;
+    --primary: oklch(0.48 0.11 var(--brand-hue));
+    --primary-hover: oklch(0.43 0.11 var(--brand-hue));
+    --primary-foreground: oklch(1 0 0);
+    --primary-soft: oklch(0.95 0.03 var(--brand-hue));
+    --primary-soft-foreground: oklch(0.38 0.1 var(--brand-hue));
 
-    --secondary: #eef1f6;
-    --secondary-foreground: #101828;
-    --muted: #eef2f7;
-    --muted-foreground: #667085;
-    --accent: #fff0f6;
-    --accent-foreground: #9f063f;
+    --success: oklch(0.46 0.12 150);
+    --success-foreground: oklch(1 0 0);
+    --success-soft: oklch(0.95 0.035 150);
+    --success-soft-foreground: oklch(0.36 0.1 150);
+    --warning: oklch(0.8 0.15 75);
+    --warning-foreground: oklch(0.28 0.06 60);
+    --warning-soft: oklch(0.96 0.04 80);
+    --warning-soft-foreground: oklch(0.4 0.09 60);
+    --destructive: oklch(0.48 0.17 25);
+    --destructive-foreground: oklch(1 0 0);
+    --destructive-soft: oklch(0.95 0.03 20);
+    --destructive-soft-foreground: oklch(0.38 0.14 25);
+    --info: oklch(0.48 0.1 245);
+    --info-foreground: oklch(1 0 0);
+    --info-soft: oklch(0.95 0.025 245);
+    --info-soft-foreground: oklch(0.38 0.1 245);
 
-    --destructive: #e60023;
-    --destructive-foreground: #ffffff;
-    --success: #008f5f;
-    --success-foreground: #ffffff;
-    --warning: #f59e0b;
-    --warning-foreground: #2d1800;
-    --orange: #f97316;
+    --border: oklch(0.9 0.008 var(--brand-hue));
+    --separator: oklch(0.93 0.006 var(--brand-hue));
+    --input: oklch(0.58 0.02 var(--brand-hue));
+    --input-surface: var(--card);
+    --ring: var(--primary);
 
-    --border: #dce1ea;
-    --input: #d5dbe6;
-    --ring: rgb(235 4 89 / 42%);
+    --chart-1: var(--primary);
+    --chart-2: oklch(0.6 0.02 var(--brand-hue));
+    --chart-3: var(--info);
+    --chart-4: var(--success);
+    --chart-5: var(--warning);
 
-    --chart-1: #eb0459;
-    --chart-2: #3654d4;
-    --chart-3: #f97316;
-    --chart-4: #0f9f7a;
-    --chart-5: #a855f7;
+    --sidebar: oklch(0.24 0.03 var(--brand-hue));
+    --sidebar-foreground: oklch(0.88 0.01 var(--brand-hue));
+    --sidebar-muted-foreground: oklch(0.7 0.02 var(--brand-hue));
+    --sidebar-primary: oklch(0.93 0.008 var(--brand-hue));
+    --sidebar-primary-foreground: var(--foreground);
+    --sidebar-accent: oklch(0.29 0.03 var(--brand-hue));
+    --sidebar-accent-foreground: var(--sidebar-foreground);
+    --sidebar-border: oklch(0.29 0.02 var(--brand-hue));
+    --sidebar-ring: var(--ring);
+    --header-border: transparent;
 
-    --brand-pink: #eb0459;
-    --brand-red: #b80643;
-    --brand-blue: #3654d4;
-    --brand-teal: var(--brand-pink);
-    --brand-surface: #fff7fb;
-    --brand-surface-strong: #ffe0ec;
-    --brand-muted: #667085;
-    --brand-focus: rgb(235 4 89 / 42%);
-    --brand-danger: #e60023;
-    --brand-shadow-primary: 0 12px 28px -16px rgb(235 4 89 / 70%);
+    /* Módulo ativo no cabeçalho: texto na tinta do acento. */
+    --module-active: var(--primary-soft-foreground);
 
-    --app-surface: #ffffff;
-    --app-surface-raised: #fafbfc;
-    --app-surface-foreground: #101828;
-    --app-line: #d9dee8;
-
-    --sidebar: #1b1520;
-    --sidebar-foreground: #f8f7fb;
-    --sidebar-primary: var(--brand-pink);
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgb(255 255 255 / 8%);
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgb(255 255 255 / 10%);
-    --sidebar-ring: var(--brand-focus);
-
-    --header-background: color-mix(
-        in oklab,
-        var(--background) 88%,
-        transparent
-    );
-    --header-foreground: var(--foreground);
-    --header-border: color-mix(in oklab, var(--border) 88%, transparent);
-
-    --table-background: #1d1722;
-    --table-text: #ffffff;
-    --card-background: var(--secondary);
+    /* Fluid: camadas neutras, foco no acento, superfícies dos cards. */
+    --hover: rgb(0 0 0 / 0.04);
+    --active: rgb(0 0 0 / 0.07);
+    --tint: rgb(0 0 0 / 0.08);
+    --tint-hover: rgb(0 0 0 / 0.065);
+    --overlay: 0 0 0;
+    --focus-ring: var(--primary);
+    --surface-1: var(--background);
+    --surface-2: var(--card);
+    --surface-3: var(--popover);
+    --surface-4: var(--popover);
+    --surface-5: var(--popover);
+    --surface-6: var(--popover);
+    --surface-7: var(--popover);
+    --surface-8: var(--popover);
+    --shadow-color: rgb(0 0 0 / 0.06);
+    --shadow-1: 0 0 0 1px var(--shadow-color);
+    --shadow-2:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color);
+    --shadow-3:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+        0 3px 3px -1.5px var(--shadow-color);
+    --shadow-4:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+        0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color);
+    --shadow-5:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+        0 3px 3px -1.5px var(--shadow-color),
+        0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color);
+    --shadow-6:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+        0 3px 3px -1.5px var(--shadow-color),
+        0 6px 6px -3px var(--shadow-color),
+        0 12px 12px -6px var(--shadow-color),
+        0 24px 24px -12px var(--shadow-color);
+    --shadow-7:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+        0 3px 3px -1.5px var(--shadow-color),
+        0 6px 6px -3px var(--shadow-color),
+        0 12px 12px -6px var(--shadow-color),
+        0 24px 24px -12px var(--shadow-color),
+        0 48px 48px -24px var(--shadow-color);
+    --shadow-8:
+        0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+        0 3px 3px -1.5px var(--shadow-color),
+        0 6px 6px -3px var(--shadow-color),
+        0 12px 12px -6px var(--shadow-color),
+        0 24px 24px -12px var(--shadow-color),
+        0 48px 48px -24px var(--shadow-color),
+        0 96px 96px -48px var(--shadow-color);
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   TEMA ESCURO
+───────────────────────────────────────────────────────────────── */
 .dark {
     color-scheme: dark;
 
-    --background: #0f1016;
-    --foreground: #f6f7fb;
-    --card: #171922;
-    --card-foreground: #f6f7fb;
-    --popover: #1b1e29;
-    --popover-foreground: #f6f7fb;
+    --background: oklch(0.19 0.01 var(--brand-hue));
+    --foreground: oklch(0.94 0.005 var(--brand-hue));
+    --card: oklch(0.23 0.01 var(--brand-hue));
+    --card-foreground: var(--foreground);
+    --popover: oklch(0.27 0.012 var(--brand-hue));
+    --popover-foreground: var(--foreground);
+    --muted: oklch(0.21 0.01 var(--brand-hue));
+    --muted-foreground: oklch(0.72 0.015 var(--brand-hue));
+    --secondary: oklch(0.31 0.015 var(--brand-hue));
+    --secondary-foreground: var(--foreground);
+    --accent: oklch(0.3 0.012 var(--brand-hue));
+    --accent-foreground: var(--foreground);
 
-    --primary: #ff2b73;
-    --primary-light: #ff7aa6;
-    --primary-foreground: #10080d;
+    --primary: oklch(0.78 0.1 var(--brand-hue));
+    --primary-hover: oklch(0.83 0.09 var(--brand-hue));
+    --primary-foreground: oklch(0.2 0.04 var(--brand-hue));
+    --primary-soft: oklch(0.3 0.045 var(--brand-hue));
+    --primary-soft-foreground: oklch(0.85 0.08 var(--brand-hue));
 
-    --secondary: #252a36;
-    --secondary-foreground: #f6f7fb;
-    --muted: #1c202b;
-    --muted-foreground: #9aa4b2;
-    --accent: #2a1622;
-    --accent-foreground: #ffd7e6;
+    --success: oklch(0.8 0.14 150);
+    --success-foreground: oklch(0.22 0.06 150);
+    --success-soft: oklch(0.3 0.05 150);
+    --success-soft-foreground: oklch(0.85 0.12 150);
+    --warning: oklch(0.85 0.14 80);
+    --warning-foreground: oklch(0.25 0.06 70);
+    --warning-soft: oklch(0.31 0.05 75);
+    --warning-soft-foreground: oklch(0.88 0.12 85);
+    --destructive: oklch(0.75 0.14 20);
+    --destructive-foreground: oklch(0.22 0.08 20);
+    --destructive-soft: oklch(0.3 0.06 20);
+    --destructive-soft-foreground: oklch(0.86 0.1 20);
+    --info: oklch(0.78 0.1 245);
+    --info-foreground: oklch(0.2 0.05 245);
+    --info-soft: oklch(0.3 0.05 245);
+    --info-soft-foreground: oklch(0.86 0.08 245);
 
-    --destructive: #ff4d5f;
-    --destructive-foreground: #130509;
-    --success: #31c48d;
-    --success-foreground: #06120d;
-    --warning: #fbbf24;
-    --warning-foreground: #1f1600;
-    --orange: #fb923c;
+    --border: oklch(0.32 0.012 var(--brand-hue));
+    --separator: oklch(0.28 0.01 var(--brand-hue));
+    --input: oklch(0.52 0.02 var(--brand-hue));
+    --input-surface: oklch(0.2 0.01 var(--brand-hue));
+    --ring: var(--primary);
 
-    --border: #303646;
-    --input: #303646;
-    --ring: rgb(255 43 115 / 48%);
+    --chart-1: var(--primary);
+    --chart-2: oklch(0.65 0.02 var(--brand-hue));
+    --chart-3: var(--info);
+    --chart-4: var(--success);
+    --chart-5: var(--warning);
 
-    --chart-1: #ff2b73;
-    --chart-2: #7c8cff;
-    --chart-3: #fb923c;
-    --chart-4: #31c48d;
-    --chart-5: #c084fc;
+    --sidebar: oklch(0.21 0.012 var(--brand-hue));
+    --sidebar-foreground: oklch(0.86 0.01 var(--brand-hue));
+    --sidebar-muted-foreground: oklch(0.68 0.015 var(--brand-hue));
+    --sidebar-primary: oklch(0.31 0.015 var(--brand-hue));
+    --sidebar-primary-foreground: var(--foreground);
+    --sidebar-accent: oklch(0.27 0.012 var(--brand-hue));
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--separator);
+    --sidebar-ring: var(--ring);
+    --header-border: var(--separator);
+    --module-active: var(--primary-soft-foreground);
 
-    --brand-pink: #ff2b73;
-    --brand-red: #d90b4e;
-    --brand-blue: #7c8cff;
-    --brand-teal: var(--brand-pink);
-    --brand-surface: #23131d;
-    --brand-surface-strong: #351927;
-    --brand-muted: #9aa4b2;
-    --brand-focus: rgb(255 43 115 / 48%);
-    --brand-danger: #ff4d5f;
-    --brand-shadow-primary: 0 14px 30px -18px rgb(255 43 115 / 80%);
-
-    --app-surface: #171923;
-    --app-surface-raised: #1c1f29;
-    --app-surface-foreground: #f6f7fb;
-    --app-line: #303646;
-
-    --sidebar: #17121b;
-    --sidebar-foreground: #f7f2f6;
-    --sidebar-primary: var(--brand-pink);
-    --sidebar-primary-foreground: #10080d;
-    --sidebar-accent: rgb(255 255 255 / 8%);
-    --sidebar-accent-foreground: #fff7fb;
-    --sidebar-border: rgb(255 255 255 / 9%);
-    --sidebar-ring: var(--brand-focus);
-
-    --header-background: color-mix(
-        in oklab,
-        var(--background) 86%,
-        transparent
-    );
-    --header-foreground: var(--foreground);
-    --header-border: color-mix(in oklab, var(--border) 78%, transparent);
-
-    --table-background: #18131d;
-    --table-text: #fff7fb;
-    --card-background: var(--secondary);
-
-    --shadow-app-panel: 0 18px 48px -36px rgb(0 0 0 / 55%);
-    --shadow-app-floating: 0 24px 56px -32px rgb(0 0 0 / 65%);
-    --shadow-app-header: 0 12px 32px -28px rgb(0 0 0 / 50%);
+    /* Fluid: escada grafite continuando background, card e popover. */
+    --hover: rgb(255 255 255 / 0.06);
+    --active: rgb(255 255 255 / 0.1);
+    --tint: rgb(255 255 255 / 0.25);
+    --tint-hover: rgb(255 255 255 / 0.2);
+    --overlay: 255 255 255;
+    --surface-1: var(--background);
+    --surface-2: var(--card);
+    --surface-3: var(--popover);
+    --surface-4: oklch(0.3 0.012 var(--brand-hue));
+    --surface-5: oklch(0.33 0.013 var(--brand-hue));
+    --surface-6: oklch(0.36 0.014 var(--brand-hue));
+    --surface-7: oklch(0.39 0.015 var(--brand-hue));
+    --surface-8: oklch(0.42 0.016 var(--brand-hue));
+    --dm-hi-base: rgba(255, 255, 255, 0.01);
+    --dm-hi-mid: rgba(255, 255, 255, 0.02);
+    --dm-hi-high: rgba(255, 255, 255, 0.04);
+    --dm-hi-peak: rgba(255, 255, 255, 0.06);
+    --dm-ring-base: rgba(255, 255, 255, 0.02);
+    --dm-ring-mid: rgba(255, 255, 255, 0.04);
+    --dm-ring-high: rgba(255, 255, 255, 0.06);
+    --dm-drop: rgba(0, 0, 0, 0.18);
+    --shadow-1: inset 0 0 0 1px var(--dm-ring-base);
+    --shadow-2:
+        inset 0 1px 0 0 var(--dm-hi-base), inset 0 0 0 1px var(--dm-ring-base),
+        0 1px 1px -0.5px var(--dm-drop);
+    --shadow-3:
+        inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-base),
+        0 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px -0.5px var(--dm-drop),
+        0 3px 3px -1.5px var(--dm-drop);
+    --shadow-4:
+        inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-mid),
+        0 0 0 1px rgba(0, 0, 0, 0.14), 0 1px 1px -0.5px var(--dm-drop),
+        0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop);
+    --shadow-5:
+        inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-mid),
+        0 0 0 1px rgba(0, 0, 0, 0.16), 0 1px 1px -0.5px var(--dm-drop),
+        0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+        0 12px 12px -6px var(--dm-drop);
+    --shadow-6:
+        inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-high),
+        0 0 0 1px rgba(0, 0, 0, 0.18), 0 1px 1px -0.5px var(--dm-drop),
+        0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+        0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop);
+    --shadow-7:
+        inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high),
+        0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 1px -0.5px var(--dm-drop),
+        0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+        0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop),
+        0 48px 48px -24px var(--dm-drop);
+    --shadow-8:
+        inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high),
+        0 0 0 1px rgba(0, 0, 0, 0.22), 0 1px 1px -0.5px var(--dm-drop),
+        0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+        0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop),
+        0 48px 48px -24px var(--dm-drop), 0 96px 96px -48px var(--dm-drop);
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   BASE RESETS
+───────────────────────────────────────────────────────────────── */
 @layer base {
     * {
         @apply border-border;
     }
 
     html {
-        min-height: 100%;
-        background: var(--background);
-        color-scheme: light;
-        scroll-behavior: smooth;
-    }
-
-    html.dark {
-        color-scheme: dark;
+        font-size: 1rem; /* DESIGN.md: font.size.base=16px */
+        accent-color: var(--primary);
     }
 
     body {
-        @apply bg-background text-foreground font-sans antialiased;
-        margin: 0;
-        min-height: 100%;
-        overflow-x: hidden;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        letter-spacing: -0.01em;
-        text-rendering: optimizeLegibility;
-        font-feature-settings: 'ss01' on, 'cv11' on;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4 {
-        text-wrap: balance;
-        letter-spacing: -0.03em;
-        font-weight: 600;
-    }
-
-    #app {
-        min-height: 100%;
-    }
-
-    button:not([disabled]),
-    [role='button']:not([aria-disabled='true']) {
-        cursor: pointer;
+        @apply bg-background text-foreground antialiased;
     }
 
     ::selection {
-        background: color-mix(in oklab, var(--primary) 18%, white);
-        color: var(--accent-foreground);
+        background-color: var(--primary);
+        color: var(--primary-foreground);
     }
 
-    .dark ::selection {
-        background: color-mix(in oklab, var(--primary) 32%, transparent);
-        color: var(--foreground);
+    /* Alto contraste do SO: superfícies tingidas perdem o fundo; o contorno mantém a separação. */
+    @media (forced-colors: active) {
+        [data-slot='badge'],
+        [data-slot='button'],
+        [data-slot='card'],
+        [data-slot='alert'] {
+            outline: 1px solid transparent;
+        }
+    }
+
+    button:not([disabled]) {
+        cursor: pointer;
+    }
+
+    /* ── Global scrollbar: clean & minimal ──────────────────────────
+       Firefox: thin native scrollbar with token-based thumb.
+       WebKit/Blink: overlay-style 8px track, pill thumb, hover reveal.
+       Per-surface overrides (.custom-scrollbar, .sidebar-scrollbar)
+       remain available for tighter contexts. */
+    html {
+        scrollbar-color: color-mix(
+                in oklab,
+                var(--muted-foreground) 30%,
+                transparent
+            )
+            transparent;
+        scrollbar-width: thin;
+    }
+
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: color-mix(
+            in oklab,
+            var(--muted-foreground) 28%,
+            transparent
+        );
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        border-radius: 9999px;
+        transition: background 0.2s ease;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: color-mix(
+            in oklab,
+            var(--muted-foreground) 48%,
+            transparent
+        );
+        background-clip: padding-box;
+    }
+
+    *::-webkit-scrollbar-corner {
+        background: transparent;
     }
 }
 
@@ -337,7 +471,7 @@
     .page-wrapper-md,
     .page-wrapper-lg,
     .page-wrapper-xl {
-        @apply mb-8 w-full px-4 pt-6 pb-8 md:px-8 lg:px-10;
+        @apply mb-3 w-full px-4 pt-5 md:px-6;
     }
 
     .page-wrapper {
@@ -363,158 +497,60 @@
     .page-wrapper-xl {
         @apply mx-auto max-w-10xl;
     }
-
-    .app-workspace {
-        position: relative;
-        isolation: isolate;
-        background:
-            radial-gradient(
-                ellipse 55% 40% at 8% 0%,
-                color-mix(in oklab, var(--primary) 6%, transparent),
-                transparent 70%
-            ),
-            var(--background);
-    }
-
-    .app-workspace::before {
-        position: fixed;
-        z-index: -1;
-        inset: 0;
-        content: '';
-        pointer-events: none;
-        opacity: 0.14;
-        background-image: radial-gradient(
-            color-mix(in oklab, var(--foreground) 8%, transparent) 0.6px,
-            transparent 0.6px
-        );
-        background-size: 18px 18px;
-        mask-image: linear-gradient(to bottom, black 0%, transparent 55%);
-    }
-
-    .dark .app-workspace::before {
-        opacity: 0.08;
-    }
-
-    .auth-workspace {
-        background:
-            radial-gradient(
-                ellipse 50% 45% at 12% 10%,
-                color-mix(in oklab, var(--primary) 14%, transparent),
-                transparent 70%
-            ),
-            radial-gradient(
-                ellipse 40% 35% at 92% 88%,
-                color-mix(in oklab, var(--brand-red) 8%, transparent),
-                transparent 65%
-            ),
-            var(--background);
-    }
 }
 
-@utility app-surface {
-    background: var(--app-surface);
-    color: var(--app-surface-foreground);
-    border-color: var(--app-line);
-}
-
-@utility app-surface-raised {
-    background: var(--app-surface-raised);
-    color: var(--app-surface-foreground);
-    border-color: color-mix(in oklab, var(--app-line) 82%, transparent);
-    box-shadow: var(--shadow-app-panel);
-}
-
-@utility app-glass {
-    background: var(--header-background);
-    color: var(--header-foreground);
-    border-color: var(--header-border);
-    backdrop-filter: blur(14px) saturate(1.08);
-}
-
-@utility brand-focus-ring {
-    box-shadow: 0 0 0 3px var(--brand-focus);
-}
-
-@utility font-tabular {
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: 'tnum' on;
-}
-
-@utility bg-app-grid {
-    background-image:
-        linear-gradient(
-            color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
-            transparent 1px
-        );
-    background-size: 32px 32px;
-}
-
-@utility shadow-neumorphic {
+/* ─────────────────────────────────────────────────────────────────
+   UTILITIES: Neumorphic shadows
+───────────────────────────────────────────────────────────────── */
+.shadow-neumorphic {
     box-shadow:
-        inset 0 1px 0 0 rgb(255 255 255 / 70%),
-        inset 0 -1px 0 0 rgb(16 24 40 / 5%),
-        0 1px 3px 0 rgb(16 24 40 / 10%);
-
-    .dark & {
-        box-shadow:
-            inset 0 1px 0 0 rgb(255 255 255 / 8%),
-            inset 0 -1px 0 0 rgb(0 0 0 / 14%),
-            0 1px 3px 0 rgb(0 0 0 / 42%);
-    }
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.06),
+        0 1px 3px 0 rgba(0, 0, 0, 0.12);
 }
 
-@utility shadow-neumorphic-hover {
+.dark .shadow-neumorphic {
     box-shadow:
-        inset 0 1px 0 0 rgb(255 255 255 / 76%),
-        inset 0 -1px 0 0 rgb(16 24 40 / 7%),
-        0 12px 28px -18px rgb(16 24 40 / 34%);
-
-    .dark & {
-        box-shadow:
-            inset 0 1px 0 0 rgb(255 255 255 / 12%),
-            inset 0 -1px 0 0 rgb(0 0 0 / 18%),
-            0 14px 30px -20px rgb(0 0 0 / 70%);
-    }
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.1),
+        0 1px 3px 0 rgba(0, 0, 0, 0.4);
 }
 
-@utility custom-scrollbar {
-    scrollbar-color: color-mix(in oklab, var(--primary) 38%, transparent)
-        transparent;
-    scrollbar-width: thin;
-
-    &::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: color-mix(in oklab, var(--primary) 26%, transparent);
-        border: 2px solid transparent;
-        border-radius: 9999px;
-        background-clip: padding-box;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background: color-mix(in oklab, var(--primary) 44%, transparent);
-        background-clip: padding-box;
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-        background: color-mix(in oklab, var(--primary) 58%, transparent);
-        background-clip: padding-box;
-    }
+.shadow-neumorphic-hover {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.08),
+        0 4px 12px 0 rgba(0, 0, 0, 0.15);
 }
 
-@utility sidebar-scrollbar {
+.dark .shadow-neumorphic-hover {
+    box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.15),
+        0 4px 12px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   UTILITIES: Custom scrollbar (6px, subtle)
+───────────────────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+}
+
+.sidebar-scrollbar {
     scrollbar-color: color-mix(
             in oklab,
             var(--sidebar-foreground) 24%,
@@ -522,92 +558,177 @@
         )
         transparent;
     scrollbar-width: thin;
-
-    &::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: color-mix(
-            in oklab,
-            var(--sidebar-foreground) 18%,
-            transparent
-        );
-        border-radius: 9999px;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background: color-mix(
-            in oklab,
-            var(--sidebar-foreground) 32%,
-            transparent
-        );
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-        background: color-mix(
-            in oklab,
-            var(--sidebar-foreground) 46%,
-            transparent
-        );
-    }
 }
 
-@utility bg-primary-custom {
-    background-color: var(--primary);
+.sidebar-scrollbar::-webkit-scrollbar {
+    width: 4px;
 }
 
-@utility bg-secondary-custom {
-    background-color: var(--secondary);
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-@utility text-primary-custom {
-    color: var(--primary);
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--sidebar-foreground) 18%, transparent);
+    border-radius: 9999px;
 }
 
-@utility text-secondary-custom {
-    color: var(--secondary-foreground);
+.sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--sidebar-foreground) 32%, transparent);
 }
 
-@utility border-primary-custom {
-    border-color: var(--primary);
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--sidebar-foreground) 46%, transparent);
 }
 
-@utility border-secondary-custom {
-    border-color: var(--secondary);
+/* ─────────────────────────────────────────────────────────────────
+   SIDEBAR DO SHELL: peças do Fluid nas cores da sidebar (petróleo
+   escuro no claro, grafite no escuro). Os aliases --color-* são
+   resolvidos em :root, então o escopo sobrescreve os aliases, não os
+   tokens base. Linhas em repouso usam --sidebar-foreground; o realce
+   deslizante e a linha ativa usam a cápsula --sidebar-primary com o
+   texto --foreground (no escuro, o realce usa --sidebar-accent).
+───────────────────────────────────────────────────────────────── */
+.app-sidebar {
+    --color-muted-foreground: var(--sidebar-foreground);
+    --color-hover: var(--sidebar-primary);
+    --color-active: var(--sidebar-primary);
+    --color-border: var(--sidebar-border);
+    --border: var(--sidebar-border);
 }
 
-@utility dashboard-header {
-    background: linear-gradient(
-        135deg,
-        var(--brand-red) 0%,
-        var(--brand-pink) 52%,
-        var(--brand-blue) 100%
+.dark .app-sidebar {
+    --color-hover: var(--sidebar-accent);
+}
+
+.app-sidebar [data-sidebar='rail']:hover::after {
+    background-color: color-mix(
+        in oklab,
+        var(--sidebar-foreground) 45%,
+        transparent
     );
 }
 
-@utility dashboard-sidebar {
-    background: var(--sidebar);
-    border-right: 1px solid var(--sidebar-border);
+/* Gaveta mobile (portal): o Fluid pinta com um token de superfície. */
+[data-sidebar='sidebar'][data-mobile='true'] {
+    background-color: var(--sidebar);
 }
 
-@utility dashboard-card {
-    background: color-mix(in oklab, var(--app-surface) 96%, transparent);
-    border: 1px solid color-mix(in oklab, var(--app-line) 82%, transparent);
-    box-shadow: var(--shadow-app-panel);
+/* ─────────────────────────────────────────────────────────────────
+   UTILITÁRIOS: bordas de rolagem do Fluid (components/ui/fluid)
+   scroll-fade dissolve o conteúdo nas bordas que ainda rolam;
+   scroll-divider desenha a linha que acompanha a mesma timeline.
+   Navegadores sem animação por rolagem não recebem nenhum dos dois.
+───────────────────────────────────────────────────────────────── */
+@property --sf-start {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1;
 }
 
-@utility font-size-xxs {
-    font-size: 0.625rem;
-    line-height: 0.875rem;
+@property --sf-end {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1;
 }
 
-@utility card-title {
-    font-size: clamp(1rem, 1.2vw + 0.6rem, 1.5rem);
-    line-height: 1.2;
-    letter-spacing: -0.03em;
+@keyframes sf-reveal-start {
+    from {
+        --sf-start: 1;
+    }
+    to {
+        --sf-start: 0;
+    }
+}
+
+@keyframes sf-reveal-end {
+    from {
+        --sf-end: 0;
+    }
+    to {
+        --sf-end: 1;
+    }
+}
+
+@keyframes sf-divider-start {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes sf-divider-end {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.scroll-fade {
+    --scroll-fade-size: 48px;
+}
+
+@supports (timeline-scope: --sf) {
+    .scroll-divider {
+        position: relative;
+        timeline-scope: --sf-scroller;
+        --scroll-divider-size: 48px;
+    }
+
+    .scroll-divider .scroll-fade {
+        scroll-timeline-name: --sf-scroller;
+    }
+
+    .scroll-divider::before,
+    .scroll-divider::after {
+        content: '';
+        position: absolute;
+        left: var(--scroll-divider-inset, 0px);
+        right: var(--scroll-divider-inset, 0px);
+        height: 1px;
+        background-color: var(--border);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0;
+    }
+
+    .scroll-divider::before {
+        top: 0;
+        animation: sf-divider-start both linear;
+        animation-timeline: --sf-scroller;
+        animation-range: 0 var(--scroll-divider-size);
+    }
+
+    .scroll-divider:first-child::before {
+        content: none;
+    }
+
+    .scroll-divider::after {
+        bottom: 0;
+        animation: sf-divider-end both linear;
+        animation-timeline: --sf-scroller;
+        animation-range: calc(100% - var(--scroll-divider-size)) 100%;
+    }
+}
+
+@supports (animation-timeline: scroll()) {
+    .scroll-fade {
+        mask-image: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, var(--sf-start)) 0,
+            #000 var(--scroll-fade-size),
+            #000 calc(100% - var(--scroll-fade-size)),
+            rgba(0, 0, 0, var(--sf-end)) 100%
+        );
+        animation:
+            sf-reveal-start both linear,
+            sf-reveal-end both linear;
+        animation-timeline: scroll(self), scroll(self);
+        animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+        animation-range-end: var(--scroll-fade-size), 100%;
+    }
 }

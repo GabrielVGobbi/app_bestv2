@@ -31,32 +31,23 @@ $response = Http::github()->get('/repos/laravel/framework');
 
 ## Use Retry with Backoff for External APIs
 
-External APIs have transient failures. Use `retry()` with increasing delays.
-
-Incorrect:
-```php
-$response = Http::post('https://api.stripe.com/v1/charges', $data);
-
-if ($response->failed()) {
-    throw new PaymentFailedException('Charge failed');
-}
-```
-
-Correct:
-```php
-$response = Http::retry([100, 500, 1000])
-    ->timeout(10)
-    ->post('https://api.stripe.com/v1/charges', $data);
-```
-
-Only retry on specific errors:
+Follow [AGENTS.md](../../../../AGENTS.md) and the existing ExternalApi `RetryPolicy`. Automatic retries are limited to GET requests, with a bounded attempt count, backoff, and explicit request/connection timeouts. Pass the actual operation to the policy; connection failures and retryable HTTP errors do not make writes safe to replay.
 
 ```php
-$response = Http::retry(3, 100, function (Throwable $exception, PendingRequest $request) {
-    return $exception instanceof ConnectionException
-        || ($exception instanceof RequestException && $exception->response->serverError());
-})->post('https://api.example.com/data');
+use App\Modules\ExternalApi\Core\Support\RetryPolicy;
+use Illuminate\Http\Client\PendingRequest;
+
+$method = 'GET';
+$retryPolicy = app(RetryPolicy::class);
+$response = Http::timeout(10)
+    ->connectTimeout(3)
+    ->retry([100, 500], when: function (Throwable $exception, PendingRequest $request) use ($retryPolicy, $method): bool {
+        return $retryPolicy->shouldRetry($exception, $method);
+    })
+    ->send($method, 'https://api.example.test/users');
 ```
+
+Mutating requests and OAuth POSTs receive one attempt. If a response is lost, reconcile the operation's result through the provider's supported read/status flow before deciding on another explicit action. Do not infer deduplication from an external reference or assume that a provider's idempotency feature authorizes automatic write retries; the current project contract enables none.
 
 ## Handle Errors Explicitly
 

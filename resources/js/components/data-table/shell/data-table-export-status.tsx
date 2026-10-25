@@ -1,27 +1,39 @@
-import { Check, Download, ExternalLink, Loader2, X } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import { Check, Download, ExternalLink, Loader2, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import type { StoredExport } from '@/types/export';
 
 interface DataTableExportStatusProps {
     activeExports: StoredExport[];
-    onDownload: (uuid: string) => void;
+    onDownload: (uuid: string, expectedDownloadUrl?: string) => boolean | void;
 }
 
-function ExportProgressBar({ processed, total }: { processed: number; total: number | null }) {
+function ExportProgressBar({
+    processed,
+    total,
+}: {
+    processed: number;
+    total: number | null;
+}) {
     if (!total) {
-        return <div className="bg-muted h-1 w-full animate-pulse rounded-full" />;
+        return (
+            <div className="h-1 w-full animate-pulse rounded-full bg-muted" />
+        );
     }
 
     const pct = Math.min(100, Math.round((processed / total) * 100));
 
     return (
-        <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
+        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
             <div
-                className="bg-primary h-full transition-all duration-500"
+                className="h-full bg-primary transition-all duration-500"
                 style={{ width: `${pct}%` }}
             />
         </div>
@@ -30,17 +42,20 @@ function ExportProgressBar({ processed, total }: { processed: number; total: num
 
 function ExportStatusIcon({ status }: { status: StoredExport['status'] }) {
     if (status === 'completed') {
-        return <Check className="size-3.5 shrink-0 text-green-500" />;
+        return <Check className="size-3.5 shrink-0 text-success" />;
     }
 
     if (status === 'failed') {
-        return <X className="size-3.5 shrink-0 text-red-500" />;
+        return <X className="size-3.5 shrink-0 text-destructive" />;
     }
 
-    return <Loader2 className="size-3.5 shrink-0 animate-spin text-blue-500" />;
+    return <Loader2 className="size-3.5 shrink-0 animate-spin text-info" />;
 }
 
-export function DataTableExportStatus({ activeExports, onDownload }: DataTableExportStatusProps) {
+export function DataTableExportStatus({
+    activeExports,
+    onDownload,
+}: DataTableExportStatusProps) {
     if (activeExports.length === 0) {
         return null;
     }
@@ -52,7 +67,12 @@ export function DataTableExportStatus({ activeExports, onDownload }: DataTableEx
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="relative gap-1.5">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="relative gap-1.5"
+                >
                     {inProgressCount > 0 ? (
                         <Loader2 className="size-4 animate-spin" />
                     ) : (
@@ -64,7 +84,7 @@ export function DataTableExportStatus({ activeExports, onDownload }: DataTableEx
                             : 'Exportações'}
                     </span>
                     {inProgressCount > 0 && (
-                        <span className="bg-primary absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] text-white">
+                        <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-2xs text-primary-foreground">
                             {inProgressCount}
                         </span>
                     )}
@@ -84,27 +104,38 @@ export function DataTableExportStatus({ activeExports, onDownload }: DataTableEx
                                         {exp.file_name ?? 'Preparando...'}
                                     </p>
                                     <div className="flex items-center gap-1.5">
-                                        <Badge variant="secondary" className="text-[10px]">
+                                        <Badge
+                                            variant="secondary"
+                                            className="text-2xs"
+                                        >
                                             {exp.format.toUpperCase()}
                                         </Badge>
-                                        {exp.status === 'processing' && exp.total_records && (
-                                            <span className="text-muted-foreground text-[10px]">
-                                                {exp.processed_records} / {exp.total_records} registros
-                                            </span>
-                                        )}
+                                        {exp.status === 'processing' &&
+                                            exp.total_records && (
+                                                <span className="text-2xs text-muted-foreground tabular-nums">
+                                                    {exp.processed_records} /{' '}
+                                                    {exp.total_records}{' '}
+                                                    registros
+                                                </span>
+                                            )}
                                         {exp.status === 'failed' && (
-                                            <span className="text-[10px] text-red-500">Falhou</span>
-                                        )}
-                                        {exp.status === 'completed' && exp.total_records && (
-                                            <span className="text-[10px] text-green-600">
-                                                {exp.total_records} registros
+                                            <span className="text-2xs text-destructive-soft-foreground">
+                                                Falhou
                                             </span>
                                         )}
+                                        {exp.status === 'completed' &&
+                                            exp.total_records && (
+                                                <span className="text-2xs text-success-soft-foreground tabular-nums">
+                                                    {exp.total_records}{' '}
+                                                    registros
+                                                </span>
+                                            )}
                                     </div>
                                 </div>
                             </div>
 
-                            {(exp.status === 'pending' || exp.status === 'processing') && (
+                            {(exp.status === 'pending' ||
+                                exp.status === 'processing') && (
                                 <ExportProgressBar
                                     processed={exp.processed_records}
                                     total={exp.total_records}
@@ -116,8 +147,17 @@ export function DataTableExportStatus({ activeExports, onDownload }: DataTableEx
                                     href={exp.download_url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
-                                    onClick={() => onDownload(exp.uuid)}
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                    onClick={(event) => {
+                                        if (
+                                            onDownload(
+                                                exp.uuid,
+                                                exp.download_url ?? undefined,
+                                            ) === false
+                                        ) {
+                                            event.preventDefault();
+                                        }
+                                    }}
                                 >
                                     <Download className="size-3" />
                                     Baixar arquivo
@@ -129,7 +169,7 @@ export function DataTableExportStatus({ activeExports, onDownload }: DataTableEx
                 <div className="border-t px-3 py-2">
                     <Link
                         href="/exportacoes"
-                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                     >
                         <ExternalLink className="size-3" />
                         Ver histórico completo

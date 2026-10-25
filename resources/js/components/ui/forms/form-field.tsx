@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import InputError from '@/components/input-error';
 import { cn } from '@/lib/utils';
 
 import { Label } from '../label';
@@ -42,6 +43,25 @@ function withFieldInputClasses(
     });
 }
 
+function withFieldError(
+    children: React.ReactNode,
+    error: string | undefined,
+    errorId: string | undefined,
+): React.ReactNode {
+    if (!error) {
+        return children;
+    }
+
+    return React.Children.map(children, (child) =>
+        React.isValidElement<React.AriaAttributes>(child)
+            ? React.cloneElement(child, {
+                  'aria-invalid': true,
+                  'aria-describedby': errorId,
+              })
+            : child,
+    );
+}
+
 function RequiredMark({ show }: { show?: boolean }) {
     if (!show) {
         return null;
@@ -73,9 +93,10 @@ function FieldLabel({
 function FieldMessage({
     error,
     description,
-}: Pick<FormFieldProps, 'error' | 'description'>) {
+    errorId,
+}: Pick<FormFieldProps, 'error' | 'description'> & { errorId?: string }) {
     if (error) {
-        return <p className="text-sm text-destructive">{error}</p>;
+        return <InputError id={errorId} message={error} />;
     }
 
     if (description) {
@@ -96,6 +117,8 @@ function FormField({
     variant = 'stacked',
 }: FormFieldProps) {
     const fieldId = id ?? getChildId(children);
+    const errorId = fieldId ? `${fieldId}-error` : undefined;
+    const field = withFieldError(children, error, errorId);
 
     if (variant === 'inline') {
         return (
@@ -112,8 +135,12 @@ function FormField({
                     className="pt-2 text-sm font-semibold leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 />
                 <div className="space-y-2">
-                    <div aria-invalid={!!error}>{children}</div>
-                    <FieldMessage error={error} description={description} />
+                    <div>{field}</div>
+                    <FieldMessage
+                    error={error}
+                    description={description}
+                    errorId={errorId}
+                />
                 </div>
             </div>
         );
@@ -129,9 +156,13 @@ function FormField({
                         required={required}
                         className="bg-background absolute -top-2 left-2 z-10 inline-flex items-center gap-1 rounded-md px-1 text-xs font-medium text-foreground"
                     />
-                    <div aria-invalid={!!error}>{children}</div>
+                    <div>{field}</div>
                 </div>
-                <FieldMessage error={error} description={description} />
+                <FieldMessage
+                    error={error}
+                    description={description}
+                    errorId={errorId}
+                />
             </div>
         );
     }
@@ -145,7 +176,6 @@ function FormField({
                         'focus-within:border-ring focus-within:ring-ring/15 focus-within:ring-[2px]',
                         error && 'border-destructive ring-destructive/20',
                     )}
-                    aria-invalid={!!error}
                 >
                     <FieldLabel
                         id={fieldId}
@@ -154,25 +184,33 @@ function FormField({
                         className="mb-1 block text-xs font-medium leading-none text-muted-foreground"
                     />
                     {withFieldInputClasses(
-                        children,
+                        field,
                         'h-7 border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-transparent focus-visible:ring-0',
                     )}
                 </div>
-                <FieldMessage error={error} description={description} />
+                <FieldMessage
+                    error={error}
+                    description={description}
+                    errorId={errorId}
+                />
             </div>
         );
     }
 
     return (
-        <div className={cn('space-y-2  grid', className)}>
+        <div className={cn('space-y-2', className)}>
             <FieldLabel
                 id={fieldId}
                 label={label}
                 required={required}
                 className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             />
-            <div aria-invalid={!!error}>{children}</div>
-            <FieldMessage error={error} description={description} />
+            <div>{field}</div>
+            <FieldMessage
+                    error={error}
+                    description={description}
+                    errorId={errorId}
+                />
         </div>
     );
 }

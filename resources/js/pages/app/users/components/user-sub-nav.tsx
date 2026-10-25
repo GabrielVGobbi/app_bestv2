@@ -14,6 +14,7 @@ type UserPage = 'show' | 'edit' | 'roles' | 'permissions';
 interface UserSubNavProps {
     userUuid: string;
     currentPage: UserPage;
+    can: { view: boolean; update: boolean; authority: boolean };
 }
 
 const navItems: {
@@ -24,7 +25,7 @@ const navItems: {
 }[] = [
     {
         key: 'show',
-        label: 'Visão Geral',
+        label: 'Detalhes',
         icon: Eye,
         getHref: (uuid) => show.url(uuid),
     },
@@ -48,28 +49,39 @@ const navItems: {
     },
 ];
 
-export function UserSubNav({ userUuid, currentPage }: UserSubNavProps) {
+export function UserSubNav({ userUuid, currentPage, can }: UserSubNavProps) {
     return (
-        <nav className="flex gap-1 rounded-lg border bg-muted/30 p-1">
-            {navItems.map(({ key, label, icon: Icon, getHref }) => {
-                const isActive = key === currentPage;
+        <nav className="flex gap-1 rounded-lg border border-border bg-muted p-1">
+            {navItems
+                .filter(({ key }) =>
+                    key === 'show'
+                        ? can.view
+                        : key === 'edit'
+                          ? can.update
+                          : can.authority,
+                )
+                .map(({ key, label, icon: Icon, getHref }) => {
+                    const isActive = key === currentPage;
 
-                return (
-                    <Link
-                        key={key}
-                        href={getHref(userUuid)}
-                        className={cn(
-                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                            isActive
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
-                        )}
-                    >
-                        <Icon className="size-3.5" />
-                        <span className="hidden sm:inline">{label}</span>
-                    </Link>
-                );
-            })}
+                    return (
+                        <Link
+                            key={key}
+                            href={getHref(userUuid)}
+                            aria-label={label}
+                            title={label}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={cn(
+                                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                isActive
+                                    ? 'bg-card text-foreground shadow-xs'
+                                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                            )}
+                        >
+                            <Icon className="size-3.5" />
+                            <span className="hidden sm:inline">{label}</span>
+                        </Link>
+                    );
+                })}
         </nav>
     );
 }

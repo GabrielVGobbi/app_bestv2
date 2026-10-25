@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Backup\Listeners;
 
 use App\Modules\Backup\Models\BackupHistory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupWasSuccessful;
+use Spatie\Backup\Events\CleanupWasSuccessful;
 
 class SyncBackupToHistory
 {
@@ -41,5 +43,26 @@ class SyncBackupToHistory
             'error_message' => $event->exception->getMessage(),
             'backed_up_at' => now(),
         ]);
+    }
+
+    public function handleCleanup(CleanupWasSuccessful $event): void
+    {
+        $prefix = rtrim($event->backupName, '/').'/';
+        if ($prefix === '/') {
+            return;
+        }
+        $disk = Storage::disk($event->diskName);
+        BackupHistory::query()->where('disk', $event->diskName)
+            ->where('status', BackupHistory::STATUS_COMPLETED)->whereNotNull('path')
+            ->chunkById(100, function (Collection $histories) use ($event, $prefix, $disk): void {
+                foreach ($histories as $history) {
+                    $path = $history->path;
+                    if (! is_string($path) || ! str_starts_with($path, $prefix) || $disk->getDriver()->fileExists($path)) {
+                        continue;
+                    }
+                    BackupHistory::query()->whereKey($history->getKey())->where('disk', $event->diskName)
+                        ->where('status', BackupHistory::STATUS_COMPLETED)->where('path', $path)->update(['path' => null]);
+                }
+            });
     }
 }

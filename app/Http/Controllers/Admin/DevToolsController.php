@@ -77,12 +77,8 @@ class DevToolsController extends Controller
 
     public function activityActions(ActivityActionRegistry $activityActions): Response
     {
-        $recentLogs = Activity::query()
-            ->with(['causer', 'subject'])
-            ->where('properties->test', true)
-            ->orderByDesc('created_at')
-            ->limit(8)
-            ->get();
+        $recentLogs = Activity::query()->with(['causer', 'subject'])->where('properties->test', true)
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(8)->get();
 
         return Inertia::render('admin/dev/components/activity-actions', [
             'activityActionCatalog' => $activityActions->catalog(includeDisabled: true),
@@ -118,7 +114,7 @@ class DevToolsController extends Controller
         $settings = AppSettings::all('email');
 
         return Inertia::render('admin/dev/components/email', [
-            'recentLogs' => $recentLogs,
+            'recentLogs' => ActivityLogResource::collection($recentLogs)->resolve(request()),
             'settings' => $settings,
         ]);
     }
@@ -397,7 +393,7 @@ class DevToolsController extends Controller
     {
         return Inertia::render('admin/dev/tools', [
             'systemInfo' => $this->devToolsService->getSystemInfo(),
-            'envVariables' => $this->devToolsService->getEnvVariables(),
+            'operationalSettings' => $this->devToolsService->getOperationalSettings(),
             'maintenanceMode' => app()->isDownForMaintenance(),
             'routes' => Inertia::defer(fn () => $this->devToolsService->getRouteList()),
         ]);
@@ -408,14 +404,14 @@ class DevToolsController extends Controller
      */
     public function toggleMaintenance(): RedirectResponse
     {
-        $this->devToolsService->toggleMaintenance();
+        $cookie = $this->devToolsService->toggleMaintenance();
 
         $isDown = app()->isDownForMaintenance();
 
         return back()->with(
             'success',
             $isDown ? 'Modo de manutenção ativado.' : 'Sistema restaurado com sucesso.',
-        );
+        )->withCookie($cookie);
     }
 
     /**

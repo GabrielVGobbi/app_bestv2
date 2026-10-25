@@ -10,9 +10,9 @@ import {
     inlineCellEdit,
     updateInlineCellEditUser,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
+import Header from '@/components/dashboard/header';
 import { DataTable, InlineCellEditor } from '@/components/data-table';
 import type { CellEditMode } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -21,14 +21,13 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { Input } from '@/components/ui/input';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { Paginated } from '@/types/pagination';
 import type { User } from '@/types/user';
@@ -110,12 +109,10 @@ const columns: ColumnDef<User>[] = [
             >
                 {({ value, onChange }) => (
                     <Select value={value} onValueChange={onChange}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
+                        <SelectTrigger className="w-full" />
                         <SelectContent>
-                            <SelectItem value="verified">Verificado</SelectItem>
-                            <SelectItem value="pending">Pendente</SelectItem>
+                            <SelectItem index={0} value="verified">Verificado</SelectItem>
+                            <SelectItem index={1} value="pending">Pendente</SelectItem>
                         </SelectContent>
                     </Select>
                 )}
@@ -353,14 +350,12 @@ export default function InlineCellEdit() {
                                     disabled={isLoading}
                                     onValueChange={onChange}
                                 >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
+                                    <SelectTrigger className="w-full" />
                                     <SelectContent>
-                                        <SelectItem value="verified">
+                                        <SelectItem index={0} value="verified">
                                             Verificado
                                         </SelectItem>
-                                        <SelectItem value="pending">
+                                        <SelectItem index={1} value="pending">
                                             Pendente
                                         </SelectItem>
                                     </SelectContent>
@@ -379,18 +374,17 @@ export default function InlineCellEdit() {
         <>
             <Head title="Inline cell edit" />
 
+            <Header
+                title="Inline cell edit"
+                subtitle="Editor reutilizavel para celulas do DataTable com estado de loading, erro e cancelamento."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    resources/js/components/data-table
+                </Badge>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Inline cell edit"
-                            description="Editor reutilizavel para celulas do DataTable com estado de loading, erro e cancelamento."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            resources/js/components/data-table
-                        </Badge>
-                    </div>
-
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card className="rounded-lg">
                             <CardHeader>
@@ -455,17 +449,21 @@ export default function InlineCellEdit() {
                                             setActiveMode(value as CellEditMode)
                                         }
                                     >
-                                        <SelectTrigger className="w-44">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger className="w-44" />
                                         <SelectContent>
-                                            <SelectItem value="inline">
+                                            <SelectItem
+                                                index={0}
+                                                value="inline"
+                                            >
                                                 Inline
                                             </SelectItem>
-                                            <SelectItem value="popover">
+                                            <SelectItem
+                                                index={1}
+                                                value="popover"
+                                            >
                                                 Popover
                                             </SelectItem>
-                                            <SelectItem value="modal">
+                                            <SelectItem index={2} value="modal">
                                                 Modal
                                             </SelectItem>
                                         </SelectContent>
@@ -486,6 +484,7 @@ export default function InlineCellEdit() {
 
                             <DataTable<User>
                                 queryKey="dev-components-users"
+                                tableId="dev-inline-cell-edit-users"
                                 endpoint={apiRoutes.users.index}
                                 mode="infinite-scroll"
                                 columns={columns}

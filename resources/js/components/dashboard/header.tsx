@@ -1,13 +1,30 @@
-interface HeaderFieldProps {
-    children: React.ReactNode;
+import type { ReactNode } from 'react';
+import { PageHeader } from '@/components/page-header';
+
+interface HeaderProps {
+    title: string;
+    subtitle?: string;
+    backHref?: string;
+    /** Ações e sub-navegação à direita do título. */
+    children?: ReactNode;
 }
 
-function Header({ children }: HeaderFieldProps) {
+/** Faixa fixa no topo das telas de módulo; o visual vem do PageHeader. */
+export default function Header({
+    title,
+    subtitle,
+    backHref,
+    children,
+}: HeaderProps) {
     return (
-        <header className="sticky top-0 z-10 flex h-header shrink-0 items-center justify-between border-b border-header-border bg-background/80 px-5 backdrop-blur-xl">
-            {children}
-        </header>
+        <div className="sticky top-0 z-20 bg-background/95 px-4 pt-5 pb-4 backdrop-blur-sm md:px-6">
+            <PageHeader
+                title={title}
+                description={subtitle || undefined}
+                backHref={backHref}
+                actions={children}
+                className="md:items-center"
+            />
+        </div>
     );
 }
-
-export default Header;

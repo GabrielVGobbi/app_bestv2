@@ -1,11 +1,11 @@
 ﻿import { Form, Head, Link, setLayoutProps, useHttp } from '@inertiajs/react';
 import {
     AlertTriangle,
-    ArrowLeft,
     CheckCircle2,
     Loader2,
     Save,
     Search,
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
@@ -29,8 +29,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import PlaylistFormFields from '@/pages/app/playlists/partials/playlist-form-fields';
 import { csrfCookie } from '@/routes/sanctum';
@@ -60,6 +60,15 @@ interface SpotifyPreviewIssue {
         spotify_playlist_id?: string | null;
     };
 }
+
+const issueToneClasses: Record<
+    NonNullable<SpotifyPreviewIssue['tone']>,
+    string
+> = {
+    info: 'bg-info-soft text-info-soft-foreground',
+    danger: 'bg-destructive-soft text-destructive-soft-foreground',
+    warning: 'bg-warning-soft text-warning-soft-foreground',
+};
 
 async function refreshCsrfCookie(): Promise<void> {
     const response = await fetch(csrfCookie.url(), {
@@ -232,33 +241,18 @@ export default function CreatePlaylist({ formOptions }: Props) {
         setFormKey(
             `spotify-${spotifyPreview.spotify_playlist_id}-${Date.now()}`,
         );
-        toast.success('Dados aplicados ao formulÃ¡rio.');
+        toast.success('Dados aplicados ao formulário.');
     }
 
     return (
-        <>
-            <Head title="Nova Playlist" />
+        <div className="flex min-h-full flex-col">
+            <Head title="Nova playlist" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">Nova Playlist</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Cadastrar canal musical comercializÃ¡vel
-                        </p>
-                    </div>
-                </div>
-            </Header>
+            <Header
+                title="Nova playlist"
+                subtitle="Cadastre um canal musical comercializável"
+                backHref={index.url()}
+            />
 
             <Dialog
                 open={spotifyPreviewIssue !== null}
@@ -269,36 +263,26 @@ export default function CreatePlaylist({ formOptions }: Props) {
                 }}
             >
                 <DialogContent className="overflow-hidden p-0 sm:max-w-md">
-                    <div
-                        className={cn(
-                            'border-b px-6 py-5',
-                            spotifyPreviewIssue?.tone === 'info' &&
-                                'bg-emerald-50/80 dark:bg-emerald-950/20',
-                            spotifyPreviewIssue?.tone === 'danger' &&
-                                'bg-red-50/80 dark:bg-red-950/20',
-                            (!spotifyPreviewIssue?.tone ||
-                                spotifyPreviewIssue.tone === 'warning') &&
-                                'bg-amber-50/80 dark:bg-amber-950/20',
-                        )}
-                    >
+                    <div className="border-b border-separator bg-muted px-6 py-5">
                         <DialogHeader className="gap-3 text-left">
                             <div
                                 className={cn(
-                                    'flex size-11 items-center justify-center rounded-full border bg-background shadow-sm',
-                                    spotifyPreviewIssue?.tone === 'info' &&
-                                        'border-emerald-200 text-emerald-700 dark:border-emerald-900 dark:text-emerald-300',
-                                    spotifyPreviewIssue?.tone === 'danger' &&
-                                        'border-red-200 text-red-700 dark:border-red-900 dark:text-red-300',
-                                    (!spotifyPreviewIssue?.tone ||
-                                        spotifyPreviewIssue.tone ===
-                                            'warning') &&
-                                        'border-amber-200 text-amber-700 dark:border-amber-900 dark:text-amber-300',
+                                    'flex size-11 items-center justify-center rounded-full',
+                                    issueToneClasses[
+                                        spotifyPreviewIssue?.tone ?? 'warning'
+                                    ],
                                 )}
                             >
                                 {spotifyPreviewIssue?.tone === 'info' ? (
-                                    <CheckCircle2 className="size-5" />
+                                    <CheckCircle2
+                                        className="size-5"
+                                        aria-hidden="true"
+                                    />
                                 ) : (
-                                    <AlertTriangle className="size-5" />
+                                    <AlertTriangle
+                                        className="size-5"
+                                        aria-hidden="true"
+                                    />
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -314,8 +298,8 @@ export default function CreatePlaylist({ formOptions }: Props) {
 
                     <div className="space-y-4 px-6 py-5">
                         {spotifyPreviewIssue?.duplicate ? (
-                            <div className="rounded-lg border bg-muted/30 p-4">
-                                <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            <div className="rounded-lg border border-border bg-muted p-4">
+                                <p className="mb-2 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                                     Playlist encontrada no cadastro
                                 </p>
                                 <p className="text-sm font-medium">
@@ -355,21 +339,18 @@ export default function CreatePlaylist({ formOptions }: Props) {
                 </DialogContent>
             </Dialog>
 
-            <div className="page-wrapper-lg p-4 sm:p-6">
+            <div className="page-wrapper-lg flex-1 p-4 sm:p-6">
                 <CreateFormSection
                     title="Buscar pelo Spotify"
                     description="Cole o link público ou o ID da playlist para preencher os dados principais."
                 >
-                    <Card className="overflow-hidden py-0 shadow-xs">
+                    <Card className="overflow-hidden py-0">
                         <CardContent className="space-y-4 p-4 sm:p-6">
                             <form
-                                className="grid gap-3 sm:grid-cols-[1fr_auto]"
+                                className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
                                 onSubmit={submitSpotifyPreview}
                             >
-                                <div className="space-y-2">
-                                    <Label htmlFor="spotify-preview-input">
-                                        Link ou ID da playlist
-                                    </Label>
+                                <FormField label="Link ou ID da playlist">
                                     <Input
                                         id="spotify-preview-input"
                                         name="spotify_input"
@@ -385,28 +366,30 @@ export default function CreatePlaylist({ formOptions }: Props) {
                                         autoComplete="off"
                                         required
                                     />
-                                </div>
-                                <div className="flex items-end">
-                                    <Button
-                                        type="submit"
-                                        className="w-full sm:w-auto"
-                                        disabled={previewProcessing}
-                                    >
-                                        {previewProcessing ? (
-                                            <Loader2 className="animate-spin" />
-                                        ) : (
-                                            <Search />
-                                        )}
-                                        Buscar dados
-                                    </Button>
-                                </div>
+                                </FormField>
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="w-full sm:w-auto"
+                                    disabled={previewProcessing}
+                                >
+                                    {previewProcessing ? (
+                                        <Loader2 className="animate-spin" />
+                                    ) : (
+                                        <Search />
+                                    )}
+                                    Buscar dados
+                                </Button>
                             </form>
 
                             {spotifyPreview ? (
-                                <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="space-y-1">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <CheckCircle2 className="size-4 text-emerald-600" />
+                                            <CheckCircle2
+                                                className="size-4 text-success"
+                                                aria-hidden="true"
+                                            />
                                             <p className="font-medium">
                                                 {spotifyPreview.name ??
                                                     'Playlist Spotify'}
@@ -474,30 +457,32 @@ export default function CreatePlaylist({ formOptions }: Props) {
                                 layout="section-cards"
                             />
 
-                            <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
-                                <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <p className="text-xs text-muted-foreground">
+                            <div className="sticky bottom-0 z-10 border-t bg-card/95 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                                <div className="flex items-center justify-between gap-3 py-3">
+                                    <p className="hidden text-xs text-muted-foreground sm:block">
                                         Campos marcados com{' '}
                                         <span className="text-destructive">
                                             *
                                         </span>{' '}
-                                        são obrigatórios.
+                                        são obrigatórios
                                     </p>
-                                    <div className="flex items-center justify-end gap-2">
+                                    <div className="ml-auto flex items-center gap-2">
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            size="sm"
                                             asChild
                                             disabled={processing}
                                         >
                                             <Link href={index.url()}>
+                                                <X
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
                                                 Cancelar
                                             </Link>
                                         </Button>
                                         <Button
                                             type="submit"
-                                            size="sm"
                                             disabled={processing}
                                         >
                                             <Save />
@@ -512,6 +497,6 @@ export default function CreatePlaylist({ formOptions }: Props) {
                     )}
                 </Form>
             </div>
-        </>
+        </div>
     );
 }

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Concerns\Exportable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateExportRequest;
 use App\Http\Resources\ExportResource;
 use App\Jobs\ProcessExport;
 use App\Models\Export;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -56,12 +59,22 @@ class ExportApiController extends Controller
 
     public function columns(Request $request): JsonResponse
     {
+        $allowedModels = config('exports.allowed_models', []);
         $request->validate([
-            'model_class' => ['required', 'string', Rule::in(config('exports.allowed_models'))],
+            'model_class' => ['required', 'string', Rule::in(is_array($allowedModels) ? $allowedModels : [])],
         ]);
 
         /** @var string $modelClass */
         $modelClass = $request->input('model_class');
+        $actor = $request->user();
+        if (! $actor instanceof User || ! is_subclass_of($modelClass, Model::class)
+            || ! in_array(Exportable::class, class_uses_recursive($modelClass), true)
+            || ! method_exists($modelClass, 'authorizedExportQuery')
+            || ! method_exists($modelClass, 'getExportableColumns')) {
+            abort(403);
+        }
+
+        $modelClass::authorizedExportQuery($actor);
 
         $columns = $modelClass::getExportableColumns();
 

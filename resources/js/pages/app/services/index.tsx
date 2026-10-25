@@ -2,7 +2,7 @@ import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import type { InfiniteData } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -14,6 +14,7 @@ import {
     restore,
     show,
 } from '@/actions/App/Modules/Services/Http/Controllers/ServiceController';
+import Header from '@/components/dashboard/header';
 import { DataTable, InlineCellEditor } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -21,10 +22,8 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
@@ -33,10 +32,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { formatMoney } from '@/lib/utils';
-import type { Paginated } from '@/types/pagination';
 import type { Service } from '@/types/app/service';
+import type { Paginated } from '@/types/pagination';
 
 interface Props {
     permissions: {
@@ -85,7 +85,7 @@ function updateCachedService(
 }
 
 function errorMessage(errors: Record<string, string>): string {
-    return Object.values(errors)[0] ?? 'Nao foi possivel salvar o servico.';
+    return Object.values(errors)[0] ?? 'Não foi possível salvar o serviço.';
 }
 
 function persistServiceName(
@@ -119,7 +119,9 @@ export default function ServiceIndex({ permissions }: Props) {
     });
 
     const queryClient = useQueryClient();
-    const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+    const [serviceToDelete, setServiceToDelete] = useState<Service | null>(
+        null,
+    );
 
     const columns = useMemo<ColumnDef<Service>[]>(
         () => [
@@ -174,17 +176,26 @@ export default function ServiceIndex({ permissions }: Props) {
             {
                 id: 'base_price',
                 accessorKey: 'base_price',
-                header: 'Preço Base',
-                cell: ({ row }) =>
-                    formatMoney(row.original.base_price, { fromCents: true }),
-                meta: { label: 'Preço Base' },
+                header: 'Preço base',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {formatMoney(row.original.base_price, {
+                            fromCents: true,
+                        })}
+                    </span>
+                ),
+                meta: { label: 'Preço base' },
             },
             {
                 id: 'is_active',
                 accessorKey: 'is_active',
                 header: 'Status',
                 cell: ({ row }) => (
-                    <Badge variant={row.original.is_active ? 'default' : 'outline'}>
+                    <Badge
+                        variant={
+                            row.original.is_active ? 'success' : 'secondary'
+                        }
+                    >
                         {row.original.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
                 ),
@@ -210,71 +221,68 @@ export default function ServiceIndex({ permissions }: Props) {
         [],
     );
 
-    const actions = useMemo<DataTableAction<Service>[]>(
-        () => {
-            const tableActions: DataTableAction<Service>[] = [
-                {
-                    label: 'Visualizar',
-                    icon: <Eye className="size-4" />,
-                    variant: 'outline',
-                    href: (service) => show.url(service.uuid),
-                    showLabel: false,
-                    tooltip: 'Visualizar',
+    const actions = useMemo<DataTableAction<Service>[]>(() => {
+        const tableActions: DataTableAction<Service>[] = [
+            {
+                label: 'Visualizar',
+                icon: <Eye className="size-4" />,
+                variant: 'outline',
+                href: (service) => show.url(service.uuid),
+                showLabel: false,
+                tooltip: 'Visualizar',
+            },
+        ];
+
+        if (permissions.can_update) {
+            tableActions.push({
+                label: 'Editar',
+                icon: <Pencil className="size-4" />,
+                variant: 'outline',
+                href: (service) => edit.url(service.uuid),
+                showLabel: false,
+                tooltip: 'Editar',
+            });
+        }
+
+        if (permissions.can_restore) {
+            tableActions.push({
+                label: 'Reativar',
+                icon: <RotateCcw className="size-4" />,
+                variant: 'outline',
+                showLabel: false,
+                tooltip: 'Reativar',
+                disabled: (service) => service.is_active,
+                onClick: (service) => {
+                    router.patch(restore.url(service.uuid), undefined, {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            void queryClient.invalidateQueries({
+                                queryKey: ['services'],
+                            });
+                        },
+                    });
                 },
-            ];
+            });
+        }
 
-            if (permissions.can_update) {
-                tableActions.push({
-                    label: 'Editar',
-                    icon: <Pencil className="size-4" />,
-                    variant: 'outline',
-                    href: (service) => edit.url(service.uuid),
-                    showLabel: false,
-                    tooltip: 'Editar',
-                });
-            }
+        if (permissions.can_delete) {
+            tableActions.push({
+                label: 'Excluir',
+                icon: <Trash2 className="size-4" />,
+                variant: 'destructive',
+                showLabel: false,
+                tooltip: 'Excluir',
+                onClick: (service) => setServiceToDelete(service),
+            });
+        }
 
-            if (permissions.can_restore) {
-                tableActions.push({
-                    label: 'Reativar',
-                    icon: <RotateCcw className="size-4" />,
-                    variant: 'outline',
-                    showLabel: false,
-                    tooltip: 'Reativar',
-                    disabled: (service) => service.is_active,
-                    onClick: (service) => {
-                        router.patch(restore.url(service.uuid), undefined, {
-                            preserveScroll: true,
-                            onSuccess: () => {
-                                void queryClient.invalidateQueries({
-                                    queryKey: ['services'],
-                                });
-                            },
-                        });
-                    },
-                });
-            }
-
-            if (permissions.can_delete) {
-                tableActions.push({
-                    label: 'Excluir',
-                    icon: <Trash2 className="size-4" />,
-                    variant: 'destructive',
-                    showLabel: false,
-                    tooltip: 'Excluir',
-                    onClick: (service) => setServiceToDelete(service),
-                });
-            }
-
-            return tableActions;
-        },
-        [
-            permissions.can_delete,
-            permissions.can_restore,
-            permissions.can_update,
-            queryClient,
-        ],
-    );
+        return tableActions;
+    }, [
+        permissions.can_delete,
+        permissions.can_restore,
+        permissions.can_update,
+        queryClient,
+    ]);
 
     function deleteService(): void {
         if (!serviceToDelete) {
@@ -294,33 +302,35 @@ export default function ServiceIndex({ permissions }: Props) {
         <>
             <Head title="Serviços" />
 
+            <Header
+                title="Serviços"
+                subtitle="Catálogo comercial de serviços vendáveis"
+            >
+                {permissions.can_create ? (
+                    <Button asChild>
+                        <Link prefetch href={create.url()}>
+                            <Plus className="size-4" />
+                            Novo serviço
+                        </Link>
+                    </Button>
+                ) : null}
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Serviços"
-                            description="Catálogo comercial de Serviços vendaveis"
-                        />
-                        {permissions.can_create ? (
-                            <Button asChild>
-                                <Link prefetch href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Novo Serviço
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
                     <Dialog
                         open={serviceToDelete !== null}
-                        onOpenChange={(open) => !open && setServiceToDelete(null)}
+                        onOpenChange={(open) =>
+                            !open && setServiceToDelete(null)
+                        }
                     >
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Arquivar Serviço</DialogTitle>
+                                <DialogTitle>Arquivar serviço</DialogTitle>
                                 <DialogDescription>
-                                    Esta acao remove o Serviço de novas consultas
-                                    operacionais, preservando o historico.
+                                    Esta ação remove o serviço de novas
+                                    consultas operacionais, preservando o
+                                    histórico.
                                 </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -328,9 +338,17 @@ export default function ServiceIndex({ permissions }: Props) {
                                     variant="outline"
                                     onClick={() => setServiceToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
-                                <Button variant="destructive" onClick={deleteService}>
+                                <Button
+                                    variant="destructive"
+                                    onClick={deleteService}
+                                >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Arquivar
                                 </Button>
                             </DialogFooter>
@@ -356,7 +374,7 @@ export default function ServiceIndex({ permissions }: Props) {
                         actions={actions}
                         actionsConfig={{
                             display: 'inline',
-                            label: 'Acoes',
+                            label: 'Ações',
                             buttonSize: 'icon',
                             showTooltips: true,
                             sticky: true,
@@ -371,7 +389,8 @@ export default function ServiceIndex({ permissions }: Props) {
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar Serviços..."
+                        searchPlaceholder="Buscar serviços..."
+                        emptyMessage="Nenhum serviço encontrado."
                     />
                 </div>
             </div>

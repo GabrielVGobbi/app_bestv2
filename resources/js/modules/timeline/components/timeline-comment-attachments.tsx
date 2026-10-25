@@ -142,7 +142,7 @@ export function TimelineCommentAttachments({
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-base">
                             <Paperclip className="size-4 text-muted-foreground" />
-                            Anexos do comentario
+                            Anexos do comentário
                         </DialogTitle>
                         <DialogDescription>
                             Envie arquivos e ajuste os dados exibidos na
@@ -159,7 +159,7 @@ export function TimelineCommentAttachments({
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         O anexo fica vinculado a este
-                                        comentario.
+                                        comentário.
                                     </p>
                                 </div>
                                 <input
@@ -197,7 +197,7 @@ export function TimelineCommentAttachments({
                                 </div>
                             ) : uploadCount === 0 ? (
                                 <div className="rounded-md border border-dashed border-border/80 bg-muted/20 py-6 text-center text-sm text-muted-foreground">
-                                    Nenhum anexo neste comentario.
+                                    Nenhum anexo neste comentário.
                                 </div>
                             ) : (
                                 items.map((upload) => (
@@ -269,7 +269,7 @@ export function TimelineCommentAttachments({
                 onConfirm={confirmDelete}
                 isLoading={uploads.remove.isPending}
                 title="Excluir anexo"
-                description="Esta acao remove o arquivo deste comentario."
+                description="Esta ação remove o arquivo deste comentário."
             />
         </div>
     );

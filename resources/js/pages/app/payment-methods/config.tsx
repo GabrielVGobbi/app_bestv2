@@ -13,8 +13,8 @@ export const columns: ColumnDef<PaymentMethod>[] = [
     {
         id: 'name',
         accessorKey: 'name',
-        header: 'Metodo',
-        meta: { label: 'Metodo' },
+        header: 'Método',
+        meta: { label: 'Método' },
         cell: ({ row }) => (
             <div className="min-w-0">
                 <p className="truncate font-medium">{row.original.name}</p>
@@ -34,13 +34,15 @@ export const columns: ColumnDef<PaymentMethod>[] = [
     {
         id: 'requires_reference',
         accessorKey: 'requires_reference',
-        header: 'Referencia',
-        meta: { label: 'Referencia' },
+        header: 'Referência',
+        meta: { label: 'Referência' },
         cell: ({ row }) => (
             <Badge
-                variant={row.original.requires_reference ? 'default' : 'secondary'}
+                variant={
+                    row.original.requires_reference ? 'default' : 'secondary'
+                }
             >
-                {row.original.requires_reference ? 'Obrigatoria' : 'Opcional'}
+                {row.original.requires_reference ? 'Obrigatória' : 'Opcional'}
             </Badge>
         ),
     },
@@ -72,7 +74,7 @@ export const filters: DataTableFilterConfig[] = [
     },
     {
         id: 'code',
-        label: 'Codigo',
+        label: 'Código',
         type: 'text',
         operator: 'contains',
     },
@@ -83,19 +85,19 @@ export const filters: DataTableFilterConfig[] = [
         options: [
             { label: 'Dinheiro', value: 'cash' },
             { label: 'Pix', value: 'pix' },
-            { label: 'Transferencia bancaria', value: 'bank_transfer' },
+            { label: 'Transferência bancária', value: 'bank_transfer' },
             { label: 'Boleto', value: 'boleto' },
-            { label: 'Cartao de credito', value: 'credit_card' },
-            { label: 'Cartao de debito', value: 'debit_card' },
+            { label: 'Cartão de crédito', value: 'credit_card' },
+            { label: 'Cartão de débito', value: 'debit_card' },
             { label: 'Outro', value: 'other' },
         ],
     },
     {
         id: 'requires_reference',
-        label: 'Referencia',
+        label: 'Referência',
         type: 'boolean',
         options: [
-            { label: 'Obrigatoria', value: true },
+            { label: 'Obrigatória', value: true },
             { label: 'Opcional', value: false },
         ],
     },

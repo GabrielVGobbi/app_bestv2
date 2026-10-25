@@ -1,8 +1,7 @@
 import { Link } from '@inertiajs/react';
-import { Palette, ShieldCheck, UserRound } from 'lucide-react';
+import { Palette, Shield, UserRound } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
-
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
@@ -21,7 +20,7 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Segurança',
         href: editSecurity(),
-        icon: ShieldCheck,
+        icon: Shield,
     },
     {
         title: 'Aparência',
@@ -34,52 +33,52 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
-        <div className="page-wrapper-full">
-            <Heading
+        <>
+            <Header
                 title="Configurações"
-                description="Gerencie seu perfil, segurança e preferências da conta."
+                subtitle="Gerencie seu perfil e as preferências da conta"
             />
-
-            <div className="mt-8 grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-                <aside className="h-fit rounded-xl border border-app-line/80 bg-card p-3 shadow-[var(--shadow-app-panel)]">
-                    <nav
-                        className="grid gap-1 sm:grid-cols-3 lg:grid-cols-1"
-                        aria-label="Configurações"
-                    >
-                        {sidebarNavItems.map((item, index) => (
-                            <Button
-                                key={`${toUrl(item.href)}-${index}`}
-                                variant="ghost"
-                                asChild
-                                className={cn(
-                                    'h-auto w-full justify-start gap-3 rounded-lg border border-transparent px-3 py-3 text-left text-[13px] font-medium text-muted-foreground',
-                                    {
-                                        'border-primary/15 bg-brand-surface text-primary shadow-xs':
-                                            isCurrentOrParentUrl(item.href),
-                                    },
-                                )}
-                            >
-                                <Link href={item.href} prefetch="click">
-                                    {item.icon && (
-                                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background text-current shadow-xs">
-                                            <item.icon className="size-4" />
-                                        </span>
+            <div className="page-wrapper-full">
+                <div className="flex flex-col lg:flex-row lg:space-x-12">
+                    <aside className="w-full max-w-xl lg:w-48">
+                        <nav
+                            className="flex flex-col space-y-1 space-x-0"
+                            aria-label="Configurações"
+                        >
+                            {sidebarNavItems.map((item, index) => (
+                                <Button
+                                    key={`${toUrl(item.href)}-${index}`}
+                                    size="sm"
+                                    variant="ghost"
+                                    asChild
+                                    className={cn(
+                                        'w-full justify-start rounded-full text-[13px]',
+                                        {
+                                            'bg-secondary text-foreground':
+                                                isCurrentOrParentUrl(item.href),
+                                        },
                                     )}
-                                    <span>{item.title}</span>
-                                </Link>
-                            </Button>
-                        ))}
-                    </nav>
-                </aside>
+                                >
+                                    <Link href={item.href} prefetch>
+                                        {item.icon && (
+                                            <item.icon className="h-4 w-4" />
+                                        )}
+                                        {item.title}
+                                    </Link>
+                                </Button>
+                            ))}
+                        </nav>
+                    </aside>
 
-                <Separator className="lg:hidden" />
+                    <Separator className="my-6 lg:hidden" />
 
-                <div className="min-w-0 rounded-xl border border-app-line/80 bg-card p-5 shadow-[var(--shadow-app-panel)] sm:p-7">
-                    <section className="max-w-2xl space-y-12">
-                        {children}
-                    </section>
+                    <div className="flex-1 md:max-w-2xl">
+                        <section className="max-w-xl space-y-12">
+                            {children}
+                        </section>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

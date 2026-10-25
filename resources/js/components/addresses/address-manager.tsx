@@ -3,8 +3,12 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { AddressFormDialog } from '@/components/addresses/address-form-dialog';
-import type { AddressFormData, AddressFormFields } from '@/components/addresses/address-form-dialog';
+import type {
+    AddressFormData,
+    AddressFormFields,
+} from '@/components/addresses/address-form-dialog';
 import { DeleteConfirmModal } from '@/components/delete-confirm-modal';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +31,7 @@ interface AddressManagerProps {
     modelId: string | number;
     initialAddresses?: Address[];
     title?: string;
+    /** Texto de apoio do estado vazio, abaixo de "Nenhum endereço cadastrado". */
     emptyMessage?: string;
     /** `plain` removes the outer Card chrome for embedding inside another surface. */
     variant?: 'card' | 'plain';
@@ -47,7 +52,7 @@ export function AddressManager({
     modelId,
     initialAddresses = [],
     title = 'Endereços',
-    emptyMessage = 'Nenhum Endereço cadastrado.',
+    emptyMessage,
     variant = 'card',
     className,
 }: AddressManagerProps) {
@@ -56,12 +61,19 @@ export function AddressManager({
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogVersion, setDialogVersion] = useState(0);
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-    const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
+    const [addressToDelete, setAddressToDelete] = useState<Address | null>(
+        null,
+    );
     const [processing, setProcessing] = useState(false);
-    const [errors, setErrors] = useState<ValidationErrors<AddressFormFields>>({});
+    const [errors, setErrors] = useState<ValidationErrors<AddressFormFields>>(
+        {},
+    );
 
     const orderedAddresses = useMemo(
-        () => [...addresses].sort((a, b) => Number(b.is_default) - Number(a.is_default)),
+        () =>
+            [...addresses].sort(
+                (a, b) => Number(b.is_default) - Number(a.is_default),
+            ),
         [addresses],
     );
 
@@ -71,7 +83,9 @@ export function AddressManager({
             model_id: String(modelId),
         });
 
-        const response = await httpGet<AddressCollectionResponse>(`${apiRoutes.addresses.index}?${params.toString()}`);
+        const response = await httpGet<AddressCollectionResponse>(
+            `${apiRoutes.addresses.index}?${params.toString()}`,
+        );
         setAddresses(response.data);
     }
 
@@ -103,15 +117,25 @@ export function AddressManager({
 
         try {
             if (editingAddress) {
-                await httpPut<ApiResponse<Address>, AddressPayload>(apiRoutes.addresses.update(editingAddress.uuid), payload);
+                await httpPut<ApiResponse<Address>, AddressPayload>(
+                    apiRoutes.addresses.update(editingAddress.uuid),
+                    payload,
+                );
             } else {
-                await httpPost<ApiResponse<Address>, AddressPayload>(apiRoutes.addresses.store, payload);
+                await httpPost<ApiResponse<Address>, AddressPayload>(
+                    apiRoutes.addresses.store,
+                    payload,
+                );
             }
 
             await refreshAddresses();
             setDialogOpen(false);
             setEditingAddress(null);
-            toast.success(editingAddress ? 'Endereço atualizado.' : 'Endereço cadastrado.');
+            toast.success(
+                editingAddress
+                    ? 'Endereço atualizado.'
+                    : 'Endereço cadastrado.',
+            );
         } catch (error) {
             if (isApiError(error) && error.type === 'validation') {
                 setErrors(error.errors as ValidationErrors<AddressFormFields>);
@@ -119,7 +143,17 @@ export function AddressManager({
                 return;
             }
 
-            toast.error(getErrorMessage(isApiError(error) ? error : { type: 'server', status: 500, message: 'Erro inesperado.' }));
+            toast.error(
+                getErrorMessage(
+                    isApiError(error)
+                        ? error
+                        : {
+                              type: 'server',
+                              status: 500,
+                              message: 'Erro inesperado.',
+                          },
+                ),
+            );
         } finally {
             setProcessing(false);
         }
@@ -133,11 +167,23 @@ export function AddressManager({
         setProcessing(true);
 
         try {
-            await httpPatch<ApiResponse<Address>, void>(apiRoutes.addresses.setDefault(address.uuid));
+            await httpPatch<ApiResponse<Address>, void>(
+                apiRoutes.addresses.setDefault(address.uuid),
+            );
             await refreshAddresses();
-            toast.success('Endereço Padrão atualizado.');
+            toast.success('Endereço padrão atualizado.');
         } catch (error) {
-            toast.error(getErrorMessage(isApiError(error) ? error : { type: 'server', status: 500, message: 'Erro inesperado.' }));
+            toast.error(
+                getErrorMessage(
+                    isApiError(error)
+                        ? error
+                        : {
+                              type: 'server',
+                              status: 500,
+                              message: 'Erro inesperado.',
+                          },
+                ),
+            );
         } finally {
             setProcessing(false);
         }
@@ -151,58 +197,78 @@ export function AddressManager({
         setProcessing(true);
 
         try {
-            await httpDelete<ApiResponse<null>>(apiRoutes.addresses.destroy(addressToDelete.uuid));
+            await httpDelete<ApiResponse<null>>(
+                apiRoutes.addresses.destroy(addressToDelete.uuid),
+            );
             await refreshAddresses();
             setAddressToDelete(null);
             toast.success('Endereço removido.');
         } catch (error) {
-            toast.error(getErrorMessage(isApiError(error) ? error : { type: 'server', status: 500, message: 'Erro inesperado.' }));
+            toast.error(
+                getErrorMessage(
+                    isApiError(error)
+                        ? error
+                        : {
+                              type: 'server',
+                              status: 500,
+                              message: 'Erro inesperado.',
+                          },
+                ),
+            );
         } finally {
             setProcessing(false);
         }
     }
 
-    const header = (
-        <div className="flex flex-row items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-            <Button type="button" size="sm" onClick={openCreateDialog}>
-                <Plus className="size-4" />
-                Adicionar
-            </Button>
-        </div>
+    const addButton = (
+        <Button type="button" size="sm" onClick={openCreateDialog}>
+            <Plus className="size-4" aria-hidden="true" />
+            Adicionar
+        </Button>
     );
 
     const body = (
         <div className="space-y-3">
             {orderedAddresses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                        <MapPin className="size-5 text-muted-foreground" />
-                    </div>
-                    <p className="max-w-sm text-sm text-muted-foreground">
-                        {emptyMessage}
-                    </p>
-                    <Button type="button" size="sm" variant="outline" onClick={openCreateDialog}>
-                        <Plus className="size-4" />
-                        Adicionar endereço
-                    </Button>
+                <div className="rounded-lg border border-dashed border-border">
+                    <EmptyState
+                        icon={MapPin}
+                        title="Nenhum endereço cadastrado"
+                        description={emptyMessage}
+                        action={
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={openCreateDialog}
+                            >
+                                <Plus className="size-4" aria-hidden="true" />
+                                Adicionar endereço
+                            </Button>
+                        }
+                    />
                 </div>
             ) : (
                 orderedAddresses.map((address) => (
                     <div
                         key={address.uuid}
-                        className="rounded-lg border border-border/70 bg-background/60 p-3"
+                        className="rounded-lg border border-border bg-card p-3"
                     >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="flex min-w-0 gap-2">
-                                <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                                <MapPin
+                                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                                    aria-hidden="true"
+                                />
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-sm font-medium">
+                                        <p className="text-sm font-medium text-foreground">
                                             {address.name || 'Endereço'}
                                         </p>
                                         {address.is_default ? (
-                                            <Badge variant="secondary">Padrão</Badge>
+                                            <Badge variant="secondary">
+                                                Padrão
+                                            </Badge>
                                         ) : null}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
@@ -216,33 +282,39 @@ export function AddressManager({
                                     type="button"
                                     variant="outline"
                                     size="icon"
-                                    className="size-8"
                                     onClick={() => setDefaultAddress(address)}
                                     disabled={processing || address.is_default}
-                                    title="Definir como Padrão"
-                                    aria-label="Definir como Endereço Padrão"
+                                    aria-label="Definir como endereço padrão"
                                 >
-                                    <Star className="size-4" />
+                                    <Star
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     size="icon"
-                                    className="size-8"
                                     onClick={() => openEditDialog(address)}
-                                    aria-label="Editar Endereço"
+                                    aria-label="Editar endereço"
                                 >
-                                    <Edit className="size-4" />
+                                    <Edit
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                 </Button>
                                 <Button
                                     type="button"
-                                    variant="destructive"
+                                    variant="outline"
                                     size="icon"
-                                    className="size-8"
+                                    className="text-destructive hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                                     onClick={() => setAddressToDelete(address)}
-                                    aria-label="Remover Endereço"
+                                    aria-label="Remover endereço"
                                 >
-                                    <Trash2 className="size-4" />
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                 </Button>
                             </div>
                         </div>
@@ -269,9 +341,9 @@ export function AddressManager({
                 onClose={() => setAddressToDelete(null)}
                 onConfirm={() => void deleteAddress()}
                 isLoading={processing}
-                title="Remover Endereço"
-                description="Este Endereço sera removido do cadastro. Se ele for o Padrão, o sistema promovera outro Endereço automaticamente."
-                confirmLabel="Remover Endereço"
+                title="Remover endereço"
+                description="Este endereço será removido do cadastro. Se ele for o padrão, o sistema promoverá outro endereço automaticamente."
+                confirmLabel="Remover endereço"
             />
         </>
     );
@@ -279,7 +351,12 @@ export function AddressManager({
     if (isPlain) {
         return (
             <div className={cn('space-y-4', className)}>
-                {header}
+                <div className="flex flex-row items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                        {title}
+                    </h3>
+                    {addButton}
+                </div>
                 {body}
                 {dialogs}
             </div>
@@ -290,10 +367,7 @@ export function AddressManager({
         <Card className={className}>
             <CardHeader className="flex flex-row items-center justify-between gap-3">
                 <CardTitle>{title}</CardTitle>
-                <Button type="button" size="sm" onClick={openCreateDialog}>
-                    <Plus className="size-4" />
-                    Adicionar
-                </Button>
+                {addButton}
             </CardHeader>
             <CardContent>{body}</CardContent>
             {dialogs}

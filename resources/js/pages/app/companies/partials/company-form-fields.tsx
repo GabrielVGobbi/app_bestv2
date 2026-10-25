@@ -1,6 +1,7 @@
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -12,7 +13,7 @@ import FormField from '@/components/ui/forms/form-field';
 import FormSection from '@/components/ui/forms/form-section';
 import { Input } from '@/components/ui/input';
 import { InputDocument } from '@/components/ui/input-document';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import CompanyLogoDropzone from '@/pages/app/companies/partials/company-logo-dropzone';
 import type { Company } from '@/types/app/company';
@@ -211,13 +212,7 @@ export default function CompanyFormFields({ company, errors }: Props) {
                     <CompanyLogoDropzone company={record} error={errors.logo} />
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <FormField
-                            id="field-name"
-                            label="Nome"
-                            variant="stacked"
-                            required
-                            error={errors.name}
-                        >
+                        <FormField label="Nome" required error={errors.name}>
                             <Input
                                 id="field-name"
                                 name="name"
@@ -225,14 +220,11 @@ export default function CompanyFormFields({ company, errors }: Props) {
                                 defaultValue={record?.name ?? ''}
                                 required
                                 autoComplete="organization"
-                                aria-invalid={!!errors.name}
                             />
                         </FormField>
 
                         <FormField
-                            id="field-nickname"
                             label="Apelido"
-                            variant="stacked"
                             required
                             error={errors.nickname}
                         >
@@ -242,24 +234,16 @@ export default function CompanyFormFields({ company, errors }: Props) {
                                 type="text"
                                 defaultValue={record?.nickname ?? ''}
                                 required
-                                aria-invalid={!!errors.nickname}
                             />
                         </FormField>
 
-                        <FormField
-                            id="field-cnpj"
-                            label="CNPJ"
-                            variant="stacked"
-                            required
-                            error={errors.cnpj}
-                        >
+                        <FormField label="CNPJ" required error={errors.cnpj}>
                             <InputDocument
                                 id="field-cnpj"
                                 name="cnpj"
                                 kind="cnpj"
                                 defaultValue={record?.cnpj ?? ''}
                                 required
-                                aria-invalid={!!errors.cnpj}
                             />
                         </FormField>
                     </div>
@@ -289,7 +273,7 @@ export default function CompanyFormFields({ company, errors }: Props) {
                         <CollapsibleTrigger asChild>
                             <button
                                 type="button"
-                                className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-secondary/60 focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/15 focus-visible:outline-none"
+                                className="flex w-full items-center justify-between gap-4 rounded-lg px-4 py-3 text-left transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 aria-expanded={isMetadataOpen}
                             >
                                 <span className="min-w-0">
@@ -308,25 +292,20 @@ export default function CompanyFormFields({ company, errors }: Props) {
                                         'size-4 shrink-0 text-muted-foreground transition-transform',
                                         isMetadataOpen && 'rotate-180',
                                     )}
+                                    aria-hidden="true"
                                 />
                             </button>
                         </CollapsibleTrigger>
 
                         <CollapsibleContent>
-                            <CardContent className="space-y-4 border-t px-4 py-4">
+                            <CardContent className="space-y-4 border-t border-border px-4 py-4">
                                 <div className="space-y-3">
                                     {metadataRows.map((row, index) => (
                                         <div
                                             key={row.id}
-                                            className="grid gap-3 rounded-md border bg-background/60 p-3 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)_auto]"
+                                            className="grid gap-3 rounded-lg border border-border bg-muted p-3 sm:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)_auto]"
                                         >
-                                            <div className="space-y-2">
-                                                <Label
-                                                    htmlFor={`${row.id}-field`}
-                                                    className="text-sm font-semibold text-foreground"
-                                                >
-                                                    Campo
-                                                </Label>
+                                            <FormField label="Campo">
                                                 <Input
                                                     id={`${row.id}-field`}
                                                     type="text"
@@ -340,21 +319,14 @@ export default function CompanyFormFields({ company, errors }: Props) {
                                                         )
                                                     }
                                                 />
-                                            </div>
+                                            </FormField>
 
-                                            <div className="space-y-2">
-                                                <Label
-                                                    htmlFor={`${row.id}-value`}
-                                                    className="text-sm font-semibold text-foreground"
-                                                >
-                                                    Valor
-                                                </Label>
-                                                <textarea
+                                            <FormField label="Valor">
+                                                <Textarea
                                                     id={`${row.id}-value`}
                                                     value={row.value}
                                                     rows={2}
-                                                    placeholder="BEST PLAY MARKETING DIRETO LTDA"
-                                                    className="border-input bg-background placeholder:text-muted-foreground flex min-h-9 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none transition-[border-color,box-shadow,color] focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/15"
+                                                    placeholder="Razão social, por exemplo"
                                                     onChange={(event) =>
                                                         updateMetadataRow(
                                                             row.id,
@@ -363,13 +335,13 @@ export default function CompanyFormFields({ company, errors }: Props) {
                                                         )
                                                     }
                                                 />
-                                            </div>
+                                            </FormField>
 
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="icon"
-                                                className="self-end text-muted-foreground hover:text-destructive"
+                                                className="self-end text-muted-foreground hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                                                 onClick={() =>
                                                     removeMetadataRow(row.id)
                                                 }
@@ -384,9 +356,9 @@ export default function CompanyFormFields({ company, errors }: Props) {
 
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     {errors.fiscal_metadata ? (
-                                        <p className="text-sm text-destructive">
-                                            {errors.fiscal_metadata}
-                                        </p>
+                                        <InputError
+                                            message={errors.fiscal_metadata}
+                                        />
                                     ) : (
                                         <span className="text-xs text-muted-foreground">
                                             Metadados opcionais

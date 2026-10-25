@@ -187,27 +187,29 @@ export default function FinancialReportsIndex({
                         <CardContent>
                             {dashboard.account_balances?.length ? (
                                 <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                                    {dashboard.account_balances.map((account) => (
-                                        <div
-                                            key={account.uuid}
-                                            className="rounded-md border px-3 py-2"
-                                        >
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-medium">
-                                                    {account.name}
-                                                </p>
-                                                <p className="truncate text-xs text-muted-foreground">
-                                                    {account.type_label}
+                                    {dashboard.account_balances.map(
+                                        (account) => (
+                                            <div
+                                                key={account.uuid}
+                                                className="rounded-md border px-3 py-2"
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {account.name}
+                                                    </p>
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {account.type_label}
+                                                    </p>
+                                                </div>
+                                                <p className="mt-3 text-base font-semibold">
+                                                    {money(
+                                                        account.current_balance_amount,
+                                                        account.currency,
+                                                    )}
                                                 </p>
                                             </div>
-                                            <p className="mt-3 text-base font-semibold">
-                                                {money(
-                                                    account.current_balance_amount,
-                                                    account.currency,
-                                                )}
-                                            </p>
-                                        </div>
-                                    ))}
+                                        ),
+                                    )}
                                 </div>
                             ) : (
                                 <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">

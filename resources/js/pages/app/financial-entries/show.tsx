@@ -1,6 +1,5 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     CalendarDays,
     CircleDollarSign,
     Filter,
@@ -17,6 +16,7 @@ import {
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
 import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,10 +62,12 @@ function movementLabel(movement: FinancialMovement): string {
 function Info({ label, value }: { label: string; value: string | null }) {
     return (
         <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {label}
             </p>
-            <p className="text-sm">{value || '-'}</p>
+            <p className="text-sm text-foreground tabular-nums">
+                {value || '-'}
+            </p>
         </div>
     );
 }
@@ -245,41 +247,22 @@ export default function ShowFinancialEntry({ entryData }: Props) {
         <>
             <Head title={entry.description} />
 
-            <Header>
-                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="size-8"
-                            asChild
-                        >
-                            <Link href={index.url()}>
-                                <ArrowLeft className="size-4" />
-                            </Link>
-                        </Button>
-                        <div>
-                            <h1 className="text-xl font-semibold">
-                                {entry.description}
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                {entry.direction_label} - {entry.origin_label}
-                            </p>
-                        </div>
-                    </div>
-
-                    {entry.permissions.can_settle && firstOpenInstallment ? (
-                        <Button
-                            type="button"
-                            onClick={() =>
-                                setSettlementInstallment(firstOpenInstallment)
-                            }
-                        >
-                            <ReceiptText className="size-4" />
-                            Registrar baixa
-                        </Button>
-                    ) : null}
-                </div>
+            <Header
+                title={entry.description}
+                subtitle={`${entry.direction_label} - ${entry.origin_label}`}
+                backHref={index.url()}
+            >
+                {entry.permissions.can_settle && firstOpenInstallment ? (
+                    <Button
+                        type="button"
+                        onClick={() =>
+                            setSettlementInstallment(firstOpenInstallment)
+                        }
+                    >
+                        <ReceiptText className="size-4" aria-hidden="true" />
+                        Registrar baixa
+                    </Button>
+                ) : null}
             </Header>
 
             <div className="page-wrapper-lg">
@@ -329,9 +312,10 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 {components.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhum componente registrado.
-                                    </div>
+                                    <EmptyState
+                                        icon={CircleDollarSign}
+                                        title="Nenhum componente registrado"
+                                    />
                                 ) : (
                                     components.map((component) => (
                                         <div
@@ -347,7 +331,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                     {component.operation_label}
                                                 </p>
                                             </div>
-                                            <span className="text-sm font-semibold">
+                                            <span className="text-sm font-semibold tabular-nums">
                                                 {money(
                                                     component.amount,
                                                     entry.currency,
@@ -393,9 +377,9 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                 </div>
 
                                 {installments.length > 0 ? (
-                                    <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+                                    <div className="space-y-3 rounded-lg border border-border bg-muted p-3">
                                         <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                            <div className="flex items-center gap-2 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                                                 <Filter className="size-3.5" />
                                                 Status
                                             </div>
@@ -430,7 +414,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                         </div>
 
                                         <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                            <div className="flex items-center gap-2 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                                                 <CalendarDays className="size-3.5" />
                                                 Datas rápidas
                                             </div>
@@ -468,41 +452,43 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                             </CardHeader>
                             <CardContent>
                                 {installments.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma parcela registrada.
-                                    </div>
+                                    <EmptyState
+                                        icon={Table2}
+                                        title="Nenhuma parcela registrada"
+                                    />
                                 ) : filteredInstallments.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma parcela encontrada para os
-                                        filtros selecionados.
-                                    </div>
+                                    <EmptyState
+                                        icon={Filter}
+                                        title="Nenhuma parcela encontrada"
+                                        description="Nenhuma parcela corresponde aos filtros selecionados."
+                                    />
                                 ) : (
                                     <div className="overflow-x-auto rounded-md border">
                                         <table className="w-full min-w-[860px] text-sm">
-                                            <thead className="bg-muted/50 text-left text-xs tracking-wide text-muted-foreground uppercase">
+                                            <thead className="bg-muted text-left text-xs font-semibold text-muted-foreground">
                                                 <tr>
-                                                    <th className="px-3 py-2 font-medium">
+                                                    <th className="px-3 py-2">
                                                         Parcela
                                                     </th>
-                                                    <th className="px-3 py-2 font-medium">
+                                                    <th className="px-3 py-2">
                                                         Status
                                                     </th>
-                                                    <th className="px-3 py-2 font-medium">
+                                                    <th className="px-3 py-2">
                                                         Vencimento
                                                     </th>
-                                                    <th className="px-3 py-2 font-medium">
+                                                    <th className="px-3 py-2">
                                                         Competência
                                                     </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
+                                                    <th className="px-3 py-2 text-right">
                                                         Original
                                                     </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
+                                                    <th className="px-3 py-2 text-right">
                                                         Liquidado
                                                     </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
+                                                    <th className="px-3 py-2 text-right">
                                                         Saldo
                                                     </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
+                                                    <th className="px-3 py-2 text-right">
                                                         Ações
                                                     </th>
                                                 </tr>
@@ -537,19 +523,19 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                 {installment.competence_date ??
                                                                     '-'}
                                                             </td>
-                                                            <td className="px-3 py-3 text-right font-medium">
+                                                            <td className="px-3 py-3 text-right font-medium tabular-nums">
                                                                 {money(
                                                                     installment.original_amount,
                                                                     installment.currency,
                                                                 )}
                                                             </td>
-                                                            <td className="px-3 py-3 text-right text-muted-foreground">
+                                                            <td className="px-3 py-3 text-right text-muted-foreground tabular-nums">
                                                                 {money(
                                                                     installment.settled_amount,
                                                                     installment.currency,
                                                                 )}
                                                             </td>
-                                                            <td className="px-3 py-3 text-right font-semibold">
+                                                            <td className="px-3 py-3 text-right font-semibold tabular-nums">
                                                                 {money(
                                                                     installment.balance_amount,
                                                                     installment.currency,
@@ -596,9 +582,10 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {settlements.length === 0 ? (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma baixa registrada.
-                                    </div>
+                                    <EmptyState
+                                        icon={ReceiptText}
+                                        title="Nenhuma baixa registrada"
+                                    />
                                 ) : (
                                     settlements.map((settlement) => {
                                         const allocations =
@@ -641,7 +628,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
 
                                                     <div className="flex items-center gap-2">
                                                         <div className="text-right">
-                                                            <p className="text-sm font-semibold">
+                                                            <p className="text-sm font-semibold tabular-nums">
                                                                 {money(
                                                                     settlement.net_amount,
                                                                     entry.currency,
@@ -730,7 +717,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                                             </span>
                                                                         </span>
                                                                     </div>
-                                                                    <span className="font-medium">
+                                                                    <span className="font-medium tabular-nums">
                                                                         {money(
                                                                             movement.amount,
                                                                             entry.currency,
@@ -759,7 +746,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     <span className="text-sm text-muted-foreground">
                                         Bruto
                                     </span>
-                                    <span className="font-medium">
+                                    <span className="font-medium tabular-nums">
                                         {money(
                                             entry.gross_amount,
                                             entry.currency,
@@ -770,7 +757,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     <span className="text-sm text-muted-foreground">
                                         Líquido
                                     </span>
-                                    <span className="font-medium">
+                                    <span className="font-medium tabular-nums">
                                         {money(
                                             entry.net_amount,
                                             entry.currency,
@@ -781,7 +768,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     <span className="text-sm text-muted-foreground">
                                         Liquidado
                                     </span>
-                                    <span className="font-medium">
+                                    <span className="font-medium tabular-nums">
                                         {money(
                                             entry.settled_amount,
                                             entry.currency,
@@ -792,7 +779,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     <span className="text-sm font-medium">
                                         Saldo
                                     </span>
-                                    <span className="font-semibold">
+                                    <span className="font-semibold tabular-nums">
                                         {money(
                                             entry.balance_amount,
                                             entry.currency,

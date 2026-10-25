@@ -11,7 +11,7 @@ import type { StoredDatabaseExport } from '@/types/database-export';
 
 interface DatabaseExportStatusProps {
     activeExports: StoredDatabaseExport[];
-    onDownload: (uuid: string) => void;
+    onDownload: (uuid: string, expectedDownloadUrl?: string) => boolean | void;
 }
 
 function ExportTypeLabel({
@@ -26,7 +26,7 @@ function ExportTypeLabel({
     };
 
     return (
-        <Badge variant="secondary" className="text-[10px]">
+        <Badge variant="secondary" className="text-2xs">
             {labels[type] ?? type}
         </Badge>
     );
@@ -34,14 +34,20 @@ function ExportTypeLabel({
 
 function StatusIcon({ status }: { status: StoredDatabaseExport['status'] }) {
     if (status === 'completed') {
-        return <Check className="size-3.5 shrink-0 text-green-500" />;
+        return (
+            <Check className="size-3.5 shrink-0 text-success-soft-foreground" />
+        );
     }
 
     if (status === 'failed') {
-        return <X className="size-3.5 shrink-0 text-red-500" />;
+        return (
+            <X className="size-3.5 shrink-0 text-destructive-soft-foreground" />
+        );
     }
 
-    return <Loader2 className="size-3.5 shrink-0 animate-spin text-blue-500" />;
+    return (
+        <Loader2 className="size-3.5 shrink-0 animate-spin text-info-soft-foreground" />
+    );
 }
 
 export function DatabaseExportStatus({
@@ -76,7 +82,7 @@ export function DatabaseExportStatus({
                             : 'Dumps'}
                     </span>
                     {inProgressCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
+                        <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-2xs text-primary-foreground">
                             {inProgressCount}
                         </span>
                     )}
@@ -100,23 +106,23 @@ export function DatabaseExportStatus({
                                             type={exp.export_type}
                                         />
                                         {exp.status === 'pending' && (
-                                            <span className="text-[10px] text-muted-foreground">
+                                            <span className="text-2xs text-muted-foreground">
                                                 Na fila...
                                             </span>
                                         )}
                                         {exp.status === 'processing' && (
-                                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                                <span className="inline-block size-1.5 animate-pulse rounded-full bg-blue-400" />
+                                            <span className="flex items-center gap-1 text-2xs text-muted-foreground">
+                                                <span className="inline-block size-1.5 animate-pulse rounded-full bg-info" />
                                                 Processando
                                             </span>
                                         )}
                                         {exp.status === 'failed' && (
-                                            <span className="text-[10px] text-red-500">
+                                            <span className="text-2xs text-destructive-soft-foreground">
                                                 Falhou
                                             </span>
                                         )}
                                         {exp.status === 'completed' && (
-                                            <span className="text-[10px] text-green-600">
+                                            <span className="text-2xs text-success-soft-foreground">
                                                 Concluído
                                             </span>
                                         )}
@@ -134,8 +140,17 @@ export function DatabaseExportStatus({
                                     href={exp.download_url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
-                                    onClick={() => onDownload(exp.uuid)}
+                                    className="inline-flex items-center gap-1 text-xs text-info-soft-foreground hover:underline"
+                                    onClick={(event) => {
+                                        if (
+                                            onDownload(
+                                                exp.uuid,
+                                                exp.download_url ?? undefined,
+                                            ) === false
+                                        ) {
+                                            event.preventDefault();
+                                        }
+                                    }}
                                 >
                                     <Download className="size-3" />
                                     Baixar arquivo SQL

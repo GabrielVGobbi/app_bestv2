@@ -23,6 +23,7 @@ class EmailWebhookService
 
     public function handle(string $provider, Request $request): void
     {
+        $request->attributes->remove(EmailWebhookEventRecorder::AUTHENTICATED_REQUEST);
         $handlerClass = $this->handlers[$provider] ?? null;
 
         if (! $handlerClass) {
@@ -35,6 +36,11 @@ class EmailWebhookService
         if (! $handler->verifySignature($request)) {
             throw new HttpException(401, 'Invalid webhook signature.');
         }
+
+        $request->attributes->set(EmailWebhookEventRecorder::AUTHENTICATED_REQUEST, [
+            'provider' => $provider,
+            'hash' => hash('sha256', $request->getContent()),
+        ]);
 
         $handler->handle($request);
     }

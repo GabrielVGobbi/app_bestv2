@@ -120,6 +120,7 @@ class EmailServiceTest extends TestCase
             'to_email' => 'test@example.com',
             'idempotency_key' => 'key-xyz',
             'status' => EmailStatus::Failed->value,
+            'retry_safe' => true,
         ]);
 
         $dto = new SendEmailDTO(
@@ -130,7 +131,7 @@ class EmailServiceTest extends TestCase
             idempotencyKey: 'key-xyz',
         );
 
-        // Failed emails do not block new sends — idempotency only blocks queued/processing/sent
+        // Only a confirmed pre-transport failure permits reuse of the key.
         $log = $this->service->queue($dto);
 
         $this->assertNotNull($log);

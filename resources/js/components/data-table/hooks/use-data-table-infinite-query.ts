@@ -17,8 +17,13 @@ export function useDataTableInfiniteQuery<TData>(args: {
     state: DataTableState;
     filters: Array<DataTableFilterConfig | DataTableQuickFilter>;
     enabled?: boolean;
+    ready?: boolean;
 }) {
-    const debouncedSearch = useDebouncedValue(args.state.search);
+    const debouncedSearch = useDebouncedValue(
+        args.state.search,
+        350,
+        args.ready,
+    );
 
     const baseParams = buildDataTableQueryParams({
         perPage: args.state.perPage,

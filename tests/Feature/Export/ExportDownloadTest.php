@@ -36,6 +36,8 @@ class ExportDownloadTest extends TestCase
             ->get("/exports/{$export->uuid}/download");
 
         $response->assertOk();
+        $response->assertHeader('Content-Disposition', 'attachment; filename=export.csv');
+        $response->assertStreamedContent('name,email');
     }
 
     public function test_download_returns_403_for_non_owner(): void

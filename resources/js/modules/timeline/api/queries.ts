@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 
 import { httpGet } from '@/lib/http';
 
@@ -13,9 +13,36 @@ export function timelineOptions(
 ) {
     return queryOptions({
         queryKey: timelineKeys.show(modelType, modelId, pageSize),
-        queryFn: () =>
-            httpGet<TimelineResponse>(timelineEndpoints.show(modelType, modelId), {
-                params: { limit: pageSize },
-            }),
+        queryFn: ({ signal }) =>
+            httpGet<TimelineResponse>(
+                timelineEndpoints.show(modelType, modelId),
+                {
+                    signal,
+                    params: { limit: pageSize },
+                },
+            ),
+    });
+}
+
+export function timelineInfiniteOptions(
+    modelType: string,
+    modelId: ModelId,
+    pageSize = 50,
+) {
+    return infiniteQueryOptions({
+        queryKey: timelineKeys.infinite(modelType, modelId, pageSize),
+        initialPageParam: null as string | null,
+        queryFn: ({ signal, pageParam }) =>
+            httpGet<TimelineResponse>(
+                timelineEndpoints.show(modelType, modelId),
+                {
+                    signal,
+                    params: {
+                        limit: pageSize,
+                        ...(pageParam === null ? {} : { cursor: pageParam }),
+                    },
+                },
+            ),
+        getNextPageParam: (page) => page.meta.next_cursor ?? undefined,
     });
 }

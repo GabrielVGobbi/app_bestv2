@@ -1,0 +1,24 @@
+<?php
+
+namespace Laravel\Sanctum\Contracts;
+
+interface HasAbilities {}
+
+namespace Laravel\Sanctum;
+
+class PersonalAccessToken implements \Laravel\Sanctum\Contracts\HasAbilities {}
+
+/**
+ * @template TToken of \Laravel\Sanctum\Contracts\HasAbilities = \Laravel\Sanctum\PersonalAccessToken
+ */
+trait HasApiTokens
+{
+    /** @return \Laravel\Sanctum\Contracts\HasAbilities|null */
+    public function currentAccessToken() {}
+
+    /**
+     * @param \Laravel\Sanctum\Contracts\HasAbilities $accessToken
+     * @return $this
+     */
+    public function withAccessToken($accessToken) {}
+}

@@ -6,4 +6,6 @@ export const timelineKeys = {
         [...timelineKeys.all, type, String(id)] as const,
     show: (type: string, id: ModelId, pageSize?: number) =>
         [...timelineKeys.subject(type, id), { pageSize }] as const,
+    infinite: (type: string, id: ModelId, pageSize: number) =>
+        [...timelineKeys.subject(type, id), 'infinite', { pageSize }] as const,
 };

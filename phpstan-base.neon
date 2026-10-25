@@ -1,0 +1,22 @@
+includes:
+    - phpstan-safety.neon
+    - tests/analysis-migrations.php
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+    reportUnmatchedIgnoredErrors: true
+    paths:
+        - app
+        - config
+        - routes
+        - database
+        - tests
+    stubFiles:
+        - tests/stubs/sanctum.stub
+    parallel:
+        maximumNumberOfProcesses: 1
+    disableSchemaScan: true
+    disableMigrationScan: false
+    enableMigrationCache: false
+    parseModelCastsMethod: true

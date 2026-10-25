@@ -63,7 +63,10 @@ export const columns: ColumnDef<FinancialAccount>[] = [
         meta: { label: 'Saldo' },
         cell: ({ row }) => (
             <span className="font-medium">
-                {money(row.original.current_balance_amount, row.original.currency)}
+                {money(
+                    row.original.current_balance_amount,
+                    row.original.currency,
+                )}
             </span>
         ),
     },

@@ -9,9 +9,9 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Suppliers/Http/Controllers/SupplierController';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { Supplier } from '@/types/app/supplier';
@@ -69,22 +69,20 @@ export default function SupplierIndex() {
         <>
             <Head title="Fornecedores" />
 
+            <Header
+                title="Fornecedores"
+                subtitle="Cadastre contrapartes de contas a pagar"
+            >
+                <Button asChild>
+                    <Link href={create.url()}>
+                        <Plus className="size-4" aria-hidden="true" />
+                        Novo fornecedor
+                    </Link>
+                </Button>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Fornecedores"
-                            description="Cadastre contrapartes de contas a pagar"
-                        />
-
-                        <Button asChild>
-                            <Link href={create.url()}>
-                                <Plus className="size-4" />
-                                Novo fornecedor
-                            </Link>
-                        </Button>
-                    </div>
-
                     <SupplierDeleteDialog
                         supplier={supplierToDelete}
                         onCancel={() => setSupplierToDelete(null)}
@@ -125,7 +123,7 @@ export default function SupplierIndex() {
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar fornecedores..."
+                        searchPlaceholder="Buscar fornecedores"
                     />
                 </div>
             </div>

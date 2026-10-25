@@ -1,5 +1,14 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import { Bell, BellRing, BookOpen, Code2, Layers, Puzzle, Zap } from 'lucide-react';
+import {
+    Bell,
+    BellRing,
+    BookOpen,
+    Code2,
+    Layers,
+    Puzzle,
+    Zap,
+    RefreshCw,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -8,7 +17,7 @@ import {
     notifications,
     seedNotification,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { NotificationBell } from '@/components/notification-bell';
 import { NotificationItem } from '@/components/notification-item';
 import { Badge } from '@/components/ui/badge';
@@ -25,12 +34,42 @@ import { useNotifications } from '@/hooks/use-notifications';
 import { httpPost } from '@/lib/http';
 
 const SEED_TYPES = [
-    { type: 'system', label: 'Sistema', description: 'Exportação concluída, aviso de sistema', color: 'text-muted-foreground' },
-    { type: 'user', label: 'Usuário', description: 'Comentário de outro usuário', color: 'text-blue-500' },
-    { type: 'mention', label: 'Menção', description: 'Você foi mencionado @usuario', color: 'text-purple-500' },
-    { type: 'social', label: 'Social', description: 'Novo seguidor, curtida', color: 'text-pink-500' },
-    { type: 'action', label: 'Ação', description: 'Solicitação com Aprovar / Recusar', color: 'text-orange-500' },
-    { type: 'warning', label: 'Aviso', description: 'Alerta de segurança', color: 'text-yellow-500' },
+    {
+        type: 'system',
+        label: 'Sistema',
+        description: 'Exportação concluída, aviso de sistema',
+        color: 'text-muted-foreground',
+    },
+    {
+        type: 'user',
+        label: 'Usuário',
+        description: 'Comentário de outro usuário',
+        color: 'text-info-soft-foreground',
+    },
+    {
+        type: 'mention',
+        label: 'Menção',
+        description: 'Você foi mencionado @usuario',
+        color: 'text-primary-soft-foreground',
+    },
+    {
+        type: 'social',
+        label: 'Social',
+        description: 'Novo seguidor, curtida',
+        color: 'text-primary-soft-foreground',
+    },
+    {
+        type: 'action',
+        label: 'Ação',
+        description: 'Solicitação com Aprovar / Recusar',
+        color: 'text-warning-soft-foreground',
+    },
+    {
+        type: 'warning',
+        label: 'Aviso',
+        description: 'Alerta de segurança',
+        color: 'text-warning-soft-foreground',
+    },
 ];
 
 const createBackendCode = `use App\\Modules\\Notifications\\Actions\\CreateNotificationAction;
@@ -115,7 +154,7 @@ const realtimeCode = `// TODO: quando Laravel Reverb/Echo for configurado:
 // 2. Descomentar em CreateNotificationAction::handle():
 //    broadcast(new NotificationCreated($notification))->toOthers();
 
-// 3. Frontend — assinar no canal privado do usuário:
+// 3. Frontend, assinar no canal privado do usuário:
 // window.Echo.private(\`user.\${userId}.notifications\`)
 //     .listen('NotificationCreated', (e) => {
 //         setUnreadCount(prev => prev + 1)
@@ -170,27 +209,29 @@ export default function NotificationsPlayground() {
         <>
             <Head title="Notifications playground" />
 
+            <Header
+                title="Notifications"
+                subtitle="Módulo completo: tipos, categorias, menções, ações executáveis e bell no header."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    app/Modules/Notifications
+                </Badge>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Notifications"
-                            description="Módulo completo: tipos, categorias, menções, ações executáveis e bell no header."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            app/Modules/Notifications
-                        </Badge>
-                    </div>
-
                     {/* Feature cards */}
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card className="rounded-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Layers className="size-4" />
-                                    9 tipos + 14 categorias
+                                    <Layers className="size-4" />9 tipos + 14
+                                    categorias
                                 </CardTitle>
-                                <CardDescription>Enums tipados para evitar strings soltas no código.</CardDescription>
+                                <CardDescription>
+                                    Enums tipados para evitar strings soltas no
+                                    código.
+                                </CardDescription>
                             </CardHeader>
                         </Card>
                         <Card className="rounded-lg">
@@ -200,7 +241,9 @@ export default function NotificationsPlayground() {
                                     Ações executáveis
                                 </CardTitle>
                                 <CardDescription>
-                                    Botões nas notificações que disparam lógica real no backend via NotificationActionResolver.
+                                    Botões nas notificações que disparam lógica
+                                    real no backend via
+                                    NotificationActionResolver.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -211,7 +254,8 @@ export default function NotificationsPlayground() {
                                     Preparado para realtime
                                 </CardTitle>
                                 <CardDescription>
-                                    Estrutura pronta para Laravel Reverb/Echo — só descomentar o broadcast.
+                                    Estrutura pronta para Laravel Reverb/Echo:
+                                    só descomentar o broadcast.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -225,7 +269,9 @@ export default function NotificationsPlayground() {
                                 Criar notificações de teste
                             </CardTitle>
                             <CardDescription>
-                                Clique para criar notificações reais para o seu usuário. A lista ao lado atualiza automaticamente.
+                                Clique para criar notificações reais para o seu
+                                usuário. A lista ao lado atualiza
+                                automaticamente.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -237,10 +283,16 @@ export default function NotificationsPlayground() {
                                         size="sm"
                                         disabled={seeding !== null}
                                         onClick={() => void seed(item.type)}
-                                        className="flex flex-col h-auto px-4 py-2 gap-0.5"
+                                        className="flex h-auto flex-col gap-0.5 px-4 py-2"
                                     >
-                                        <span className={`text-xs font-semibold ${item.color}`}>{item.label}</span>
-                                        <span className="text-[10px] text-muted-foreground font-normal">{item.description}</span>
+                                        <span
+                                            className={`text-xs font-semibold ${item.color}`}
+                                        >
+                                            {item.label}
+                                        </span>
+                                        <span className="text-2xs font-normal text-muted-foreground">
+                                            {item.description}
+                                        </span>
                                     </Button>
                                 ))}
                             </div>
@@ -256,7 +308,9 @@ export default function NotificationsPlayground() {
                                         <Bell className="size-5" />
                                         Lista ao vivo
                                         {unreadCount > 0 && (
-                                            <Badge variant="secondary">{unreadCount} não lidas</Badge>
+                                            <Badge variant="secondary">
+                                                {unreadCount} não lidas
+                                            </Badge>
                                         )}
                                     </CardTitle>
                                     <div className="flex gap-2">
@@ -264,25 +318,40 @@ export default function NotificationsPlayground() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => void markAllAsRead()}
+                                                onClick={() =>
+                                                    void markAllAsRead()
+                                                }
                                             >
                                                 Marcar todas como lidas
                                             </Button>
                                         )}
-                                        <Button size="sm" variant="ghost" onClick={refresh} disabled={loading}>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={refresh}
+                                            disabled={loading}
+                                        >
+                                            <RefreshCw
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Atualizar
                                         </Button>
                                     </div>
                                 </div>
                                 <CardDescription>
-                                    Suas notificações. Teste marcar como lida, excluir e executar ações.
+                                    Suas notificações. Teste marcar como lida,
+                                    excluir e executar ações.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {loading ? (
                                     <div className="space-y-2">
                                         {[1, 2, 3].map((i) => (
-                                            <div key={i} className="flex gap-3 rounded-lg border p-3">
+                                            <div
+                                                key={i}
+                                                className="flex gap-3 rounded-lg border p-3"
+                                            >
                                                 <Skeleton className="size-8 shrink-0 rounded-full" />
                                                 <div className="flex-1 space-y-2">
                                                     <Skeleton className="h-3.5 w-1/3" />
@@ -295,7 +364,8 @@ export default function NotificationsPlayground() {
                                     <div className="flex flex-col items-center gap-3 py-10 text-center">
                                         <Bell className="size-8 text-muted-foreground/30" />
                                         <p className="text-sm text-muted-foreground">
-                                            Nenhuma notificação. Use os botões acima para criar.
+                                            Nenhuma notificação. Use os botões
+                                            acima para criar.
                                         </p>
                                     </div>
                                 ) : (
@@ -304,8 +374,14 @@ export default function NotificationsPlayground() {
                                             <NotificationItem
                                                 key={n.uuid}
                                                 notification={n}
-                                                onMarkAsRead={(uuid) => void markAsRead(uuid)}
-                                                onDelete={(uuid) => void deleteNotification(uuid)}
+                                                onMarkAsRead={(uuid) =>
+                                                    void markAsRead(uuid)
+                                                }
+                                                onDelete={(uuid) =>
+                                                    void deleteNotification(
+                                                        uuid,
+                                                    )
+                                                }
                                                 onExecuteAction={executeAction}
                                             />
                                         ))}
@@ -323,7 +399,8 @@ export default function NotificationsPlayground() {
                                         Bell preview
                                     </CardTitle>
                                     <CardDescription>
-                                        O componente exato que aparece no header. Clique para abrir.
+                                        O componente exato que aparece no
+                                        header. Clique para abrir.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -331,7 +408,8 @@ export default function NotificationsPlayground() {
                                         <NotificationBell />
                                     </div>
                                     <p className="mt-2 text-xs text-muted-foreground">
-                                        O badge atualiza conforme você cria e lê notificações acima.
+                                        O badge atualiza conforme você cria e lê
+                                        notificações acima.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -371,10 +449,11 @@ export default function NotificationsPlayground() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <BookOpen className="size-5" />
-                                Realtime — próximos passos
+                                Realtime: próximos passos
                             </CardTitle>
                             <CardDescription>
-                                A estrutura está pronta. Para habilitar push em tempo real basta seguir os passos abaixo.
+                                A estrutura está pronta. Para habilitar push em
+                                tempo real basta seguir os passos abaixo.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

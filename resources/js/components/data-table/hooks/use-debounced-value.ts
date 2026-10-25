@@ -1,13 +1,28 @@
 import { useEffect, useState } from 'react';
 
-export function useDebouncedValue<TValue>(value: TValue, delayMs = 350): TValue {
-    const [debouncedValue, setDebouncedValue] = useState(value);
+export function useDebouncedValue<TValue>(
+    value: TValue,
+    delayMs = 350,
+    ready = true,
+): TValue {
+    const [snapshot, setSnapshot] = useState({ value, ready });
+
+    if (snapshot.ready !== ready) {
+        setSnapshot({ value, ready });
+    }
 
     useEffect(() => {
-        const timeout = window.setTimeout(() => setDebouncedValue(value), delayMs);
+        if (!ready) {
+            return;
+        }
+
+        const timeout = window.setTimeout(
+            () => setSnapshot({ value, ready }),
+            delayMs,
+        );
 
         return () => window.clearTimeout(timeout);
-    }, [delayMs, value]);
+    }, [delayMs, ready, value]);
 
-    return debouncedValue;
+    return snapshot.ready !== ready ? value : snapshot.value;
 }

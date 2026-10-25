@@ -1,5 +1,15 @@
 import { Link, useForm } from '@inertiajs/react';
-import { ListPlus, Music2, Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import {
+    Building2,
+    ListPlus,
+    Music2,
+    Package,
+    Pencil,
+    Plus,
+    Save,
+    Trash2,
+    X,
+} from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -10,20 +20,21 @@ import {
 } from '@/actions/App/Modules/Sales/Http/Controllers/SaleController';
 import { AsyncSelect } from '@/components/async-select';
 import type { AsyncSelectOption } from '@/components/async-select';
+import { EmptyState } from '@/components/empty-state';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { InputMoney } from '@/components/ui/input-money';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import { Input } from '@/components/ui/input';
+import { InputMoney } from '@/components/ui/input-money';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { cn, formatMoney } from '@/lib/utils';
@@ -120,10 +131,10 @@ function quantityFromInput(value: string): number {
 
 function FormSection({ title, description, children }: FormSectionProps) {
     return (
-        <section className="grid grid-cols-1 gap-x-8 gap-y-4 py-6 md:grid-cols-[minmax(0,240px)_minmax(0,1fr)] lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
-            <div className="px-1 md:px-0">
-                <h2 className="text-sm leading-6 font-semibold">{title}</h2>
-                <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+        <section className="grid gap-x-10 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+            <div className="md:pt-6">
+                <h2 className="text-sm font-semibold">{title}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
                     {description}
                 </p>
             </div>
@@ -517,495 +528,520 @@ export default function SaleForm({ sale, formOptions, cancelHref }: Props) {
 
     return (
         <>
-            <form onSubmit={submit} className="divide-y divide-border">
-                <FormSection
-                    title="Dados comerciais"
-                    description="Defina a empresa, o cliente e a identificação do rascunho comercial antes de compor os itens."
-                >
-                    <Card className="overflow-hidden py-0 shadow-xs">
-                        <CardContent className="grid gap-4 p-4 sm:p-6">
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <div className="flex min-h-7 items-center">
-                                        <Label htmlFor="company_id">
-                                            Empresa
-                                        </Label>
-                                    </div>
-                                    <Select
-                                        value={form.data.company_id}
-                                        onValueChange={(value) =>
-                                            form.setData('company_id', value)
-                                        }
+            <form onSubmit={submit} className="flex flex-1 flex-col">
+                <div className="page-wrapper-md flex-1 space-y-8 pb-8">
+                    <FormSection
+                        title="Dados comerciais"
+                        description="Defina a empresa, o cliente e a identificação do rascunho comercial antes de compor os itens."
+                    >
+                        <Card>
+                            <CardContent className="grid gap-4">
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    <FormField
+                                        id="company_id"
+                                        label="Empresa"
+                                        required
+                                        error={fieldErrors.company_id}
                                     >
-                                        <SelectTrigger
-                                            id="company_id"
-                                            className="w-full"
-                                        >
-                                            <SelectValue placeholder="Selecione a empresa" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {formOptions.companies.map(
-                                                (company) => (
-                                                    <SelectItem
-                                                        key={company.id}
-                                                        value={String(
-                                                            company.id,
-                                                        )}
-                                                    >
-                                                        {company.nickname ??
-                                                            company.name}
-                                                    </SelectItem>
-                                                ),
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError
-                                        message={fieldErrors.company_id}
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <div className="flex min-h-7 items-center justify-between gap-2">
-                                        <Label>Cliente</Label>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-7 shrink-0 px-2 text-xs"
-                                            onClick={() =>
-                                                setClientDialogOpen(true)
+                                        <Select
+                                            value={form.data.company_id}
+                                            onValueChange={(value) =>
+                                                form.setData(
+                                                    'company_id',
+                                                    value,
+                                                )
                                             }
                                         >
-                                            <Plus className="size-3.5" />
-                                            Novo cliente
-                                        </Button>
-                                    </div>
-                                    <AsyncSelect
-                                        endpoint={apiRoutes.clients.index}
-                                        options={clientOptions}
-                                        value={form.data.client_id || null}
-                                        initialLabel={selectedClientLabel}
-                                        placeholder="Selecione um cliente"
-                                        searchPlaceholder="Buscar cliente..."
-                                        emptyMessage="Nenhum cliente encontrado."
-                                        clearable
-                                        transformOption={transformClientOption}
-                                        onChange={(value) =>
-                                            form.setData(
-                                                'client_id',
-                                                value ?? '',
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={fieldErrors.client_id}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="title">Título</Label>
-                                <Input
-                                    id="title"
-                                    value={form.data.title}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'title',
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="Campanha, pacote ou negociação"
-                                />
-                                <InputError message={fieldErrors.title} />
-                            </div>
-
-                            {isEditing ? (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="discount_amount">
-                                        Desconto da venda
-                                    </Label>
-                                    <InputMoney
-                                        id="discount_amount"
-                                        value={form.data.discount_amount}
-                                        onChange={(value) =>
-                                            form.setData(
-                                                'discount_amount',
-                                                value,
-                                            )
-                                        }
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Total atual:{' '}
-                                        {formatMoney(sale?.total_amount, {
-                                            fromCents: true,
-                                            fallback: '-',
-                                        })}
-                                    </p>
-                                    <InputError
-                                        message={fieldErrors.discount_amount}
-                                    />
-                                </div>
-                            ) : null}
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="notes">Observações</Label>
-                                <Textarea
-                                    id="notes"
-                                    value={form.data.notes}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'notes',
-                                            event.target.value,
-                                        )
-                                    }
-                                    rows={5}
-                                />
-                                <InputError message={fieldErrors.notes} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </FormSection>
-
-                <FormSection
-                    title="Itens da venda"
-                    description={
-                        isEditing
-                            ? 'Atualize serviços do catálogo ou vagas de playlist antes de salvar.'
-                            : 'Adicione serviços ou vagas de playlist com a música e a referência do Spotify.'
-                    }
-                >
-                    <Card className="overflow-hidden py-0 shadow-xs">
-                        <CardHeader className="flex flex-col gap-3 border-b bg-muted/20 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={addServiceLine}
-                                >
-                                    <ListPlus className="size-4" />
-                                    Adicionar serviço
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={openNewPlaylistDialog}
-                                >
-                                    <Music2 className="size-4" />
-                                    Adicionar playlist
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 p-4 sm:p-6">
-                            {form.data.items.length === 0 ? (
-                                <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-                                    Nenhum item adicionado.
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {form.data.items.map((item, index) => (
-                                        <div
-                                            key={item.id}
-                                            className="rounded-md border bg-muted/20 p-3"
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <span
-                                                    className={cn(
-                                                        'relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background text-muted-foreground',
-                                                        item.type ===
-                                                            'playlist_slot' &&
-                                                            'text-primary',
-                                                    )}
-                                                >
-                                                    {item.type === 'service' ? (
-                                                        <ListPlus className="size-4" />
-                                                    ) : (
-                                                        <>
-                                                            <Music2 className="size-4" />
-                                                            {itemArtworkUrl(
-                                                                item,
-                                                                optionsById,
-                                                            ) ? (
-                                                                <img
-                                                                    src={
-                                                                        itemArtworkUrl(
-                                                                            item,
-                                                                            optionsById,
-                                                                        ) ?? ''
-                                                                    }
-                                                                    alt=""
-                                                                    loading="lazy"
-                                                                    decoding="async"
-                                                                    className="absolute inset-0 size-full object-cover"
-                                                                    onError={(
-                                                                        event,
-                                                                    ) =>
-                                                                        event.currentTarget.classList.add(
-                                                                            'hidden',
-                                                                        )
-                                                                    }
-                                                                />
-                                                            ) : null}
-                                                        </>
-                                                    )}
-                                                </span>
-
-                                                <div className="min-w-0 flex-1 space-y-3">
-                                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                                        <div className="min-w-0">
-                                                            <p className="truncate text-sm font-semibold">
-                                                                {itemTitle(
-                                                                    item,
-                                                                    optionsById,
-                                                                )}
-                                                            </p>
-                                                            <p className="truncate text-xs text-muted-foreground">
-                                                                {itemSubtitle(
-                                                                    item,
-                                                                    optionsById,
-                                                                )}
-                                                            </p>
-                                                        </div>
-                                                        <Badge variant="secondary">
-                                                            {formatMoney(
-                                                                lineTotal(item),
-                                                                {
-                                                                    fromCents: true,
-                                                                    fallback:
-                                                                        'R$ 0,00',
-                                                                },
+                                            <SelectTrigger
+                                                id="company_id"
+                                                className="w-full"
+                                                icon={Building2}
+                                                placeholder="Selecione a empresa"
+                                            />
+                                            <SelectContent>
+                                                {formOptions.companies.map(
+                                                    (company, index) => (
+                                                        <SelectItem
+                                                            key={company.id}
+                                                            index={index}
+                                                            value={String(
+                                                                company.id,
                                                             )}
-                                                        </Badge>
-                                                    </div>
+                                                        >
+                                                            {company.nickname ??
+                                                                company.name}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormField>
 
-                                                    {item.type === 'service' ? (
-                                                        <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_110px_180px]">
-                                                            <div className="grid gap-2">
-                                                                <Label
-                                                                    htmlFor={`items_${index}_service_id`}
-                                                                >
-                                                                    Serviço
-                                                                </Label>
-                                                                <Select
-                                                                    value={
-                                                                        item.service_id
-                                                                    }
-                                                                    onValueChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        updateServiceLine(
-                                                                            item.id,
-                                                                            'service_id',
-                                                                            value,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <SelectTrigger
-                                                                        id={`items_${index}_service_id`}
-                                                                        className="w-full"
-                                                                    >
-                                                                        <SelectValue placeholder="Selecione" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {formOptions.services.map(
-                                                                            (
-                                                                                service,
-                                                                            ) => (
-                                                                                <SelectItem
-                                                                                    key={
-                                                                                        service.id
-                                                                                    }
-                                                                                    value={String(
-                                                                                        service.id,
-                                                                                    )}
-                                                                                >
-                                                                                    {serviceLabel(
-                                                                                        service,
-                                                                                    )}
-                                                                                </SelectItem>
-                                                                            ),
-                                                                        )}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                <InputError
-                                                                    message={
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <Label>
+                                                Cliente{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
+                                            </Label>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    setClientDialogOpen(true)
+                                                }
+                                            >
+                                                <Plus className="size-4" />
+                                                Novo cliente
+                                            </Button>
+                                        </div>
+                                        <AsyncSelect
+                                            endpoint={apiRoutes.clients.index}
+                                            options={clientOptions}
+                                            value={form.data.client_id || null}
+                                            initialLabel={selectedClientLabel}
+                                            placeholder="Selecione um cliente"
+                                            searchPlaceholder="Buscar cliente..."
+                                            emptyMessage="Nenhum cliente encontrado."
+                                            clearable
+                                            transformOption={
+                                                transformClientOption
+                                            }
+                                            onChange={(value) =>
+                                                form.setData(
+                                                    'client_id',
+                                                    value ?? '',
+                                                )
+                                            }
+                                        />
+                                        <InputError
+                                            message={fieldErrors.client_id}
+                                        />
+                                    </div>
+                                </div>
+
+                                <FormField
+                                    label="Título"
+                                    error={fieldErrors.title}
+                                >
+                                    <Input
+                                        id="title"
+                                        value={form.data.title}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'title',
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="Campanha, pacote ou negociação"
+                                    />
+                                </FormField>
+
+                                {isEditing ? (
+                                    <FormField
+                                        label="Desconto da venda"
+                                        error={fieldErrors.discount_amount}
+                                        description={`Total atual: ${formatMoney(
+                                            sale?.total_amount,
+                                            {
+                                                fromCents: true,
+                                                fallback: '-',
+                                            },
+                                        )}`}
+                                    >
+                                        <InputMoney
+                                            id="discount_amount"
+                                            value={form.data.discount_amount}
+                                            onChange={(value) =>
+                                                form.setData(
+                                                    'discount_amount',
+                                                    value,
+                                                )
+                                            }
+                                        />
+                                    </FormField>
+                                ) : null}
+
+                                <FormField
+                                    label="Observações"
+                                    error={fieldErrors.notes}
+                                >
+                                    <Textarea
+                                        id="notes"
+                                        value={form.data.notes}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'notes',
+                                                event.target.value,
+                                            )
+                                        }
+                                        rows={5}
+                                    />
+                                </FormField>
+                            </CardContent>
+                        </Card>
+                    </FormSection>
+
+                    <FormSection
+                        title="Itens da venda"
+                        description={
+                            isEditing
+                                ? 'Atualize serviços do catálogo ou vagas de playlist antes de salvar.'
+                                : 'Adicione serviços ou vagas de playlist com a música e a referência do Spotify.'
+                        }
+                    >
+                        <Card className="gap-0 overflow-hidden py-0">
+                            <CardHeader className="flex flex-col gap-3 border-b border-border bg-muted px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={addServiceLine}
+                                    >
+                                        <ListPlus className="size-4" />
+                                        Adicionar serviço
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={openNewPlaylistDialog}
+                                    >
+                                        <Music2 className="size-4" />
+                                        Adicionar playlist
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3 px-4 py-4 sm:px-6">
+                                {form.data.items.length === 0 ? (
+                                    <EmptyState
+                                        icon={Package}
+                                        title="Nenhum item adicionado"
+                                        description="Adicione um serviço do catálogo ou uma vaga de playlist."
+                                    />
+                                ) : (
+                                    <div className="space-y-3">
+                                        {form.data.items.map((item, index) => (
+                                            <div
+                                                key={item.id}
+                                                className="rounded-lg border border-border bg-muted p-3"
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <span
+                                                        className={cn(
+                                                            'relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md',
+                                                            item.type ===
+                                                                'playlist_slot'
+                                                                ? 'bg-primary-soft text-primary-soft-foreground'
+                                                                : 'bg-card text-muted-foreground',
+                                                        )}
+                                                    >
+                                                        {item.type ===
+                                                        'service' ? (
+                                                            <ListPlus className="size-4" />
+                                                        ) : (
+                                                            <>
+                                                                <Music2 className="size-4" />
+                                                                {itemArtworkUrl(
+                                                                    item,
+                                                                    optionsById,
+                                                                ) ? (
+                                                                    <img
+                                                                        src={
+                                                                            itemArtworkUrl(
+                                                                                item,
+                                                                                optionsById,
+                                                                            ) ??
+                                                                            ''
+                                                                        }
+                                                                        alt=""
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                        className="absolute inset-0 size-full object-cover"
+                                                                        onError={(
+                                                                            event,
+                                                                        ) =>
+                                                                            event.currentTarget.classList.add(
+                                                                                'hidden',
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                ) : null}
+                                                            </>
+                                                        )}
+                                                    </span>
+
+                                                    <div className="min-w-0 flex-1 space-y-3">
+                                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                            <div className="min-w-0">
+                                                                <p className="truncate text-sm font-semibold">
+                                                                    {itemTitle(
+                                                                        item,
+                                                                        optionsById,
+                                                                    )}
+                                                                </p>
+                                                                <p className="truncate text-xs text-muted-foreground">
+                                                                    {itemSubtitle(
+                                                                        item,
+                                                                        optionsById,
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="tabular-nums"
+                                                            >
+                                                                {formatMoney(
+                                                                    lineTotal(
+                                                                        item,
+                                                                    ),
+                                                                    {
+                                                                        fromCents: true,
+                                                                        fallback:
+                                                                            'R$ 0,00',
+                                                                    },
+                                                                )}
+                                                            </Badge>
+                                                        </div>
+
+                                                        {item.type ===
+                                                        'service' ? (
+                                                            <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_110px_180px]">
+                                                                <FormField
+                                                                    id={`items_${index}_service_id`}
+                                                                    label="Serviço"
+                                                                    required
+                                                                    error={
                                                                         fieldErrors[
                                                                             `items.${index}.service_id`
                                                                         ]
                                                                     }
-                                                                />
-                                                            </div>
-
-                                                            <div className="grid gap-2">
-                                                                <Label
-                                                                    htmlFor={`items_${index}_quantity`}
                                                                 >
-                                                                    Qtd.
-                                                                </Label>
-                                                                <Input
-                                                                    id={`items_${index}_quantity`}
-                                                                    type="number"
-                                                                    min="1"
-                                                                    value={
-                                                                        item.quantity
-                                                                    }
-                                                                    onChange={(
-                                                                        event,
-                                                                    ) =>
-                                                                        updateServiceLine(
-                                                                            item.id,
-                                                                            'quantity',
-                                                                            event
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                />
-                                                                <InputError
-                                                                    message={
+                                                                    <Select
+                                                                        value={
+                                                                            item.service_id
+                                                                        }
+                                                                        onValueChange={(
+                                                                            value,
+                                                                        ) =>
+                                                                            updateServiceLine(
+                                                                                item.id,
+                                                                                'service_id',
+                                                                                value,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <SelectTrigger
+                                                                            id={`items_${index}_service_id`}
+                                                                            className="w-full"
+                                                                            placeholder="Selecione"
+                                                                        />
+                                                                        <SelectContent>
+                                                                            {formOptions.services.map(
+                                                                                (
+                                                                                    service,
+                                                                                    serviceIndex,
+                                                                                ) => (
+                                                                                    <SelectItem
+                                                                                        key={
+                                                                                            service.id
+                                                                                        }
+                                                                                        index={
+                                                                                            serviceIndex
+                                                                                        }
+                                                                                        value={String(
+                                                                                            service.id,
+                                                                                        )}
+                                                                                    >
+                                                                                        {serviceLabel(
+                                                                                            service,
+                                                                                        )}
+                                                                                    </SelectItem>
+                                                                                ),
+                                                                            )}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </FormField>
+
+                                                                <FormField
+                                                                    label="Qtd."
+                                                                    error={
                                                                         fieldErrors[
                                                                             `items.${index}.quantity`
                                                                         ]
                                                                     }
-                                                                />
-                                                            </div>
-
-                                                            <div className="grid gap-2">
-                                                                <Label
-                                                                    htmlFor={`items_${index}_unit_amount`}
                                                                 >
-                                                                    Unitário
-                                                                </Label>
-                                                                <InputMoney
-                                                                    id={`items_${index}_unit_amount`}
-                                                                    value={
-                                                                        item.unit_amount
+                                                                    <Input
+                                                                        id={`items_${index}_quantity`}
+                                                                        type="number"
+                                                                        min="1"
+                                                                        value={
+                                                                            item.quantity
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            updateServiceLine(
+                                                                                item.id,
+                                                                                'quantity',
+                                                                                event
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </FormField>
+
+                                                                <FormField
+                                                                    label="Unitário"
+                                                                    error={
+                                                                        fieldErrors[
+                                                                            `items.${index}.unit_amount`
+                                                                        ]
                                                                     }
-                                                                    onChange={(
-                                                                        value,
-                                                                    ) =>
-                                                                        updateServiceLine(
-                                                                            item.id,
-                                                                            'unit_amount',
+                                                                >
+                                                                    <InputMoney
+                                                                        id={`items_${index}_unit_amount`}
+                                                                        value={
+                                                                            item.unit_amount
+                                                                        }
+                                                                        onChange={(
                                                                             value,
+                                                                        ) =>
+                                                                            updateServiceLine(
+                                                                                item.id,
+                                                                                'unit_amount',
+                                                                                value,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </FormField>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
+                                                                    <span className="truncate">
+                                                                        TOP:{' '}
+                                                                        {optionsById.playlistTops.get(
+                                                                            item.playlist_top_id,
                                                                         )
+                                                                            ?.top_name ??
+                                                                            'Selecionado'}
+                                                                    </span>
+                                                                    <span className="truncate">
+                                                                        Spotify:{' '}
+                                                                        {
+                                                                            item.track_spotify_url
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <InputError
+                                                                    message={
+                                                                        fieldErrors[
+                                                                            `items.${index}.playlist_top_id`
+                                                                        ]
                                                                     }
                                                                 />
                                                                 <InputError
                                                                     message={
                                                                         fieldErrors[
-                                                                            `items.${index}.unit_amount`
+                                                                            `items.${index}.track_name`
+                                                                        ]
+                                                                    }
+                                                                />
+                                                                <InputError
+                                                                    message={
+                                                                        fieldErrors[
+                                                                            `items.${index}.track_spotify_url`
                                                                         ]
                                                                     }
                                                                 />
                                                             </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
-                                                                <span className="truncate">
-                                                                    TOP:{' '}
-                                                                    {optionsById.playlistTops.get(
-                                                                        item.playlist_top_id,
-                                                                    )
-                                                                        ?.top_name ??
-                                                                        'Selecionado'}
-                                                                </span>
-                                                                <span className="truncate">
-                                                                    Spotify:{' '}
-                                                                    {
-                                                                        item.track_spotify_url
-                                                                    }
-                                                                </span>
-                                                            </div>
-                                                            <InputError
-                                                                message={
-                                                                    fieldErrors[
-                                                                        `items.${index}.playlist_top_id`
-                                                                    ]
-                                                                }
-                                                            />
-                                                            <InputError
-                                                                message={
-                                                                    fieldErrors[
-                                                                        `items.${index}.track_name`
-                                                                    ]
-                                                                }
-                                                            />
-                                                            <InputError
-                                                                message={
-                                                                    fieldErrors[
-                                                                        `items.${index}.track_spotify_url`
-                                                                    ]
-                                                                }
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                        )}
+                                                    </div>
 
-                                                <div className="flex shrink-0 flex-col gap-1">
-                                                    {item.type ===
-                                                    'playlist_slot' ? (
+                                                    <div className="flex shrink-0 flex-col gap-1">
+                                                        {item.type ===
+                                                        'playlist_slot' ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                aria-label="Editar playlist"
+                                                                title="Editar playlist"
+                                                                onClick={() =>
+                                                                    openEditPlaylistDialog(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </Button>
+                                                        ) : null}
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
                                                             size="icon"
-                                                            aria-label="Editar playlist"
-                                                            title="Editar playlist"
+                                                            aria-label="Remover item"
+                                                            title="Remover item"
+                                                            className="hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                                                             onClick={() =>
-                                                                openEditPlaylistDialog(
-                                                                    item,
+                                                                removeItem(
+                                                                    item.id,
                                                                 )
                                                             }
                                                         >
-                                                            <Pencil className="size-4" />
+                                                            <Trash2 className="size-4" />
                                                         </Button>
-                                                    ) : null}
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        aria-label="Remover item"
-                                                        title="Remover item"
-                                                        onClick={() =>
-                                                            removeItem(item.id)
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-muted-foreground">
+                                        Subtotal previsto
+                                    </span>
+                                    <span className="text-lg font-semibold tabular-nums">
+                                        {formatMoney(subtotalAmount, {
+                                            fromCents: true,
+                                            fallback: 'R$ 0,00',
+                                        })}
+                                    </span>
                                 </div>
-                            )}
+                            </CardContent>
+                        </Card>
+                    </FormSection>
+                </div>
 
-                            <div className="flex flex-col gap-2 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
-                                <span className="text-sm text-muted-foreground">
-                                    Subtotal previsto
-                                </span>
-                                <span className="text-lg font-semibold tabular-nums">
-                                    {formatMoney(subtotalAmount, {
-                                        fromCents: true,
-                                        fallback: 'R$ 0,00',
-                                    })}
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </FormSection>
-
-                <div className="sticky bottom-0 flex items-center justify-end gap-2 bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        asChild
-                        disabled={form.processing}
-                    >
-                        <Link href={cancelHref}>Cancelar</Link>
-                    </Button>
-                    <Button type="submit" disabled={form.processing}>
-                        <Save className="size-4" />
-                        {form.processing ? 'Salvando...' : 'Salvar'}
-                    </Button>
+                {/* Encaixado na base da área de conteúdo: visível com formulário curto ou longo. */}
+                <div className="sticky bottom-0 z-10 border-t border-border bg-card/95">
+                    <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                        <p className="hidden text-xs text-muted-foreground sm:block">
+                            Campos marcados com{' '}
+                            <span className="text-destructive">*</span> são
+                            obrigatórios
+                        </p>
+                        <div className="ml-auto flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                asChild
+                                disabled={form.processing}
+                            >
+                                <Link href={cancelHref}>
+                                    <X className="size-4" aria-hidden="true" />
+                                    Cancelar
+                                </Link>
+                            </Button>
+                            <Button type="submit" disabled={form.processing}>
+                                <Save className="size-4" />
+                                {form.processing ? 'Salvando...' : 'Salvar'}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </form>
 

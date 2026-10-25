@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
+import type { StickyGeometry } from '../core/table-layout';
 import type { DataTableAppearance } from '../core/types';
 import { DataTableEmptyState } from './data-table-empty-state';
 import { DataTableTruncatedCell } from './data-table-truncated-cell';
@@ -20,6 +21,7 @@ interface DataTableBodyProps<TData> {
     hasSearch?: boolean;
     hasFilters?: boolean;
     isScrolled?: boolean;
+    geometry?: StickyGeometry;
     onClearSearch?: () => void;
     onResetFilters?: () => void;
     onRetry?: () => void;
@@ -36,6 +38,7 @@ export function DataTableBody<TData>({
     hasSearch,
     hasFilters,
     isScrolled = false,
+    geometry = {},
     onClearSearch,
     onResetFilters,
     onRetry,
@@ -121,19 +124,20 @@ export function DataTableBody<TData>({
                         key={row.id}
                         data-state={isSelected ? 'selected' : undefined}
                         className={cn(
-                            'transition-colors hover:bg-accent/45',
-                            showHorizontalLines && 'border-b',
+                            'hover:bg-accent',
+                            showHorizontalLines && 'border-b border-separator',
                             appearance.rowStyle === 'striped' &&
-                                'even:bg-muted/40',
+                                'even:bg-muted/60',
                             appearance.rowStyle === 'soft-striped' &&
-                                'even:bg-muted/20',
-                            isSelected && 'bg-muted/60',
+                                'even:bg-muted/30',
+                            isSelected && 'bg-primary-soft/40',
                         )}
                     >
                         {row.getVisibleCells().map((cell) => {
                             const meta = cell.column.columnDef.meta;
                             const align = meta?.align ?? 'left';
-                            const isSticky = meta?.sticky === 'right';
+                            const sticky = geometry[cell.column.id];
+                            const isSticky = Boolean(sticky);
                             const isTruncate = meta?.truncate;
 
                             const cellContent =
@@ -155,6 +159,7 @@ export function DataTableBody<TData>({
                             return (
                                 <td
                                     key={cell.id}
+                                    data-column-id={cell.column.id}
                                     className={cn(
                                         'overflow-hidden whitespace-nowrap',
                                         cellHeight,
@@ -163,16 +168,18 @@ export function DataTableBody<TData>({
                                         showVerticalLines &&
                                             'border-r last:border-r-0',
                                         align === 'center' && 'text-center',
-                                        align === 'right' &&
-                                            'text-right font-tabular',
-                                        isSticky &&
-                                            'sticky right-0 z-[1] border-l bg-card',
+                                        align === 'right' && 'text-right',
+                                        meta?.type === 'number' ||
+                                            meta?.type === 'date'
+                                            ? 'tabular-nums'
+                                            : null,
+                                        isSticky && 'sticky z-[1] bg-card',
                                     )}
                                     style={{
-                                        width: cell.column.getSize(),
+                                        ...sticky,
                                         ...(isSticky && {
                                             boxShadow: isScrolled
-                                                ? '-12px 0 16px -4px rgba(0,0,0,0.1)'
+                                                ? `${sticky?.left !== undefined ? 8 : -8}px 0 12px -8px rgba(0,0,0,0.2)`
                                                 : 'none',
                                         }),
                                     }}

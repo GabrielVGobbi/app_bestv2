@@ -1,0 +1,19 @@
+<?php
+
+namespace {{ namespace }}\Configuration;
+
+use App\Modules\ExternalApi\Core\Abstracts\AbstractConfiguration;
+
+class {{ class }}Configuration extends AbstractConfiguration
+{
+    public function getModuleKey(): string
+    {
+        return '{{ key }}';
+    }
+
+    public function getBaseUrl(): string
+    {
+        return rtrim((string) config('external-apis.modules.{{ key }}.base_url', 'https://api.example.com'), '/');
+    }
+}
+

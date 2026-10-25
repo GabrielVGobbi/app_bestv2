@@ -56,8 +56,7 @@ export const apiRoutes = {
         show: (id: number | string) => `/api/v1/financial-categories/${id}`,
         store: '/api/v1/financial-categories',
         update: (id: number | string) => `/api/v1/financial-categories/${id}`,
-        destroy: (id: number | string) =>
-            `/api/v1/financial-categories/${id}`,
+        destroy: (id: number | string) => `/api/v1/financial-categories/${id}`,
     },
     financialCounterparties: {
         options: '/api/v1/financial-counterparty-options',

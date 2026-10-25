@@ -1,7 +1,13 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
-
 import type { RowSelectionState } from '@tanstack/react-table';
+import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePrivateState } from '@/contexts/private-state-context';
+import { getErrorMessage, toApiError } from '@/lib/http';
+import type {
+    DataTableBulkAction,
+    DataTableSelectionResolver,
+    DataTableSelectionStatus,
+} from '../core/types';
 
 interface UseDataTableSelectionArgs<TData> {
     storageKey: string;
@@ -10,106 +16,418 @@ interface UseDataTableSelectionArgs<TData> {
     rowSelection: RowSelectionState;
     setRowSelection: Dispatch<SetStateAction<RowSelectionState>>;
     enabled: boolean;
+    selectionResolver?: DataTableSelectionResolver<TData>;
 }
 
-interface UseDataTableSelectionResult<TData> {
-    selectedRows: TData[];
-    selectedCount: number;
-    clearSelection: () => void;
+interface SelectionState<TData> {
+    storageKey: string | null;
+    epoch: number;
+    ready: boolean;
+    nextGeneration: number;
+    members: Record<string, number>;
+    rows: Record<string, TData>;
+    pageRows: Record<string, TData>;
+}
+
+function emptyRecord<T>(): Record<string, T> {
+    return Object.create(null);
 }
 
 export function useDataTableSelection<TData>({
-    storageKey,
+    storageKey: unscopedStorageKey,
     keyExtractor,
     currentRows,
     rowSelection,
     setRowSelection,
     enabled,
-}: UseDataTableSelectionArgs<TData>): UseDataTableSelectionResult<TData> {
-    // Ref-based cache: holds row data for every selected row ever seen.
-    // Using a ref avoids triggering extra re-renders when the cache updates.
-    const cacheRef = useRef<Record<string, TData>>({});
-    const restoredRef = useRef(false);
-    const persistTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    selectionResolver,
+}: UseDataTableSelectionArgs<TData>) {
+    const { scope } = usePrivateState();
+    const storageKey = scope.storageKey(unscopedStorageKey);
+    const [selection, setSelection] = useState<SelectionState<TData>>({
+        storageKey,
+        epoch: 0,
+        ready: false,
+        nextGeneration: 0,
+        members: {},
+        rows: {},
+        pageRows: {},
+    });
+    const [resolution, setResolution] = useState<{
+        fingerprint: string;
+        pending: boolean;
+        error: string | null;
+        unavailableIds: string[];
+    }>({ fingerprint: '', pending: false, error: null, unavailableIds: [] });
+    const initial = useRef({ storageKey, rowSelection, used: false });
+    const committed = useRef<SelectionState<TData> | null>(null);
+    const inFlight = useRef<AbortController | null>(null);
+    const persistence = useRef<{ key: string; ids: string[] } | null>(null);
 
-    // Restore from localStorage once on mount.
-    useEffect(() => {
-        if (!enabled || restoredRef.current) return;
-        restoredRef.current = true;
+    const sameDataset = selection.storageKey === storageKey;
+    const active = enabled && scope.isCurrent();
+    const effectiveSelection =
+        active && sameDataset && (selection.ready || selection.epoch === 0)
+            ? rowSelection
+            : {};
+    const ids = active
+        ? Object.keys(effectiveSelection).filter((id) => effectiveSelection[id])
+        : [];
+    const next: SelectionState<TData> = {
+        ...selection,
+        storageKey,
+        epoch: sameDataset ? selection.epoch : selection.epoch + 1,
+        ready: sameDataset && selection.ready,
+        members: emptyRecord(),
+        rows: emptyRecord(),
+        pageRows: emptyRecord(),
+    };
 
-        try {
-            const raw = localStorage.getItem(storageKey);
-            if (!raw) return;
-            const ids: string[] = JSON.parse(raw);
-            if (ids.length === 0) return;
-            setRowSelection(
-                ids.reduce<RowSelectionState>((acc, id) => {
-                    acc[id] = true;
-                    return acc;
-                }, {}),
-            );
-        } catch {
-            // ignore malformed storage
+    for (const id of ids) {
+        next.members[id] =
+            sameDataset && Object.hasOwn(selection.members, id)
+                ? selection.members[id]
+                : ++next.nextGeneration;
+
+        if (sameDataset && Object.hasOwn(selection.rows, id)) {
+            next.rows[id] = selection.rows[id];
         }
-    }, [enabled, storageKey, setRowSelection]);
 
-    // Debounced localStorage persist — defers the synchronous write so rapid
-    // multi-clicks don't block the main thread on each selection change.
-    useEffect(() => {
-        if (!enabled) return;
-
-        clearTimeout(persistTimerRef.current);
-        persistTimerRef.current = setTimeout(() => {
-            const ids = Object.keys(rowSelection).filter((id) => rowSelection[id]);
-            if (ids.length === 0) {
-                localStorage.removeItem(storageKey);
-            } else {
-                try {
-                    localStorage.setItem(storageKey, JSON.stringify(ids));
-                } catch {
-                    // ignore quota errors
-                }
-            }
-        }, 300);
-
-        return () => clearTimeout(persistTimerRef.current);
-    }, [enabled, rowSelection, storageKey]);
-
-    // clearSelection resets everything: TanStack state, ref cache, localStorage.
-    const clearSelection = useCallback(() => {
-        setRowSelection({});
-        cacheRef.current = {};
-        clearTimeout(persistTimerRef.current);
-        localStorage.removeItem(storageKey);
-    }, [setRowSelection, storageKey]);
-
-    if (!enabled) {
-        return { selectedRows: [], selectedCount: 0, clearSelection };
+        if (sameDataset && Object.hasOwn(selection.pageRows, id)) {
+            next.pageRows[id] = selection.pageRows[id];
+        }
     }
-
-    // Sync cache inline during render — mutating a ref here is safe and
-    // idempotent. No state update means no extra re-render per click.
-    const cache = cacheRef.current;
 
     for (const row of currentRows) {
         const id = String(keyExtractor(row));
-        if (rowSelection[id]) {
-            cache[id] = row;
+
+        if (Object.hasOwn(next.members, id) && next.pageRows[id] !== row) {
+            next.rows[id] = row;
+            next.pageRows[id] = row;
         }
     }
 
-    for (const id of Object.keys(cache)) {
-        if (!rowSelection[id]) {
-            delete cache[id];
+    // Interrupted renders must not publish rows or inclusion generations.
+    if (
+        !sameDataset ||
+        Object.keys(selection.members).length !== ids.length ||
+        ids.some(
+            (id) =>
+                selection.members[id] !== next.members[id] ||
+                selection.rows[id] !== next.rows[id] ||
+                selection.pageRows[id] !== next.pageRows[id],
+        )
+    ) {
+        setSelection(next);
+    }
+
+    const fingerprint = JSON.stringify([
+        next.epoch,
+        ids.map((id) => [id, next.members[id]]),
+    ]);
+    const currentResolution =
+        resolution.fingerprint === fingerprint ? resolution : null;
+
+    useEffect(() => {
+        committed.current = next;
+    });
+
+    useEffect(() => {
+        if (!enabled || !storageKey || !scope.isCurrent()) {
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
+            let restored: RowSelectionState = {};
+
+            try {
+                const raw = localStorage.getItem(storageKey);
+
+                if (
+                    raw === null &&
+                    !initial.current.used &&
+                    initial.current.storageKey === storageKey
+                ) {
+                    restored = initial.current.rowSelection;
+                } else if (raw !== null) {
+                    const stored: unknown = JSON.parse(raw);
+
+                    if (
+                        Array.isArray(stored) &&
+                        stored.every(
+                            (id) => typeof id === 'string' && id.length > 0,
+                        )
+                    ) {
+                        restored = Object.fromEntries(
+                            stored.map((id) => [id, true]),
+                        );
+                    }
+                }
+            } catch {
+                /* Malformed or unavailable storage does not select rows. */
+            }
+
+            initial.current.used = true;
+            setRowSelection(restored);
+            setSelection((current) =>
+                current.storageKey === storageKey
+                    ? { ...current, ready: true }
+                    : current,
+            );
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, [enabled, storageKey, scope, setRowSelection]);
+
+    useEffect(() => {
+        if (!enabled || !storageKey || !next.ready || !scope.isCurrent()) {
+            return;
+        }
+
+        const record = { key: storageKey, ids };
+        persistence.current = record;
+        const persist = () => {
+            if (persistence.current !== record || !scope.isCurrent()) {
+                return;
+            }
+
+            try {
+                if (record.ids.length) {
+                    localStorage.setItem(
+                        record.key,
+                        JSON.stringify(record.ids),
+                    );
+                } else {
+                    localStorage.removeItem(record.key);
+                }
+            } catch {
+                /* Storage may be unavailable or full. */
+            }
+        };
+        const timer = setTimeout(persist, 300);
+
+        return () => {
+            clearTimeout(timer);
+            persist();
+        };
+    });
+
+    useEffect(
+        () => () => {
+            committed.current = null;
+            inFlight.current?.abort();
+            inFlight.current = null;
+        },
+        [storageKey, scope],
+    );
+
+    useEffect(
+        () => () => {
+            inFlight.current?.abort();
+            inFlight.current = null;
+        },
+        [fingerprint],
+    );
+
+    function clearSnapshot(snapshot: SelectionState<TData>) {
+        const current = committed.current;
+
+        if (
+            !scope.isCurrent() ||
+            !current ||
+            current.storageKey !== snapshot.storageKey ||
+            current.epoch !== snapshot.epoch
+        ) {
+            return;
+        }
+
+        persistence.current = null;
+        const removable = new Set(
+            Object.keys(snapshot.members).filter(
+                (id) => current.members[id] === snapshot.members[id],
+            ),
+        );
+        setRowSelection((previous) => {
+            const remaining = { ...previous };
+
+            for (const id of removable) {
+                delete remaining[id];
+            }
+
+            return remaining;
+        });
+
+        if (storageKey) {
+            try {
+                const remainingIds = Object.keys(current.members).filter(
+                    (id) => !removable.has(id),
+                );
+
+                if (remainingIds.length) {
+                    localStorage.setItem(
+                        storageKey,
+                        JSON.stringify(remainingIds),
+                    );
+                } else {
+                    localStorage.removeItem(storageKey);
+                }
+            } catch {
+                /* Storage is optional. */
+            }
         }
     }
 
-    // selectedCount reads from rowSelection directly — includes rows not visible
-    // in the current query (e.g. filtered out), giving the accurate total.
-    const selectedCount = Object.values(rowSelection).filter(Boolean).length;
+    async function resolveSelection(action?: DataTableBulkAction<TData>) {
+        if (!active || !ids.length || inFlight.current) {
+            return;
+        }
 
-    // selectedRows comes from the cache — only rows whose data we've loaded.
-    const selectedRows = Object.values(cache);
+        const snapshot = next;
+        const controller = new AbortController();
+        inFlight.current = controller;
+        const abort = () => controller.abort();
+        scope.signal.addEventListener('abort', abort, { once: true });
+        const isCurrent = () => {
+            const current = committed.current;
 
-    return { selectedRows, selectedCount, clearSelection };
+            return (
+                scope.isCurrent() &&
+                !controller.signal.aborted &&
+                inFlight.current === controller &&
+                current !== null &&
+                current.storageKey === snapshot.storageKey &&
+                current.epoch === snapshot.epoch &&
+                Object.keys(current.members).length === ids.length &&
+                ids.every((id) => current.members[id] === snapshot.members[id])
+            );
+        };
+        setResolution({
+            fingerprint,
+            pending: true,
+            error: null,
+            unavailableIds: [],
+        });
+
+        try {
+            let rows = ids.flatMap((id) =>
+                Object.hasOwn(snapshot.rows, id) ? [snapshot.rows[id]] : [],
+            );
+            let unavailableIds: string[] = [];
+
+            if (selectionResolver) {
+                const result = await selectionResolver(ids, {
+                    signal: controller.signal,
+                });
+                rows = result.rows;
+                unavailableIds = result.unavailableIds;
+                const partition = [
+                    ...rows.map((row) => String(keyExtractor(row))),
+                    ...unavailableIds,
+                ];
+
+                if (
+                    partition.length !== ids.length ||
+                    new Set(partition).size !== ids.length ||
+                    partition.some((id) => !Object.hasOwn(snapshot.members, id))
+                ) {
+                    throw new Error(
+                        'A resposta não corresponde à seleção solicitada.',
+                    );
+                }
+            }
+
+            if (!isCurrent()) {
+                return;
+            }
+
+            setResolution({
+                fingerprint,
+                pending: false,
+                error: null,
+                unavailableIds,
+            });
+            setSelection((current) =>
+                current.storageKey === snapshot.storageKey &&
+                current.epoch === snapshot.epoch &&
+                Object.keys(current.members).length === ids.length &&
+                ids.every((id) => current.members[id] === snapshot.members[id])
+                    ? {
+                          ...current,
+                          rows: Object.fromEntries(
+                              rows.map((row) => [
+                                  String(keyExtractor(row)),
+                                  row,
+                              ]),
+                          ),
+                      }
+                    : current,
+            );
+
+            if (unavailableIds.length || rows.length !== ids.length) {
+                return;
+            }
+
+            if (action?.disabled?.(rows)) {
+                setResolution({
+                    fingerprint,
+                    pending: false,
+                    error: 'A ação não está disponível para todos os registros selecionados.',
+                    unavailableIds: [],
+                });
+            } else if (action) {
+                action.onClick(rows, () => clearSnapshot(snapshot));
+            }
+        } catch (error) {
+            if (isCurrent()) {
+                setResolution({
+                    fingerprint,
+                    pending: false,
+                    error:
+                        error instanceof Error && !('type' in error)
+                            ? error.message
+                            : getErrorMessage(toApiError(error)),
+                    unavailableIds: [],
+                });
+            }
+        } finally {
+            scope.signal.removeEventListener('abort', abort);
+
+            if (inFlight.current === controller) {
+                inFlight.current = null;
+            }
+        }
+    }
+
+    const selectedRows = ids.flatMap((id) =>
+        Object.hasOwn(next.rows, id) ? [next.rows[id]] : [],
+    );
+    const status: DataTableSelectionStatus<TData> = {
+        complete:
+            selectedRows.length === ids.length &&
+            !currentResolution?.unavailableIds.length,
+        pending: currentResolution?.pending ?? false,
+        reviewed: Boolean(
+            currentResolution &&
+            !currentResolution.pending &&
+            !currentResolution.error &&
+            !currentResolution.unavailableIds.length,
+        ),
+        error: currentResolution?.error ?? null,
+        unavailableIds: currentResolution?.unavailableIds ?? [],
+        canResolve: Boolean(selectionResolver),
+        onResolve: () => void resolveSelection(),
+        onAction: (action) => void resolveSelection(action),
+    };
+
+    return {
+        selectedRows,
+        selectedCount: ids.length,
+        clearSelection: () => clearSnapshot(next),
+        rowSelection: effectiveSelection,
+        status,
+    };
 }

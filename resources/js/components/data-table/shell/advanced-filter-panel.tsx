@@ -1,11 +1,4 @@
-import {
-    CalendarDays,
-    ChevronRight,
-    Filter,
-    RotateCcw,
-    Search,
-    X,
-} from 'lucide-react';
+import { ChevronRight, Filter, RotateCcw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -18,26 +11,16 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-import { formatShortDate } from '../core/date-presets';
-import { isActiveFilterValue, optionLabel } from '../core/filter-utils';
-import { CategoryContent } from './filter-category-content';
-import { DateFilterSection } from './filter-date-section';
+import { isActiveFilterValue } from '../core/filter-utils';
 import type {
     DataTableDateColumn,
     DataTableDatePreset,
     DataTableFilterConfig,
-    DataTableFilterPrimitive,
     DataTableFilterValue,
 } from '../core/types';
 import { useDataTableFilters } from '../hooks/use-data-table-filters';
-
-interface FilterChip {
-    id: string;
-    title: string;
-    label: string;
-    value?: string;
-    type?: 'date' | 'filter';
-}
+import { CategoryContent } from './filter-category-content';
+import { DateFilterSection } from './filter-date-section';
 
 interface AdvancedFilterPanelProps {
     filters: DataTableFilterConfig[];
@@ -48,78 +31,9 @@ interface AdvancedFilterPanelProps {
     onReset: () => void;
 }
 
-
 function filterTitle(filter: DataTableFilterConfig): string {
     return filter.title ?? filter.label;
 }
-
-
-function buildChips(
-    filters: DataTableFilterConfig[],
-    values: Record<string, DataTableFilterValue>,
-): FilterChip[] {
-    return filters.flatMap((filter): FilterChip[] => {
-        const value = values[filter.id];
-
-        if (!isActiveFilterValue(value)) {
-            return [];
-        }
-
-        if (Array.isArray(value)) {
-            return value.map((item) => ({
-                id: filter.id,
-                title: filterTitle(filter),
-                label: optionLabel(filter.options, item),
-                value: String(item),
-            }));
-        }
-
-        if (typeof value === 'object' && value !== null) {
-            const from = value.from ? formatShortDate(value.from) : '...';
-            const to = value.to ? formatShortDate(value.to) : '...';
-
-            return [
-                {
-                    id: filter.id,
-                    title: filterTitle(filter),
-                    label: `${from} - ${to}`,
-                    type: 'date',
-                },
-            ];
-        }
-
-        const primitiveValue = value as DataTableFilterPrimitive;
-
-        return [
-            {
-                id: filter.id,
-                title: filterTitle(filter),
-                label: optionLabel(filter.options, primitiveValue),
-                value: String(primitiveValue),
-            },
-        ];
-    });
-}
-
-function removeChipValue(
-    chip: FilterChip,
-    currentValue: DataTableFilterValue,
-    onChange: (value: DataTableFilterValue) => void,
-): void {
-    if (Array.isArray(currentValue) && chip.value !== undefined) {
-        const nextValue = currentValue.filter(
-            (value) => String(value) !== chip.value,
-        );
-
-        onChange(nextValue.length > 0 ? nextValue : undefined);
-
-        return;
-    }
-
-    onChange(undefined);
-}
-
-
 
 export function AdvancedFilterPanel({
     filters,
@@ -150,10 +64,6 @@ export function AdvancedFilterPanel({
 
     const activeFilter =
         filters.find((filter) => filter.id === activeCategory) ?? filters[0];
-    const chips = useMemo(
-        () => buildChips(filtersWithDates, values),
-        [filtersWithDates, values],
-    );
     const filteredCategories = useMemo(() => {
         if (!categorySearch.trim()) {
             return filters;
@@ -224,13 +134,14 @@ export function AdvancedFilterPanel({
                     </div>
 
                     {filters.length > 0 && (
-                        <div className="grid min-h-80 grid-cols-[220px_1fr]">
+                        <div className="grid max-h-[min(32rem,65vh)] grid-cols-1 overflow-y-auto sm:min-h-80 sm:grid-cols-[220px_minmax(0,1fr)]">
                             <div className="border-r bg-muted/20 p-2">
                                 {filters.length > 6 && (
                                     <div className="relative mb-2">
                                         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
                                             placeholder="Buscar categoria..."
+                                            aria-label="Buscar categoria de filtro"
                                             value={categorySearch}
                                             onChange={(event) =>
                                                 setCategorySearch(
@@ -242,7 +153,7 @@ export function AdvancedFilterPanel({
                                     </div>
                                 )}
 
-                                <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
+                                <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto pr-1 sm:block sm:max-h-72 sm:space-y-1">
                                     {filteredCategories.map((filter) => {
                                         const Icon = filter.icon;
                                         const selected =
@@ -258,8 +169,9 @@ export function AdvancedFilterPanel({
                                             <button
                                                 key={filter.id}
                                                 type="button"
+                                                aria-pressed={selected}
                                                 className={cn(
-                                                    'flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-accent',
+                                                    'flex min-w-0 items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-accent sm:w-full',
                                                     selected
                                                         ? 'bg-accent font-medium text-accent-foreground'
                                                         : 'text-muted-foreground',
@@ -300,7 +212,7 @@ export function AdvancedFilterPanel({
                                 </div>
                             </div>
 
-                            <div className="p-4">
+                            <div className="min-w-0 p-4">
                                 {activeFilter && (
                                     <div className="space-y-4">
                                         <div>
@@ -328,54 +240,6 @@ export function AdvancedFilterPanel({
                     )}
                 </PopoverContent>
             </Popover>
-
-            {chips.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                    {chips.slice(0, 3).map((chip) => (
-                        <Badge
-                            key={`${chip.id}-${chip.value ?? chip.label}`}
-                            variant="secondary"
-                            className={cn(
-                                'h-8 gap-1.5 pr-1.5 pl-2.5',
-                                chip.type === 'date' &&
-                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                            )}
-                        >
-                            {chip.type === 'date' && (
-                                <CalendarDays className="size-3" />
-                            )}
-                            <span className="text-xs font-medium">
-                                {chip.title}:
-                            </span>
-                            <span className="max-w-32 truncate text-xs">
-                                {chip.label}
-                            </span>
-                            <button
-                                type="button"
-                                className="rounded-full p-0.5 hover:bg-background/60"
-                                onClick={() =>
-                                    removeChipValue(
-                                        chip,
-                                        values[chip.id],
-                                        (value) => onChange(chip.id, value),
-                                    )
-                                }
-                            >
-                                <X className="size-3" />
-                            </button>
-                        </Badge>
-                    ))}
-
-                    {chips.length > 3 && (
-                        <Badge
-                            variant="outline"
-                            className="h-7 rounded-full text-xs"
-                        >
-                            +{chips.length - 3} mais
-                        </Badge>
-                    )}
-                </div>
-            )}
         </div>
     );
 }

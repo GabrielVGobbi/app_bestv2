@@ -1,22 +1,16 @@
 import {
     Activity,
     BellRing,
-    BadgePercent,
     BookOpen,
-    Building2,
     Clock,
-    Contact,
-    CreditCard,
     Download,
     Eye,
-    FolderTree,
     FolderGit2,
     History,
     KeyRound,
     LayoutGrid,
     Layers,
     ListMusic,
-    MessageSquare,
     Mic2,
     PencilLine,
     Paperclip,
@@ -24,7 +18,6 @@ import {
     Puzzle,
     Search,
     Shield,
-    ShieldCheck,
     TableProperties,
     Users,
     Wrench,
@@ -33,13 +26,6 @@ import {
     Mail,
     DatabaseZap,
     Bell,
-    Music2,
-    ShoppingBag,
-    ReceiptText,
-    ListChecks,
-    Truck,
-    ChartNoAxesColumn
-
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -50,22 +36,16 @@ import type { LucideIcon } from 'lucide-react';
 const NAV_ICONS: Record<string, LucideIcon> = {
     Activity,
     BellRing,
-    BadgePercent,
     BookOpen,
-    Building2,
     Clock,
-    Contact,
-    CreditCard,
     Download,
     Eye,
-    FolderTree,
     FolderGit2,
     History,
     KeyRound,
     LayoutGrid,
     Layers,
     ListMusic,
-    MessageSquare,
     Mic2,
     PencilLine,
     Paperclip,
@@ -73,7 +53,6 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Puzzle,
     Search,
     Shield,
-    ShieldCheck,
     TableProperties,
     Users,
     Wrench,
@@ -82,12 +61,6 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Mail,
     DatabaseZap,
     Bell,
-    Music2,
-    ShoppingBag,
-    ReceiptText,
-    ListChecks,
-    Truck,
-    ChartNoAxesColumn
 };
 
 export function resolveIcon(name?: string | null): LucideIcon | null {

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
+import { buildFilterChips } from '../core/filter-presentation';
 import { isActiveFilterValue } from '../core/filter-utils';
 import type {
     DataTableDateColumn,
@@ -23,6 +24,8 @@ import { DataTableActionsMenu } from './data-table-actions-menu';
 import { DataTableExportDialog } from './data-table-export-dialog';
 import { DataTableExportStatus } from './data-table-export-status';
 import { QuickFilterSelect } from './quick-filter-select';
+import { TableLayoutSettings } from './table-layout-settings';
+import type { TableLayoutControls } from './table-layout-settings';
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>;
@@ -42,6 +45,7 @@ interface DataTableToolbarProps<TData> {
     exportConfig?: DataTableExportConfig;
     currentSort?: string;
     currentSortDirection?: 'asc' | 'desc';
+    layoutControls?: TableLayoutControls;
 }
 
 export function DataTableToolbar<TData>({
@@ -62,6 +66,7 @@ export function DataTableToolbar<TData>({
     exportConfig,
     currentSort,
     currentSortDirection,
+    layoutControls,
 }: DataTableToolbarProps<TData>) {
     const [searchExpanded, setSearchExpanded] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -72,16 +77,39 @@ export function DataTableToolbar<TData>({
         [filterValues],
     );
 
-    const { activeExports, startExport, markAsDownloaded } =
-        useExport(exportConfig);
+    const dateFilters = useMemo<DataTableFilterConfig[]>(
+        () =>
+            dateFilterColumns.map((column) => ({
+                id: column.value,
+                label: column.label,
+                type: 'date-range' as const,
+                operator: 'between' as const,
+            })),
+        [dateFilterColumns],
+    );
+
+    const exportFilterConfig = useMemo(
+        () => [...quickFilters, ...filters, ...dateFilters],
+        [dateFilters, filters, quickFilters],
+    );
+    const activeChips = buildFilterChips(
+        [...filters, ...dateFilters].filter(
+            (filter) => !quickFilters.some((quick) => quick.id === filter.id),
+        ),
+        filterValues,
+    );
 
     const showExport =
         features.export && exportConfig && exportConfig.enabled !== false;
+    const { activeExports, startExport, markAsDownloaded } = useExport(
+        exportConfig,
+        Boolean(showExport),
+    );
 
     return (
-        <div className="flex flex-col gap-3 rounded-xl border border-app-line/80 bg-card/90 p-2.5 shadow-[var(--shadow-app-panel)] backdrop-blur-sm">
+        <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-1 flex-col gap-2.5 md:flex-row md:items-center">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                     {features.search && (
                         <div
                             className={cn(
@@ -119,6 +147,7 @@ export function DataTableToolbar<TData>({
                                 <>
                                     <Search className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
+                                        aria-label={searchPlaceholder}
                                         value={search}
                                         onChange={(event) =>
                                             onSearchChange(event.target.value)
@@ -155,6 +184,36 @@ export function DataTableToolbar<TData>({
                             }
                         />
                     ))}
+
+                    {activeChips.length > 0 && (
+                        <>
+                            {activeChips.map((chip) => (
+                                <Button
+                                    key={`${chip.id}:${chip.value ?? ''}`}
+                                    type="button"
+                                    size="sm"
+                                    variant="secondary"
+                                    aria-label={`Remover filtro ${chip.title}: ${chip.label}`}
+                                    onClick={() => {
+                                        const value = filterValues[chip.id];
+                                        onFilterChange(
+                                            chip.id,
+                                            Array.isArray(value)
+                                                ? value.filter(
+                                                      (item) =>
+                                                          String(item) !==
+                                                          chip.value,
+                                                  )
+                                                : undefined,
+                                        );
+                                    }}
+                                >
+                                    {chip.title}: {chip.label}
+                                    <X className="size-3.5" />
+                                </Button>
+                            ))}
+                        </>
+                    )}
 
                     {features.filters && (
                         <AdvancedFilterPanel
@@ -221,6 +280,7 @@ export function DataTableToolbar<TData>({
                                 modelClass={exportConfig.modelClass}
                                 columnsEndpoint={exportConfig.columnsEndpoint}
                                 currentFilters={filterValues}
+                                currentFilterConfig={exportFilterConfig}
                                 currentSearch={search}
                                 currentSort={currentSort}
                                 currentSortDirection={currentSortDirection}
@@ -232,10 +292,17 @@ export function DataTableToolbar<TData>({
                             />
                         </>
                     )}
-                    <DataTableActionsMenu
-                        table={table}
-                        showColumnVisibility={features.columnVisibility}
-                    />
+                    {features.columnVisibility && layoutControls ? (
+                        <TableLayoutSettings
+                            table={table}
+                            {...layoutControls}
+                        />
+                    ) : (
+                        <DataTableActionsMenu
+                            table={table}
+                            showColumnVisibility={features.columnVisibility}
+                        />
+                    )}
                 </div>
             </div>
         </div>

@@ -6,6 +6,7 @@ import {
     Trash2,
     TrendingDown,
     TrendingUp,
+    X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ClipboardEvent, FormEvent, KeyboardEvent } from 'react';
@@ -21,6 +22,12 @@ import FinancialCategoryTreeSelect from '@/components/financial/financial-catego
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '@/components/ui/fluid/select';
 import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
 import { InputMoney } from '@/components/ui/input-money';
@@ -29,13 +36,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { apiRoutes } from '@/lib/api/api-routes';
@@ -180,16 +180,6 @@ function optionFromResource(item: unknown): AsyncSelectOption {
         ),
         description:
             [companyName, document].filter(Boolean).join(' - ') || undefined,
-        imageUrl:
-            typeof record.logo_url === 'string' ? record.logo_url : undefined,
-        avatarInitials:
-            typeof record.logo_initials === 'string'
-                ? record.logo_initials
-                : undefined,
-        avatarColor:
-            typeof record.logo_color === 'string'
-                ? record.logo_color
-                : undefined,
     };
 }
 
@@ -337,7 +327,7 @@ function AmountHeroInput({
                 readOnly
                 disabled={disabled}
                 placeholder="0,00"
-                className="min-w-0 flex-1 rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-3xl font-extralight tracking-tight transition-colors outline-none placeholder:text-muted-foreground/20 hover:border-border/50 focus:border-border focus:ring-0 disabled:pointer-events-none disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-3xl font-extralight tracking-tight transition-colors outline-none placeholder:text-muted-foreground hover:border-border focus:border-border focus:ring-0 disabled:pointer-events-none disabled:opacity-50"
             />
         </div>
     );
@@ -414,7 +404,7 @@ function FormValidationBadge({ messages }: { messages: string[] }) {
                     onMouseEnter={() => setIsOpen(true)}
                     onFocus={() => setIsOpen(true)}
                     aria-label="Ver pendências do formulário"
-                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-amber-400/35 bg-amber-50/80 text-xs font-semibold text-amber-700 shadow-xs transition-colors hover:border-amber-400/60 hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-400/30 focus-visible:outline-none dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-warning-soft text-xs font-semibold text-warning-soft-foreground transition-colors hover:bg-warning-soft/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                     !
                 </button>
@@ -432,7 +422,7 @@ function FormValidationBadge({ messages }: { messages: string[] }) {
                             key={message}
                             className="flex gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground"
                         >
-                            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-amber-500" />
+                            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-warning" />
                             <span className="leading-snug">{message}</span>
                         </li>
                     ))}
@@ -712,25 +702,24 @@ export default function FinancialEntryForm({
                                             }
                                             disabled={processing}
                                             className={cn(
-                                                'flex cursor-pointer items-center justify-center gap-3 rounded-xl border px-4 py-3 transition-all duration-300 outline-none',
+                                                'flex cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-3 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                                 isSelected
                                                     ? isPayable
-                                                        ? 'scale-[1.02] border-rose-100/50 bg-rose-400/30 text-rose-900 shadow-[0_4px_20px_-4px_rgba(244,63,94,0.2)] ring-1 ring-rose-100/30 dark:text-rose-600'
-                                                        : 'scale-[1.02] border-emerald-500/50 bg-emerald-500/10 text-emerald-800 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/30 dark:text-emerald-500'
-                                                    : 'border-border/60 bg-transparent text-muted-foreground hover:scale-[1.01] hover:bg-accent/40 hover:text-foreground',
+                                                        ? 'border-destructive bg-destructive-soft text-destructive-soft-foreground'
+                                                        : 'border-success bg-success-soft text-success-soft-foreground'
+                                                    : 'border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground',
                                             )}
                                         >
                                             <Icon
                                                 className={cn(
                                                     'size-4 transition-transform duration-300',
-                                                    isSelected
-                                                        ? isPayable
+                                                    isSelected &&
+                                                        (isPayable
                                                             ? 'translate-y-0.5'
-                                                            : '-translate-y-0.5'
-                                                        : 'opacity-60',
+                                                            : '-translate-y-0.5'),
                                                 )}
                                             />
-                                            <span className="text-[15px] font-medium tracking-tight">
+                                            <span className="text-sm font-medium tracking-tight">
                                                 {option.label}
                                             </span>
                                         </button>
@@ -748,7 +737,7 @@ export default function FinancialEntryForm({
                                 }
                                 disabled={processing}
                                 placeholder="O que você está lançando?"
-                                className="w-full rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-2xl font-light tracking-tight transition-colors outline-none placeholder:text-muted-foreground/30 hover:border-border/50 focus:border-border focus:ring-0"
+                                className="w-full rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-2xl font-light tracking-tight transition-colors outline-none placeholder:text-muted-foreground hover:border-border focus:border-border focus:ring-0"
                                 autoFocus
                             />
                             {errors.description ? (
@@ -779,7 +768,7 @@ export default function FinancialEntryForm({
                         </FormField>
 
                         {hasNegativeNetAmount ? (
-                            <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                            <div className="rounded-lg border border-border bg-destructive-soft px-4 py-3 text-sm text-destructive-soft-foreground">
                                 Subtrações não podem ser maiores que o valor
                                 bruto. Ajuste os valores adicionais para
                                 continuar.
@@ -788,7 +777,7 @@ export default function FinancialEntryForm({
 
                         {shouldRenderDetails ? (
                             <div className="space-y-7">
-                                <Separator className="opacity-30" />
+                                <Separator />
 
                                 <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2">
                                     <FormField
@@ -843,7 +832,7 @@ export default function FinancialEntryForm({
                                     />
                                 </FormField>
 
-                                <div className="overflow-hidden rounded-xl border bg-background">
+                                <div className="overflow-hidden rounded-lg border border-border bg-card">
                                     <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                                         <div className="flex min-w-0 items-center gap-2">
                                             <span className="text-sm font-medium">
@@ -896,9 +885,9 @@ export default function FinancialEntryForm({
                                     </div>
 
                                     {showAdditionalComponents ? (
-                                        <div className="space-y-3 border-t bg-muted/20 p-4">
+                                        <div className="space-y-3 border-t bg-muted p-4">
                                             {data.components.length === 0 ? (
-                                                <div className="rounded-lg border border-dashed bg-background px-4 py-3 text-sm text-muted-foreground">
+                                                <div className="rounded-lg border border-dashed border-border bg-card px-4 py-3 text-sm text-muted-foreground">
                                                     Nenhum valor adicional
                                                     informado.
                                                 </div>
@@ -908,10 +897,10 @@ export default function FinancialEntryForm({
                                                 (component, index) => (
                                                     <div
                                                         key={component.id}
-                                                        className="rounded-xl border bg-background p-3 shadow-sm sm:p-4"
+                                                        className="rounded-lg border border-border bg-card p-3 sm:p-4"
                                                     >
                                                         <div className="mb-3 flex items-center justify-between gap-3">
-                                                            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                                            <span className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                                                                 Componente{' '}
                                                                 {index + 1}
                                                             </span>
@@ -919,7 +908,7 @@ export default function FinancialEntryForm({
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="size-8 text-muted-foreground hover:text-destructive"
+                                                                className="size-8 text-muted-foreground hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                                                                 onClick={() =>
                                                                     removeComponent(
                                                                         component.id,
@@ -951,9 +940,7 @@ export default function FinancialEntryForm({
                                                                         )
                                                                     }
                                                                 >
-                                                                    <SelectTrigger>
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
+                                                                    <SelectTrigger className="w-full" />
                                                                     <SelectContent>
                                                                         {componentCodeOptions
                                                                             .filter(
@@ -966,10 +953,14 @@ export default function FinancialEntryForm({
                                                                             .map(
                                                                                 (
                                                                                     option,
+                                                                                    optionIndex,
                                                                                 ) => (
                                                                                     <SelectItem
                                                                                         key={
                                                                                             option.value
+                                                                                        }
+                                                                                        index={
+                                                                                            optionIndex
                                                                                         }
                                                                                         value={
                                                                                             option.value
@@ -1002,17 +993,19 @@ export default function FinancialEntryForm({
                                                                         )
                                                                     }
                                                                 >
-                                                                    <SelectTrigger>
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
+                                                                    <SelectTrigger className="w-full" />
                                                                     <SelectContent>
                                                                         {componentOperationOptions.map(
                                                                             (
                                                                                 option,
+                                                                                optionIndex,
                                                                             ) => (
                                                                                 <SelectItem
                                                                                     key={
                                                                                         option.value
+                                                                                    }
+                                                                                    index={
+                                                                                        optionIndex
                                                                                     }
                                                                                     value={
                                                                                         option.value
@@ -1083,7 +1076,7 @@ export default function FinancialEntryForm({
                                     ) : null}
                                 </div>
 
-                                <div className="space-y-4 rounded-xl border bg-muted/30 p-4">
+                                <div className="space-y-4 rounded-lg border border-border bg-muted p-4">
                                     <div className="space-y-2">
                                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                             <span className="text-sm leading-none font-semibold">
@@ -1154,7 +1147,7 @@ export default function FinancialEntryForm({
                                         ) : null}
                                     </div>
 
-                                    <Separator className="opacity-30" />
+                                    <Separator />
 
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-muted-foreground">
@@ -1169,8 +1162,8 @@ export default function FinancialEntryForm({
                                                     ? 'text-destructive'
                                                     : data.direction ===
                                                         'payable'
-                                                      ? 'text-rose-600'
-                                                      : 'text-emerald-800',
+                                                      ? 'text-destructive'
+                                                      : 'text-success',
                                             )}
                                         >
                                             {formatMoneyFromCents(
@@ -1277,7 +1270,7 @@ export default function FinancialEntryForm({
                     </CardContent>
 
                     {stepComplete ? (
-                        <div className="sticky bottom-0 mt-auto border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/10">
+                        <div className="sticky bottom-0 mt-auto border-t bg-card/95">
                             <div className="w-full px-5 pt-5 pb-3">
                                 <div className="flex items-center justify-end gap-3">
                                     <div className="hidden flex-col sm:flex">
@@ -1313,7 +1306,13 @@ export default function FinancialEntryForm({
                                         asChild
                                         disabled={processing}
                                     >
-                                        <Link href={index.url()}>Cancelar</Link>
+                                        <Link href={index.url()}>
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Cancelar
+                                        </Link>
                                     </Button>
 
                                     <Button type="submit" disabled={!canSubmit}>

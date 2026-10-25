@@ -1,6 +1,6 @@
 import type { StatusPresenter } from '../status';
-import type { FinancialCategory } from './financial-category';
 import type { FinancialAccount } from './financial-account';
+import type { FinancialCategory } from './financial-category';
 import type { PaymentMethod } from './payment-method';
 
 export type FinancialDirection = 'receivable' | 'payable';

@@ -12,7 +12,6 @@ function Toaster({ ...props }: ToasterProps) {
             theme={appearance}
             className="toaster group"
             position="bottom-center"
-            richColors
             closeButton
             toastOptions={{
                 classNames: {
@@ -22,12 +21,11 @@ function Toaster({ ...props }: ToasterProps) {
                     actionButton: 'rounded-lg font-medium',
                     cancelButton: 'rounded-lg',
                     success:
-                        'border-emerald-500/30 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/90 dark:text-emerald-50',
-                    error:
-                        'border-red-500/30 bg-red-50 text-red-950 dark:bg-red-950/90 dark:text-red-50',
+                        'border-success-soft-foreground/20 bg-success-soft text-success-soft-foreground',
+                    error: 'border-destructive-soft-foreground/20 bg-destructive-soft text-destructive-soft-foreground',
                     warning:
-                        'border-amber-500/40 bg-amber-50 text-amber-950 dark:bg-amber-950/90 dark:text-amber-50',
-                    info: 'border-sky-500/30 bg-sky-50 text-sky-950 dark:bg-sky-950/90 dark:text-sky-50',
+                        'border-warning-soft-foreground/20 bg-warning-soft text-warning-soft-foreground',
+                    info: 'border-info-soft-foreground/20 bg-info-soft text-info-soft-foreground',
                     loading:
                         'border-muted-foreground/20 bg-popover text-popover-foreground',
                     default:

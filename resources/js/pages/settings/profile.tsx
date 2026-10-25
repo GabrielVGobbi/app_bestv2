@@ -1,8 +1,9 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Save } from 'lucide-react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import InputError, { errorProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,15 +21,13 @@ export default function Profile({
 
     return (
         <>
-            <Head title="Profile settings" />
-
-            <h1 className="sr-only">Profile settings</h1>
+            <Head title="Perfil" />
 
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Profile information"
-                    description="Update your name and email address"
+                    title="Informações do perfil"
+                    description="Atualize seu nome e e-mail"
                 />
 
                 <Form
@@ -41,39 +40,41 @@ export default function Profile({
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name">Nome</Label>
 
                                 <Input
                                     id="name"
-                                    className="mt-1 block w-full"
+                                    {...errorProps('name', errors.name)}
                                     defaultValue={auth.user.name}
                                     name="name"
                                     required
                                     autoComplete="name"
-                                    placeholder="Full name"
+                                    placeholder="Nome completo"
                                 />
 
                                 <InputError
+                                    field="name"
                                     className="mt-2"
                                     message={errors.name}
                                 />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">E-mail</Label>
 
                                 <Input
                                     id="email"
+                                    {...errorProps('email', errors.email)}
                                     type="email"
-                                    className="mt-1 block w-full"
                                     defaultValue={auth.user.email}
                                     name="email"
                                     required
                                     autoComplete="username"
-                                    placeholder="Email address"
+                                    placeholder="nome@empresa.com.br"
                                 />
 
                                 <InputError
+                                    field="email"
                                     className="mt-2"
                                     message={errors.email}
                                 />
@@ -83,22 +84,21 @@ export default function Profile({
                                 auth.user.email_verified_at === null && (
                                     <div>
                                         <p className="-mt-4 text-sm text-muted-foreground">
-                                            Your email address is unverified.{' '}
+                                            Seu e-mail ainda não foi verificado.{' '}
                                             <Link
                                                 href={send()}
                                                 as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                                className="text-foreground underline decoration-muted-foreground underline-offset-4 transition-colors hover:decoration-foreground"
                                             >
-                                                Click here to resend the
-                                                verification email.
+                                                Reenviar e-mail de verificação.
                                             </Link>
                                         </p>
 
                                         {status ===
                                             'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
-                                                A new verification link has been
-                                                sent to your email address.
+                                            <div className="mt-2 text-sm font-medium text-success-soft-foreground">
+                                                Um novo link de verificação foi
+                                                enviado para o seu e-mail.
                                             </div>
                                         )}
                                     </div>
@@ -109,7 +109,11 @@ export default function Profile({
                                     disabled={processing}
                                     data-test="update-profile-button"
                                 >
-                                    Save
+                                    <Save
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    Salvar
                                 </Button>
                             </div>
                         </>
@@ -125,7 +129,7 @@ export default function Profile({
 Profile.layout = {
     breadcrumbs: [
         {
-            title: 'Profile settings',
+            title: 'Perfil',
             href: edit(),
         },
     ],

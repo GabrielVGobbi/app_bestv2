@@ -4,7 +4,6 @@ import type {
     DataTableDateColumn,
     DataTableExportConfig,
     DataTableFilterConfig,
-    DataTableQuickFilter,
 } from '@/components/data-table';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
@@ -22,13 +21,16 @@ export const columns: ColumnDef<FinancialEntry>[] = [
     {
         id: 'description',
         accessorKey: 'description',
-        header: 'Lancamento',
-        meta: { label: 'Lancamento' },
+        header: 'Lançamento',
+        meta: { label: 'Lançamento' },
         cell: ({ row }) => (
             <div className="min-w-0">
-                <p className="truncate font-medium">{row.original.description}</p>
+                <p className="truncate font-medium">
+                    {row.original.description}
+                </p>
                 <p className="truncate text-xs text-muted-foreground">
-                    {row.original.origin_label} - {row.original.origin_display_name}
+                    {row.original.origin_label} -{' '}
+                    {row.original.origin_display_name}
                 </p>
             </div>
         ),
@@ -36,10 +38,16 @@ export const columns: ColumnDef<FinancialEntry>[] = [
     {
         id: 'direction',
         accessorKey: 'direction',
-        header: 'Direcao',
-        meta: { label: 'Direcao' },
+        header: 'Direção',
+        meta: { label: 'Direção' },
         cell: ({ row }) => (
-            <Badge variant={row.original.direction === 'receivable' ? 'default' : 'secondary'}>
+            <Badge
+                variant={
+                    row.original.direction === 'receivable'
+                        ? 'default'
+                        : 'secondary'
+                }
+            >
                 {row.original.direction_label}
             </Badge>
         ),
@@ -56,41 +64,55 @@ export const columns: ColumnDef<FinancialEntry>[] = [
         accessorKey: 'due_date',
         header: 'Vencimento',
         meta: { label: 'Vencimento' },
-        cell: ({ row }) => row.original.due_date ?? '-',
+        cell: ({ row }) => (
+            <span className="tabular-nums">{row.original.due_date ?? '-'}</span>
+        ),
     },
     {
         id: 'status',
         accessorKey: 'status',
         header: 'Status',
         meta: { label: 'Status' },
-        cell: ({ row }) => <StatusBadge presenter={row.original.status_presenter} />,
+        cell: ({ row }) => (
+            <StatusBadge presenter={row.original.status_presenter} />
+        ),
     },
     {
         id: 'net_amount',
         accessorKey: 'net_amount',
-        header: 'Liquido',
-        meta: { label: 'Liquido' },
-        cell: ({ row }) => money(row.original.net_amount, row.original.currency),
+        header: 'Líquido',
+        meta: { label: 'Líquido' },
+        cell: ({ row }) => (
+            <span className="tabular-nums">
+                {money(row.original.net_amount, row.original.currency)}
+            </span>
+        ),
     },
     {
         id: 'balance_amount',
         accessorKey: 'balance_amount',
         header: 'Saldo',
         meta: { label: 'Saldo' },
-        cell: ({ row }) => money(row.original.balance_amount, row.original.currency),
+        cell: ({ row }) => (
+            <span className="tabular-nums">
+                {money(row.original.balance_amount, row.original.currency)}
+            </span>
+        ),
     },
 ];
 
+// Categoria e contraparte eram quick filters assíncronos; a DataTable atual não
+// renderiza `async-select`, então ficam no painel de filtros como campo de id.
 export const filters: DataTableFilterConfig[] = [
     {
         id: 'description',
-        label: 'Descricao',
+        label: 'Descrição',
         type: 'text',
         operator: 'contains',
     },
     {
         id: 'direction',
-        label: 'Direcao',
+        label: 'Direção',
         type: 'select',
         options: [
             { label: 'A receber', value: 'receivable' },
@@ -111,37 +133,26 @@ export const filters: DataTableFilterConfig[] = [
             { label: 'Renegociado', value: 'renegotiated' },
         ],
     },
-];
-
-export const quickFilters: DataTableQuickFilter[] = [
     {
         id: 'category_id',
         label: 'Categoria',
         type: 'async-select',
+        operator: 'eq',
         placeholder: 'Categoria',
-        asyncSelect: {
-            endpoint: apiRoutes.financialCategories.index,
-            searchPlaceholder: 'Buscar categoria...',
-            emptyMessage: 'Nenhuma categoria encontrada.',
-        },
     },
     {
         id: 'counterparty',
         label: 'Contraparte',
         type: 'async-select',
+        operator: 'eq',
         placeholder: 'Contraparte',
-        asyncSelect: {
-            endpoint: apiRoutes.financialCounterparties.options,
-            searchPlaceholder: 'Buscar contraparte...',
-            emptyMessage: 'Nenhuma contraparte encontrada.',
-        },
     },
 ];
 
 export const dateFilterColumns: DataTableDateColumn[] = [
     { value: 'due_date', label: 'Vencimento' },
-    { value: 'issue_date', label: 'Emissao' },
-    { value: 'competence_date', label: 'Competencia' },
+    { value: 'issue_date', label: 'Emissão' },
+    { value: 'competence_date', label: 'Competência' },
     { value: 'created_at', label: 'Criado em' },
 ];
 

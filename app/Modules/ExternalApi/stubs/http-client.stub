@@ -1,0 +1,19 @@
+<?php
+
+namespace {{ namespace }}\Http;
+
+use App\Modules\ExternalApi\Core\Abstracts\AbstractHttpClient;
+
+class {{ class }}HttpClient extends AbstractHttpClient
+{
+    protected function getHeaders(): array
+    {
+        return [
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$this->configuration->getApiKey(),
+            'User-Agent' => 'Laravel-ExternalApi/1.0',
+        ];
+    }
+}
+

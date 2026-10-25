@@ -8,24 +8,24 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Backup — Web Routes (admin + downloads diretos do browser)
+| Backup: Web Routes (admin + downloads diretos do browser)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['web', 'auth', 'verified', 'role:developer'])->name('admin.dev.backups.')->group(function (): void {
+Route::middleware(['web', 'auth', 'verified'])->name('admin.dev.backups.')->group(function (): void {
 
     Route::prefix('admin/dev/backups')->group(function (): void {
         Route::get('/', [BackupController::class, 'index'])->name('index');
         Route::get('/{backupHistory}/download', [BackupController::class, 'downloadBackup'])->name('download');
     });
 
-    // Download direto — browser navega aqui, não usa fetch/axios
+    // Download direto: browser navega aqui, não usa fetch/axios
     Route::get('api/v1/database-exports/{databaseExport}/download', [DatabaseExportApiController::class, 'download'])
         ->name('database-exports.download');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Backup — API Routes (JSON, chamadas via fetch/axios com Sanctum)
+| Backup: API Routes (JSON, chamadas via fetch/axios com Sanctum)
 |--------------------------------------------------------------------------
 */
 Route::prefix('api/v1')->as('backup.')->middleware(['api', 'auth:sanctum'])->group(function (): void {

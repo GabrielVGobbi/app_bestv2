@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Uploads\Services;
 
 use App\Models\User;
+use App\Modules\Timeline\Models\TimelineComment;
 use App\Modules\Uploads\Contracts\HasUploadTags;
 use App\Modules\Uploads\Models\Uploaded;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -14,6 +15,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator as PaginatorImpl;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use LogicException;
+use RuntimeException;
+use Throwable;
 
 class UploadService
 {
@@ -42,7 +46,7 @@ class UploadService
 
             try {
                 return $class::query()->where('uuid', $id)->first();
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 return null;
             }
         }
@@ -114,13 +118,14 @@ class UploadService
         int $page = 1,
         ?string $tag = null,
         ?string $collection = null,
+        ?string $search = null,
     ): LengthAwarePaginator {
         $parentable = $this->resolveModel($alias, $id);
         if ($parentable === null) {
             return new PaginatorImpl([], 0, $perPage, $page);
         }
 
-        return $this->listForParent($parentable, $perPage, $page, $tag, $collection);
+        return $this->listForParent($parentable, $perPage, $page, $tag, $collection, $search);
     }
 
     public function listForParent(
@@ -129,34 +134,76 @@ class UploadService
         int $page = 1,
         ?string $tag = null,
         ?string $collection = null,
+        ?string $search = null,
     ): LengthAwarePaginator {
+        return $this->queryForParent($parentable, $tag, $collection, $search)
+            ->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    /** @return Builder<Uploaded> */
+    public function queryForParent(Model $parentable, ?string $tag = null, ?string $collection = null, ?string $search = null): Builder
+    {
         $query = Uploaded::query()
-            ->with('uploader:id,name')
+            ->with(['uploader:id,name', 'parentable'])
             ->where('parentable_type', $parentable::class)
             ->where('parentable_id', $parentable->getKey());
         $this->applyFilters($query, $tag, $collection);
 
-        return $query->latest()->paginate($perPage, ['*'], 'page', $page);
+        if ($parentable instanceof TimelineComment) {
+            $query->with('parentable.commentable');
+        }
+
+        if ($search !== null && $search !== '') {
+            $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%';
+            $grammar = $query->getQuery()->getGrammar();
+            $query->where(function (Builder $searchQuery) use ($pattern, $grammar): void {
+                foreach (['name', 'original_name', 'file_name', 'tag', 'extension'] as $field) {
+                    $searchQuery->orWhereRaw($grammar->wrap($field)." LIKE ? ESCAPE '!'", [$pattern]);
+                }
+            });
+        }
+
+        return $query->latest()->orderByDesc('id');
     }
 
     public function canViewParent(User $user, Model $parentable): bool
     {
-        return $user->can('view', $parentable);
+        return $this->parentDecision($user, $parentable, 'view');
     }
 
     public function canCreateForParent(User $user, Model $parentable): bool
     {
-        if ($user->can('upload', $parentable)) {
-            return true;
+        return $this->parentDecision($user, $parentable, 'update');
+    }
+
+    /**
+     * Reuse parent decisions only while serializing a read-only listing.
+     * Mutations and subsequent requests always evaluate the policy again.
+     */
+    private function parentDecision(User $user, Model $parentable, string $ability): bool
+    {
+        $request = request();
+        if (! $parentable->exists || ! $request->isMethod('GET') || ! $request->routeIs('api.uploads.index', 'api.timeline.show')) {
+            return $user->can($ability, $parentable);
         }
 
-        return $user->can('update', $parentable);
+        $attribute = self::class.'.parent_authorization';
+        /** @var array<string, bool> $decisions */
+        $decisions = $request->attributes->get($attribute, []);
+        $token = $user->currentAccessToken();
+        $key = implode(':', [spl_object_id($user), $token === null ? 'session' : spl_object_id($token), $parentable::class, (string) $parentable->getKey(), $ability]);
+        if (! array_key_exists($key, $decisions)) {
+            $decisions[$key] = $user->can($ability, $parentable);
+            $request->attributes->set($attribute, $decisions);
+        }
+
+        return $decisions[$key];
     }
 
     /**
      * Store a file and create an Uploaded record. If the same file (by hash)
-     * already exists for the same parent + tag, returns the existing record
-     * instead of duplicating the upload.
+     * already exists for the same parent, collection and tag, return the
+     * existing record without writing another file or replaying metadata.
      */
     public function upload(
         Model $parentable,
@@ -167,54 +214,86 @@ class UploadService
         bool $isCover = false,
         ?string $disk = null,
     ): Uploaded {
+        $connection = (new Uploaded)->getConnection();
+
+        if ($parentable->getConnection() !== $connection) {
+            throw new LogicException('Upload and parent must share the same database connection and session.');
+        }
+
+        $connectionName = $connection->getName();
         $disk = $disk ?? $this->diskForUpload($parentable, $tag, $collection);
         $hash = hash_file('sha256', $file->getRealPath()) ?: null;
-        if ($hash !== null) {
-            $existing = Uploaded::query()
-                ->where('parentable_type', $parentable::class)
-                ->where('parentable_id', $parentable->getKey())
-                ->where('file_hash', $hash)
-                ->when($tag !== null, fn ($q) => $q->where('tag', $tag))
-                ->first();
-            if ($existing instanceof Uploaded) {
-                return $existing;
-            }
-        }
-        $originalName = $file->getClientOriginalName();
-        $extension = $file->getClientOriginalExtension();
-        $fileName = (string) Str::uuid().($extension ? ".{$extension}" : '');
-        $folder = sprintf(
-            'uploads/%s/%s/%s',
-            Str::snake(class_basename($parentable)),
-            $this->pathIdentifierFor($parentable),
-            date('Y/m'),
-        );
-        $path = "{$folder}/{$fileName}";
-        Storage::disk($disk)->putFileAs($folder, $file, $fileName);
-        if ($isCover) {
-            $this->clearCoverFor($parentable);
-        }
-        $uploaded = Uploaded::create([
-            'user_id' => auth()->id(),
-            'uploader_id' => auth()->id(),
-            'parentable_type' => $parentable::class,
-            'parentable_id' => $parentable->getKey(),
-            'name' => $name ?: pathinfo($originalName, PATHINFO_FILENAME),
-            'original_name' => $originalName,
-            'file_name' => $fileName,
-            'extension' => $extension ?: null,
-            'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
-            'path' => $path,
-            'disk' => $disk,
-            'file_hash' => $hash,
-            'size' => $file->getSize() ?: null,
-            'tag' => $tag,
-            'collection' => $collection,
-            'is_cover' => $isCover,
-            'source' => 'upload',
-        ]);
 
-        return $uploaded;
+        return $connection->transaction(function () use ($parentable, $file, $name, $tag, $collection, $isCover, $disk, $hash, $connectionName): Uploaded {
+            $parentable->newQuery()->whereKey($parentable->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($hash !== null) {
+                $existing = Uploaded::on($connectionName)
+                    ->where('parentable_type', $parentable::class)
+                    ->where('parentable_id', $parentable->getKey())
+                    ->where('collection', $collection)
+                    ->where('tag', $tag)
+                    ->where('file_hash', $hash)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing instanceof Uploaded) {
+                    return $existing;
+                }
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+            $fileName = (string) Str::uuid().($extension ? ".{$extension}" : '');
+            $folder = sprintf(
+                'uploads/%s/%s/%s',
+                Str::snake(class_basename($parentable)),
+                $this->pathIdentifierFor($parentable),
+                date('Y/m'),
+            );
+            $path = "{$folder}/{$fileName}";
+            $filesystem = Storage::disk($disk);
+
+            if ($filesystem->putFileAs($folder, $file, $fileName) === false) {
+                $filesystem->delete($path);
+
+                throw new RuntimeException('Unable to store the upload file.');
+            }
+
+            try {
+                if ($isCover) {
+                    $this->clearCoverFor($parentable, $connectionName);
+                }
+
+                return Uploaded::on($connectionName)->create([
+                    'user_id' => auth()->id(),
+                    'uploader_id' => auth()->id(),
+                    'parentable_type' => $parentable::class,
+                    'parentable_id' => $parentable->getKey(),
+                    'name' => $name ?: pathinfo($originalName, PATHINFO_FILENAME),
+                    'original_name' => $originalName,
+                    'file_name' => $fileName,
+                    'extension' => $extension ?: null,
+                    'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                    'path' => $path,
+                    'disk' => $disk,
+                    'file_hash' => $hash,
+                    'size' => $file->getSize() ?: null,
+                    'tag' => $tag,
+                    'collection' => $collection,
+                    'is_cover' => $isCover,
+                    'source' => 'upload',
+                ]);
+            } catch (Throwable $exception) {
+                // This catch runs before transaction() attempts COMMIT. A
+                // commit failure must never delete a potentially referenced file.
+                if (! $filesystem->delete($path)) {
+                    throw new RuntimeException('Upload creation failed and its new file could not be removed.', 0, $exception);
+                }
+
+                throw $exception;
+            }
+        }, 1);
     }
 
     /**
@@ -278,9 +357,9 @@ class UploadService
         }
     }
 
-    protected function clearCoverFor(Model $parentable): void
+    protected function clearCoverFor(Model $parentable, ?string $connectionName = null): void
     {
-        Uploaded::query()
+        Uploaded::on($connectionName)
             ->where('parentable_type', $parentable::class)
             ->where('parentable_id', $parentable->getKey())
             ->where('is_cover', true)

@@ -62,14 +62,10 @@ export default function TopFormFields({ top, errors }: Props) {
                                 type="number"
                                 min={1}
                                 step={1}
-                                defaultValue={
-                                    top?.default_slots_quantity ?? 1
-                                }
+                                defaultValue={top?.default_slots_quantity ?? 1}
                                 required
                                 inputMode="numeric"
-                                aria-invalid={
-                                    !!errors.default_slots_quantity
-                                }
+                                aria-invalid={!!errors.default_slots_quantity}
                             />
                         </FormField>
 
@@ -109,7 +105,7 @@ export default function TopFormFields({ top, errors }: Props) {
                         />
                     </FormField>
 
-                    <div className="flex min-h-20 items-center justify-between gap-4 rounded-md border px-4 py-3">
+                    <div className="flex min-h-20 items-center justify-between gap-4 rounded-lg border border-border bg-muted px-4 py-3">
                         <div className="space-y-1">
                             <Label htmlFor="field-is-active">Ativo</Label>
                             <p className="text-xs text-muted-foreground">

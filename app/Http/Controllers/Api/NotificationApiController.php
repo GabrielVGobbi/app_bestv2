@@ -11,7 +11,6 @@ use App\Modules\Notifications\Actions\DeleteNotificationAction;
 use App\Modules\Notifications\Actions\MarkAllAsReadAction;
 use App\Modules\Notifications\Actions\MarkAsReadAction;
 use App\Modules\Notifications\Models\AppNotification;
-use App\Modules\Notifications\Services\NotificationActionResolver;
 use App\Modules\Notifications\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +20,6 @@ class NotificationApiController extends Controller
 {
     public function __construct(
         private readonly NotificationService $service,
-        private readonly NotificationActionResolver $resolver,
         private readonly MarkAsReadAction $markAsReadAction,
         private readonly MarkAllAsReadAction $markAllAsReadAction,
         private readonly DeleteNotificationAction $deleteAction,
@@ -82,21 +80,13 @@ class NotificationApiController extends Controller
 
     public function executeAction(ExecuteNotificationActionRequest $request, AppNotification $notification): JsonResponse
     {
-        abort_unless($notification->recipient_id === $request->user()->id, 403);
-        abort_unless($notification->hasActions(), 422, 'Esta notificação não possui ações.');
-        abort_unless($notification->isActionPending(), 409, 'A ação desta notificação já foi executada ou está em estado final.');
-
         $actionType = $request->validated('action_type');
-
-        abort_unless($notification->hasActionOfType($actionType), 422, "Ação [{$actionType}] não encontrada nesta notificação.");
-        abort_unless($this->resolver->supports($actionType), 422, "Tipo de ação [{$actionType}] não é executável pelo sistema.");
-
-        $executable = $this->resolver->resolve($actionType);
-        $result = $executable->execute($notification, $request->user(), $request->validated('payload', []));
-
-        $notification->update([
-            'action_status' => $actionType === 'reject_request' ? 'rejected' : 'executed',
-        ]);
+        $result = $this->service->executeAction(
+            $request->user(),
+            $notification,
+            $actionType,
+            $request->validated('payload') ?? [],
+        );
 
         return response()->json([
             'action_type' => $actionType,

@@ -1,12 +1,21 @@
 import { X } from 'lucide-react';
 
-import { AsyncSelect } from '@/components/async-select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-import type { DataTableFilterPrimitive, DataTableFilterValue, DataTableQuickFilter } from '../core/types';
+import { filterValueLabel } from '../core/filter-presentation';
+import { isActiveFilterValue } from '../core/filter-utils';
+import type {
+    DataTableFilterPrimitive,
+    DataTableFilterValue,
+    DataTableQuickFilter,
+} from '../core/types';
 
 interface QuickFilterSelectProps {
     filter: DataTableQuickFilter;
@@ -14,136 +23,138 @@ interface QuickFilterSelectProps {
     onChange: (value: DataTableFilterValue) => void;
 }
 
-function selectedLabels(filter: DataTableQuickFilter, value: DataTableFilterValue): string {
-    const options = filter.options ?? [];
-
-    if (Array.isArray(value)) {
-        if (value.length === 0) {
-            return filter.placeholder ?? filter.label;
-        }
-
-        if (value.length === 1) {
-            return options.find((option) => String(option.value) === String(value[0]))?.label ?? String(value[0]);
-        }
-
-        return `${value.length} selecionados`;
-    }
-
-    if (value === null || value === undefined || value === '') {
-        return filter.placeholder ?? filter.label;
-    }
-
-    return options.find((option) => String(option.value) === String(value))?.label ?? String(value);
-}
-
 function optionColor(color?: string) {
     if (!color) {
         return null;
     }
 
-    return <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} />;
+    return (
+        <span
+            className="size-2.5 rounded-full"
+            style={{ backgroundColor: color }}
+        />
+    );
 }
 
-export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelectProps) {
+export function QuickFilterSelect({
+    filter,
+    value,
+    onChange,
+}: QuickFilterSelectProps) {
     const Icon = filter.icon;
-    const selectedValues = Array.isArray(value) ? value.map(String) : value === undefined || value === null ? [] : [String(value)];
-    const hasValue = selectedValues.length > 0;
+    const hasValue = isActiveFilterValue(value);
+    const selectedValues = Array.isArray(value)
+        ? value.map(String)
+        : hasValue
+          ? [String(value)]
+          : [];
+    const summary = filterValueLabel(filter, value);
+    const label = hasValue ? `${filter.label}: ${summary}` : filter.label;
 
-    if (filter.type === 'async-select' && filter.asyncSelect) {
-        const asyncValue =
-            value === undefined || value === null || Array.isArray(value) || typeof value === 'object'
-                ? null
-                : String(value);
-
-        return (
-            <div className="min-w-52 md:w-56">
-                <AsyncSelect
-                    value={asyncValue}
-                    endpoint={filter.asyncSelect.endpoint}
-                    params={filter.asyncSelect.params}
-                    placeholder={filter.placeholder ?? filter.label}
-                    searchPlaceholder={filter.asyncSelect.searchPlaceholder}
-                    emptyMessage={filter.asyncSelect.emptyMessage}
-                    clearable={filter.clearable !== false}
-                    className={cn('min-h-9 py-1.5 text-sm', hasValue && 'border-primary/50 bg-primary/5')}
-                    onChange={(nextValue) => onChange(nextValue ?? undefined)}
-                />
-            </div>
-        );
-    }
-
-    function toggleMultiple(optionValue: DataTableFilterPrimitive, checked: boolean): void {
+    function toggleMultiple(
+        optionValue: DataTableFilterPrimitive,
+        checked: boolean,
+    ): void {
         const stringValue = String(optionValue);
+        const currentValues = Array.isArray(value) ? value : [];
         const nextValues = checked
-            ? [...selectedValues, stringValue]
-            : selectedValues.filter((selectedValue) => selectedValue !== stringValue);
+            ? [
+                  ...currentValues.filter(
+                      (selectedValue) => String(selectedValue) !== stringValue,
+                  ),
+                  optionValue,
+              ]
+            : currentValues.filter(
+                  (selectedValue) => String(selectedValue) !== stringValue,
+              );
 
         onChange(nextValues.length > 0 ? nextValues : undefined);
     }
 
     return (
         <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn('justify-start gap-2', hasValue && 'border-primary/50 bg-primary/5')}
-                >
-                    {Icon && <Icon className="size-4" />}
-                    <span className="max-w-36 truncate">{selectedLabels(filter, value)}</span>
-                    {hasValue && filter.clearable !== false && (
-                        <span
-                            role="button"
-                            tabIndex={0}
-                            className="hover:bg-background/80 rounded-full p-0.5"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                onChange(undefined);
-                            }}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter' || event.key === ' ') {
-                                    event.preventDefault();
-                                    onChange(undefined);
-                                }
-                            }}
-                        >
-                            <X className="size-3" />
+            <div
+                className={cn(
+                    'flex min-w-0 items-center rounded-md border bg-background shadow-sm',
+                    hasValue
+                        ? 'border-primary/50 bg-primary/5'
+                        : 'border-input',
+                )}
+            >
+                <PopoverTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={label}
+                        title={label}
+                        className="min-w-0 justify-start gap-2 border-0 shadow-none"
+                    >
+                        {Icon && <Icon className="size-4" />}
+                        <span className="max-w-48 min-w-0 truncate text-left">
+                            <span className="text-muted-foreground">
+                                {filter.label}
+                                {hasValue ? ':' : ''}
+                            </span>
+                            {hasValue && <> {summary}</>}
                         </span>
-                    )}
-                </Button>
-            </PopoverTrigger>
+                    </Button>
+                </PopoverTrigger>
+                {hasValue && filter.clearable !== false && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="mr-1 size-7 shrink-0"
+                        aria-label={`Limpar ${filter.label}`}
+                        onClick={() => onChange(undefined)}
+                    >
+                        <X className="size-3" />
+                    </Button>
+                )}
+            </div>
 
             <PopoverContent align="start" className="w-56 p-1">
-                <div className="px-2 py-1.5 text-sm font-medium border-b border-border mb-3">{filter.label}</div>
+                <div className="mb-3 border-b border-border px-2 py-1.5 text-sm font-medium">
+                    {filter.label}
+                </div>
                 <div className="max-h-64 overflow-auto">
-                    {(filter.options ?? []).map((option) => {
-                        const checked = selectedValues.includes(String(option.value));
+                    <button
+                        type="button"
+                        aria-pressed={!hasValue}
+                        className={cn(
+                            'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+                            !hasValue && 'bg-accent',
+                        )}
+                        onClick={() => onChange(undefined)}
+                    >
+                        <span className="flex-1">Todos</span>
+                    </button>
+                    {filter.options.map((option) => {
+                        const checked = selectedValues.includes(
+                            String(option.value),
+                        );
 
                         if (filter.multiple) {
                             return (
-                                <div
+                                <label
                                     key={String(option.value)}
-                                    role="menuitemcheckbox"
-                                    aria-checked={checked}
-                                    tabIndex={0}
-                                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus-visible:bg-accent"
-                                    onClick={() => toggleMultiple(option.value, !checked)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Enter' || event.key === ' ') {
-                                            event.preventDefault();
-                                            toggleMultiple(option.value, !checked);
-                                        }
-                                    }}
+                                    className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                                 >
                                     <Checkbox
                                         checked={checked}
-                                        onClick={(event) => event.stopPropagation()}
-                                        onCheckedChange={(nextChecked) => toggleMultiple(option.value, Boolean(nextChecked))}
+                                        onCheckedChange={(nextChecked) =>
+                                            toggleMultiple(
+                                                option.value,
+                                                Boolean(nextChecked),
+                                            )
+                                        }
                                     />
                                     {optionColor(option.color)}
-                                    <span className="flex-1">{option.label}</span>
-                                </div>
+                                    <span className="flex-1">
+                                        {option.label}
+                                    </span>
+                                </label>
                             );
                         }
 
@@ -151,8 +162,9 @@ export function QuickFilterSelect({ filter, value, onChange }: QuickFilterSelect
                             <button
                                 key={String(option.value)}
                                 type="button"
+                                aria-pressed={checked}
                                 className={cn(
-                                    'hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm',
+                                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
                                     checked && 'bg-accent',
                                 )}
                                 onClick={() => onChange(option.value)}

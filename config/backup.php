@@ -1,5 +1,6 @@
 <?php
 
+use App\Supports\CheckedBackupCleanupStrategy;
 use Spatie\Backup\Notifications\Notifiable;
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
@@ -7,7 +8,6 @@ use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
-use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 
@@ -38,10 +38,20 @@ return [
                 'exclude' => [
                     base_path('.env'),
                     base_path('.env.*'),
+                    base_path('.config'),
+                    base_path('.config.*'),
+                    base_path('auth.json'),
+                    base_path('.npmrc'),
+                    base_path('.aws'),
+                    base_path('.ssh'),
                     base_path('.git'),
                     base_path('vendor'),
                     base_path('node_modules'),
+                    base_path('bootstrap/cache'),
+                    database_path('*.sqlite*'),
                     storage_path('framework'),
+                    storage_path('logs'),
+                    storage_path('debugbar'),
                 ],
 
                 /*
@@ -59,7 +69,7 @@ return [
                  * Set to `null` to include complete absolute path
                  * Example: base_path()
                  */
-                'relative_path' => null,
+                'relative_path' => base_path(),
             ],
 
             /*
@@ -329,7 +339,7 @@ return [
          * No matter how you configure it the default strategy will never
          * delete the newest backup.
          */
-        'strategy' => DefaultStrategy::class,
+        'strategy' => CheckedBackupCleanupStrategy::class,
 
         'default_strategy' => [
             /*

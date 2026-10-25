@@ -8,6 +8,9 @@ import {
     Search,
     Settings,
     Zap,
+    PanelTop,
+    X,
+    Save,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -18,7 +21,7 @@ import {
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
 import { AsyncSelect } from '@/components/async-select';
 import type { AsyncSelectOption } from '@/components/async-select';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,11 +44,10 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
 
 const STATUS_OPTIONS: AsyncSelectOption[] = [
-    { value: 'pending', label: 'Pendente', description: 'Aguardando acao' },
+    { value: 'pending', label: 'Pendente', description: 'Aguardando ação' },
     { value: 'confirmed', label: 'Confirmado', description: 'Validado' },
     { value: 'in_transit', label: 'Em transito', description: 'Em movimento' },
     { value: 'delivered', label: 'Entregue', description: 'Finalizado' },
@@ -55,7 +57,7 @@ const STATUS_OPTIONS: AsyncSelectOption[] = [
 const PRIORITY_OPTIONS: AsyncSelectOption[] = [
     { value: 'low', label: 'Baixa', description: 'Sem urgencia' },
     { value: 'medium', label: 'Media', description: 'Fluxo normal' },
-    { value: 'high', label: 'Alta', description: 'Precisa atencao' },
+    { value: 'high', label: 'Alta', description: 'Precisa atenção' },
     { value: 'urgent', label: 'Urgente', description: 'Resolver agora' },
 ];
 
@@ -68,7 +70,7 @@ const [userId, setUserId] = useState<string | null>(null)
     endpoint={asyncSelectUsers.url()}
     value={userId}
     onChange={setUserId}
-    placeholder="Selecione um usuario"
+    placeholder="Selecione um usuário"
     clearable
 />`;
 
@@ -79,7 +81,7 @@ const multipleCode = `const [userIds, setUserIds] = useState<string[]>([])
     endpoint={asyncSelectUsers.url()}
     value={userIds}
     onChange={setUserIds}
-    placeholder="Selecione usuarios"
+    placeholder="Selecione usuários"
     clearable
 />`;
 
@@ -118,7 +120,7 @@ const [assigneeId, setAssigneeId] = useState<string | null>(null)
             endpoint={asyncSelectUsers.url()}
             value={assigneeId}
             onChange={setAssigneeId}
-            placeholder="Selecione um Responsável"
+            placeholder="Selecione um responsavel"
             clearable
         />
 
@@ -191,7 +193,7 @@ public function asyncSelectUsers(Request $request): JsonResponse
 
 function CodeBlock({ code }: { code: string }) {
     return (
-        <pre className="overflow-x-auto rounded-md border bg-muted/50 p-4 text-xs leading-relaxed">
+        <pre className="overflow-x-auto rounded-lg border bg-muted/50 p-4 text-xs leading-relaxed">
             <code>{code}</code>
         </pre>
     );
@@ -207,7 +209,7 @@ function FeatureCard({
     description: string;
 }) {
     return (
-        <Card className="rounded-md">
+        <Card className="rounded-lg">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                     <Icon className="size-4" />
@@ -236,7 +238,7 @@ function PropRow({
                 <code className="text-sm font-semibold text-primary">
                     {name}
                 </code>
-                {required && <Badge variant="outline">obrigatorio</Badge>}
+                {required && <Badge variant="outline">obrigatório</Badge>}
             </div>
             <code className="w-fit rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                 {type}
@@ -281,18 +283,17 @@ export default function AsyncSelectPage() {
         <>
             <Head title="Async select" />
 
+            <Header
+                title="Async select"
+                subtitle="Select reutilizável com busca remota, busca local, seleção única e múltipla."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    resources/js/components/async-select
+                </Badge>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Async select"
-                            description="Select reutilizavel com busca remota, busca local, selecao unica e multipla."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            resources/js/components/async-select
-                        </Badge>
-                    </div>
-
                     <div className="grid gap-4 md:grid-cols-3">
                         <FeatureCard
                             icon={Database}
@@ -306,12 +307,12 @@ export default function AsyncSelectPage() {
                         />
                         <FeatureCard
                             icon={ListFilter}
-                            title="Multiplo"
+                            title="Múltiplo"
                             description="Retorna string[] e exibe selecoes como badges."
                         />
                     </div>
 
-                    <Card className="rounded-md">
+                    <Card className="rounded-lg">
                         <CardHeader>
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
@@ -321,7 +322,7 @@ export default function AsyncSelectPage() {
                                     </CardTitle>
                                     <CardDescription className="mt-1.5">
                                         Troque o modo e abra o select. No modo
-                                        async, veja as requisicoes para o
+                                        async, veja as requisições para o
                                         backend no Network.
                                     </CardDescription>
                                 </div>
@@ -334,7 +335,7 @@ export default function AsyncSelectPage() {
                                         size="sm"
                                         onClick={() => setMultiple(!multiple)}
                                     >
-                                        Multiplo: {multiple ? 'sim' : 'nao'}
+                                        Múltiplo: {multiple ? 'sim' : 'não'}
                                     </Button>
                                     <Button
                                         type="button"
@@ -344,7 +345,7 @@ export default function AsyncSelectPage() {
                                         size="sm"
                                         onClick={() => setClearable(!clearable)}
                                     >
-                                        Clearable: {clearable ? 'sim' : 'nao'}
+                                        Clearable: {clearable ? 'sim' : 'não'}
                                     </Button>
                                     <Button
                                         type="button"
@@ -354,7 +355,7 @@ export default function AsyncSelectPage() {
                                         size="sm"
                                         onClick={() => setDisabled(!disabled)}
                                     >
-                                        Disabled: {disabled ? 'sim' : 'nao'}
+                                        Disabled: {disabled ? 'sim' : 'não'}
                                     </Button>
                                 </div>
                             </div>
@@ -370,14 +371,12 @@ export default function AsyncSelectPage() {
                                         setMode(value as 'async' | 'static')
                                     }
                                 >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
+                                    <SelectTrigger className="w-full" />
                                     <SelectContent>
-                                        <SelectItem value="async">
+                                        <SelectItem index={0} value="async">
                                             Async (backend)
                                         </SelectItem>
-                                        <SelectItem value="static">
+                                        <SelectItem index={1} value="static">
                                             Static (array)
                                         </SelectItem>
                                     </SelectContent>
@@ -391,7 +390,7 @@ export default function AsyncSelectPage() {
                                         endpoint={asyncSelectUsers.url()}
                                         value={multipleValue}
                                         onChange={setMultipleValue}
-                                        placeholder="Selecione usuarios"
+                                        placeholder="Selecione usuários"
                                         clearable={clearable}
                                         disabled={disabled}
                                     />
@@ -401,7 +400,7 @@ export default function AsyncSelectPage() {
                                         endpoint={asyncSelectUsers.url()}
                                         value={singleValue}
                                         onChange={setSingleValue}
-                                        placeholder="Selecione um usuario"
+                                        placeholder="Selecione um usuário"
                                         clearable={clearable}
                                         disabled={disabled}
                                     />
@@ -428,7 +427,7 @@ export default function AsyncSelectPage() {
                                     />
                                 )}
 
-                                <div className="rounded-md border bg-muted/30 p-3">
+                                <div className="rounded-lg border bg-muted/30 p-3">
                                     <div className="text-xs font-medium text-muted-foreground">
                                         Valor atual
                                     </div>
@@ -440,7 +439,7 @@ export default function AsyncSelectPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="rounded-md">
+                    <Card className="rounded-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Layers className="size-5" />
@@ -453,7 +452,7 @@ export default function AsyncSelectPage() {
                         </CardHeader>
                         <CardContent className="grid gap-5 xl:grid-cols-2">
                             <div className="space-y-4">
-                                <div className="rounded-md border bg-muted/20 p-4">
+                                <div className="rounded-lg border bg-muted/20 p-4">
                                     <div className="mb-3">
                                         <div className="font-medium">
                                             Seleção única
@@ -467,6 +466,10 @@ export default function AsyncSelectPage() {
                                         type="button"
                                         onClick={() => setSingleModalOpen(true)}
                                     >
+                                        <PanelTop
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
                                         Abrir modal single
                                     </Button>
                                 </div>
@@ -475,7 +478,7 @@ export default function AsyncSelectPage() {
                             </div>
 
                             <div className="space-y-4">
-                                <div className="rounded-md border bg-muted/20 p-4">
+                                <div className="rounded-lg border bg-muted/20 p-4">
                                     <div className="mb-3">
                                         <div className="font-medium">
                                             Seleção múltipla
@@ -492,6 +495,10 @@ export default function AsyncSelectPage() {
                                             setMultipleModalOpen(true)
                                         }
                                     >
+                                        <PanelTop
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
                                         Abrir modal multi
                                     </Button>
                                 </div>
@@ -533,6 +540,7 @@ export default function AsyncSelectPage() {
                                     variant="outline"
                                     onClick={() => setSingleModalOpen(false)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
@@ -540,6 +548,10 @@ export default function AsyncSelectPage() {
                                     disabled={!modalUserId}
                                     onClick={() => setSingleModalOpen(false)}
                                 >
+                                    <Save
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Salvar
                                 </Button>
                             </DialogFooter>
@@ -580,6 +592,7 @@ export default function AsyncSelectPage() {
                                     variant="outline"
                                     onClick={() => setMultipleModalOpen(false)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
@@ -587,6 +600,10 @@ export default function AsyncSelectPage() {
                                     disabled={modalUserIds.length === 0}
                                     onClick={() => setMultipleModalOpen(false)}
                                 >
+                                    <Save
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Salvar {modalUserIds.length || ''}
                                 </Button>
                             </DialogFooter>
@@ -594,7 +611,7 @@ export default function AsyncSelectPage() {
                     </Dialog>
 
                     <div className="grid gap-6 xl:grid-cols-2">
-                        <Card className="rounded-md">
+                        <Card className="rounded-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Search className="size-5" />
@@ -620,13 +637,13 @@ export default function AsyncSelectPage() {
 
                                 <div className="space-y-2">
                                     <span className="text-sm font-medium">
-                                        Usuario com renderOption
+                                        Usuário com renderOption
                                     </span>
                                     <AsyncSelect
                                         endpoint={asyncSelectUsers.url()}
                                         value={singleValue}
                                         onChange={setSingleValue}
-                                        placeholder="Selecione um usuario"
+                                        placeholder="Selecione um usuário"
                                         renderOption={(option) => (
                                             <div className="flex items-center justify-between gap-3">
                                                 <div className="min-w-0">
@@ -656,7 +673,7 @@ export default function AsyncSelectPage() {
                                         value={limitedUserIds}
                                         onChange={setLimitedUserIds}
                                         maxVisibleSelected={5}
-                                        placeholder="Selecione usuarios"
+                                        placeholder="Selecione usuários"
                                         clearable
                                     />
                                     <p className="text-xs text-muted-foreground">
@@ -668,14 +685,14 @@ export default function AsyncSelectPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-md">
+                        <Card className="rounded-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Code2 className="size-5" />
-                                    Codigo rapido
+                                    Código rápido
                                 </CardTitle>
                                 <CardDescription>
-                                    Os tres usos mais comuns.
+                                    Os três usos mais comuns.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -688,7 +705,7 @@ export default function AsyncSelectPage() {
                     </div>
 
                     <div className="grid gap-6 xl:grid-cols-2">
-                        <Card className="rounded-md">
+                        <Card className="rounded-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Zap className="size-5" />
@@ -699,12 +716,12 @@ export default function AsyncSelectPage() {
                                 <PropRow
                                     name="endpoint"
                                     type="string"
-                                    description="URL usada para buscar opcoes. Se omitida, o componente usa options local."
+                                    description="URL usada para buscar opções. Se omitida, o componente usa options local."
                                 />
                                 <PropRow
                                     name="options"
                                     type="AsyncSelectOption[]"
-                                    description="Opcoes locais para modo static."
+                                    description="Opções locais para modo static."
                                 />
                                 <PropRow
                                     name="value"
@@ -721,7 +738,7 @@ export default function AsyncSelectPage() {
                                 <PropRow
                                     name="initialLabel"
                                     type="string | Record<string, string>"
-                                    description="Label inicial para valores ja salvos. Em multiple, passe um objeto { value: label } para nao exibir UUID."
+                                    description="Label inicial para valores já salvos. Em multiple, passe um objeto { value: label } para não exibir UUID."
                                 />
                                 <PropRow
                                     name="maxVisibleSelected"
@@ -741,12 +758,12 @@ export default function AsyncSelectPage() {
                                 <PropRow
                                     name="renderOption"
                                     type="(option) => ReactNode"
-                                    description="Renderizacao customizada de cada opcao."
+                                    description="Renderização customizada de cada opção."
                                 />
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-md">
+                        <Card className="rounded-lg">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <BookOpen className="size-5" />

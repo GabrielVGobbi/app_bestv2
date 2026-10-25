@@ -1,4 +1,4 @@
-import { Search, WifiOff } from 'lucide-react';
+import { Search, WifiOff, RefreshCw, SearchX, FilterX } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,13 +20,13 @@ function EmptyStateGraphic({ type }: { type: 'empty' | 'error' }) {
     return (
         <div className="relative mx-auto flex size-28 items-center justify-center">
             <div className="absolute inset-0 rounded-full border border-border bg-[radial-gradient(circle_at_center,var(--muted)_0,transparent_65%)]" />
-            <div className="absolute inset-4 rounded-full border border-border bg-card shadow-sm" />
+            <div className="absolute inset-4 rounded-full border border-border bg-background shadow-sm" />
             <div
                 className={cn(
                     'relative flex size-14 items-center justify-center rounded-2xl border shadow-xs',
                     type === 'error'
                         ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                        : 'border-primary/15 bg-brand-surface text-primary',
+                        : 'border-border bg-muted text-muted-foreground',
                 )}
             >
                 <Icon className="size-7" />
@@ -59,13 +59,13 @@ export function DataTableEmptyState({
                     <h3 className="text-base font-semibold text-foreground">
                         {title ??
                             (isError
-                                ? 'Não foi possível carregar os dados'
+                                ? 'Sem conexão'
                                 : 'Nenhum registro encontrado')}
                     </h3>
                     <p className="text-sm leading-6 text-muted-foreground">
                         {description ??
                             (isError
-                                ? 'Verifique sua conexão e tente novamente. Se o problema continuar, entre em contato com o suporte.'
+                                ? 'Confira sua conexão com a internet e tente novamente. Se o problema continuar, fale com o suporte.'
                                 : 'Sua busca ou filtros não retornaram resultados. Ajuste os critérios e tente novamente.')}
                     </p>
                 </div>
@@ -73,6 +73,7 @@ export function DataTableEmptyState({
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                     {isError && (
                         <Button type="button" size="sm" onClick={onRetry}>
+                            <RefreshCw className="size-4" aria-hidden="true" />
                             Tentar novamente
                         </Button>
                     )}
@@ -84,6 +85,7 @@ export function DataTableEmptyState({
                             size="sm"
                             onClick={onClearSearch}
                         >
+                            <SearchX className="size-4" aria-hidden="true" />
                             Limpar busca
                         </Button>
                     )}
@@ -95,6 +97,7 @@ export function DataTableEmptyState({
                             size="sm"
                             onClick={onResetFilters}
                         >
+                            <FilterX className="size-4" aria-hidden="true" />
                             Limpar filtros
                         </Button>
                     )}

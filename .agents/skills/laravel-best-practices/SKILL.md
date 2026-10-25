@@ -10,6 +10,8 @@ metadata:
 
 Best practices for Laravel, prioritized by impact. Each rule teaches what to do and why. For exact API syntax, verify with `search-docs`.
 
+Read and follow the canonical [AGENTS.md](../../../AGENTS.md) first. Its project safety, authorization, UUID, testing, and scope requirements take precedence over these defaults.
+
 ## Consistency First
 
 Before applying any rule, check what the application already does. Laravel offers multiple valid approaches — the best choice is the one the codebase already uses, even if another pattern would be theoretically better. Inconsistency is worse than a suboptimal pattern.
@@ -42,10 +44,10 @@ Check sibling files, related controllers, models, or tests for established patte
 
 ### 3. Security → `rules/security.md`
 
-- Define `$fillable` or `$guarded` on every model, authorize every action via policies or gates
+- Protect mass assignment with the existing `#[Fillable]` / `#[Guarded]` attributes or `$fillable` / `$guarded` properties; authorize actions via policies or gates
 - No raw SQL with user input — use Eloquent or query builder
-- `{{ }}` for output escaping, `@csrf` on all POST/PUT/DELETE forms, `throttle` on auth and API routes
-- Validate MIME type, extension, and size for file uploads
+- Escape Blade output with `{{ }}`; use `@csrf` for state-changing Blade forms and the existing cookie/header CSRF transport for Inertia; preserve auth/API throttling
+- Validate file content MIME type and size; `mimes` inspects content, while `extensions` separately checks the client filename when required
 - Never commit `.env`, use `config()` for secrets, `encrypted` cast for sensitive DB fields
 
 ### 4. Caching → `rules/caching.md`
@@ -85,10 +87,10 @@ Check sibling files, related controllers, models, or tests for established patte
 
 ### 8. Testing Patterns → `rules/testing.md`
 
-- `LazilyRefreshDatabase` over `RefreshDatabase` for speed
-- `assertModelExists()` over raw `assertDatabaseHas()`
+- Choose eager `RefreshDatabase` or deferred `LazilyRefreshDatabase` to match fixture initialization; lazy refresh starts on the first query, not a schema freshness check
+- Use model existence assertions for existence, and refreshed attributes/database assertions for ownership, values, and unchanged state
 - Factory states and sequences over manual overrides
-- Use fakes (`Event::fake()`, `Exceptions::fake()`, etc.) — but always after factory setup, not before
+- Fake external effects before the action; keep factory-required model events active or use selective event fakes
 - `recycle()` to share relationship instances across factories
 
 ### 9. Queue & Job Patterns → `rules/queue-jobs.md`
@@ -110,7 +112,7 @@ Check sibling files, related controllers, models, or tests for established patte
 ### 11. HTTP Client → `rules/http-client.md`
 
 - Explicit `timeout` and `connectTimeout` on every request
-- `retry()` with exponential backoff for external APIs
+- Preserve the ExternalApi GET-only automatic retry policy; mutating requests and OAuth POSTs receive one attempt, with no automatic write replay
 - Check response status or use `throw()`
 - `Http::pool()` for concurrent independent requests
 - `Http::fake()` and `preventStrayRequests()` in tests
@@ -183,7 +185,7 @@ Check sibling files, related controllers, models, or tests for established patte
 
 ## How to Apply
 
-Always use a sub-agent to read rule files and explore this skill's content.
+Read only the relevant rule files. Delegate a bounded review when delegation is authorized and useful; otherwise perform it directly within the assigned scope.
 
 1. Identify the file type and select relevant sections (e.g., migration → §16, controller → §1, §3, §5, §6, §10)
 2. Check sibling files for existing patterns — follow those first per Consistency First

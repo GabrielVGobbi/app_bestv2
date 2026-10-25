@@ -1,4 +1,9 @@
 ---
 alwaysApply: true
 ---
-I want a system with an elegant and modern design that conveys sophistication and intuitive usability. The interface should be clean, responsive, and visually pleasing, with attention to visual details such as typography, harmonious color palette, smooth transitions, and custom icons. The user experience needs to be fluid, with subtle animations and a well-organized layout that values both aesthetics and functionality. I want the system to visually impress from the first access, striking a balance between innovation and simplicity. Inspiration can come from current UI/UX trends, such as Neumorphism, Glassmorphism, or interfaces with a minimalist futuristic look. Each visual component should be designed to deliver beauty and efficiency, reinforcing a strong and specific visual identity.
+
+# Interface design
+
+Read and follow [AGENTS.md](../../AGENTS.md) and the canonical [DESIGN.md](../../DESIGN.md) first. It defines the Start Kit's themable identity on top of the validated shell composition; preserve that composition and the Start Kit business scope. For requested interface work, consult the [frontend design skill](../../.agents/skills/frontend-design/SKILL.md) and relevant component documentation. Generic skill preferences do not replace the approved visual reference.
+
+Preserve the existing components, theme, typography, spacing, and interaction patterns for scoped fixes. Apply a new visual direction when the user requests design work, within that scope. Keep responsive layouts, light/dark behavior, accessible focus and contrast, and clear loading/error feedback. Use motion proportionally and respect reduced motion.

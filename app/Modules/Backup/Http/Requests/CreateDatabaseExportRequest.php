@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Backup\Http\Requests;
 
-use App\Modules\Backup\Models\DatabaseExport;
+use App\Supports\DatabaseDumpOptions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -21,30 +21,26 @@ class CreateDatabaseExportRequest extends FormRequest
      */
     public function rules(): array
     {
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
+        $types = DatabaseDumpOptions::supportedTypes($driver);
+
         return [
-            'export_type' => ['required', Rule::in([
-                DatabaseExport::TYPE_SCHEMA,
-                DatabaseExport::TYPE_DATA,
-                DatabaseExport::TYPE_FULL,
-            ])],
+            'export_type' => ['required', Rule::in($types)],
             'tables' => ['nullable', 'array'],
-            'tables.*' => ['string', Rule::in($this->getAvailableTables())],
+            'tables.*' => ['bail', 'string', 'regex:'.DatabaseDumpOptions::tablePattern($driver),
+                Rule::in($types === [] ? [] : DatabaseDumpOptions::tables($connection))],
         ];
     }
 
-    /**
-     * @return array<int, string>
-     */
-    private function getAvailableTables(): array
+    /** @return array<string, string> */
+    public function messages(): array
     {
-        $driver = config('database.default');
-
-        $tables = match ($driver) {
-            'sqlite' => DB::select("SELECT name FROM sqlite_master WHERE type='table'"),
-            'pgsql' => DB::select("SELECT tablename as name FROM pg_tables WHERE schemaname = 'public'"),
-            default => DB::select('SHOW TABLES'),
-        };
-
-        return array_map(fn ($row) => array_values((array) $row)[0], $tables);
+        return [
+            'export_type.in' => DB::connection()->getDriverName() === 'sqlite'
+                ? 'SQLite permite somente dump completo. Estrutura e dados separados não são suportados.'
+                : 'O tipo de dump não é suportado pelo driver atual.',
+            'tables.*.regex' => 'O nome da tabela não permite uma seleção literal segura neste driver.',
+        ];
     }
 }

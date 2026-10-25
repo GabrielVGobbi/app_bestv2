@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useNotificationBellContext } from '@/contexts/notification-bell-context';
+import { usePrivateState } from '@/contexts/private-state-context';
+import { toApiError } from '@/lib/http';
 import { notificationService } from '@/services/notification-service';
-import type { Paginated, PaginationMeta } from '@/types';
+import type { PaginationMeta } from '@/types';
 import type { Notification, NotificationFilters } from '@/types/notification';
 
 interface UseNotificationsReturn {
@@ -15,81 +17,138 @@ interface UseNotificationsReturn {
     markAsRead: (uuid: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
     deleteNotification: (uuid: string) => Promise<void>;
-    executeAction: (uuid: string, actionType: string, payload?: Record<string, unknown>) => Promise<unknown>;
+    executeAction: (
+        uuid: string,
+        actionType: string,
+        payload?: Record<string, unknown>,
+    ) => Promise<unknown>;
 }
 
-export function useNotifications(filters?: NotificationFilters): UseNotificationsReturn {
+export function useNotifications(
+    filters?: NotificationFilters,
+    onPageChange?: (page: number) => void,
+): UseNotificationsReturn {
+    const { scope } = usePrivateState();
+    const {
+        unreadCount,
+        revision,
+        isCurrentRevision,
+        refresh,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        executeAction,
+    } = useNotificationBellContext();
+    const { type, category, read, per_page, page } = filters ?? {};
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const abortRef = useRef<AbortController | null>(null);
+    const mounted = useRef(false);
+    useEffect(() => {
+        mounted.current = true;
+
+        return () => {
+            mounted.current = false;
+            abortRef.current?.abort();
+        };
+    }, []);
 
     const fetchAll = useCallback(async () => {
+        if (!scope.isCurrent()) {
+            return;
+        }
+
         abortRef.current?.abort();
-        abortRef.current = new AbortController();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        const isCurrent = () =>
+            scope.isCurrent() &&
+            mounted.current &&
+            !controller.signal.aborted &&
+            abortRef.current === controller &&
+            isCurrentRevision(revision);
+        let redirected = false;
 
         setLoading(true);
         setError(null);
 
         try {
-            const listResult = await notificationService.getNotifications(filters);
-            const notificationList = listResult as Paginated<Notification> & { unread_count?: number };
+            let query: NotificationFilters = {
+                type,
+                category,
+                read,
+                per_page,
+                page,
+            };
 
-            setNotifications(notificationList.data);
-            setPagination(notificationList.meta);
-            setUnreadCount(notificationList.unread_count ?? 0);
+            while (isCurrent()) {
+                const result = await notificationService.getNotifications(
+                    query,
+                    {
+                        signal: controller.signal,
+                    },
+                );
+
+                if (!isCurrent()) {
+                    return;
+                }
+
+                const lastPage = Math.max(1, result.meta.last_page);
+
+                if (result.meta.current_page > lastPage) {
+                    if (onPageChange) {
+                        redirected = true;
+                        onPageChange(lastPage);
+
+                        return;
+                    }
+
+                    query = { ...query, page: lastPage };
+                    continue;
+                }
+
+                setNotifications(result.data);
+                setPagination(result.meta);
+
+                return;
+            }
         } catch (err: unknown) {
-            if ((err as { name?: string })?.name !== 'CanceledError') {
+            if (isCurrent() && toApiError(err).type !== 'canceled') {
                 setError('Não foi possível carregar as notificações.');
             }
         } finally {
-            setLoading(false);
+            if (isCurrent() && !redirected) {
+                setLoading(false);
+            }
         }
-    }, [JSON.stringify(filters)]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [
+        scope,
+        type,
+        category,
+        read,
+        per_page,
+        page,
+        revision,
+        isCurrentRevision,
+        onPageChange,
+    ]);
 
     useEffect(() => {
-        void fetchAll();
-        return () => abortRef.current?.abort();
-    }, [fetchAll]);
+        let active = true;
 
-    const markAsRead = useCallback(
-        async (uuid: string) => {
-            const target = notifications.find((n) => n.uuid === uuid);
-            if (!target || target.is_read) return;
-            await notificationService.markAsRead(uuid);
-            setNotifications((prev) =>
-                prev.map((n) => (n.uuid === uuid ? { ...n, is_read: true, read_at: new Date().toISOString() } : n)),
-            );
-            setUnreadCount((c) => Math.max(0, c - 1));
-        },
-        [notifications],
-    );
-
-    const markAllAsRead = useCallback(async () => {
-        await notificationService.markAllAsRead();
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
-        setUnreadCount(0);
-    }, []);
-
-    const deleteNotification = useCallback(
-        async (uuid: string) => {
-            const target = notifications.find((n) => n.uuid === uuid);
-            await notificationService.deleteNotification(uuid);
-            setNotifications((prev) => prev.filter((n) => n.uuid !== uuid));
-            if (target && !target.is_read) {
-                setUnreadCount((c) => Math.max(0, c - 1));
+        void Promise.resolve().then(() => {
+            if (active) {
+                void fetchAll();
             }
-        },
-        [notifications],
-    );
+        });
 
-    const executeAction = useCallback(async (uuid: string, actionType: string, payload?: Record<string, unknown>) => {
-        const result = await notificationService.executeAction(uuid, actionType, payload);
-        setNotifications((prev) => prev.map((n) => (n.uuid === uuid ? { ...n, action_status: 'executed' } : n)));
-        return result;
-    }, []);
+        return () => {
+            active = false;
+            abortRef.current?.abort();
+        };
+    }, [fetchAll]);
 
     return {
         notifications,
@@ -97,7 +156,7 @@ export function useNotifications(filters?: NotificationFilters): UseNotification
         unreadCount,
         loading,
         error,
-        refresh: fetchAll,
+        refresh,
         markAsRead,
         markAllAsRead,
         deleteNotification,
@@ -107,7 +166,7 @@ export function useNotifications(filters?: NotificationFilters): UseNotification
 
 /**
  * Reads notification bell state from the shared NotificationBellProvider.
- * The provider must be mounted once in the app root (app.tsx) — never subscribe
+ * The provider must be mounted once in the private tree: never subscribe
  * to Echo or fetch here, so multiple <NotificationBell /> components stay in sync
  * and toasts fire exactly once per event.
  */

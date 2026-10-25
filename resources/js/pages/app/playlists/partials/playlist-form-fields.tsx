@@ -197,21 +197,13 @@ function LockedSuffixLinkInput({
     return (
         <div
             className={cn(
-                'flex h-10 items-center gap-2 rounded-md border border-input bg-background/70 px-2 shadow-xs transition-[border-color,box-shadow,color]',
-                'focus-within:border-ring focus-within:ring-[2px] focus-within:ring-ring/15',
-                invalid &&
-                    'border-destructive ring-destructive/20 dark:ring-destructive/40',
+                'flex h-10 items-center gap-2 rounded-md border border-input bg-input-surface px-2 transition-[border-color,box-shadow,color]',
+                'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+                invalid && 'border-destructive ring-destructive/20',
                 disabled && 'opacity-75',
             )}
         >
-            <span
-                className={cn(
-                    'flex size-7 shrink-0 items-center justify-center rounded-md border bg-background',
-                    isSpotify
-                        ? 'border-emerald-200 text-emerald-600 dark:border-emerald-900/70 dark:text-emerald-400'
-                        : 'border-red-200 text-red-600 dark:border-red-900/70 dark:text-red-400',
-                )}
-            >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                 {isSpotify ? (
                     <SpotifyIcon className="size-4" />
                 ) : (
@@ -283,6 +275,121 @@ function canSeeLegacyData(user: unknown): boolean {
     return Array.isArray(roles) && roles.some(isDeveloperRole);
 }
 
+interface LegacyMetadataFieldsProps {
+    metadata: Playlist['external_metadata'] | undefined;
+    errors: Record<string, string>;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+function LegacyMetadataFields({
+    metadata,
+    errors,
+    open,
+    onOpenChange,
+}: LegacyMetadataFieldsProps) {
+    return (
+        <Collapsible open={open} onOpenChange={onOpenChange}>
+            <section className="rounded-lg border border-border bg-muted">
+                <CollapsibleTrigger asChild>
+                    <button
+                        type="button"
+                        className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                        <span className="flex min-w-0 items-center gap-3">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-card text-muted-foreground">
+                                <Settings2
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block text-sm font-semibold">
+                                    Dados legados
+                                </span>
+                                <span className="block truncate text-xs text-muted-foreground">
+                                    Campos técnicos mantidos para migração e
+                                    rastreabilidade
+                                </span>
+                            </span>
+                        </span>
+                        <ChevronDown
+                            aria-hidden="true"
+                            className={cn(
+                                'size-4 shrink-0 text-muted-foreground transition-transform',
+                                open && 'rotate-180',
+                            )}
+                        />
+                    </button>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                    <div className="rounded-b-lg border-t border-separator bg-card px-4 py-4">
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <FormField
+                                id="field-legacy-id"
+                                label="Spotify ID legado"
+                                variant="stacked"
+                                error={
+                                    errors[
+                                        'external_metadata.legacy_spotify_id'
+                                    ]
+                                }
+                            >
+                                <Input
+                                    id="field-legacy-id"
+                                    name="external_metadata[legacy_spotify_id]"
+                                    type="text"
+                                    defaultValue={
+                                        metadata?.legacy_spotify_id ?? ''
+                                    }
+                                    autoComplete="off"
+                                />
+                            </FormField>
+
+                            <FormField
+                                id="field-legacy-key"
+                                label="Spotify Key legado"
+                                variant="stacked"
+                                error={
+                                    errors[
+                                        'external_metadata.legacy_spotify_key'
+                                    ]
+                                }
+                            >
+                                <Input
+                                    id="field-legacy-key"
+                                    name="external_metadata[legacy_spotify_key]"
+                                    type="text"
+                                    defaultValue={
+                                        metadata?.legacy_spotify_key ?? ''
+                                    }
+                                    autoComplete="off"
+                                />
+                            </FormField>
+
+                            <FormField
+                                id="field-source"
+                                label="Origem"
+                                variant="stacked"
+                                error={errors['external_metadata.source']}
+                            >
+                                <Input
+                                    id="field-source"
+                                    name="external_metadata[source]"
+                                    type="text"
+                                    defaultValue={metadata?.source ?? ''}
+                                    autoComplete="off"
+                                />
+                            </FormField>
+                        </div>
+                    </div>
+                </CollapsibleContent>
+            </section>
+        </Collapsible>
+    );
+}
+
 export default function PlaylistFormFields({
     playlist,
     options,
@@ -325,6 +432,31 @@ export default function PlaylistFormFields({
             current.filter((id) => allowedIds.has(id)),
         );
     }
+
+    const notesField = (
+        <FormField
+            id="field-notes"
+            label="Observações"
+            variant="stacked"
+            error={errors.notes}
+        >
+            <Textarea
+                id="field-notes"
+                name="notes"
+                defaultValue={playlist?.notes ?? ''}
+                rows={3}
+            />
+        </FormField>
+    );
+
+    const legacyFields = (
+        <LegacyMetadataFields
+            metadata={playlist?.external_metadata}
+            errors={errors}
+            open={isLegacyOpen}
+            onOpenChange={setIsLegacyOpen}
+        />
+    );
 
     return (
         <div
@@ -427,12 +559,12 @@ export default function PlaylistFormFields({
                 description="Referências públicas e números comerciais usados na triagem."
                 layout={layout}
             >
-                <div className="space-y-3 rounded-md border bg-muted/20 p-3 sm:p-4">
+                <div className="space-y-4">
                     <FormField
                         id="field-spotify-url"
                         label="Link Spotify"
                         variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        className="sm:grid-cols-[9.5rem_1fr]"
                         error={errors.spotify_url}
                     >
                         <input
@@ -462,7 +594,7 @@ export default function PlaylistFormFields({
                         id="field-spotify-playlist-id"
                         label="ID público Spotify"
                         variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        className="sm:grid-cols-[9.5rem_1fr]"
                         error={errors.spotify_playlist_id}
                     >
                         <LockedSuffixLinkInput
@@ -481,7 +613,7 @@ export default function PlaylistFormFields({
                         id="field-youtube-url"
                         label="Link YouTube"
                         variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        className="sm:grid-cols-[9.5rem_1fr]"
                         error={errors.youtube_url}
                     >
                         <input
@@ -505,7 +637,7 @@ export default function PlaylistFormFields({
                         id="field-followers"
                         label="Seguidores"
                         variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        className="sm:grid-cols-[9.5rem_1fr]"
                         error={errors.followers_count}
                     >
                         <Input
@@ -524,7 +656,7 @@ export default function PlaylistFormFields({
                         id="field-estimated-reach"
                         label="Alcance estimado"
                         variant="inline"
-                        className="rounded-md bg-background/70 p-2 sm:grid-cols-[9.5rem_1fr] sm:p-3"
+                        className="sm:grid-cols-[9.5rem_1fr]"
                         error={errors.estimated_reach}
                     >
                         <Input
@@ -547,38 +679,10 @@ export default function PlaylistFormFields({
                     description="Anotações internas para qualificação, operação comercial e contexto da curadoria."
                     layout={layout}
                 >
-                    <FormField
-                        id="field-notes"
-                        label="Observações"
-                        variant="stacked"
-                        error={errors.notes}
-                    >
-                        <Textarea
-                            id="field-notes"
-                            name="notes"
-                            defaultValue={playlist?.notes ?? ''}
-                            rows={3}
-                            autoResize
-                            aria-invalid={!!errors.notes}
-                        />
-                    </FormField>
+                    {notesField}
                 </PlaylistFormSection>
             ) : (
-                <FormField
-                    id="field-notes"
-                    label="Observações"
-                    variant="stacked"
-                    error={errors.notes}
-                >
-                    <Textarea
-                        id="field-notes"
-                        name="notes"
-                        defaultValue={playlist?.notes ?? ''}
-                        rows={3}
-                        autoResize
-                        aria-invalid={!!errors.notes}
-                    />
-                </FormField>
+                notesField
             )}
 
             {showLegacyData ? (
@@ -588,228 +692,10 @@ export default function PlaylistFormFields({
                         description="Campos técnicos mantidos para migração e rastreabilidade."
                         layout={layout}
                     >
-                        <Collapsible
-                            open={isLegacyOpen}
-                            onOpenChange={setIsLegacyOpen}
-                        >
-                            <section className="rounded-md border bg-muted/20">
-                                <CollapsibleTrigger asChild>
-                                    <button
-                                        type="button"
-                                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                                    >
-                                        <span className="flex min-w-0 items-center gap-3">
-                                            <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
-                                                <Settings2 className="size-4" />
-                                            </span>
-                                            <span className="min-w-0">
-                                                <span className="block text-sm font-semibold">
-                                                    Dados legados
-                                                </span>
-                                                <span className="block truncate text-xs text-muted-foreground">
-                                                    Campos técnicos mantidos
-                                                    para migração e
-                                                    rastreabilidade
-                                                </span>
-                                            </span>
-                                        </span>
-                                        <ChevronDown
-                                            className={cn(
-                                                'size-4 shrink-0 text-muted-foreground transition-transform',
-                                                isLegacyOpen && 'rotate-180',
-                                            )}
-                                        />
-                                    </button>
-                                </CollapsibleTrigger>
-
-                                <CollapsibleContent>
-                                    <div className="border-t bg-background px-4 py-4">
-                                        <div className="grid gap-4 sm:grid-cols-3">
-                                            <FormField
-                                                id="field-legacy-id"
-                                                label="Spotify ID legado"
-                                                variant="stacked"
-                                                error={
-                                                    errors[
-                                                        'external_metadata.legacy_spotify_id'
-                                                    ]
-                                                }
-                                            >
-                                                <Input
-                                                    id="field-legacy-id"
-                                                    name="external_metadata[legacy_spotify_id]"
-                                                    type="text"
-                                                    defaultValue={
-                                                        playlist
-                                                            ?.external_metadata
-                                                            ?.legacy_spotify_id ??
-                                                        ''
-                                                    }
-                                                    autoComplete="off"
-                                                />
-                                            </FormField>
-
-                                            <FormField
-                                                id="field-legacy-key"
-                                                label="Spotify Key legado"
-                                                variant="stacked"
-                                                error={
-                                                    errors[
-                                                        'external_metadata.legacy_spotify_key'
-                                                    ]
-                                                }
-                                            >
-                                                <Input
-                                                    id="field-legacy-key"
-                                                    name="external_metadata[legacy_spotify_key]"
-                                                    type="text"
-                                                    defaultValue={
-                                                        playlist
-                                                            ?.external_metadata
-                                                            ?.legacy_spotify_key ??
-                                                        ''
-                                                    }
-                                                    autoComplete="off"
-                                                />
-                                            </FormField>
-
-                                            <FormField
-                                                id="field-source"
-                                                label="Origem"
-                                                variant="stacked"
-                                                error={
-                                                    errors[
-                                                        'external_metadata.source'
-                                                    ]
-                                                }
-                                            >
-                                                <Input
-                                                    id="field-source"
-                                                    name="external_metadata[source]"
-                                                    type="text"
-                                                    defaultValue={
-                                                        playlist
-                                                            ?.external_metadata
-                                                            ?.source ?? ''
-                                                    }
-                                                    autoComplete="off"
-                                                />
-                                            </FormField>
-                                        </div>
-                                    </div>
-                                </CollapsibleContent>
-                            </section>
-                        </Collapsible>
+                        {legacyFields}
                     </PlaylistFormSection>
                 ) : (
-                    <Collapsible
-                        open={isLegacyOpen}
-                        onOpenChange={setIsLegacyOpen}
-                    >
-                        <section className="rounded-md border bg-muted/20">
-                            <CollapsibleTrigger asChild>
-                                <button
-                                    type="button"
-                                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                                >
-                                    <span className="flex min-w-0 items-center gap-3">
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
-                                            <Settings2 className="size-4" />
-                                        </span>
-                                        <span className="min-w-0">
-                                            <span className="block text-sm font-semibold">
-                                                Dados legados
-                                            </span>
-                                            <span className="block truncate text-xs text-muted-foreground">
-                                                Campos técnicos mantidos para
-                                                migração e rastreabilidade
-                                            </span>
-                                        </span>
-                                    </span>
-                                    <ChevronDown
-                                        className={cn(
-                                            'size-4 shrink-0 text-muted-foreground transition-transform',
-                                            isLegacyOpen && 'rotate-180',
-                                        )}
-                                    />
-                                </button>
-                            </CollapsibleTrigger>
-
-                            <CollapsibleContent>
-                                <div className="border-t bg-background px-4 py-4">
-                                    <div className="grid gap-4 sm:grid-cols-3">
-                                        <FormField
-                                            id="field-legacy-id"
-                                            label="Spotify ID legado"
-                                            variant="stacked"
-                                            error={
-                                                errors[
-                                                    'external_metadata.legacy_spotify_id'
-                                                ]
-                                            }
-                                        >
-                                            <Input
-                                                id="field-legacy-id"
-                                                name="external_metadata[legacy_spotify_id]"
-                                                type="text"
-                                                defaultValue={
-                                                    playlist?.external_metadata
-                                                        ?.legacy_spotify_id ??
-                                                    ''
-                                                }
-                                                autoComplete="off"
-                                            />
-                                        </FormField>
-
-                                        <FormField
-                                            id="field-legacy-key"
-                                            label="Spotify Key legado"
-                                            variant="stacked"
-                                            error={
-                                                errors[
-                                                    'external_metadata.legacy_spotify_key'
-                                                ]
-                                            }
-                                        >
-                                            <Input
-                                                id="field-legacy-key"
-                                                name="external_metadata[legacy_spotify_key]"
-                                                type="text"
-                                                defaultValue={
-                                                    playlist?.external_metadata
-                                                        ?.legacy_spotify_key ??
-                                                    ''
-                                                }
-                                                autoComplete="off"
-                                            />
-                                        </FormField>
-
-                                        <FormField
-                                            id="field-source"
-                                            label="Origem"
-                                            variant="stacked"
-                                            error={
-                                                errors[
-                                                    'external_metadata.source'
-                                                ]
-                                            }
-                                        >
-                                            <Input
-                                                id="field-source"
-                                                name="external_metadata[source]"
-                                                type="text"
-                                                defaultValue={
-                                                    playlist?.external_metadata
-                                                        ?.source ?? ''
-                                                }
-                                                autoComplete="off"
-                                            />
-                                        </FormField>
-                                    </div>
-                                </div>
-                            </CollapsibleContent>
-                        </section>
-                    </Collapsible>
+                    legacyFields
                 )
             ) : null}
         </div>

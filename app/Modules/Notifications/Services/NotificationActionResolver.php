@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Services;
 
-use App\Modules\Notifications\Actions\Executable\ApproveRequestNotificationAction;
 use App\Modules\Notifications\Actions\Executable\Contracts\NotificationExecutableAction;
 use App\Modules\Notifications\Actions\Executable\DownloadExportNotificationAction;
-use App\Modules\Notifications\Actions\Executable\RejectRequestNotificationAction;
 use InvalidArgumentException;
 
 class NotificationActionResolver
@@ -20,8 +18,6 @@ class NotificationActionResolver
      * @var array<string, class-string<NotificationExecutableAction>>
      */
     protected array $map = [
-        'approve_request' => ApproveRequestNotificationAction::class,
-        'reject_request' => RejectRequestNotificationAction::class,
         'download_export' => DownloadExportNotificationAction::class,
     ];
 

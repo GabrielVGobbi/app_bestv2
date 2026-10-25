@@ -23,9 +23,9 @@ class PaginationRequest extends FormRequest
             'include' => ['nullable', 'string', 'max:255'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'role' => ['nullable', 'string', 'max:50'],
             'sort' => ['nullable', 'string', 'max:50'],
             'direction' => ['nullable', 'string', 'in:asc,desc'],
+            'role' => ['nullable', 'string', 'max:50'],
         ];
     }
 
@@ -60,14 +60,14 @@ class PaginationRequest extends FormRequest
         return $this->string('sort')->value() ?: null;
     }
 
-    public function role(): ?string
-    {
-        return $this->string('role')->value() ?: null;
-    }
-
     public function sortDirection(): ?string
     {
         return $this->string('direction')->value() ?: null;
+    }
+
+    public function role(): ?string
+    {
+        return $this->string('role')->value() ?: null;
     }
 
     public function perPage(): int

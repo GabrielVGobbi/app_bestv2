@@ -28,16 +28,18 @@ class TimelineController extends Controller
         Gate::authorize('view', $subject);
 
         $before = $request->validated('before')
-            ? Carbon::parse($request->validated('before'))
+            ? Carbon::parse($request->validated('before'))->setTimezone(config('app.timezone'))
             : null;
+        $page = $this->timeline->page(
+            subject: $subject,
+            limit: $request->limit(),
+            before: $before,
+            types: $request->validated('types') ?? [],
+            cursor: $request->validated('cursor'),
+        );
 
         return response()->json([
-            'data' => TimelineItemResource::collection($this->timeline->items(
-                subject: $subject,
-                limit: $request->limit(),
-                before: $before,
-                types: $request->validated('types') ?? [],
-            ))->resolve($request),
+            'data' => TimelineItemResource::collection($page['items'])->resolve($request),
             'subject' => [
                 'type' => $type,
                 'id' => $subject->getKey(),
@@ -45,7 +47,7 @@ class TimelineController extends Controller
                 'label' => $this->displayName($subject),
             ],
             'meta' => [
-                'next_cursor' => null,
+                'next_cursor' => $page['next_cursor'],
             ],
         ]);
     }

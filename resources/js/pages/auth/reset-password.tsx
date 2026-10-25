@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { KeyRound } from 'lucide-react';
+import InputError, { errorProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ type Props = {
 export default function ResetPassword({ token, email }: Props) {
     return (
         <>
-            <Head title="Reset password" />
+            <Head title="Redefinir senha" />
 
             <Form
                 {...update()}
@@ -25,47 +26,55 @@ export default function ResetPassword({ token, email }: Props) {
                 {({ processing, errors }) => (
                     <div className="grid gap-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">E-mail</Label>
                             <Input
                                 id="email"
+                                {...errorProps('email', errors.email)}
                                 type="email"
                                 name="email"
                                 autoComplete="email"
                                 value={email}
-                                className="mt-1 block w-full"
                                 readOnly
                             />
                             <InputError
+                                field="email"
                                 message={errors.email}
                                 className="mt-2"
                             />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">Senha</Label>
                             <PasswordInput
                                 id="password"
+                                {...errorProps('password', errors.password)}
                                 name="password"
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
                                 autoFocus
-                                placeholder="Password"
+                                placeholder="Senha"
                             />
-                            <InputError message={errors.password} />
+                            <InputError
+                                field="password"
+                                message={errors.password}
+                            />
                         </div>
 
                         <div className="grid gap-2">
                             <Label htmlFor="password_confirmation">
-                                Confirm password
+                                Confirmar senha
                             </Label>
                             <PasswordInput
                                 id="password_confirmation"
+                                {...errorProps(
+                                    'password_confirmation',
+                                    errors.password_confirmation,
+                                )}
                                 name="password_confirmation"
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
-                                placeholder="Confirm password"
+                                placeholder="Confirmar senha"
                             />
                             <InputError
+                                field="password_confirmation"
                                 message={errors.password_confirmation}
                                 className="mt-2"
                             />
@@ -77,8 +86,15 @@ export default function ResetPassword({ token, email }: Props) {
                             disabled={processing}
                             data-test="reset-password-button"
                         >
-                            {processing && <Spinner />}
-                            Reset password
+                            {processing ? (
+                                <Spinner />
+                            ) : (
+                                <KeyRound
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                            )}
+                            Redefinir senha
                         </Button>
                     </div>
                 )}
@@ -88,6 +104,6 @@ export default function ResetPassword({ token, email }: Props) {
 }
 
 ResetPassword.layout = {
-    title: 'Reset password',
-    description: 'Please enter your new password below',
+    title: 'Redefinir senha',
+    description: 'Digite a nova senha abaixo',
 };

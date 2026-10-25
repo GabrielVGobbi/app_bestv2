@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Check, Copy, Mail } from 'lucide-react';
+import { Check, Copy, Mail, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -44,12 +44,12 @@ export default function TemporaryPasswordDialog() {
 
     async function copyTemporaryPassword(): Promise<void> {
         if (await copy(temporaryPassword)) {
-            toast.success('Senha temporaria copiada.');
+            toast.success('Senha temporária copiada.');
         }
     }
 
     function mockEmailSend(): void {
-        toast.info('Mock: envio por email simulado.');
+        toast.info('Mock: envio por e-mail simulado.');
     }
 
     return (
@@ -63,17 +63,17 @@ export default function TemporaryPasswordDialog() {
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Senha temporaria criada</DialogTitle>
+                    <DialogTitle>Senha temporária criada</DialogTitle>
                     <DialogDescription>
-                        Copie esta senha agora. Ela nao sera exibida novamente.
+                        Copie esta senha agora. Ela não será exibida novamente.
                     </DialogDescription>
                 </DialogHeader>
 
                 {temporaryUserPassword && (
                     <div className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label>Usuario</Label>
-                            <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                            <Label>Usuário</Label>
+                            <div className="rounded-md border border-border bg-muted px-3 py-2 text-sm">
                                 <div className="font-medium">
                                     {temporaryUserPassword.name}
                                 </div>
@@ -85,7 +85,7 @@ export default function TemporaryPasswordDialog() {
 
                         <div className="grid gap-2">
                             <Label htmlFor="temporary-password">
-                                Senha temporaria
+                                Senha temporária
                             </Label>
                             <div className="flex gap-2">
                                 <Input
@@ -99,7 +99,7 @@ export default function TemporaryPasswordDialog() {
                                     variant="outline"
                                     size="icon"
                                     onClick={copyTemporaryPassword}
-                                    aria-label="Copiar senha temporaria"
+                                    aria-label="Copiar senha temporária"
                                 >
                                     {copied ? (
                                         <Check className="size-4" />
@@ -119,12 +119,13 @@ export default function TemporaryPasswordDialog() {
                         onClick={mockEmailSend}
                     >
                         <Mail className="size-4" />
-                        Enviar por email
+                        Enviar por e-mail
                     </Button>
                     <Button
                         type="button"
                         onClick={() => setTemporaryUserPassword(null)}
                     >
+                        <X className="size-4" aria-hidden="true" />
                         Fechar
                     </Button>
                 </DialogFooter>

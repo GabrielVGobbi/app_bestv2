@@ -60,6 +60,7 @@ class TimelineComment extends Model implements HasUploadTags
         return $this->morphTo();
     }
 
+    /** @return BelongsTo<User, $this> */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

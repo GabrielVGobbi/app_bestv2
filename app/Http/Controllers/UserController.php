@@ -13,6 +13,7 @@ use App\Modules\Permissions\Models\Permission;
 use App\Modules\Permissions\Models\Role;
 use App\Supports\TheOneResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +24,15 @@ class UserController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('app/users/index');
+        Gate::authorize('viewAny', User::class);
+
+        return Inertia::render('app/users/index', [
+            'can' => [
+                'create' => Gate::allows('create', User::class),
+                'update' => Gate::allows('updateAny', User::class),
+                'delete' => Gate::allows('deleteAny', User::class),
+            ],
+        ]);
     }
 
     /**
@@ -31,7 +40,11 @@ class UserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('app/users/create');
+        Gate::authorize('create', User::class);
+
+        return Inertia::render('app/users/create', [
+            'can' => ['view' => Gate::allows('viewAny', User::class)],
+        ]);
     }
 
     /**
@@ -39,6 +52,8 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request, CreateUserWithTemporaryPassword $createUser): RedirectResponse
     {
+        Gate::authorize('create', User::class);
+
         ['user' => $user, 'temporary_password' => $temporaryPassword] = $createUser->handle($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User created. Copy the temporary password and send it to the user.')]);
@@ -64,10 +79,17 @@ class UserController extends Controller
             return TheOneResponse::notFound('User not found', 'users.index');
         }
 
+        Gate::authorize('view', $user);
+
         $user->load(['roles', 'permissions']);
 
         return Inertia::render('app/users/show', [
             'userData' => new UserResource($user),
+            'can' => [
+                'update' => Gate::allows('update', $user),
+                'delete' => Gate::allows('delete', $user),
+                'authority' => Gate::allows('viewAny', User::class),
+            ],
         ]);
     }
 
@@ -76,8 +98,15 @@ class UserController extends Controller
      */
     public function edit(User $user): Response
     {
+        Gate::authorize('update', $user);
+
         return Inertia::render('app/users/edit', [
             'userData' => new UserResource($user),
+            'can' => [
+                'view' => Gate::allows('viewAny', User::class),
+                'delete' => Gate::allows('delete', $user),
+                'authority' => Gate::allows('viewAny', User::class),
+            ],
         ]);
     }
 
@@ -86,6 +115,8 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        Gate::authorize('update', $user);
+
         $user->fill($request->validated());
 
         if ($user->isDirty('email')) {
@@ -105,11 +136,14 @@ class UserController extends Controller
             return TheOneResponse::notFound('User not found', 'users.index');
         }
 
+        Gate::authorize('update', $user);
+
         $user->load(['roles', 'permissions']);
 
         return Inertia::render('app/users/roles', [
             'userData' => new UserResource($user),
             'allRoles' => RoleResource::collection(Role::orderBy('name')->get()),
+            'can' => $this->userActions($user),
         ]);
     }
 
@@ -119,11 +153,14 @@ class UserController extends Controller
             return TheOneResponse::notFound('User not found', 'users.index');
         }
 
+        Gate::authorize('update', $user);
+
         $user->load(['roles', 'permissions']);
 
         return Inertia::render('app/users/permissions', [
             'userData' => new UserResource($user),
             'allPermissions' => PermissionResource::collection(Permission::orderBy('group')->orderBy('name')->get()),
+            'can' => $this->userActions($user),
         ]);
     }
 
@@ -132,14 +169,22 @@ class UserController extends Controller
      */
     public function destroy(User $user): RedirectResponse
     {
-        if ($user->id === 1) {
-            return to_route('users.index');
-        }
+        Gate::authorize('delete', $user);
 
         $user->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User deleted.')]);
 
         return to_route('users.index');
+    }
+
+    /** @return array{view: bool, update: bool, delete: bool} */
+    private function userActions(User $user): array
+    {
+        return [
+            'view' => Gate::allows('view', $user),
+            'update' => Gate::allows('update', $user),
+            'delete' => Gate::allows('delete', $user),
+        ];
     }
 }

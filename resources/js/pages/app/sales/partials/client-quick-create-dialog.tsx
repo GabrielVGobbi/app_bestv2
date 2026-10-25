@@ -1,9 +1,8 @@
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,8 +12,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { InputPhone } from '@/components/ui/input-phone';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { csrfCookie } from '@/routes/sanctum';
 import type { SaleFormOption } from '@/types/app/sale';
@@ -220,8 +220,7 @@ export function ClientQuickCreateDialog({
                 </DialogHeader>
 
                 <form onSubmit={submit} className="space-y-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="quick_client_name">Nome</Label>
+                    <FormField label="Nome" required error={errors.name}>
                         <Input
                             id="quick_client_name"
                             value={form.name}
@@ -231,27 +230,21 @@ export function ClientQuickCreateDialog({
                             autoComplete="name"
                             autoFocus
                         />
-                        <InputError message={errors.name} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="quick_client_phone">Telefone</Label>
-                        <Input
+                    <FormField label="Telefone" error={errors.phone}>
+                        <InputPhone
                             id="quick_client_phone"
                             value={form.phone}
-                            onChange={(event) =>
-                                updateField('phone', event.target.value)
-                            }
-                            autoComplete="tel"
-                            inputMode="tel"
+                            onChange={(value) => updateField('phone', value)}
                         />
-                        <InputError message={errors.phone} />
-                    </div>
+                    </FormField>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="quick_client_email">
-                            E-mail opcional
-                        </Label>
+                    <FormField
+                        label="E-mail"
+                        description="Opcional"
+                        error={errors.email}
+                    >
                         <Input
                             id="quick_client_email"
                             type="email"
@@ -260,9 +253,9 @@ export function ClientQuickCreateDialog({
                                 updateField('email', event.target.value)
                             }
                             autoComplete="email"
+                            placeholder="nome@empresa.com.br"
                         />
-                        <InputError message={errors.email} />
-                    </div>
+                    </FormField>
 
                     <DialogFooter>
                         <Button
@@ -271,6 +264,7 @@ export function ClientQuickCreateDialog({
                             onClick={close}
                             disabled={processing}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={processing}>

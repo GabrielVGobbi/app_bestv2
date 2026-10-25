@@ -1,5 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
+} from 'react';
 import { resolveNavModules } from '@/lib/resolve-nav-items';
 import type { NavModule } from '@/types';
 
@@ -32,13 +38,19 @@ const NavModuleContext = createContext<NavModuleContextValue | null>(null);
 // Helpers
 // ---------------------------------------------------------------------------
 
-function detectModule(modules: NavModule[], pathname: string): NavModule | undefined {
+function detectModule(
+    modules: NavModule[],
+    pathname: string,
+): NavModule | undefined {
     // Apenas módulos com items participam da detecção (link-modules navegam diretamente)
     const candidates = modules
         .filter((m) => m.items.length > 0)
-        .flatMap((m) => m.routePrefixes.map((prefix) => ({ module: m, prefix })));
+        .flatMap((m) =>
+            m.routePrefixes.map((prefix) => ({ module: m, prefix })),
+        );
 
     candidates.sort((a, b) => b.prefix.length - a.prefix.length);
+
     return candidates.find(({ prefix }) => pathname.startsWith(prefix))?.module;
 }
 
@@ -51,11 +63,14 @@ export function NavModuleProvider({ children }: { children: React.ReactNode }) {
     const { nav } = page.props;
     const rawUrl = page.url as string;
 
-    // Memoize resolved modules — nav.modules is stable within a page, only
+    // Memoize resolved modules: nav.modules is stable within a page, only
     // changes on Inertia navigations, so this avoids re-creating objects every render.
-    const modules = useMemo(() => resolveNavModules(nav.modules), [nav.modules]);
+    const modules = useMemo(
+        () => resolveNavModules(nav.modules),
+        [nav.modules],
+    );
 
-    // Memoize pathname extraction — avoids creating a URL object on every render.
+    // Memoize pathname extraction: avoids creating a URL object on every render.
     const pathname = useMemo(() => {
         try {
             return new URL(rawUrl, 'http://x').pathname;
@@ -77,47 +92,58 @@ export function NavModuleProvider({ children }: { children: React.ReactNode }) {
     const detected = detectModule(modules, pathname);
 
     // Se a URL não bate nenhum módulo com items → mostra lista de módulos
-    const [activeSlug, setActiveSlug] = useState((detected ?? defaultModuleWithItems)?.slug ?? '');
-    const [sidebarView, setSidebarView] = useState<SidebarView>(detected ? 'items' : 'modules');
+    const [navigation, setNavigation] = useState(() => ({
+        modules,
+        pathname,
+        activeSlug: (detected ?? defaultModuleWithItems)?.slug ?? '',
+        sidebarView: (detected ? 'items' : 'modules') as SidebarView,
+    }));
 
-    // Quando a URL muda → re-detecta módulo ativo.
-    // modules is stable within a page (memoized above) so including it here
-    // is safe and removes the need to suppress the exhaustive-deps rule.
-    const prevSlugRef = useRef(activeSlug);
-    useEffect(() => {
-        const next = detectModule(modules, pathname);
-        if (next) {
-            if (next.slug !== prevSlugRef.current) {
-                prevSlugRef.current = next.slug;
-                setActiveSlug(next.slug);
-            }
-            setSidebarView('items');
-        } else {
-            // URL não pertence a nenhum módulo com items → volta para lista de módulos
-            setSidebarView('modules');
-        }
-    }, [pathname, modules]);
+    // Reconcile route changes in this render so children never receive the
+    // previous route's selection. Manual choices survive ordinary rerenders.
+    if (navigation.pathname !== pathname || navigation.modules !== modules) {
+        setNavigation({
+            modules,
+            pathname,
+            activeSlug: detected?.slug ?? navigation.activeSlug,
+            sidebarView: detected ? 'items' : 'modules',
+        });
+    }
+
+    const { activeSlug, sidebarView } = navigation;
 
     // Memoize activeModule so consumers don't re-render when other state changes.
     const activeModule = useMemo(
-        () => modules.find((m) => m.slug === activeSlug) ?? defaultModuleWithItems,
+        () =>
+            modules.find((m) => m.slug === activeSlug) ??
+            defaultModuleWithItems,
         [modules, activeSlug, defaultModuleWithItems],
     );
 
     // Stable function references so the memoized context value below doesn't
     // invalidate on every render.
-    const showModuleList = useCallback(() => setSidebarView('modules'), []);
+    const showModuleList = useCallback(() => {
+        setNavigation((previous) => ({ ...previous, sidebarView: 'modules' }));
+    }, []);
 
     const selectModule = useCallback((slug: string) => {
-        setActiveSlug(slug);
-        prevSlugRef.current = slug;
-        setSidebarView('items');
+        setNavigation((previous) => ({
+            ...previous,
+            activeSlug: slug,
+            sidebarView: 'items',
+        }));
     }, []);
 
     // Memoize the context value so consumers only re-render when something
     // actually changed, not on every provider render (e.g. Inertia visit events).
     const contextValue = useMemo(
-        () => ({ modules, activeModule, sidebarView, showModuleList, selectModule }),
+        () => ({
+            modules,
+            activeModule,
+            sidebarView,
+            showModuleList,
+            selectModule,
+        }),
         [modules, activeModule, sidebarView, showModuleList, selectModule],
     );
 
@@ -134,6 +160,10 @@ export function NavModuleProvider({ children }: { children: React.ReactNode }) {
 
 export function useNavModule(): NavModuleContextValue {
     const ctx = useContext(NavModuleContext);
-    if (!ctx) throw new Error('useNavModule must be used inside NavModuleProvider');
+
+    if (!ctx) {
+        throw new Error('useNavModule must be used inside NavModuleProvider');
+    }
+
     return ctx;
 }

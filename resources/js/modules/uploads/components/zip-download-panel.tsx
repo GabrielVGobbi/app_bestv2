@@ -1,16 +1,10 @@
-import {
-    AlertCircle,
-    Archive,
-    CheckCircle2,
-    Loader2,
-    X,
-} from 'lucide-react'
+import { AlertCircle, Archive, CheckCircle2, Loader2, X } from 'lucide-react';
 
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-import { useZipDownloadStore } from '../stores/zip-download-store'
-import { useZipPoller } from '../hooks/use-zip-poller'
+import { useZipPoller } from '../hooks/use-zip-poller';
+import { useZipDownloadStore } from '../stores/zip-download-store';
 
 /**
  * Global floating panel (bottom-right) that shows active and ready ZIP downloads.
@@ -18,31 +12,36 @@ import { useZipPoller } from '../hooks/use-zip-poller'
  * across Inertia page navigations.
  */
 export function ZipDownloadPanel() {
-    useZipPoller()
+    useZipPoller();
 
-    const jobs = useZipDownloadStore((s) => s.jobs)
-    const removeJob = useZipDownloadStore((s) => s.removeJob)
+    const jobs = useZipDownloadStore((s) => s.jobs);
+    const removeJob = useZipDownloadStore((s) => s.removeJob);
 
-    if (jobs.length === 0) return null
+    if (jobs.length === 0) {
+        return null;
+    }
 
     return (
-        <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+        <div className="fixed right-4 bottom-4 z-50 flex w-80 flex-col gap-2">
             {jobs.map((job) => (
                 <div
                     key={job.uuid}
                     className={cn(
                         'flex items-start gap-3 rounded-xl border bg-card p-3 shadow-lg transition-all',
-                        job.status === 'ready' && 'border-green-500/30 bg-green-50/80 dark:bg-green-950/30',
-                        job.status === 'failed' && 'border-destructive/30 bg-destructive/5',
+                        job.status === 'ready' &&
+                            'border-success-soft-foreground/20 bg-success-soft',
+                        job.status === 'failed' &&
+                            'border-destructive/30 bg-destructive/5',
                     )}
                 >
                     {/* Icon */}
                     <div className="mt-0.5 shrink-0">
-                        {(job.status === 'pending' || job.status === 'processing') && (
+                        {(job.status === 'pending' ||
+                            job.status === 'processing') && (
                             <Loader2 className="size-4 animate-spin text-muted-foreground" />
                         )}
                         {job.status === 'ready' && (
-                            <CheckCircle2 className="size-4 text-green-600" />
+                            <CheckCircle2 className="size-4 text-success-soft-foreground" />
                         )}
                         {job.status === 'failed' && (
                             <AlertCircle className="size-4 text-destructive" />
@@ -51,21 +50,29 @@ export function ZipDownloadPanel() {
 
                     {/* Content */}
                     <div className="min-w-0 flex-1 space-y-1">
-                        <p className="truncate text-sm font-medium" title={job.label}>
+                        <p
+                            className="truncate text-sm font-medium"
+                            title={job.label}
+                        >
                             {job.label}
                         </p>
                         <p className="text-xs text-muted-foreground">
                             {job.status === 'pending' && 'Aguardando na fila…'}
-                            {job.status === 'processing' && `Compactando ${job.fileCount} arquivo(s)…`}
-                            {job.status === 'ready' && 'ZIP pronto para download.'}
-                            {job.status === 'failed' && (job.errorMessage ?? 'Erro ao gerar ZIP.')}
+                            {job.status === 'processing' &&
+                                `Compactando ${job.fileCount} arquivo(s)…`}
+                            {job.status === 'ready' &&
+                                'ZIP pronto para download.'}
+                            {job.status === 'failed' &&
+                                (job.errorMessage ?? 'Erro ao gerar ZIP.')}
                         </p>
 
                         {job.status === 'ready' && job.downloadUrl && (
                             <Button
                                 size="sm"
                                 className="mt-1 h-7 gap-1.5 text-xs"
-                                onClick={() => window.open(job.downloadUrl, '_self')}
+                                onClick={() =>
+                                    window.open(job.downloadUrl, '_self')
+                                }
                             >
                                 <Archive className="size-3.5" />
                                 Baixar ZIP
@@ -73,7 +80,7 @@ export function ZipDownloadPanel() {
                         )}
                     </div>
 
-                    {/* Dismiss — only for terminal states */}
+                    {/* Dismiss: only for terminal states */}
                     {(job.status === 'ready' || job.status === 'failed') && (
                         <Button
                             type="button"
@@ -89,5 +96,5 @@ export function ZipDownloadPanel() {
                 </div>
             ))}
         </div>
-    )
+    );
 }

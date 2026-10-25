@@ -20,8 +20,8 @@ class IndexTimelineRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cursor' => ['nullable', 'string', 'max:255'],
-            'before' => ['nullable', 'date'],
+            'cursor' => ['nullable', 'string', 'max:2048', 'prohibits:before'],
+            'before' => ['nullable', 'date', 'prohibits:cursor'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
             'types' => ['nullable', 'array'],
             'types.*' => ['required', Rule::in(['activity', 'comment', 'system'])],

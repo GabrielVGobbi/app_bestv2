@@ -18,6 +18,8 @@ export type DetailItem = {
     value: string | null | undefined;
 };
 
+const EMPTY_VALUE = '-';
+
 export function isBlank(value: string | null | undefined): boolean {
     return !value || value.trim() === '';
 }
@@ -38,7 +40,7 @@ export function Section({
             {title || action ? (
                 <header className="flex min-h-7 items-center justify-between gap-3">
                     {title ? (
-                        <h2 className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                        <h2 className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                             {title}
                         </h2>
                     ) : (
@@ -48,34 +50,6 @@ export function Section({
                 </header>
             ) : null}
             {children}
-        </section>
-    );
-}
-
-/** @deprecated Prefer Section inside tab shells — kept for callers expecting a bordered panel. */
-export function Panel({
-    title,
-    children,
-    className,
-    action,
-}: {
-    title: string;
-    children: ReactNode;
-    className?: string;
-    action?: ReactNode;
-}) {
-    return (
-        <section
-            className={cn(
-                'rounded-xl border border-border/80 bg-card shadow-[var(--shadow-app-panel)]',
-                className,
-            )}
-        >
-            <header className="flex min-h-10 items-center justify-between gap-3 px-5 pt-4">
-                <h2 className="text-sm font-semibold">{title}</h2>
-                {action}
-            </header>
-            <div className="px-5 pt-3 pb-5">{children}</div>
         </section>
     );
 }
@@ -91,7 +65,7 @@ export function FieldGrid({
 }) {
     if (variant === 'rows') {
         return (
-            <dl className="divide-y divide-border/70 rounded-lg border border-border/70">
+            <dl className="divide-y divide-separator rounded-lg border border-border">
                 {items.map((item) => {
                     const blank = isBlank(item.value);
 
@@ -107,11 +81,11 @@ export function FieldGrid({
                                 className={cn(
                                     'min-w-0 text-sm break-words',
                                     blank
-                                        ? 'text-muted-foreground/70'
+                                        ? 'text-muted-foreground'
                                         : 'font-medium text-foreground',
                                 )}
                             >
-                                {blank ? '—' : item.value}
+                                {blank ? EMPTY_VALUE : item.value}
                             </dd>
                         </div>
                     );
@@ -134,11 +108,11 @@ export function FieldGrid({
                             className={cn(
                                 'mt-1 min-w-0 text-sm break-words',
                                 blank
-                                    ? 'font-normal text-muted-foreground/70'
+                                    ? 'text-muted-foreground'
                                     : 'font-medium text-foreground',
                             )}
                         >
-                            {blank ? '—' : item.value}
+                            {blank ? EMPTY_VALUE : item.value}
                         </dd>
                     </div>
                 );
@@ -169,27 +143,27 @@ export function SidebarContactRow({
             return (
                 <Link
                     href={emptyHref}
-                    className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                    className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     aria-label={emptyLabel}
                 >
-                    <Icon className="size-4 shrink-0" />
+                    <Icon className="size-4 shrink-0" aria-hidden="true" />
                     <span className="truncate">{emptyLabel}</span>
                 </Link>
             );
         }
 
         return (
-            <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70">
-                <Icon className="size-4 shrink-0" />
+            <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground">
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
                 <span className="sr-only">{label}</span>
-                <span className="truncate">—</span>
+                <span className="truncate">{EMPTY_VALUE}</span>
             </div>
         );
     }
 
     const content = (
         <>
-            <Icon className="size-4 shrink-0" />
+            <Icon className="size-4 shrink-0" aria-hidden="true" />
             <span className="sr-only">{label}</span>
             <span className="truncate">{value}</span>
         </>
@@ -202,13 +176,15 @@ export function SidebarContactRow({
                 label={label}
                 className="w-full px-2 py-1.5 text-sm text-muted-foreground"
             >
-                <span className="flex min-w-0 items-center gap-2">{content}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                    {content}
+                </span>
             </CopyableText>
         );
     }
 
     return (
-        <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-secondary/60">
+        <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground">
             {content}
         </div>
     );
@@ -227,18 +203,21 @@ export function SidebarMetaRow({
 
     return (
         <div className="flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-sm">
-            <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <Icon
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+            />
             <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <p
                     className={cn(
                         'mt-0.5 break-words',
                         blank
-                            ? 'text-muted-foreground/70'
+                            ? 'text-muted-foreground'
                             : 'font-medium text-foreground',
                     )}
                 >
-                    {blank ? '—' : value}
+                    {blank ? EMPTY_VALUE : value}
                 </p>
             </div>
         </div>
@@ -248,8 +227,8 @@ export function SidebarMetaRow({
 export function DefaultAddressSummary({ address }: { address?: Address }) {
     if (!address) {
         return (
-            <div className="flex items-start gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70">
-                <MapPin className="mt-0.5 size-4 shrink-0" />
+            <div className="flex items-start gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground">
+                <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>Nenhum endereço padrão</span>
             </div>
         );
@@ -258,46 +237,16 @@ export function DefaultAddressSummary({ address }: { address?: Address }) {
     return (
         <div className="space-y-1.5 rounded-md px-2 py-1.5">
             <div className="flex min-w-0 items-center gap-2">
-                <MapPin className="size-4 shrink-0 text-muted-foreground" />
+                <MapPin
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                />
                 <p className="truncate text-sm font-medium">
                     {address.name || 'Endereço'}
                 </p>
-                <Badge
-                    variant="secondary"
-                    className="h-5 shrink-0 rounded-sm px-1.5 text-[10px]"
-                >
-                    Padrão
-                </Badge>
+                <Badge variant="secondary">Padrão</Badge>
             </div>
             <p className="pl-6 text-xs leading-5 text-muted-foreground">
-                {address.full_address}
-            </p>
-        </div>
-    );
-}
-
-export function DefaultAddressPanel({ address }: { address?: Address }) {
-    if (!address) {
-        return (
-            <p className="text-sm text-muted-foreground">
-                Nenhum endereço padrão definido.
-            </p>
-        );
-    }
-
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center gap-2">
-                <MapPin className="size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">{address.name || 'Endereço'}</p>
-                <Badge
-                    variant="secondary"
-                    className="h-5 rounded-sm px-1.5 text-[10px]"
-                >
-                    Padrão
-                </Badge>
-            </div>
-            <p className="text-sm leading-6 text-muted-foreground">
                 {address.full_address}
             </p>
         </div>
@@ -309,30 +258,14 @@ export function TechnicalIdsDisclosure({ items }: { items: DetailItem[] }) {
         <Collapsible>
             <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md px-1 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
                 Dados técnicos
-                <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" />
+                <ChevronDown
+                    className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+                    aria-hidden="true"
+                />
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-2">
                 <FieldGrid columns="grid-cols-1" items={items} />
             </CollapsibleContent>
         </Collapsible>
-    );
-}
-
-export function ClientStatusBadge({
-    status,
-}: {
-    status: 'active' | 'inactive' | 'archived';
-}) {
-    const label =
-        status === 'active'
-            ? 'Ativo'
-            : status === 'inactive'
-              ? 'Inativo'
-              : 'Arquivado';
-
-    return (
-        <Badge variant="secondary" className="justify-center px-3">
-            {label}
-        </Badge>
     );
 }

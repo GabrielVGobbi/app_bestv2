@@ -8,6 +8,7 @@ export interface User {
     email: string;
     email_verified_at: string | null;
     must_change_password: boolean;
+    can?: { update: boolean; delete: boolean };
     roles?: Role[];
     permissions?: Permission[];
     created_at: string;

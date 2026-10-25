@@ -1,293 +1,452 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+﻿import { Head, Link, usePage } from '@inertiajs/react';
 import {
+    ArrowRight,
     ArrowUpRight,
-    CheckCircle2,
-    Disc3,
-    Layers3,
-    Music2,
-    Sparkles,
+    Check,
+    CircleDot,
+    FolderOpen,
+    Layers,
+    LayoutGrid,
+    ShieldCheck,
+    UserRound,
 } from 'lucide-react';
-import type { ElementType } from 'react';
-
+import type { LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 import { dashboard } from '@/actions/App/Http/Controllers/AppController';
-import { resolveNavItems, resolveNavModules } from '@/lib/resolve-nav-items';
-import type { NavItem, NavModule } from '@/types';
+import { PageHeader } from '@/components/page-header';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
+import { resolveNavModules } from '@/lib/resolve-nav-items';
+import { cn } from '@/lib/utils';
+import type { NavItem } from '@/types';
 
-type DashboardModule = NavModule & {
-    href: string;
-};
-
-function findFirstLink(items: NavItem[]): NavItem | null {
-    for (const item of items) {
-        if (item.href && item.href !== '#') {
-            return item;
-        }
-
-        if (item.items?.length) {
-            const child = findFirstLink(item.items);
-
-            if (child) {
-                return child;
-            }
-        }
-    }
-
-    return null;
-}
-
-function flattenLinks(items: NavItem[]): NavItem[] {
-    return items.flatMap((item) => {
-        const children = item.items?.length ? flattenLinks(item.items) : [];
-        const current = item.href && item.href !== '#' ? [item] : [];
-
-        return [...current, ...children];
-    });
-}
-
-function resolveDashboardModules(modules: NavModule[]): DashboardModule[] {
-    return modules.flatMap((module) => {
-        const firstLink = findFirstLink(module.items);
-        const href = module.defaultHref ?? module.href ?? firstLink?.href;
-
-        if (typeof href !== 'string' || href === '#') {
-            return [];
-        }
-
-        return [{ ...module, href }];
-    });
-}
-
-function EqualizerMark() {
-    return (
-        <div className="flex h-16 items-end gap-1.5" aria-hidden="true">
-            <span className="h-6 w-2 animate-pulse rounded-full bg-white/45" />
-            <span className="h-11 w-2 animate-pulse rounded-full bg-white/70 [animation-delay:120ms]" />
-            <span className="h-16 w-2 animate-pulse rounded-full bg-white [animation-delay:240ms]" />
-            <span className="h-9 w-2 animate-pulse rounded-full bg-white/70 [animation-delay:360ms]" />
-            <span className="h-13 w-2 animate-pulse rounded-full bg-white/50 [animation-delay:480ms]" />
-        </div>
+function links(
+    items: NavItem[],
+    section = '',
+): Array<NavItem & { section: string }> {
+    return items.flatMap((item) =>
+        item.items?.length
+            ? links(item.items, item.title)
+            : item.href && item.href !== '#'
+              ? [{ ...item, section }]
+              : [],
     );
 }
 
-function ModuleCard({ module }: { module: DashboardModule }) {
-    const Icon = module.icon ?? Disc3;
-    const visibleLinks = flattenLinks(module.items).length;
+const panel =
+    'rounded-lg border border-border bg-card shadow-xs dark:shadow-none';
+const focus =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const toneChip = {
+    slate: 'bg-muted text-muted-foreground',
+    amber: 'bg-warning-soft text-warning-soft-foreground',
+    emerald: 'bg-success-soft text-success-soft-foreground',
+} as const;
 
-    return (
-        <Link
-            href={module.href}
-            prefetch
-            className="group relative overflow-hidden rounded-xl border border-border/80 bg-card p-5 shadow-[var(--shadow-app-panel)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[var(--shadow-app-floating)] focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
-        >
-            <div className="absolute -top-16 -right-12 size-32 rounded-full bg-primary/6 blur-2xl transition-colors group-hover:bg-primary/12" />
-
-            <div className="relative flex items-start justify-between gap-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-brand-surface text-primary shadow-sm">
-                    <Icon className="size-5" />
-                </span>
-                <ArrowUpRight className="size-4 text-muted-foreground transition-[color,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
-            </div>
-
-            <div className="relative mt-7">
-                <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    {module.label}
-                </h2>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    {visibleLinks > 0
-                        ? `${visibleLinks} ${visibleLinks === 1 ? 'área disponível' : 'áreas disponíveis'}`
-                        : 'Acesso direto ao módulo'}
-                </p>
-            </div>
-        </Link>
-    );
-}
-
-function StatusItem({
-    icon: Icon,
+function Metric({
     label,
     value,
+    caption,
+    icon: Icon,
+    tone = 'slate',
 }: {
-    icon: ElementType;
     label: string;
-    value: string;
+    value: string | number;
+    caption: string;
+    icon: LucideIcon;
+    tone?: 'slate' | 'amber' | 'emerald';
 }) {
     return (
-        <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/70 px-3 py-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand-surface text-primary">
-                <Icon className="size-4" />
-            </span>
-            <div className="min-w-0">
-                <p className="text-[11px] font-medium text-muted-foreground">
+        <section className={cn(panel, 'relative min-h-40 p-3')}>
+            <div className="flex items-start justify-between gap-2">
+                <h2 className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                     {label}
-                </p>
-                <p className="truncate text-sm font-semibold text-foreground">
-                    {value}
-                </p>
+                </h2>
+                <span
+                    className={cn(
+                        'flex size-7 shrink-0 items-center justify-center rounded-full',
+                        toneChip[tone],
+                    )}
+                >
+                    <Icon size={14} />
+                </span>
             </div>
-        </div>
+            <p className="mt-3 text-xl font-bold tracking-tight text-foreground tabular-nums">
+                {value}
+            </p>
+            <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
+                {caption}
+            </p>
+        </section>
     );
 }
 
 export default function Dashboard() {
     const { auth, nav } = usePage().props;
-    const modules = resolveDashboardModules(resolveNavModules(nav.modules));
-    const globalLinks = flattenLinks(resolveNavItems(nav.global));
-    const moduleLinks = modules.flatMap((module) => flattenLinks(module.items));
-    const quickLinks = [...globalLinks, ...moduleLinks]
-        .filter(
-            (item, index, links) =>
-                links.findIndex((candidate) => candidate.href === item.href) ===
-                index,
-        )
-        .slice(0, 6);
-    const firstName = auth.user?.name?.split(' ')[0] ?? 'time';
+    const modules = resolveNavModules(nav.modules);
+    const [selected, setSelected] = useState('all');
+    const [showAllResources, setShowAllResources] = useState(false);
+    const visibleModules =
+        selected === 'all'
+            ? modules
+            : modules.filter((module) => module.slug === selected);
+    const resources = visibleModules.flatMap((module) =>
+        links(module.items).map((item) => ({ ...item, module: module.label })),
+    );
+    const allResources = modules.flatMap((module) => links(module.items));
+    const sections = [
+        ...new Set(allResources.map((item) => item.section).filter(Boolean)),
+    ];
+    const firstName = auth.user?.name?.split(' ')[0] ?? '';
 
     return (
         <>
             <Head title="Dashboard" />
+            <Tabs
+                value={selected}
+                onValueChange={setSelected}
+                className="page-wrapper space-y-5"
+            >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <PageHeader
+                        eyebrow={
+                            <>
+                                Olá,{' '}
+                                <span className="font-semibold text-foreground">
+                                    {firstName}
+                                </span>
+                            </>
+                        }
+                        title="Visão geral"
+                        className="min-w-0"
+                    />
+                    {/* Fluid Tabs: o segmento ativo desliza; o painel abaixo é o conteúdo filtrado. */}
+                    <TabsList
+                        aria-label="Filtrar recursos por módulo"
+                        className="max-w-full self-start overflow-x-auto lg:self-auto"
+                    >
+                        {[
+                            { slug: 'all', label: 'Todos os módulos' },
+                            ...modules,
+                        ].map((module) => (
+                            <TabItem
+                                key={module.slug}
+                                value={module.slug}
+                                label={module.label}
+                            />
+                        ))}
+                    </TabsList>
+                </div>
 
-            <div className="page-wrapper space-y-6 pb-8">
-                <section className="relative overflow-hidden rounded-2xl bg-sidebar px-6 py-7 text-sidebar-foreground shadow-[var(--shadow-app-floating)] md:px-8 md:py-9">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,color-mix(in_oklab,var(--primary)_32%,transparent),transparent_32rem)]" />
-                    <div className="absolute top-0 right-0 h-full w-2/5 [background-image:repeating-linear-gradient(115deg,transparent_0_14px,white_14px_15px)] opacity-15" />
-
-                    <div className="relative grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
-                        <div className="max-w-2xl">
-                            <div className="mb-5 flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] text-white/60 uppercase">
-                                <Music2 className="size-4 text-primary" />
-                                Central de operações
+                <TabPanel value={selected} className="space-y-4">
+                    <div className="grid gap-3 xl:grid-cols-12">
+                        <section className={cn(panel, 'p-3 xl:col-span-6')}>
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <h2 className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                        Recursos disponíveis
+                                    </h2>
+                                    <p className="mt-2 flex items-baseline gap-3 text-2xl font-bold text-foreground tabular-nums">
+                                        {resources.length}
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            {selected === 'all'
+                                                ? 'em todos os módulos'
+                                                : visibleModules[0]?.label}
+                                        </span>
+                                    </p>
+                                </div>
+                                <span className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
+                                    <LayoutGrid size={18} />
+                                </span>
                             </div>
-                            <h1 className="text-2xl font-semibold tracking-[-0.035em] text-balance text-white md:text-3xl">
-                                Olá, {firstName}. Tudo em um só ritmo.
-                            </h1>
-                            <p className="mt-3 max-w-xl text-sm leading-6 text-white/65 md:text-[15px]">
-                                Acesse vendas, playlists, cadastros e rotinas da
-                                BestPlay a partir de uma visão única e
-                                organizada.
-                            </p>
-                        </div>
-
-                        <div className="hidden items-center gap-6 border-l border-white/10 pl-8 md:flex">
-                            <EqualizerMark />
-                            <div>
-                                <p className="text-3xl font-semibold text-white tabular-nums">
-                                    {modules.length}
-                                </p>
-                                <p className="mt-1 text-xs text-white/55">
-                                    módulos disponíveis
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-                    <section>
-                        <div className="mb-4 flex items-end justify-between gap-4">
-                            <div>
-                                <p className="text-[11px] font-semibold tracking-[0.14em] text-primary uppercase">
-                                    Navegação
-                                </p>
-                                <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                                    Módulos do sistema
-                                </h2>
-                            </div>
-                            <span className="hidden text-xs text-muted-foreground sm:block">
-                                Selecione uma área para começar
-                            </span>
-                        </div>
-
-                        {modules.length > 0 ? (
-                            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-                                {modules.map((module) => (
-                                    <ModuleCard
+                            <div
+                                className="mt-5 flex h-2 overflow-hidden rounded-full bg-muted"
+                                aria-hidden="true"
+                            >
+                                {modules.map((module, index) => (
+                                    <span
                                         key={module.slug}
-                                        module={module}
+                                        style={{
+                                            flex:
+                                                links(module.items).length || 1,
+                                        }}
+                                        className={
+                                            [
+                                                'bg-chart-1',
+                                                'bg-chart-2',
+                                                'bg-chart-3',
+                                            ][index % 3]
+                                        }
                                     />
                                 ))}
                             </div>
-                        ) : (
-                            <div className="rounded-xl border border-dashed border-border bg-card/60 px-6 py-12 text-center">
-                                <Layers3 className="mx-auto size-7 text-muted-foreground" />
-                                <p className="mt-3 text-sm font-medium text-foreground">
-                                    Nenhum módulo disponível
-                                </p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Solicite ao administrador a liberação dos
-                                    acessos.
-                                </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {modules.map((module) => (
+                                    <button
+                                        type="button"
+                                        key={module.slug}
+                                        onClick={() => setSelected(module.slug)}
+                                        className={cn(
+                                            'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md border border-border px-2.5 py-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground',
+                                            focus,
+                                        )}
+                                    >
+                                        <span className="truncate">
+                                            {module.label}
+                                        </span>
+                                        <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-2xs tabular-nums">
+                                            {links(module.items).length}
+                                        </span>
+                                    </button>
+                                ))}
                             </div>
-                        )}
-                    </section>
+                        </section>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:col-span-6">
+                            <Metric
+                                label="Módulos"
+                                value={modules.length}
+                                caption="Disponíveis na navegação"
+                                icon={Layers}
+                                tone="amber"
+                            />
+                            <Metric
+                                label="Recursos"
+                                value={allResources.length}
+                                caption="Páginas e ferramentas"
+                                icon={LayoutGrid}
+                            />
+                            <Metric
+                                label="Seções"
+                                value={sections.length}
+                                caption="Grupos de navegação"
+                                icon={FolderOpen}
+                            />
+                            <Metric
+                                label="Sua conta"
+                                value={
+                                    auth.user?.email_verified_at
+                                        ? 'Verificada'
+                                        : 'Ativa'
+                                }
+                                caption="Sessão autenticada"
+                                icon={ShieldCheck}
+                                tone="emerald"
+                            />
+                        </div>
+                    </div>
 
-                    <aside className="space-y-4">
-                        <section className="rounded-xl border border-border/80 bg-card p-5 shadow-[var(--shadow-app-panel)]">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-[11px] font-semibold tracking-[0.12em] text-primary uppercase">
-                                        Acesso rápido
-                                    </p>
-                                    <h2 className="mt-1 text-base font-semibold text-foreground">
-                                        Rotas principais
+                    {allResources.length > 0 && (
+                        <nav
+                            aria-label="Acesso rápido"
+                            className={cn(
+                                panel,
+                                'grid gap-2 p-3 sm:grid-cols-3 xl:grid-cols-6',
+                            )}
+                        >
+                            {allResources.slice(0, 6).map((item) => {
+                                const Icon = item.icon ?? LayoutGrid;
+
+                                return (
+                                    <Link
+                                        key={`${item.section}-${item.title}`}
+                                        href={item.href}
+                                        className={cn(
+                                            'flex min-w-0 items-center gap-3 rounded-lg border border-transparent bg-muted px-3 py-2.5 text-sm font-semibold text-foreground hover:bg-accent',
+                                            focus,
+                                        )}
+                                    >
+                                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                                            <Icon size={14} />
+                                        </span>
+                                        <span className="truncate">
+                                            {item.title}
+                                        </span>
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                    )}
+
+                    <div className="grid items-start gap-3 xl:grid-cols-12">
+                        <section
+                            className={cn(panel, 'min-w-0 p-3 xl:col-span-7')}
+                        >
+                            <div className="mb-3 flex items-center gap-2">
+                                <span className="flex size-7 items-center justify-center rounded-full border border-border text-muted-foreground">
+                                    <LayoutGrid size={13} />
+                                </span>
+                                <h2 className="text-xs font-semibold text-foreground">
+                                    Recursos da plataforma
+                                </h2>
+                                {resources.length > 6 && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowAllResources(
+                                                !showAllResources,
+                                            )
+                                        }
+                                        className={cn(
+                                            'ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground',
+                                            focus,
+                                        )}
+                                    >
+                                        {showAllResources
+                                            ? 'Ver menos'
+                                            : 'Ver todos'}
+                                        <ArrowRight size={12} />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] gap-3 px-2 py-2 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                <span>Recurso</span>
+                                <span>Módulo</span>
+                                <span>Acesso</span>
+                            </div>
+                            <div className="space-y-1">
+                                {resources
+                                    .slice(0, showAllResources ? undefined : 6)
+                                    .map((item) => (
+                                        <Link
+                                            key={`${item.module}-${item.section}-${item.title}`}
+                                            href={item.href}
+                                            className={cn(
+                                                'grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] items-center gap-3 border-b border-separator px-2 py-3 text-xs last:border-b-0 hover:bg-accent',
+                                                focus,
+                                            )}
+                                        >
+                                            <span className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
+                                                <span className="size-2 shrink-0 rounded-full bg-success" />
+                                                <span className="truncate">
+                                                    {item.title}
+                                                </span>
+                                            </span>
+                                            <span className="truncate text-muted-foreground">
+                                                {item.section || item.module}
+                                            </span>
+                                            <span className="flex items-center gap-2 text-muted-foreground">
+                                                <span className="hidden sm:inline">
+                                                    Disponível
+                                                </span>
+                                                <ArrowUpRight size={12} />
+                                            </span>
+                                        </Link>
+                                    ))}
+                            </div>
+                            {resources.length === 0 && (
+                                <p className="py-10 text-center text-xs text-muted-foreground">
+                                    Nenhum recurso disponível neste módulo.
+                                </p>
+                            )}
+                        </section>
+                        <div className="space-y-3 xl:col-span-5">
+                            <section className={cn(panel, 'p-3')}>
+                                <div className="mb-3 flex items-center gap-2">
+                                    <span className="flex size-7 items-center justify-center rounded-full border border-border text-muted-foreground">
+                                        <Layers size={13} />
+                                    </span>
+                                    <h2 className="text-xs font-semibold text-foreground">
+                                        Módulos da plataforma
                                     </h2>
                                 </div>
-                                <Sparkles className="size-4 text-primary" />
-                            </div>
+                                <div className="space-y-1">
+                                    {modules.map((module) => {
+                                        const Icon = module.icon ?? Layers;
 
-                            <div className="mt-4 space-y-1">
-                                {quickLinks.map((item) => {
-                                    const Icon = item.icon ?? Disc3;
-
-                                    return (
-                                        <Link
-                                            key={`${item.title}-${String(item.href)}`}
-                                            href={item.href}
-                                            prefetch
-                                            className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-brand-surface hover:text-foreground"
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={module.slug}
+                                                onClick={() =>
+                                                    setSelected(module.slug)
+                                                }
+                                                className={cn(
+                                                    'flex w-full items-center gap-3 border-b border-separator px-2 py-3 text-left last:border-b-0 hover:bg-accent',
+                                                    focus,
+                                                )}
+                                            >
+                                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                                                    <Icon size={14} />
+                                                </span>
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="block truncate text-xs font-semibold text-foreground">
+                                                        {module.label}
+                                                    </span>
+                                                    <span className="text-2xs text-muted-foreground">
+                                                        {
+                                                            links(module.items)
+                                                                .length
+                                                        }{' '}
+                                                        recursos disponíveis
+                                                    </span>
+                                                </span>
+                                                <ArrowRight
+                                                    size={12}
+                                                    className="text-muted-foreground"
+                                                />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                            <section className={cn(panel, 'p-3')}>
+                                <div className="mb-3 flex items-center gap-2">
+                                    <span className="flex size-7 items-center justify-center rounded-full border border-border text-muted-foreground">
+                                        <UserRound size={13} />
+                                    </span>
+                                    <h2 className="text-xs font-semibold text-foreground">
+                                        Sua conta
+                                    </h2>
+                                </div>
+                                <div className="space-y-1">
+                                    {[
+                                        {
+                                            label: auth.user?.name ?? '',
+                                            caption: 'Nome da conta',
+                                            icon: UserRound,
+                                        },
+                                        {
+                                            label: auth.user?.email ?? '',
+                                            caption: 'E-mail',
+                                            icon: CircleDot,
+                                        },
+                                        {
+                                            label: auth.user?.email_verified_at
+                                                ? 'E-mail verificado'
+                                                : 'E-mail não verificado',
+                                            caption: 'Verificação da conta',
+                                            icon: ShieldCheck,
+                                        },
+                                    ].map((detail) => (
+                                        <div
+                                            key={detail.caption}
+                                            className="flex items-center gap-3 border-b border-separator px-2 py-3 last:border-b-0"
                                         >
-                                            <Icon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-                                            <span className="min-w-0 flex-1 truncate font-medium">
-                                                {item.title}
-                                            </span>
-                                            <ArrowUpRight className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        </section>
-
-                        <section className="rounded-xl border border-border/80 bg-card p-4 shadow-[var(--shadow-app-panel)]">
-                            <div className="mb-3 flex items-center gap-2 px-1">
-                                <CheckCircle2 className="size-4 text-success" />
-                                <h2 className="text-sm font-semibold text-foreground">
-                                    Ambiente pronto
-                                </h2>
-                            </div>
-                            <div className="space-y-2">
-                                <StatusItem
-                                    icon={Layers3}
-                                    label="Módulos liberados"
-                                    value={String(modules.length)}
-                                />
-                                <StatusItem
-                                    icon={Music2}
-                                    label="Workspace"
-                                    value="BestPlay"
-                                />
-                            </div>
-                        </section>
-                    </aside>
-                </div>
-            </div>
+                                            <detail.icon
+                                                size={14}
+                                                className="shrink-0 text-success"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-xs font-semibold text-foreground">
+                                                    {detail.label}
+                                                </p>
+                                                <p className="text-2xs text-muted-foreground">
+                                                    {detail.caption}
+                                                </p>
+                                            </div>
+                                            <Check
+                                                size={14}
+                                                className="shrink-0 text-muted-foreground"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </TabPanel>
+            </Tabs>
         </>
     );
 }
 
-Dashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-    ],
-};
+Dashboard.layout = { breadcrumbs: [{ title: 'Dashboard', href: dashboard() }] };

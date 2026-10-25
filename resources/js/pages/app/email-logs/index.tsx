@@ -17,20 +17,40 @@ import {
     Shield,
     ShieldOff,
     X,
-    XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { index, resend, updateSettings } from '@/actions/App/Modules/Email/Http/Controllers/EmailLogController';
-import Heading from '@/components/heading';
+import {
+    index,
+    resend,
+    updateSettings,
+} from '@/actions/App/Modules/Email/Http/Controllers/EmailLogController';
+import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '@/components/ui/fluid/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { formatDate } from '@/lib/utils';
-import type { EmailLog, EmailSettings, EmailStatus } from '@/types/app/email-log';
+import type {
+    EmailLog,
+    EmailSettings,
+    EmailStatus,
+} from '@/types/app/email-log';
 
 // Laravel's raw paginator shape (returned by ->paginate() passed directly to Inertia)
 interface LaravelPaginator<T> {
@@ -47,83 +67,88 @@ interface LaravelPaginator<T> {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-type StatusConfig = { label: string; icon: React.ReactNode; className: string };
+type StatusConfig = {
+    label: string;
+    icon: React.ReactNode;
+    variant: 'success' | 'warning' | 'destructive' | 'info' | 'secondary';
+};
 
 const STATUS_CONFIG: Record<EmailStatus, StatusConfig> = {
     queued: {
         label: 'Na fila',
         icon: <Clock className="size-3" />,
-        className: 'bg-amber-100 text-amber-700 border-amber-200',
+        variant: 'warning',
     },
     processing: {
         label: 'Processando',
         icon: <Loader2 className="size-3 animate-spin" />,
-        className: 'bg-blue-100 text-blue-700 border-blue-200',
+        variant: 'info',
     },
     sent: {
         label: 'Enviado',
         icon: <Send className="size-3" />,
-        className: 'bg-green-100 text-green-700 border-green-200',
+        variant: 'success',
     },
     failed: {
         label: 'Falhou',
         icon: <X className="size-3" />,
-        className: 'bg-red-100 text-red-700 border-red-200',
+        variant: 'destructive',
     },
     bounced: {
         label: 'Rejeitado',
         icon: <AlertTriangle className="size-3" />,
-        className: 'bg-orange-100 text-orange-700 border-orange-200',
+        variant: 'destructive',
     },
     delivered: {
         label: 'Entregue',
         icon: <CheckCircle className="size-3" />,
-        className: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        variant: 'info',
     },
     delivery_delayed: {
         label: 'Entrega atrasada',
         icon: <Clock className="size-3" />,
-        className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        variant: 'warning',
     },
     complained: {
         label: 'Spam',
         icon: <AlertTriangle className="size-3" />,
-        className: 'bg-rose-100 text-rose-700 border-rose-200',
+        variant: 'destructive',
     },
     opened: {
         label: 'Aberto',
         icon: <Eye className="size-3" />,
-        className: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+        variant: 'info',
     },
     clicked: {
         label: 'Clicado',
         icon: <MousePointerClick className="size-3" />,
-        className: 'bg-violet-100 text-violet-700 border-violet-200',
+        variant: 'info',
     },
     received: {
         label: 'Recebido',
         icon: <Mail className="size-3" />,
-        className: 'bg-sky-100 text-sky-700 border-sky-200',
+        variant: 'info',
     },
     scheduled: {
         label: 'Agendado',
         icon: <Clock className="size-3" />,
-        className: 'bg-slate-100 text-slate-700 border-slate-200',
+        variant: 'secondary',
     },
     suppressed: {
         label: 'Suprimido',
         icon: <ShieldOff className="size-3" />,
-        className: 'bg-stone-100 text-stone-700 border-stone-200',
+        variant: 'secondary',
     },
 };
 
 function StatusBadge({ status }: { status: EmailStatus }) {
     const cfg = STATUS_CONFIG[status];
+
     return (
-        <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-medium ${cfg.className}`}>
+        <Badge variant={cfg.variant}>
             {cfg.icon}
             {cfg.label}
-        </span>
+        </Badge>
     );
 }
 
@@ -138,7 +163,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function CategoryBadge({ category }: { category: string }) {
     return (
-        <Badge variant="secondary" className="text-[10px]">
+        <Badge variant="secondary" className="text-2xs">
             {CATEGORY_LABELS[category] ?? category}
         </Badge>
     );
@@ -148,10 +173,9 @@ function CategoryBadge({ category }: { category: string }) {
 
 interface KillSwitchPanelProps {
     settings: EmailSettings;
-    globalEnabled: boolean;
 }
 
-function KillSwitchPanel({ settings, globalEnabled: initialGlobal }: KillSwitchPanelProps) {
+function KillSwitchPanel({ settings }: KillSwitchPanelProps) {
     const { data, setData, patch, processing, wasSuccessful } = useForm({
         enabled: settings.enabled ?? true,
         auth_enabled: settings.auth_enabled ?? true,
@@ -169,40 +193,77 @@ function KillSwitchPanel({ settings, globalEnabled: initialGlobal }: KillSwitchP
     const globalOn = data.enabled;
 
     return (
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border border-border bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <div className={`flex size-8 items-center justify-center rounded-md ${globalOn ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                        {globalOn ? <Shield className="size-4" /> : <ShieldOff className="size-4" />}
+                    <div
+                        className={`flex size-8 items-center justify-center rounded-md ${globalOn ? 'bg-success-soft text-success-soft-foreground' : 'bg-destructive-soft text-destructive-soft-foreground'}`}
+                    >
+                        {globalOn ? (
+                            <Shield className="size-4" />
+                        ) : (
+                            <ShieldOff className="size-4" />
+                        )}
                     </div>
                     <div>
-                        <p className="text-sm font-semibold">Kill Switch de E-mail</p>
-                        <p className="text-muted-foreground text-xs">Ative ou desative o envio em tempo real</p>
+                        <p className="text-sm font-semibold">
+                            Controle de envios
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Ative ou desative o envio em tempo real
+                        </p>
                     </div>
                 </div>
                 <Button size="sm" onClick={save} disabled={processing}>
-                    {processing ? <Loader2 className="size-3.5 animate-spin" /> : wasSuccessful ? <Check className="size-3.5" /> : null}
+                    {processing ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                    ) : wasSuccessful ? (
+                        <Check className="size-3.5" />
+                    ) : null}
                     <span className="ml-1">Salvar</span>
                 </Button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                    { key: 'enabled' as const, label: 'Global', description: 'Desativa TODOS os envios' },
-                    { key: 'auth_enabled' as const, label: 'Autenticação', description: 'Reset de senha, boas-vindas' },
-                    { key: 'export_enabled' as const, label: 'Exportação', description: 'Notificações de arquivo pronto' },
-                    { key: 'notification_enabled' as const, label: 'Notificações', description: 'Alertas internos por e-mail' },
-                    { key: 'system_enabled' as const, label: 'Sistema', description: 'Alertas críticos do sistema' },
+                    {
+                        key: 'enabled' as const,
+                        label: 'Global',
+                        description: 'Desativa TODOS os envios',
+                    },
+                    {
+                        key: 'auth_enabled' as const,
+                        label: 'Autenticação',
+                        description: 'Reset de senha, boas-vindas',
+                    },
+                    {
+                        key: 'export_enabled' as const,
+                        label: 'Exportação',
+                        description: 'Notificações de arquivo pronto',
+                    },
+                    {
+                        key: 'notification_enabled' as const,
+                        label: 'Notificações',
+                        description: 'Alertas internos por e-mail',
+                    },
+                    {
+                        key: 'system_enabled' as const,
+                        label: 'Sistema',
+                        description: 'Alertas críticos do sistema',
+                    },
                 ].map(({ key, label, description }) => {
                     const isOn = data[key];
                     const isDisabled = key !== 'enabled' && !data.enabled;
+
                     return (
                         <div
                             key={key}
                             className={`flex items-center gap-3 rounded-md border p-3 transition-colors ${
                                 key === 'enabled'
-                                    ? isOn ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
-                                    : 'bg-muted/30'
+                                    ? isOn
+                                        ? 'border-success-soft-foreground/20 bg-success-soft'
+                                        : 'border-destructive-soft-foreground/20 bg-destructive-soft'
+                                    : 'bg-muted'
                             }`}
                         >
                             <button
@@ -210,20 +271,31 @@ function KillSwitchPanel({ settings, globalEnabled: initialGlobal }: KillSwitchP
                                 role="switch"
                                 aria-checked={isOn}
                                 disabled={isDisabled}
-                                onClick={() => !isDisabled && setData(key, !isOn)}
-                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${
+                                onClick={() =>
+                                    !isDisabled && setData(key, !isOn)
+                                }
+                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                                     isOn ? 'bg-primary' : 'bg-input'
                                 }`}
                             >
                                 <span
-                                    className={`pointer-events-none block size-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                                    className={`pointer-events-none block size-4 rounded-full bg-background shadow-lg ring-0 transition-transform ${
                                         isOn ? 'translate-x-4' : 'translate-x-0'
                                     }`}
                                 />
                             </button>
-                            <Label className="cursor-pointer" onClick={() => !isDisabled && setData(key, !isOn)}>
-                                <span className="block text-sm font-medium">{label}</span>
-                                <span className="text-muted-foreground block text-xs">{description}</span>
+                            <Label
+                                className="cursor-pointer"
+                                onClick={() =>
+                                    !isDisabled && setData(key, !isOn)
+                                }
+                            >
+                                <span className="block text-sm font-medium">
+                                    {label}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                    {description}
+                                </span>
                             </Label>
                         </div>
                     );
@@ -244,56 +316,99 @@ function EmailLogDetailSheet({
     open: boolean;
     onClose: () => void;
 }) {
-    if (!log) return null;
+    if (!log) {
+        return null;
+    }
 
     function handleResend() {
-        router.post(resend.url(log!), {}, {
-            preserveScroll: true,
-            onSuccess: onClose,
-        });
+        router.post(
+            resend.url(log!),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: onClose,
+            },
+        );
     }
 
     return (
         <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-            <SheetContent className="flex w-full flex-col sm:max-w-lg" side="right">
+            <SheetContent
+                className="flex w-full flex-col sm:max-w-lg"
+                side="right"
+            >
                 <SheetHeader className="shrink-0 pb-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge status={log.status} />
                         <CategoryBadge category={log.category} />
                     </div>
-                    <SheetTitle className="mt-1 break-all text-base leading-snug">{log.subject}</SheetTitle>
+                    <SheetTitle className="mt-1 text-base leading-snug break-all">
+                        {log.subject}
+                    </SheetTitle>
                     <SheetDescription className="flex items-center gap-1.5 text-xs">
                         <Mail className="size-3.5" />
                         {log.to_email}
-                        {log.to_name && <span className="text-muted-foreground">({log.to_name})</span>}
+                        {log.to_name && (
+                            <span className="text-muted-foreground">
+                                ({log.to_name})
+                            </span>
+                        )}
                     </SheetDescription>
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto">
                     <div className="space-y-5 px-4 py-3">
-
                         {/* Meta */}
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { label: 'Template', value: log.template },
-                                { label: 'Mailer', value: log.mailer ?? '—' },
-                                { label: 'Tentativas', value: String(log.attempts) },
-                                { label: 'Message ID', value: log.message_id ? log.message_id.slice(0, 16) + '…' : '—' },
-                                { label: 'Enviado em', value: log.sent_at ? formatDate(log.sent_at) : '—' },
-                                { label: 'Falhou em', value: log.failed_at ? formatDate(log.failed_at) : '—' },
+                                { label: 'Mailer', value: log.mailer ?? '-' },
+                                {
+                                    label: 'Tentativas',
+                                    value: String(log.attempts),
+                                },
+                                {
+                                    label: 'Message ID',
+                                    value: log.message_id
+                                        ? log.message_id.slice(0, 16) + '…'
+                                        : '-',
+                                },
+                                {
+                                    label: 'Enviado em',
+                                    value: log.sent_at
+                                        ? formatDate(log.sent_at)
+                                        : '-',
+                                },
+                                {
+                                    label: 'Falhou em',
+                                    value: log.failed_at
+                                        ? formatDate(log.failed_at)
+                                        : '-',
+                                },
                             ].map(({ label, value }) => (
-                                <div key={label} className="rounded-md border p-2.5">
-                                    <p className="text-muted-foreground text-xs font-medium">{label}</p>
-                                    <p className="mt-0.5 break-all font-mono text-xs">{value}</p>
+                                <div
+                                    key={label}
+                                    className="rounded-md border p-2.5"
+                                >
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        {label}
+                                    </p>
+                                    <p className="mt-0.5 font-mono text-xs break-all">
+                                        {value}
+                                    </p>
                                 </div>
                             ))}
                         </div>
 
                         {/* Error */}
                         {log.error_message && (
-                            <div className="rounded-md border border-red-200 bg-red-50 p-3">
-                                <p className="mb-1 text-xs font-medium text-red-700">Erro</p>
-                                <p className="break-all font-mono text-xs text-red-600">{log.error_message}</p>
+                            <div className="rounded-md border border-destructive-soft-foreground/20 bg-destructive-soft p-3">
+                                <p className="mb-1 text-xs font-medium text-destructive-soft-foreground">
+                                    Erro
+                                </p>
+                                <p className="font-mono text-xs break-all text-destructive-soft-foreground">
+                                    {log.error_message}
+                                </p>
                             </div>
                         )}
 
@@ -301,13 +416,18 @@ function EmailLogDetailSheet({
 
                         {/* Actions */}
                         {log.status === 'failed' && (
-                            <Button variant="outline" size="sm" onClick={handleResend} className="w-full">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleResend}
+                                className="w-full"
+                            >
                                 <RefreshCw className="size-3.5" />
                                 Reenviar e-mail
                             </Button>
                         )}
 
-                        <p className="text-muted-foreground text-center text-xs">
+                        <p className="text-center text-xs text-muted-foreground">
                             Criado em {formatDate(log.created_at)}
                         </p>
                     </div>
@@ -329,11 +449,15 @@ function FiltersBar({ filters, statuses, categories }: FiltersBarProps) {
     const [search, setSearch] = useState(filters.search ?? '');
 
     function applyFilters(overrides: Record<string, string | undefined>) {
-        router.get(index.url(), { ...filters, ...overrides }, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            index.url(),
+            { ...filters, ...overrides },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
     }
 
     function handleSearchSubmit(e: React.FormEvent) {
@@ -344,51 +468,87 @@ function FiltersBar({ filters, statuses, categories }: FiltersBarProps) {
     return (
         <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <form onSubmit={handleSearchSubmit} className="flex items-center gap-1.5">
+            <form
+                onSubmit={handleSearchSubmit}
+                className="flex items-center gap-1.5"
+            >
                 <div className="relative">
-                    <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+                    <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar por e-mail ou assunto..."
-                        className="h-8 w-56 pl-8 text-xs"
+                        placeholder="Buscar por e-mail ou assunto"
+                        className="h-9 w-64 pl-8"
                     />
                 </div>
             </form>
 
             {/* Status filter */}
-            <select
-                value={filters.status ?? ''}
-                onChange={(e) => applyFilters({ status: e.target.value || undefined })}
-                className="border-input bg-background h-8 rounded-md border px-2 py-1 text-xs focus:outline-none"
+            <Select
+                value={filters.status ?? 'all'}
+                onValueChange={(value) =>
+                    applyFilters({
+                        status: value === 'all' ? undefined : value,
+                    })
+                }
             >
-                <option value="">Todos os status</option>
-                {Object.entries(statuses).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
+                <SelectTrigger
+                    className="w-44"
+                    aria-label="Filtrar por status"
+                    placeholder="Todos os status"
+                />
+                <SelectContent>
+                    <SelectItem index={0} value="all">
+                        Todos os status
+                    </SelectItem>
+                    {Object.entries(statuses).map(([value, label], index) => (
+                        <SelectItem key={value} index={index + 1} value={value}>
+                            {label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
 
             {/* Category filter */}
-            <select
-                value={filters.category ?? ''}
-                onChange={(e) => applyFilters({ category: e.target.value || undefined })}
-                className="border-input bg-background h-8 rounded-md border px-2 py-1 text-xs focus:outline-none"
+            <Select
+                value={filters.category ?? 'all'}
+                onValueChange={(value) =>
+                    applyFilters({
+                        category: value === 'all' ? undefined : value,
+                    })
+                }
             >
-                <option value="">Todas as categorias</option>
-                {Object.entries(categories).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
+                <SelectTrigger
+                    className="w-44"
+                    aria-label="Filtrar por categoria"
+                    placeholder="Todas as categorias"
+                />
+                <SelectContent>
+                    <SelectItem index={0} value="all">
+                        Todas as categorias
+                    </SelectItem>
+                    {Object.entries(categories).map(([value, label], index) => (
+                        <SelectItem key={value} index={index + 1} value={value}>
+                            {label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
 
             {/* Clear filters */}
             {(filters.status || filters.category || filters.search) && (
                 <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 text-xs"
-                    onClick={() => { setSearch(''); applyFilters({ status: undefined, category: undefined, search: undefined }); }}
+                    onClick={() => {
+                        setSearch('');
+                        applyFilters({
+                            status: undefined,
+                            category: undefined,
+                            search: undefined,
+                        });
+                    }}
                 >
-                    <X className="size-3" />
+                    <X className="size-3.5" />
                     Limpar
                 </Button>
             )}
@@ -399,7 +559,9 @@ function FiltersBar({ filters, statuses, categories }: FiltersBarProps) {
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
 function PaginationBar({ logs }: { logs: LaravelPaginator<EmailLog> }) {
-    if (logs.last_page <= 1) return null;
+    if (logs.last_page <= 1) {
+        return null;
+    }
 
     return (
         <div className="flex items-center justify-between text-xs">
@@ -412,7 +574,12 @@ function PaginationBar({ logs }: { logs: LaravelPaginator<EmailLog> }) {
                     size="sm"
                     className="h-7 w-7 p-0"
                     disabled={!logs.prev_page_url}
-                    onClick={() => logs.prev_page_url && router.visit(logs.prev_page_url, { preserveState: true })}
+                    onClick={() =>
+                        logs.prev_page_url &&
+                        router.visit(logs.prev_page_url, {
+                            preserveState: true,
+                        })
+                    }
                 >
                     <ChevronLeft className="size-3.5" />
                 </Button>
@@ -424,7 +591,12 @@ function PaginationBar({ logs }: { logs: LaravelPaginator<EmailLog> }) {
                     size="sm"
                     className="h-7 w-7 p-0"
                     disabled={!logs.next_page_url}
-                    onClick={() => logs.next_page_url && router.visit(logs.next_page_url, { preserveState: true })}
+                    onClick={() =>
+                        logs.next_page_url &&
+                        router.visit(logs.next_page_url, {
+                            preserveState: true,
+                        })
+                    }
                 >
                     <ChevronRight className="size-3.5" />
                 </Button>
@@ -443,7 +615,13 @@ interface PageProps {
     settings: EmailSettings;
 }
 
-export default function EmailLogsIndex({ logs, filters, statuses, categories, settings }: PageProps) {
+export default function EmailLogsIndex({
+    logs,
+    filters,
+    statuses,
+    categories,
+    settings,
+}: PageProps) {
     setLayoutProps({
         breadcrumbs: [{ title: 'E-mails', href: index.url() }],
     });
@@ -454,7 +632,7 @@ export default function EmailLogsIndex({ logs, filters, statuses, categories, se
 
     return (
         <>
-            <Head title="Logs de E-mail" />
+            <Head title="E-mails" />
 
             <EmailLogDetailSheet
                 log={selectedLog}
@@ -462,60 +640,81 @@ export default function EmailLogsIndex({ logs, filters, statuses, categories, se
                 onClose={() => setSelectedLog(null)}
             />
 
+            <Header
+                title="E-mails"
+                subtitle="Histórico de todos os e-mails enviados pelo sistema."
+            >
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    aria-expanded={showSettings}
+                >
+                    <Settings2 className="size-3.5" />
+                    Controle de envios
+                    {!globalEnabled && (
+                        <Badge variant="destructive" className="ml-1">
+                            Desligado
+                        </Badge>
+                    )}
+                </Button>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                        <Heading
-                            title="Logs de E-mail"
-                            description="Histórico de todos os e-mails enviados pelo sistema."
-                        />
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowSettings(!showSettings)}
-                            className="shrink-0"
-                        >
-                            <Settings2 className="size-3.5" />
-                            Kill Switch
-                            {!globalEnabled && (
-                                <Badge variant="destructive" className="ml-1 px-1.5 py-0 text-[10px]">OFF</Badge>
-                            )}
-                        </Button>
-                    </div>
-
                     {/* Kill Switch */}
-                    {showSettings && (
-                        <KillSwitchPanel settings={settings} globalEnabled={globalEnabled} />
-                    )}
+                    {showSettings && <KillSwitchPanel settings={settings} />}
 
                     {/* Global OFF alert */}
                     {!globalEnabled && !showSettings && (
-                        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="flex items-center gap-2 rounded-md border border-destructive-soft-foreground/20 bg-destructive-soft px-4 py-3 text-sm text-destructive-soft-foreground">
                             <ShieldOff className="size-4 shrink-0" />
-                            <span>O envio de e-mails está <strong>desativado</strong> globalmente. Clique em "Kill Switch" para reativar.</span>
+                            <span>
+                                O envio de e-mails está{' '}
+                                <strong>desativado</strong> globalmente. Abra
+                                "Controle de envios" para reativar.
+                            </span>
                         </div>
                     )}
 
                     {/* Filters */}
-                    <FiltersBar filters={filters} statuses={statuses} categories={categories} />
+                    <FiltersBar
+                        filters={filters}
+                        statuses={statuses}
+                        categories={categories}
+                    />
 
                     {/* Table */}
                     {logs.data.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-                            <Mail className="text-muted-foreground mb-3 size-10" />
-                            <p className="text-muted-foreground text-sm">Nenhum e-mail encontrado.</p>
+                        <div className="rounded-lg border border-dashed border-border">
+                            <EmptyState
+                                icon={Mail}
+                                title="Nenhum e-mail encontrado"
+                            />
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-lg border">
+                        <div className="overflow-hidden rounded-lg border border-border bg-card">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="bg-muted/50 border-b">
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">Status</th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">Destinatário</th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">Assunto</th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">Categoria</th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">Tentativas</th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">Data</th>
+                                    <tr className="border-b border-border bg-muted">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                                            Destinatário
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                                            Assunto
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                                            Categoria
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                                            Tentativas
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
+                                            Data
+                                        </th>
                                         <th className="px-4 py-3" />
                                     </tr>
                                 </thead>
@@ -523,46 +722,78 @@ export default function EmailLogsIndex({ logs, filters, statuses, categories, se
                                     {logs.data.map((log, i) => (
                                         <tr
                                             key={log.uuid}
-                                            className={i % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
+                                            className={
+                                                i % 2 === 0
+                                                    ? 'bg-card'
+                                                    : 'bg-muted/30'
+                                            }
                                         >
                                             <td className="px-4 py-3">
-                                                <StatusBadge status={log.status} />
+                                                <StatusBadge
+                                                    status={log.status}
+                                                />
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-medium">{log.to_email}</span>
+                                                    <span className="text-sm font-medium">
+                                                        {log.to_email}
+                                                    </span>
                                                     {log.to_name && (
-                                                        <span className="text-muted-foreground text-xs">{log.to_name}</span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {log.to_name}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="max-w-xs px-4 py-3">
-                                                <span className="block truncate text-sm">{log.subject}</span>
-                                                <span className="text-muted-foreground font-mono text-xs">{log.template}</span>
+                                                <span className="block truncate text-sm">
+                                                    {log.subject}
+                                                </span>
+                                                <span className="font-mono text-xs text-muted-foreground">
+                                                    {log.template}
+                                                </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <CategoryBadge category={log.category} />
+                                                <CategoryBadge
+                                                    category={log.category}
+                                                />
                                             </td>
                                             <td className="px-4 py-3 tabular-nums">
                                                 {log.status === 'failed' ? (
-                                                    <span className="text-xs font-medium text-red-600">{log.attempts}×</span>
+                                                    <span className="text-xs font-medium text-destructive-soft-foreground">
+                                                        {log.attempts}×
+                                                    </span>
                                                 ) : (
-                                                    <span className="text-muted-foreground text-xs">{log.attempts}×</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {log.attempts}×
+                                                    </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <span className="text-muted-foreground text-xs">{formatDate(log.created_at)}</span>
+                                            <td className="px-4 py-3 tabular-nums">
+                                                <span className="text-xs text-muted-foreground">
+                                                    {formatDate(log.created_at)}
+                                                </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-1">
-                                                    {log.status === 'failed' && (
+                                                    {log.status ===
+                                                        'failed' && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                                                            className="h-7 px-2 text-xs"
+                                                            aria-label="Reenviar e-mail"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                router.post(resend.url(log), {}, { preserveScroll: true });
+                                                                router.post(
+                                                                    resend.url(
+                                                                        log,
+                                                                    ),
+                                                                    {},
+                                                                    {
+                                                                        preserveScroll: true,
+                                                                    },
+                                                                );
                                                             }}
                                                         >
                                                             <RefreshCw className="size-3" />
@@ -572,8 +803,14 @@ export default function EmailLogsIndex({ logs, filters, statuses, categories, se
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-7 px-2 text-xs"
-                                                        onClick={() => setSelectedLog(log)}
+                                                        onClick={() =>
+                                                            setSelectedLog(log)
+                                                        }
                                                     >
+                                                        <Eye
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                         Ver
                                                     </Button>
                                                 </div>

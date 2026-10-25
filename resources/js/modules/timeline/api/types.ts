@@ -2,7 +2,12 @@ import type { Upload } from '@/modules/uploads/api/types';
 
 export type ModelId = string | number;
 
-export type TimelineSeverity = 'muted' | 'info' | 'success' | 'warning' | 'danger';
+export type TimelineSeverity =
+    | 'muted'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'danger';
 
 export interface TimelineActor {
     id: number | null;
@@ -27,7 +32,7 @@ export interface TimelineActivityItem {
     severity: TimelineSeverity;
     causer: TimelineActor | null;
     changes: TimelineChange[];
-    created_at: string;
+    created_at: string | null;
 }
 
 export interface TimelineCommentPermissions {
@@ -47,7 +52,7 @@ export interface TimelineCommentItem {
     replies?: TimelineCommentItem[];
     permissions: TimelineCommentPermissions;
     edited_at: string | null;
-    created_at: string;
+    created_at: string | null;
 }
 
 export type TimelineItem = TimelineActivityItem | TimelineCommentItem;

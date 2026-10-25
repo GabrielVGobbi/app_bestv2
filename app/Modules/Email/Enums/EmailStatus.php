@@ -20,6 +20,35 @@ enum EmailStatus: string
     case Scheduled = 'scheduled';
     case Suppressed = 'suppressed';
 
+    public function acceptsProviderStatus(self $incoming): bool
+    {
+        if ($this === $incoming || in_array($incoming, [self::Queued, self::Processing], true)) {
+            return false;
+        }
+
+        if ($this === self::Received || $this === self::Complained) {
+            return false;
+        }
+
+        if ($this === self::Suppressed) {
+            return $incoming === self::Complained;
+        }
+
+        if (in_array($incoming, [self::Suppressed, self::Complained], true)) {
+            return true;
+        }
+
+        return match ($this) {
+            self::Queued, self::Processing => true,
+            self::Scheduled => in_array($incoming, [self::Sent, self::DeliveryDelayed, self::Failed, self::Bounced, self::Delivered, self::Opened, self::Clicked], true),
+            self::Sent, self::DeliveryDelayed => in_array($incoming, [self::DeliveryDelayed, self::Failed, self::Bounced, self::Delivered, self::Opened, self::Clicked], true),
+            self::Failed, self::Bounced => in_array($incoming, [self::Delivered, self::Opened, self::Clicked], true),
+            self::Delivered => in_array($incoming, [self::Opened, self::Clicked], true),
+            self::Opened => $incoming === self::Clicked,
+            default => false,
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

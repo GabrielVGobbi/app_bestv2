@@ -69,7 +69,7 @@ function NavSubItems({ items }: { items: NavItem[] }) {
                             asChild
                             isActive={isCurrentOrParentUrl(item.href as string)}
                         >
-                            <Link href={item.href as string} prefetch="click">
+                            <Link href={item.href as string} prefetch>
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
                             </Link>
@@ -86,7 +86,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
 
     return (
         <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
             <SidebarMenu>
                 {items.map((item) => {
                     const hasChildren = (item.items?.length ?? 0) > 0;
@@ -134,10 +134,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                 )}
                                 tooltip={{ children: item.title }}
                             >
-                                <Link
-                                    href={item.href as string}
-                                    prefetch="click"
-                                >
+                                <Link href={item.href as string} prefetch>
                                     {item.icon && <item.icon />}
                                     <span>{item.title}</span>
                                 </Link>

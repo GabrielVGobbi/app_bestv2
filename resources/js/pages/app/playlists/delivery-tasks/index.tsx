@@ -4,12 +4,13 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Check, ExternalLink, Eye, Music2 } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { index as playlistsIndex } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import {
     complete,
     index,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistDeliveryTaskController';
-import { index as playlistsIndex } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import { show as showSale } from '@/actions/App/Modules/Sales/Http/Controllers/SaleController';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -17,7 +18,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { apiRoutes } from '@/lib/api/api-routes';
@@ -81,7 +81,7 @@ export default function PlaylistDeliveryTaskIndex({
     setLayoutProps({
         breadcrumbs: [
             { title: 'Playlists', href: playlistsIndex.url() },
-            { title: 'Fila de Playlists', href: index.url() },
+            { title: 'Fila de playlists', href: index.url() },
         ],
     });
 
@@ -169,7 +169,8 @@ export default function PlaylistDeliveryTaskIndex({
                             {row.original.sale_order_number ?? '-'}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                            {row.original.client_name ?? 'Cliente não informado'}
+                            {row.original.client_name ??
+                                'Cliente não informado'}
                         </p>
                     </div>
                 ),
@@ -247,7 +248,11 @@ export default function PlaylistDeliveryTaskIndex({
                 disabled: (task) => !task.playlist?.spotify_url,
                 onClick: (task) => {
                     if (task.playlist?.spotify_url) {
-                        window.open(task.playlist.spotify_url, '_blank', 'noopener,noreferrer');
+                        window.open(
+                            task.playlist.spotify_url,
+                            '_blank',
+                            'noopener,noreferrer',
+                        );
                     }
                 },
             },
@@ -275,7 +280,8 @@ export default function PlaylistDeliveryTaskIndex({
             showLabel: false,
             tooltip: 'Ver venda',
             disabled: (task) => !task.sale?.uuid,
-            href: (task) => (task.sale?.uuid ? showSale.url(task.sale.uuid) : '#'),
+            href: (task) =>
+                task.sale?.uuid ? showSale.url(task.sale.uuid) : '#',
         });
 
         if (permissions.can_complete) {
@@ -304,23 +310,22 @@ export default function PlaylistDeliveryTaskIndex({
 
     return (
         <>
-            <Head title="Fila de Playlists" />
+            <Head title="Fila de playlists" />
+
+            <Header
+                title="Fila de playlists"
+                subtitle="Checklist operacional para adicionar, remover e trocar músicas manualmente no Spotify"
+            >
+                <Button variant="outline" asChild>
+                    <Link href={playlistsIndex.url()}>
+                        <Music2 className="size-4" aria-hidden="true" />
+                        Playlists
+                    </Link>
+                </Button>
+            </Header>
 
             <div className="page-wrapper-xl">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Fila de Playlists"
-                            description="Checklist operacional para adicionar, remover e trocar músicas manualmente no Spotify."
-                        />
-                        <Button variant="outline" asChild>
-                            <Link href={playlistsIndex.url()}>
-                                <Music2 className="size-4" />
-                                Playlists
-                            </Link>
-                        </Button>
-                    </div>
-
                     <DataTable<PlaylistDeliveryTask>
                         queryKey={tableQueryKey}
                         endpoint={apiRoutes.playlistDeliveryTasks.index}
@@ -355,7 +360,7 @@ export default function PlaylistDeliveryTaskIndex({
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar por música, playlist, cliente ou venda..."
+                        searchPlaceholder="Buscar por música, playlist, cliente ou venda"
                         emptyMessage="Nenhuma tarefa de playlist encontrada."
                     />
                 </div>

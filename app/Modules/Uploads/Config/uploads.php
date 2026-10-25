@@ -28,9 +28,15 @@ return [
         'auth',
     ],
 
+    'zip' => [
+        'processing_timeout' => 60,
+        'pending_timeout' => 120,
+        'retention_hours' => 2,
+    ],
+
     'aliases' => [
-        'client' => Client::class,
         'bank-statement-import' => BankStatementImport::class,
+        'client' => Client::class,
         'financial-entry' => FinancialEntry::class,
         'financial-installment' => FinancialInstallment::class,
         'financial-settlement' => FinancialSettlement::class,

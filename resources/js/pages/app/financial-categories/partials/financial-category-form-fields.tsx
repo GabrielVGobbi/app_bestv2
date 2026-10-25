@@ -1,16 +1,16 @@
+import { Tag } from 'lucide-react';
 import { useState } from 'react';
 
 import FinancialCategoryTreeSelect from '@/components/financial/financial-category-tree-select';
-import FormField from '@/components/ui/forms/form-field';
-import FormSection from '@/components/ui/forms/form-section';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import FormSection from '@/components/ui/forms/form-section';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type {
@@ -86,8 +86,8 @@ export default function FinancialCategoryFormFields({
                         required
                         error={errors.type}
                     >
-                        <input name="type" type="hidden" value={type} />
                         <Select
+                            name="type"
                             value={type}
                             onValueChange={(value) => {
                                 setType(value as FinancialCategoryType);
@@ -97,14 +97,15 @@ export default function FinancialCategoryFormFields({
                             <SelectTrigger
                                 id="field-type"
                                 className="w-full"
-                                aria-invalid={!!errors.type}
-                            >
-                                <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
+                                placeholder="Selecione o tipo"
+                                icon={Tag}
+                                error={errors.type}
+                            />
                             <SelectContent>
-                                {typeOptions.map((option) => (
+                                {typeOptions.map((option, optionIndex) => (
                                     <SelectItem
                                         key={option.value}
+                                        index={optionIndex}
                                         value={option.value}
                                     >
                                         {option.label}
@@ -148,14 +149,19 @@ export default function FinancialCategoryFormFields({
                                 id="field-color"
                                 type="color"
                                 value={color}
-                                onChange={(event) => setColor(event.target.value)}
-                                className="h-10 w-14 px-1 py-1"
+                                onChange={(event) =>
+                                    setColor(event.target.value)
+                                }
+                                className="w-14 px-1 py-1"
                                 aria-invalid={!!errors.color}
                             />
                             <Input
                                 type="text"
                                 value={color}
-                                onChange={(event) => setColor(event.target.value)}
+                                onChange={(event) =>
+                                    setColor(event.target.value)
+                                }
+                                aria-label="Cor em hexadecimal"
                                 aria-invalid={!!errors.color}
                             />
                         </div>
@@ -189,7 +195,7 @@ export default function FinancialCategoryFormFields({
                         type="hidden"
                         value={isActive ? '1' : '0'}
                     />
-                    <label className="flex items-center justify-between gap-4 rounded-md border p-4">
+                    <label className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
                         <span>
                             <span className="block text-sm font-medium">
                                 Categoria ativa

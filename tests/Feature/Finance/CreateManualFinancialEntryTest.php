@@ -23,6 +23,13 @@ class CreateManualFinancialEntryTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Os vencimentos fixos destes cenarios sao de 2026; o relogio congelado mantem as parcelas em aberto.
+        Carbon::setTestNow('2026-07-01 10:00:00');
+    }
+
     public function test_creates_manual_receivable_with_amount_components_and_net_amount(): void
     {
         $company = Company::factory()->create();

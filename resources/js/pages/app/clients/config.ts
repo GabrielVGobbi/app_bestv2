@@ -26,8 +26,8 @@ export const columns: ColumnDef<Client>[] = [
     {
         id: 'email',
         accessorKey: 'email',
-        header: 'Email',
-        meta: { label: 'Email' },
+        header: 'E-mail',
+        meta: { label: 'E-mail', truncate: true },
     },
     {
         id: 'phone',
@@ -52,7 +52,7 @@ export const filters: DataTableFilterConfig[] = [
     },
     {
         id: 'email',
-        label: 'Email',
+        label: 'E-mail',
         type: 'text',
         operator: 'contains',
     },
@@ -74,10 +74,14 @@ export const filters: DataTableFilterConfig[] = [
     },
 ];
 
-export function buildQuickFilters({
-    classifications,
-    musicalGenres,
-}: ClientQuickFilterOptions): DataTableQuickFilter[] {
+/**
+ * Filtros rápidos da toolbar. A DataTable só aceita opções prontas, então a
+ * lista de atendentes chega resolvida pela tela (ver `clients/index.tsx`).
+ */
+export function buildQuickFilters(
+    { classifications, musicalGenres }: ClientQuickFilterOptions,
+    responsibleUsers: DataTableFilterOption[],
+): DataTableQuickFilter[] {
     return [
         {
             id: 'classification',
@@ -104,13 +108,7 @@ export function buildQuickFilters({
             label: 'Atendente',
             placeholder: 'Atendente',
             icon: UserRoundCheck,
-            type: 'async-select',
-            asyncSelect: {
-                endpoint: apiRoutes.users.index,
-                params: { role: 'commercial' },
-                searchPlaceholder: 'Buscar por nome ou email...',
-                emptyMessage: 'Nenhum usuário comercial encontrado.',
-            },
+            options: responsibleUsers,
             clearable: true,
         },
     ];

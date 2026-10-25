@@ -6,14 +6,17 @@ namespace App\Modules\Timeline\Policies;
 
 use App\Models\User;
 use App\Modules\Timeline\Models\TimelineComment;
+use App\Modules\Uploads\Services\UploadService;
 
 class TimelineCommentPolicy
 {
+    public function __construct(private readonly UploadService $uploads) {}
+
     public function view(User $user, TimelineComment $comment): bool
     {
         $commentable = $comment->commentable;
 
-        return $commentable !== null && $user->can('view', $commentable);
+        return $commentable !== null && $this->uploads->canViewParent($user, $commentable);
     }
 
     public function update(User $user, TimelineComment $comment): bool

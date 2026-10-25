@@ -1,24 +1,23 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { useMemo, useRef } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { isValidElement, useMemo, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    DropdownContent,
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
+import type { IconComponent } from '@/components/ui/fluid/lib/icon-context';
+import { MenuItem } from '@/components/ui/fluid/menu-item';
+import { Tooltip } from '@/components/ui/fluid/tooltip';
 
+import { usePrivateState } from '@/contexts/private-state-context';
+import { cn } from '@/lib/utils';
 import { useDataTableInfiniteQuery } from '../hooks/use-data-table-infinite-query';
 import { useDataTableQuery } from '../hooks/use-data-table-query';
 import { useDataTableSelection } from '../hooks/use-data-table-selection';
@@ -35,9 +34,19 @@ import type {
     DataTableQuickFilter,
 } from './types';
 
-// Stable empty-array references — prevents new array instances on every render
+// Stable empty-array references: prevents new array instances on every render
 // which would cause useMemo/useEffect deps to fire unnecessarily.
 const EMPTY_ARRAY: never[] = [];
+
+/**
+ * O MenuItem do Fluid recebe o componente do ícone para controlar tamanho, traço
+ * e cor. shortcut: usa o tipo do elemento (ícones Lucide); outro nó vira linha sem ícone.
+ */
+function menuIcon(icon: ReactNode): IconComponent | undefined {
+    return isValidElement(icon) && typeof icon.type !== 'string'
+        ? (icon.type as IconComponent)
+        : undefined;
+}
 
 function getInitialColumnVisibility<TData>(
     columns: ColumnDef<TData>[],
@@ -55,6 +64,28 @@ function getInitialColumnVisibility<TData>(
 
         return visibility;
     }, {});
+}
+
+type RowActionVariant = NonNullable<DataTableAction<unknown>['variant']>;
+
+/** Ações só com ícone nunca ficam vermelhas em repouso: o vermelho aparece em hover e foco. */
+function rowActionVariant(
+    action: { variant?: RowActionVariant },
+    showLabel: boolean,
+): { variant: RowActionVariant; className?: string } {
+    if (!showLabel && action.variant === 'destructive') {
+        return {
+            variant: 'ghost',
+            className:
+                'hover:bg-destructive-soft hover:text-destructive-soft-foreground focus-visible:bg-destructive-soft focus-visible:text-destructive-soft-foreground',
+        };
+    }
+
+    if (!showLabel && action.variant === 'outline') {
+        return { variant: 'ghost' };
+    }
+
+    return { variant: action.variant ?? 'ghost' };
 }
 
 function renderInlineActions<TData>(
@@ -98,9 +129,8 @@ function renderInlineActions<TData>(
         }
 
         return (
-            <Tooltip key={action.label}>
-                <TooltipTrigger asChild>{actionButton}</TooltipTrigger>
-                <TooltipContent>{tooltip}</TooltipContent>
+            <Tooltip key={action.label} content={tooltip}>
+                {actionButton as ReactElement}
             </Tooltip>
         );
     }
@@ -111,10 +141,12 @@ function renderInlineActions<TData>(
                 const disabled = action.disabled?.(row) ?? false;
                 const showLabel = shouldShowLabel(action);
                 const actionSize = actionButtonSize(showLabel);
-
-                if (action.render) {
-                    return <div key={action.label}>{action.render(row)}</div>;
-                }
+                const actionVariant = rowActionVariant(action, showLabel);
+                const actionClassName = cn(
+                    actionSize === 'icon' &&
+                        'size-8 shrink-0 rounded-[6px] shadow-none',
+                    actionVariant.className,
+                );
 
                 if (action.href && !disabled) {
                     return renderWithTooltip(
@@ -122,12 +154,14 @@ function renderInlineActions<TData>(
                         <Button
                             key={action.label}
                             type="button"
-                            variant={action.variant ?? 'ghost'}
+                            variant={actionVariant.variant}
+                            className={actionClassName}
                             size={actionSize}
                             asChild
                             aria-label={action.label}
                         >
                             <Link
+                                draggable={false}
                                 href={action.href(row)}
                                 prefetch={action.prefetch}
                             >
@@ -144,7 +178,8 @@ function renderInlineActions<TData>(
                     <Button
                         key={action.label}
                         type="button"
-                        variant={action.variant ?? 'ghost'}
+                        variant={actionVariant.variant}
+                        className={actionClassName}
                         size={actionSize}
                         disabled={disabled}
                         onClick={() => action.onClick?.(row)}
@@ -166,64 +201,65 @@ function renderMenuActions<TData>(
 ) {
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Ações"
-                >
-                    <MoreHorizontal />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                {actions.map((action) => {
+            <DropdownTrigger
+                render={
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Acoes"
+                    >
+                        <MoreHorizontal />
+                    </Button>
+                }
+            />
+            <DropdownContent align="end" className="w-56">
+                {actions.map((action, index) => {
                     const disabled = action.disabled?.(row) ?? false;
-                    const content = (
-                        <>
-                            {action.icon}
-                            {action.label}
-                        </>
-                    );
-
-                    if (action.render) {
-                        return (
-                            <div key={action.label}>{action.render(row)}</div>
-                        );
-                    }
-
-                    if (action.href && !disabled) {
-                        return (
-                            <DropdownMenuItem key={action.label} asChild>
-                                <Link
-                                    href={action.href(row)}
-                                    prefetch={action.prefetch}
-                                >
-                                    {content}
-                                </Link>
-                            </DropdownMenuItem>
-                        );
-                    }
 
                     return (
-                        <DropdownMenuItem
+                        <MenuItem
                             key={action.label}
+                            index={index}
+                            icon={menuIcon(action.icon)}
+                            label={action.label}
                             disabled={disabled}
-                            onClick={() => action.onClick?.(row)}
-                        >
-                            {content}
-                        </DropdownMenuItem>
+                            destructive={action.variant === 'destructive'}
+                            onSelect={() =>
+                                action.href
+                                    ? router.visit(action.href(row))
+                                    : action.onClick?.(row)
+                            }
+                        />
                     );
                 })}
-            </DropdownMenuContent>
+            </DropdownContent>
         </DropdownMenu>
     );
 }
 
-export function DataTable<TData>({
+export function DataTable<TData>(props: DataTableProps<TData>) {
+    const { scope } = usePrivateState();
+
+    return (
+        <DataTableContent
+            key={JSON.stringify([
+                scope.userId,
+                scope.generation,
+                props.tableId,
+                props.queryKey,
+                props.endpoint,
+            ])}
+            {...props}
+        />
+    );
+}
+
+function DataTableContent<TData>({
     queryKey,
+    tableId,
     endpoint,
-    mode = 'paginated',
+    mode = 'infinite-scroll',
     columns,
     keyExtractor,
     features = {},
@@ -236,6 +272,7 @@ export function DataTable<TData>({
     bulkActions = EMPTY_ARRAY as DataTableBulkAction<TData>[],
     bulkAggregates = EMPTY_ARRAY as DataTableBulkAggregate<TData>[],
     bulkActionsConfig,
+    selectionResolver,
     infiniteScrollConfig,
     appearance,
     size,
@@ -290,7 +327,10 @@ export function DataTable<TData>({
         if (activeFeatures.selection) {
             nextColumns.unshift({
                 id: 'select',
+                enableHiding: false,
                 size: 44,
+                minSize: 44,
+                maxSize: 44,
                 enableSorting: false,
                 enableResizing: false,
                 header: ({ table }) => {
@@ -364,7 +404,7 @@ export function DataTable<TData>({
                       ? 56
                       : 80;
             const gapPx = 6; // gap-1.5
-            const cellPaddingPx = 24; // px-3 on both sides
+            const cellPaddingPx = 32; // px-4 on both sides at the default density
 
             const autoSize =
                 actionDisplay === 'inline'
@@ -378,7 +418,10 @@ export function DataTable<TData>({
 
             nextColumns.push({
                 id: 'actions',
+                enableHiding: false,
                 size: actionsConfig?.columnSize ?? autoSize,
+                minSize: actionsConfig?.columnSize ?? autoSize,
+                maxSize: actionsConfig?.columnSize ?? autoSize,
                 enableSorting: false,
                 enableResizing: false,
                 header: actionsConfig?.label ?? '',
@@ -392,9 +435,10 @@ export function DataTable<TData>({
                         : renderMenuActions(row.original, actions),
                 meta: {
                     align: 'right',
-                    label: actionsConfig?.label ?? 'Ações',
+                    label: actionsConfig?.label ?? 'Acoes',
                     type: 'actions',
-                    sticky: actionsConfig?.sticky ? 'right' : undefined,
+                    sticky:
+                        (actionsConfig?.sticky ?? true) ? 'right' : undefined,
                 },
             });
         }
@@ -424,10 +468,24 @@ export function DataTable<TData>({
 
     const tableState = useDataTableState({
         queryKey,
+        tableId,
         initialPerPage,
+        initialDensity: resolvedAppearance.size,
+        initialColumnPinning: {
+            left: activeFeatures.selection ? ['select'] : [],
+            right: (actionsConfig?.sticky ?? true) ? ['actions'] : [],
+        },
         initialColumnVisibility,
         filters: allFilters,
         columnIds,
+        nonHideableColumnIds: tableColumns
+            .filter((column) => column.enableHiding === false)
+            .map(
+                (column) =>
+                    column.id ??
+                    ('accessorKey' in column ? String(column.accessorKey) : ''),
+            )
+            .filter(Boolean),
         persistState,
     });
 
@@ -436,7 +494,8 @@ export function DataTable<TData>({
         endpoint,
         state: tableState.state,
         filters: allFilters,
-        enabled: mode === 'paginated',
+        enabled: mode === 'paginated' && tableState.ready,
+        ready: tableState.ready,
     });
 
     const infiniteQuery = useDataTableInfiniteQuery<TData>({
@@ -444,7 +503,8 @@ export function DataTable<TData>({
         endpoint,
         state: tableState.state,
         filters: allFilters,
-        enabled: mode === 'infinite-scroll',
+        enabled: mode === 'infinite-scroll' && tableState.ready,
+        ready: tableState.ready,
     });
 
     const query = mode === 'infinite-scroll' ? infiniteQuery : paginatedQuery;
@@ -459,6 +519,16 @@ export function DataTable<TData>({
 
     const hasBulkActions = bulkActions.length > 0;
 
+    const selection = useDataTableSelection<TData>({
+        storageKey: `datatable-selection:${queryKey}`,
+        keyExtractor,
+        currentRows: query.rows,
+        rowSelection: tableState.state.rowSelection,
+        setRowSelection: tableState.setRowSelection,
+        enabled: activeFeatures.selection && hasBulkActions,
+        selectionResolver,
+    });
+
     const table = useReactTable({
         data: query.rows,
         columns: tableColumns,
@@ -467,37 +537,39 @@ export function DataTable<TData>({
         manualPagination: true,
         manualSorting: true,
         enableColumnResizing: true,
-        columnResizeMode: 'onChange',
+        columnResizeMode: 'onEnd',
+        defaultColumn: { minSize: 60, maxSize: 1200 },
         enableRowSelection: activeFeatures.selection,
         state: {
             sorting: tableState.state.sorting,
             columnVisibility: tableState.state.columnVisibility,
-            rowSelection: tableState.state.rowSelection,
+            columnOrder: tableState.state.columnOrder,
+            columnPinning: tableState.state.columnPinning,
+            columnSizing: tableState.state.columnSizing,
+            rowSelection: selection.rowSelection,
         },
         onSortingChange: tableState.setSorting,
         onColumnVisibilityChange: tableState.setColumnVisibility,
+        onColumnOrderChange: tableState.setColumnOrder,
+        onColumnPinningChange: tableState.setColumnPinning,
+        onColumnSizingChange: tableState.setColumnSizing,
         onRowSelectionChange: tableState.setRowSelection,
     });
-
-    const { selectedRows, selectedCount, clearSelection } =
-        useDataTableSelection<TData>({
-            storageKey: `datatable-selection:${queryKey}`,
-            keyExtractor,
-            currentRows: query.rows,
-            rowSelection: tableState.state.rowSelection,
-            setRowSelection: tableState.setRowSelection,
-            enabled: activeFeatures.selection && hasBulkActions,
-        });
 
     return (
         <DataTableShell
             table={table}
+            headerGroups={table.getHeaderGroups()}
+            tableWidth={table.getTotalSize()}
             rows={table.getRowModel().rows}
-            isLoading={query.isLoading}
+            isLoading={!tableState.ready || query.isLoading}
             isFetching={query.isFetching}
             error={query.error}
             meta={query.meta}
-            state={tableState.state}
+            state={{
+                ...tableState.state,
+                rowSelection: selection.rowSelection,
+            }}
             features={activeFeatures}
             filterConfig={filters}
             quickFilters={quickFilters}
@@ -513,14 +585,22 @@ export function DataTable<TData>({
             bulkActions={hasBulkActions ? bulkActions : undefined}
             bulkAggregates={bulkAggregates}
             bulkActionsConfig={bulkActionsConfig}
-            appearance={resolvedAppearance}
-            selectedRows={selectedRows}
-            selectedCount={selectedCount}
-            onClearSelection={clearSelection}
+            appearance={{
+                ...resolvedAppearance,
+                size: tableState.state.density,
+            }}
+            selectedRows={selection.selectedRows}
+            selectedCount={selection.selectedCount}
+            onClearSelection={selection.clearSelection}
+            selectionStatus={selection.status}
             onSearchChange={tableState.setSearch}
             onFilterChange={tableState.setFilterValue}
             onResetFilters={tableState.resetFilters}
             onClearSearch={() => tableState.setSearch('')}
+            onResetLayout={tableState.resetLayout}
+            onResetAll={tableState.resetAll}
+            onDensityChange={tableState.setDensity}
+            storageStatus={tableState.storageStatus}
             onRefresh={query.refresh}
             onPageChange={tableState.setPage}
             onPerPageChange={tableState.setPerPage}

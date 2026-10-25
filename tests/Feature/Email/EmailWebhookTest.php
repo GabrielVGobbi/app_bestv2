@@ -6,6 +6,10 @@ use App\Modules\Email\Enums\EmailStatus;
 use App\Modules\Email\Models\EmailLog;
 use App\Modules\Email\Models\EmailWebhookEvent;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\TestResponse;
+use Tests\Fixtures\Email\SnsMessageFixture;
+use Tests\Fixtures\Email\SvixMessageFixture;
 use Tests\TestCase;
 
 class EmailWebhookTest extends TestCase
@@ -19,7 +23,7 @@ class EmailWebhookTest extends TestCase
             'message_id' => 'msg-abc123',
         ]);
 
-        $this->postJson('/api/email/webhook/resend', [
+        $this->postSignedResend([
             'type' => 'email.delivered',
             'data' => ['email_id' => 'msg-abc123'],
         ])->assertNoContent();
@@ -44,7 +48,7 @@ class EmailWebhookTest extends TestCase
             'message_id' => 'msg-bounce-xyz',
         ]);
 
-        $this->postJson('/api/email/webhook/resend', [
+        $this->postSignedResend([
             'type' => 'email.bounced',
             'data' => [
                 'email_id' => 'msg-bounce-xyz',
@@ -77,19 +81,18 @@ class EmailWebhookTest extends TestCase
         foreach ($eventTypes as $eventType => $status) {
             $messageId = 'msg-'.str_replace(['email.', '_'], ['', '-'], $eventType);
             $log = EmailLog::factory()->create([
-                'status' => EmailStatus::Sent->value,
+                'status' => EmailStatus::Processing->value,
                 'message_id' => $messageId,
             ]);
 
-            $this->withHeaders(['svix-id' => 'evt-'.$messageId])
-                ->postJson('/api/email/webhook/resend', [
-                    'type' => $eventType,
-                    'created_at' => '2026-05-20T01:30:00.000Z',
-                    'data' => [
-                        'email_id' => $messageId,
-                        'reason' => 'provider reason',
-                    ],
-                ])->assertNoContent();
+            $this->postSignedResend([
+                'type' => $eventType,
+                'created_at' => '2026-05-20T01:30:00.000Z',
+                'data' => [
+                    'email_id' => $messageId,
+                    'reason' => 'provider reason',
+                ],
+            ], 'evt-'.$messageId)->assertNoContent();
 
             $this->assertDatabaseHas('email_logs', [
                 'uuid' => $log->uuid,
@@ -119,12 +122,10 @@ class EmailWebhookTest extends TestCase
             'data' => ['email_id' => 'msg-duplicate'],
         ];
 
-        $this->withHeaders(['svix-id' => 'evt-duplicate'])
-            ->postJson('/api/email/webhook/resend', $payload)
+        $this->postSignedResend($payload, 'evt-duplicate')
             ->assertNoContent();
 
-        $this->withHeaders(['svix-id' => 'evt-duplicate'])
-            ->postJson('/api/email/webhook/resend', $payload)
+        $this->postSignedResend($payload, 'evt-duplicate')
             ->assertNoContent();
 
         $this->assertSame(1, EmailWebhookEvent::where('event_id', 'evt-duplicate')->count());
@@ -133,19 +134,17 @@ class EmailWebhookTest extends TestCase
 
     public function test_resend_webhook_stores_domain_and_contact_events_without_email_log(): void
     {
-        $this->withHeaders(['svix-id' => 'evt-domain-created'])
-            ->postJson('/api/email/webhook/resend', [
-                'type' => 'domain.created',
-                'created_at' => '2026-05-20T01:30:00.000Z',
-                'data' => ['id' => 'domain_123', 'name' => 'example.com'],
-            ])->assertNoContent();
+        $this->postSignedResend([
+            'type' => 'domain.created',
+            'created_at' => '2026-05-20T01:30:00.000Z',
+            'data' => ['id' => 'domain_123', 'name' => 'example.com'],
+        ], 'evt-domain-created')->assertNoContent();
 
-        $this->withHeaders(['svix-id' => 'evt-contact-created'])
-            ->postJson('/api/email/webhook/resend', [
-                'type' => 'contact.created',
-                'created_at' => '2026-05-20T01:31:00.000Z',
-                'data' => ['id' => 'contact_123', 'email' => 'user@example.com'],
-            ])->assertNoContent();
+        $this->postSignedResend([
+            'type' => 'contact.created',
+            'created_at' => '2026-05-20T01:31:00.000Z',
+            'data' => ['id' => 'contact_123', 'email' => 'user@example.com'],
+        ], 'evt-contact-created')->assertNoContent();
 
         $this->assertDatabaseHas('email_webhook_events', [
             'provider' => 'resend',
@@ -166,27 +165,15 @@ class EmailWebhookTest extends TestCase
 
     public function test_resend_webhook_accepts_valid_svix_signature(): void
     {
-        config(['services.resend.webhook_secret' => 'whsec_'.base64_encode('secret')]);
-
         $log = EmailLog::factory()->create([
             'status' => EmailStatus::Sent->value,
             'message_id' => 'msg-signed',
         ]);
 
-        $payload = json_encode([
+        $this->postSignedResend([
             'type' => 'email.delivered',
             'data' => ['email_id' => 'msg-signed'],
-        ]);
-
-        $svixId = 'msg_123';
-        $svixTimestamp = '1760000000';
-        $signature = 'v1,'.base64_encode(hash_hmac('sha256', "{$svixId}.{$svixTimestamp}.{$payload}", 'secret', true));
-
-        $this->withHeaders([
-            'svix-id' => $svixId,
-            'svix-timestamp' => $svixTimestamp,
-            'svix-signature' => $signature,
-        ])->postJson('/api/email/webhook/resend', json_decode($payload, true))
+        ], 'msg_123')
             ->assertNoContent();
 
         $this->assertDatabaseHas('email_logs', [
@@ -197,11 +184,12 @@ class EmailWebhookTest extends TestCase
 
     public function test_resend_webhook_rejects_invalid_svix_signature(): void
     {
-        config(['services.resend.webhook_secret' => 'whsec_'.base64_encode('secret')]);
+        $this->travelTo('2026-10-16 12:00:00 UTC');
+        config(['services.resend.webhook_secret' => SvixMessageFixture::secret()]);
 
         $this->withHeaders([
             'svix-id' => 'msg_123',
-            'svix-timestamp' => '1760000000',
+            'svix-timestamp' => (string) now()->timestamp,
             'svix-signature' => 'v1,invalid',
         ])->postJson('/api/email/webhook/resend', [
             'type' => 'email.delivered',
@@ -211,7 +199,7 @@ class EmailWebhookTest extends TestCase
 
     public function test_webhook_ignores_unknown_message_id(): void
     {
-        $this->postJson('/api/email/webhook/resend', [
+        $this->postSignedResend([
             'type' => 'email.delivered',
             'data' => ['email_id' => 'nonexistent-id'],
         ])->assertNoContent();
@@ -230,6 +218,20 @@ class EmailWebhookTest extends TestCase
             ->assertNotFound();
     }
 
+    /** @param array<string, mixed> $payload */
+    private function postSignedResend(array $payload, string $id = 'evt-synthetic'): TestResponse
+    {
+        $this->travelTo('2026-10-16 12:00:00 UTC');
+        config(['services.resend.webhook_secret' => SvixMessageFixture::secret()]);
+        $raw = SvixMessageFixture::raw($payload);
+        $server = ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'];
+        foreach (SvixMessageFixture::headers($raw, $id, (string) now()->timestamp) as $name => $value) {
+            $server['HTTP_'.strtoupper(str_replace('-', '_', $name))] = $value;
+        }
+
+        return $this->call('POST', '/api/email/webhook/resend', [], [], [], $server, $raw);
+    }
+
     public function test_ses_webhook_handles_delivery_notification(): void
     {
         $log = EmailLog::factory()->create([
@@ -237,14 +239,14 @@ class EmailWebhookTest extends TestCase
             'message_id' => 'ses-msg-001',
         ]);
 
-        $this->postJson('/api/email/webhook/ses', [
-            'Type' => 'Notification',
-            'TopicArn' => 'arn:aws:sns:us-east-1:123:MyTopic',
-            'Message' => json_encode([
-                'eventType' => 'Delivery',
-                'mail' => ['messageId' => 'ses-msg-001'],
-            ]),
-        ])->assertNoContent();
+        $this->isolateProjectFiles();
+        $fixture = SnsMessageFixture::create($this->testEnvironment->path);
+        config(['services.ses.allowed_topic_arns' => [SnsMessageFixture::TOPIC_ARN]]);
+        SnsMessageFixture::bindResolver($this->app);
+        Http::preventStrayRequests();
+        Http::fake(fn () => Http::response($fixture->certificate(), 200));
+
+        $this->postJson('/api/email/webhook/ses', $fixture->notification('ses-msg-001'))->assertNoContent();
 
         $this->assertDatabaseHas('email_logs', [
             'uuid' => $log->uuid,

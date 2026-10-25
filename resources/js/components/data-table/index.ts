@@ -25,5 +25,6 @@ export type {
     DataTableProps,
     DataTableQuickFilter,
     DataTableRowStyle,
+    DataTableSelectionResolver,
     DataTableSize,
 } from './core/types';

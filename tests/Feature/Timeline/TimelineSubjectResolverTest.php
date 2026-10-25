@@ -6,6 +6,7 @@ namespace Tests\Feature\Timeline;
 
 use App\Models\User;
 use App\Modules\Clients\Models\Client;
+use App\Modules\Permissions\Models\Permission;
 use App\Modules\Timeline\Support\TimelineSubjectResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +62,7 @@ class TimelineSubjectResolverTest extends TestCase
     public function test_timeline_endpoint_returns_resolved_client_subject_by_id(): void
     {
         $user = User::factory()->create();
+        $this->grantClientRead($user);
         $client = Client::factory()->create();
 
         $this->actingAs($user, 'sanctum')
@@ -75,6 +77,7 @@ class TimelineSubjectResolverTest extends TestCase
     public function test_timeline_endpoint_returns_resolved_client_subject_by_uuid(): void
     {
         $user = User::factory()->create();
+        $this->grantClientRead($user);
         $client = Client::factory()->create();
 
         $this->actingAs($user, 'sanctum')
@@ -90,5 +93,14 @@ class TimelineSubjectResolverTest extends TestCase
 
         $this->getJson("/api/v1/timeline/client/{$client->id}")
             ->assertUnauthorized();
+    }
+
+    private function grantClientRead(User $user): void
+    {
+        $permission = Permission::query()->firstOrCreate(
+            ['slug' => 'view-clients'],
+            ['name' => 'View Clients', 'group' => 'clients'],
+        );
+        $user->permissions()->syncWithoutDetaching([$permission->getKey()]);
     }
 }

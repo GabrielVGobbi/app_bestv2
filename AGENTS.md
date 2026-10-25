@@ -1,3 +1,40 @@
+# Project instructions
+
+This file is the canonical source of shared project instructions. Tool-specific files and skills supplement it without introducing another stack, style, authorization contract or architecture. Follow current human instructions and applicable platform instructions first; preserve existing work. Read this file before using an adapter. Keep project rules outside the generated Boost block so `boost:update` does not erase them. After regeneration, reconcile generated guidelines and tool adapters with these rules and the installed manifests; do not run regeneration merely to change instructions.
+
+## Visual design contract
+
+For UI work, read [DESIGN.md](DESIGN.md). It defines the Start Kit's own
+themable identity (semantic tokens derived from `--brand-hue`, brand set in
+`config/branding.php`) on top of the validated shell composition, while
+preserving Start Kit modules, data, routes and authority. Generic frontend skill
+preferences do not override this contract. Keep the canonical design contract
+synchronized with shared components.
+
+## Browser UUID compatibility
+
+Do not introduce direct `crypto.randomUUID()` or `globalThis.crypto.randomUUID()` calls in frontend code. Local projects may use HTTP on a custom domain where this API is unavailable. Reuse the project's compatible identifier generator when present; otherwise create one central helper with capability detection and an appropriate fallback, preserving valid UUIDs and stable idempotency keys. Never silently replace security identifiers with `Math.random()`. Cover absence of `randomUUID` in regression tests and verify the affected flow in the actual browser and protocol. Build and unit tests do not replace E2E; report exactly what was and was not verified.
+
+## Scope, verification and tools
+
+Use the existing Laravel/Inertia modular application, Vite, installed dependencies, PHPUnit classes and current project patterns. Formatting comes from `.editorconfig`, `.prettierrc`, ESLint and Pint; do not impose tabs, removed semicolons, a new repository layer, another frontend framework or a redesign. Follow the existing schema/model mass-assignment conventions, including Laravel attributes.
+
+Read relevant internal documentation at `D:\laragon\www\ProV2\best_play\.docs\.best_play.obs` (Obsidian vault with the Best Play business rules) and at `docs/.start_kit.obs/` relative to the project root (shared systems inherited from the Start Kit). Exports and related jobs/queues/downloads require `docs/.start_kit.obs/Exports/async-export-system.md`. Upload configuration is `app/Modules/Uploads/Config/uploads.php`. Authorization is the Best Play ACL (`app/Modules/Permissions`, `config/permissions.php`, roles and permissions seeded by `PermissionsSeeder`): check permissions by slug through policies and gates; the frontend only renders the navigation and `can` props it receives and never infers privileges from a role name.
+
+Documentation and tests within the user's authorized implementation scope are part of the work. Test code changes meaningfully. For instruction/documentation/configuration-only changes, validate links, syntax, consumers and relevant startup instead of inventing application tests. Choose focused checks, then broader integration at justified milestones; do not ask permission to continue already authorized checks or repeat unchanged suites. Never weaken assertions or suppress diagnostics to obtain green. Do not convert unrelated tests or reformat unrelated dirty files. Run Pint on the affected PHP files; `--dirty` is suitable only when every dirty PHP file belongs to the current lot.
+
+Before any database refresh, use the guards and isolated destinations documented by `tests/TestEnvironment.php`, `tests/TestCase.php` and `tests/bootstrap.php`. Isolate HTTP, Mail, queues, SDKs, caches, storage and processes. A normal HTTP/E2E server does not share PHPUnit's transaction; use its own disposable database and runtime. Never point a check at existing application data or live integrations. A relevant unexecuted check remains pending. Report observed failures and limits precisely.
+
+Delegate only when authorized and useful, with exclusive file ownership per agent and a single runtime runner. Do not deploy, operate production, charge or send real messages from this repository.
+
+## MCP startup
+
+Open the project root as the working directory, with the compatible `php` executable on PATH and Composer dependencies installed. The portable local command is `php artisan boost:mcp`; `.codex/config.toml`, `.mcp.json`, `.cursor/mcp.json` and `.kiro/settings/mcp.json` use that same command without a machine-specific working directory. If a tool starts elsewhere, configure its working directory locally for that checkout; do not commit another user's absolute path or assume unsupported placeholder expansion. Boost's installed generator may reintroduce an absolute `cwd` on `boost:install` or `boost:update`; review regenerated configuration and guidelines before keeping the changes. Never use this read/startup check to call mutating tools or query private data.
+
+## Inertia SSR
+
+With the installed `@inertiajs/vite`, development SSR integrates with Vite. Production SSR still needs its server bundle and a running SSR process with the supported Node version (v3 documentation requires Node 22+). Do not claim a production SSR runtime from a build or development integration. SSR and realtime are optional.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
@@ -22,8 +59,11 @@ Activate skills in `**/skills/**` before working in their domain. Do not wait un
 
 ## Internal Documentation (Obsidian)
 
-Path: `D:\laragon\www\ProV2\best_play\app2_best_play\.docs\best_play.obs`
-Consult before working on: existing docs in obsidian
+Paths: `D:\laragon\www\ProV2\best_play\.docs\.best_play.obs` (Best Play business rules: clients, companies, services, sales, playlists, TOPs, finance) and `docs/.start_kit.obs/` relative to the project root (shared systems inherited from the Start Kit).
+
+Consult before working on: existing features, shared systems, DataTable, exports, jobs, queues, notifications, API patterns, frontend hooks, shared React components, Inertia pages, project conventions.
+
+**Async export system:** always read `docs/.start_kit.obs/Exports/async-export-system.md` before touching exports, Excel/CSV/XLSX/TSV, queues, export buttons, polling, or download links.
 
 **When documentation exists:**
 1. Read docs first, understand architecture before editing.
@@ -33,7 +73,7 @@ Consult before working on: existing docs in obsidian
 5. If docs and code conflict, explain the difference before changing anything.
 6. If no docs exist, inspect nearby code and follow project conventions.
 
-Do not create or edit documentation files unless explicitly asked. If code change makes docs outdated, mention which file needs updating.
+Maintain documentation pertinent to the authorized change. Broader documentation work requires scope from the user.
 
 ## Conventions
 
@@ -51,7 +91,7 @@ Do not create or edit documentation files unless explicitly asked. If code chang
 
 ## Frontend
 
-If a frontend change isn't reflected, ask user to run `npm run build`, `npm run dev`, or `composer run dev`.
+If a frontend change is not reflected, inspect the current assets/runtime and use the authorized build or development command; report what was executed.
 
 ## Replies
 
@@ -68,14 +108,14 @@ If a frontend change isn't reflected, ask user to run `npm run build`, `npm run 
 
 Prefer Boost tools over manual alternatives:
 
-- `database-query` — read-only DB queries (instead of raw tinker SQL)
-- `database-schema` — inspect tables before writing migrations, models, queries, resources, or validation
-- `get-absolute-url` — resolve correct URL before sharing any project URL with the user
-- `browser-logs` — read recent browser errors/exceptions (ignore old entries)
+- `database-query`: read-only DB queries (instead of raw tinker SQL)
+- `database-schema`: inspect tables before writing migrations, models, queries, resources, or validation
+- `get-absolute-url`: resolve correct URL before sharing any project URL with the user
+- `browser-logs`: read recent browser errors/exceptions (ignore old entries)
 
 ## search-docs
 
-Always run `search-docs` before making code changes. Pass a `packages` array when relevant. Use multiple broad, topic-based queries. Package names are already shared — don't include them in queries.
+Always run `search-docs` before making code changes. Pass a `packages` array when relevant. Use multiple broad, topic-based queries. Package names are already shared, so don't include them in queries.
 
 Good: `rate limiting`, `routing`, `"infinite scroll"`
 Bad: `Laravel 13 rate limiting`, `Inertia v3 forms`
@@ -144,7 +184,7 @@ Don't remove tests or test files without approval. Tests are part of the applica
 
 # PHPUnit
 
-All tests must be PHPUnit classes. If you see a Pest test, convert it to PHPUnit.
+New or updated tests use PHPUnit classes. Do not convert unrelated tests as part of another lot.
 
 ```bash
 php artisan make:test --phpunit {Name}    # feature test
@@ -153,7 +193,7 @@ php artisan make:test --phpunit --unit {Name}  # unit test
 
 Tests must cover: happy paths, failure paths, edge cases, authorization, validation, ownership checks.
 
-Run the affected test after every update. When tests pass, ask user if they want the full suite.
+Run affected tests after code updates. Broaden integration checks when justified by the change or milestone, within the existing authorization.
 
 === inertia-laravel/core rules ===
 
@@ -170,8 +210,8 @@ Run the affected test after every update. When tests pass, ask user if they want
 - Optimistic updates with automatic rollback
 - `useLayoutProps` for layout props
 - Instant visits, deferred props, infinite scroll, merging props, polling, prefetching, once props, flash data
-- Simplified SSR via `@inertiajs/vite` — no separate Node.js server needed
-- Axios removed by default — use built-in XHR client or install Axios if project already uses it
+- Development SSR integrates with `@inertiajs/vite`; production still requires an SSR bundle and a running SSR process (Node 22+ per v3 documentation)
+- Axios removed by default: use built-in XHR client or install Axios if project already uses it
 - `Inertia::lazy()` / `LazyProp` removed → use `Inertia::optional()`
 - `router.cancel()` → `router.cancelAll()`
 - Events: `invalid` → `httpException`, `exception` → `networkError`

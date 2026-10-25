@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', [AppController::class, 'ping']);
 
-// Email delivery webhooks — public, no auth (signature verified per-provider)
+// Email delivery webhooks: public, no auth (signature verified per-provider)
 Route::post('email/webhook/{provider}', [EmailWebhookController::class, 'handle'])->name('email.webhook')->withoutMiddleware(['auth', 'auth:sanctum']);
 
 Route::prefix('v1')->as('api.')->group(function () {
@@ -37,6 +37,7 @@ Route::prefix('v1')->as('api.')->group(function () {
         |--------------------------------------------------------------------------
         */
         Route::apiResource('users', UserApiController::class)->only('index');
+        Route::delete('users/bulk', [UserApiController::class, 'bulkDestroy'])->name('users.bulk-destroy');
         Route::put('users/{user}/sync-roles-permissions', [UserApiController::class, 'syncRolesPermissions'])->name('users.sync-roles-permissions');
 
         Route::apiResource('clients', ClientApiController::class)->parameters(['clients' => 'client']);

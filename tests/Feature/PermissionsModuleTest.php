@@ -592,7 +592,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_roles_and_permissions_can_be_synced(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
         $role1 = Role::factory()->create();
         $role2 = Role::factory()->create();
@@ -616,7 +616,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_sync_can_clear_all_roles_and_permissions(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
         $role = Role::factory()->create();
         $perm = Permission::factory()->create();
@@ -635,7 +635,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_sync_validates_role_ids_exist(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
 
         $response = $this->actingAs($actor)->putJson(route('api.users.sync-roles-permissions', $target), [
@@ -649,7 +649,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_sync_validates_permission_ids_exist(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
 
         $response = $this->actingAs($actor)->putJson(route('api.users.sync-roles-permissions', $target), [
@@ -663,7 +663,7 @@ class PermissionsModuleTest extends TestCase
 
     public function test_user_sync_requires_roles_and_permissions_keys_to_be_present(): void
     {
-        $actor = User::factory()->create();
+        $actor = $this->userWithRole('admin');
         $target = User::factory()->create();
 
         $response = $this->actingAs($actor)->putJson(route('api.users.sync-roles-permissions', $target), []);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\BrandingService;
 use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -37,13 +38,14 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $nav = app(NavigationService::class);
-        $user = $request->user()?->loadAccessControl();
+        $branding = app(BrandingService::class)->toArray();
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => $branding['name'],
+            'branding' => $branding,
             'auth' => [
-                'user' => $user,
+                'user' => $request->user()?->withoutRelations(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'layout' => [
@@ -52,9 +54,7 @@ class HandleInertiaRequests extends Middleware
             'nav' => [
                 'style' => $nav->style(),
                 'modulesMenuPosition' => $nav->modulesMenuPosition(),
-                'global' => $nav->global(),
-                'modules' => $nav->modules(),
-                'footer' => $nav->footer(),
+                ...$nav->resolved(),
             ],
         ];
     }

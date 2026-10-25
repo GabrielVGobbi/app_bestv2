@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -10,7 +10,7 @@ import {
 } from '@/actions/App/Modules/Finance/Http/Controllers/PaymentMethodController';
 import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import type {
     PaymentMethodResource,
     PaymentMethodTypeOption,
@@ -31,48 +31,33 @@ export default function EditPaymentMethod({
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Metodos de pagamento', href: index.url() },
+            { title: 'Métodos de pagamento', href: index.url() },
             { title: paymentMethod.name, href: show.url(paymentMethod.uuid) },
             { title: 'Editar', href: edit.url(paymentMethod.uuid) },
         ],
     });
 
     return (
-        <>
+        <div className="flex min-h-full flex-col">
             <Head title={`Editar ${paymentMethod.name}`} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={show.url(paymentMethod.uuid)}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">
-                            Editar metodo de pagamento
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {paymentMethod.code}
-                        </p>
-                    </div>
-                </div>
-            </Header>
+            <Header
+                title="Editar método de pagamento"
+                subtitle={paymentMethod.type_label}
+                backHref={show.url(paymentMethod.uuid)}
+            />
 
-            <div className="page-wrapper-sm">
-                <Form
-                    action={update.url(paymentMethod.uuid)}
-                    method="put"
-                    options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatorios.')}
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <div className="space-y-4">
+            <Form
+                action={update.url(paymentMethod.uuid)}
+                method="put"
+                options={{ preserveScroll: true }}
+                onError={() => toast.error('Verifique os campos obrigatórios.')}
+                className="flex flex-1 flex-col"
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="page-wrapper-md flex-1 pb-8">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Dados do metodo</CardTitle>
-                                </CardHeader>
                                 <CardContent>
                                     <PaymentMethodFormFields
                                         paymentMethod={paymentMethod}
@@ -81,34 +66,42 @@ export default function EditPaymentMethod({
                                     />
                                 </CardContent>
                             </Card>
+                        </div>
 
-                            <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-                                <div className="flex items-center justify-between gap-3 py-3">
+                        <div className="sticky bottom-0 z-10 border-t bg-card/95">
+                            <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                                <p className="hidden text-xs text-muted-foreground sm:block">
+                                    Campos marcados com{' '}
+                                    <span className="text-destructive">*</span>{' '}
+                                    são obrigatórios
+                                </p>
+                                <div className="ml-auto flex items-center gap-2">
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        size="sm"
                                         asChild
                                         disabled={processing}
                                     >
-                                        <Link href={show.url(paymentMethod.uuid)}>
+                                        <Link
+                                            href={show.url(paymentMethod.uuid)}
+                                        >
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Cancelar
                                         </Link>
                                     </Button>
-                                    <Button
-                                        type="submit"
-                                        size="sm"
-                                        disabled={processing}
-                                    >
+                                    <Button type="submit" disabled={processing}>
                                         <Save />
                                         {processing ? 'Salvando...' : 'Salvar'}
                                     </Button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </Form>
-            </div>
-        </>
+                    </>
+                )}
+            </Form>
+        </div>
     );
 }

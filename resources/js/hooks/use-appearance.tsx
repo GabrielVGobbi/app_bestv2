@@ -34,7 +34,13 @@ const getStoredAppearance = (): Appearance => {
         return 'system';
     }
 
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
+    try {
+        const stored = localStorage.getItem('appearance');
+
+        return stored === 'light' || stored === 'dark' ? stored : 'system';
+    } catch {
+        return currentAppearance;
+    }
 };
 
 const isDarkMode = (appearance: Appearance): boolean => {
@@ -68,16 +74,14 @@ const mediaQuery = (): MediaQueryList | null => {
     return window.matchMedia('(prefers-color-scheme: dark)');
 };
 
-const handleSystemThemeChange = (): void => applyTheme(currentAppearance);
+const handleSystemThemeChange = (): void => {
+    applyTheme(currentAppearance);
+    notify();
+};
 
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
         return;
-    }
-
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
     }
 
     currentAppearance = getStoredAppearance();
@@ -94,15 +98,21 @@ export function useAppearance(): UseAppearanceReturn {
         () => 'system',
     );
 
-    const resolvedAppearance: ResolvedAppearance = isDarkMode(appearance)
-        ? 'dark'
-        : 'light';
+    const resolvedAppearance: ResolvedAppearance = useSyncExternalStore(
+        subscribe,
+        () => (isDarkMode(currentAppearance) ? 'dark' : 'light'),
+        () => 'light',
+    );
 
     const updateAppearance = (mode: Appearance): void => {
         currentAppearance = mode;
 
         // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
+        try {
+            localStorage.setItem('appearance', mode);
+        } catch {
+            // The selected theme remains usable when browser storage is blocked.
+        }
 
         // Store in cookie for SSR...
         setCookie('appearance', mode);

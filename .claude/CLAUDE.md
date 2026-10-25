@@ -2,15 +2,19 @@
 alwaysApply: true
 ---
 
+# Project instructions
+
+Read [AGENTS.md](../AGENTS.md) first: canonical stack, workflows, testing isolation and documentation paths. For any UI work read [DESIGN.md](../DESIGN.md): themable Start Kit identity (semantic tokens from `--brand-hue`, Fluid Functionalism components in `resources/js/components/ui/fluid/`, `PageHeader`, `EmptyState`, pt-BR copy, no native form controls, no fixed Tailwind palette classes).
+
 ## MANDATORY Form Input Components (Brazilian standard)
 
-Whenever you (or any LLM) create or edit form inputs, you MUST reuse these components — never a plain `<input>` for these field types:
+Whenever you (or any LLM) create or edit form inputs, you MUST reuse these components, never a plain `<input>` for these field types:
 
 - **Telefone:** use `InputPhone` from `@/components/ui/input-phone` (mask `(99) 99999-9999`).
 - **CPF / CNPJ:** use `InputDocument` from `@/components/ui/input-document` (`kind="cpf" | "cnpj" | "auto"`).
 - **Datas:** use `DatePicker` from `@/components/ui/date-picker` (Calendar + Popover, pt-BR, posta `yyyy-MM-dd` via `name`).
 - **Valores monetarios:** use `InputMoney` from `@/components/ui/input-money` (R$, padrao brasileiro).
-- Mask helpers puros vivem em `@/lib/masks` (`maskPhone`, `maskCpf`, `maskCnpj`, `maskCpfCnpj`, `maskCep`, `onlyDigits`) — reuse-os antes de criar nova logica de mascara.
+- Mask helpers puros vivem em `@/lib/masks` (`maskPhone`, `maskCpf`, `maskCnpj`, `maskCpfCnpj`, `maskCep`, `onlyDigits`): reuse-os antes de criar nova logica de mascara.
 
 All of the above work both controlled (`value`/`onChange`) and uncontrolled (`defaultValue` + `name`) inside the Inertia `<Form>`. Do not duplicate masking logic or build parallel date/money inputs.
 

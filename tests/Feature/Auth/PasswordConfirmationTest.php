@@ -24,6 +24,18 @@ class PasswordConfirmationTest extends TestCase
         );
     }
 
+    public function test_wrong_password_error_is_shown_in_portuguese()
+    {
+        app()->setLocale('pt_BR');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('password.confirm'))
+            ->post(route('password.confirm.store'), ['password' => 'senha-errada'])
+            ->assertRedirect(route('password.confirm'))
+            ->assertSessionHasErrors(['password' => 'A senha informada está incorreta.']);
+    }
+
     public function test_password_confirmation_requires_authentication()
     {
         $response = $this->get(route('password.confirm'));

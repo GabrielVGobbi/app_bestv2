@@ -1,6 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     ClipboardList,
     FileText,
     History,
@@ -22,18 +21,23 @@ import {
 import { AddressManager } from '@/components/addresses/address-manager';
 import Header from '@/components/dashboard/header';
 import DeleteButton from '@/components/delete-button';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { CopyableText } from '@/components/ui/copyable-text';
+import { Card, CardContent } from '@/components/ui/card';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatCpfCnpj, formatDate, formatPhone, cn } from '@/lib/utils';
+import { formatCpfCnpj, formatDate, formatPhone } from '@/lib/utils';
 import { ActivityTimeline } from '@/modules/timeline';
 import type { ClientResource } from '@/types/app/client';
+
 import { ClientQuickUpdatePanel } from './components/client-quick-update-panel';
 import type { ClientQuickUpdateColumn } from './components/client-quick-update-panel';
-import { ClientStatusMenu } from './components/client-status-menu';
 import {
     ClientStatusBadge,
+    ClientStatusMenu,
+} from './components/client-status-menu';
+import { ClientSubNav } from './components/client-sub-nav';
+import {
     DefaultAddressSummary,
     FieldGrid,
     Section,
@@ -75,16 +79,6 @@ const clientTabs: Array<{
     { value: 'activity', label: 'Atividade', icon: History },
 ];
 
-const tabTriggerClass = cn(
-    'group relative h-11 flex-none gap-2 rounded-none border-0 bg-transparent px-3.5',
-    'text-sm font-medium text-muted-foreground shadow-none',
-    'hover:bg-transparent hover:text-foreground',
-    'focus-visible:ring-0 focus-visible:outline-none',
-    'data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none',
-    'after:absolute after:right-2 after:bottom-0 after:left-2 after:h-0.5 after:rounded-full after:bg-transparent after:transition-colors',
-    'data-[state=active]:after:bg-primary',
-);
-
 export default function ShowClient({ clientData, timelineSubject }: Props) {
     const client = clientData.data;
     const responsibleUser = client.responsible_user;
@@ -92,23 +86,14 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
     const defaultAddress = addresses.find((address) => address.is_default);
     const canUpdate = client.permissions.can_update;
     const editUrl = edit.url(client.uuid);
+    const clientName = String(client.name ?? client.uuid);
 
     setLayoutProps({
         breadcrumbs: [
             { title: 'Clientes', href: index.url() },
-            {
-                title: String(client.name ?? client.uuid),
-                href: show.url(client.uuid),
-            },
+            { title: clientName, href: show.url(client.uuid) },
         ],
     });
-
-    const clientName = String(client.name ?? client.uuid);
-    const subtitle = !isBlank(client.company_name)
-        ? client.company_name
-        : !isBlank(client.email)
-          ? client.email
-          : null;
 
     const initials = clientName
         .split(' ')
@@ -145,69 +130,19 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
         <>
             <Head title={clientName} />
 
-            <Header>
-                <div className="flex min-w-0 items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8 shrink-0"
-                        asChild
-                    >
-                        <Link href={index.url()} aria-label="Voltar para clientes">
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="truncate text-xl font-semibold">
-                                {clientName}
-                            </h1>
-                           
-                        </div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-                            {subtitle ? (
-                                <span className="truncate">{subtitle}</span>
-                            ) : null}
-                            {subtitle ? (
-                                <span className="text-border" aria-hidden>
-                                    ·
-                                </span>
-                            ) : null}
-                            <CopyableText
-                                value={client.uuid}
-                                label="ID"
-                                className="text-xs text-muted-foreground"
-                            >
-                                <span className="underline-offset-2 group-hover/copyable:underline">
-                                    Copiar ID
-                                </span>
-                            </CopyableText>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    {canUpdate ? (
-                        <>
-                            <Button variant="outline" size="action" asChild>
-                                <Link href={editUrl}>
-                                    <SquarePen className="size-4" />
-                                    Editar
-                                </Link>
-                            </Button>
-
-                            <Separator
-                                orientation="vertical"
-                                className="mx-1 h-6"
-                            />
-                        </>
-                    ) : null}
-
+            <Header title={clientName} backHref={index.url()}>
+                <div className="flex flex-wrap items-center gap-2">
+                    <ClientSubNav
+                        clientUuid={client.uuid}
+                        currentPage="show"
+                        canEdit={canUpdate}
+                    />
+                    <Separator orientation="vertical" className="mx-1 h-6" />
                     <DeleteButton
                         url={destroy.url(client.uuid)}
                         resourceName={clientName}
                         resourceType="cliente"
                         redirectTo={index.url()}
-                        size="action"
                     />
                 </div>
             </Header>
@@ -215,10 +150,26 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
             <div className="page-wrapper-lg">
                 <div className="grid gap-4 p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
-                        <div className="rounded-lg border bg-card">
-                            <div className="p-5">
-                                <div className="flex h-20 items-center justify-center rounded-lg bg-secondary text-2xl font-semibold text-primary">
+                        <Card className="gap-0 py-0">
+                            <CardContent className="p-5">
+                                <div className="flex h-20 items-center justify-center rounded-lg bg-primary-soft text-2xl font-semibold text-primary-soft-foreground">
                                     {initials}
+                                </div>
+
+                                <div className="mt-4">
+                                    {canUpdate ? (
+                                        <ClientStatusMenu
+                                            uuid={client.uuid}
+                                            status={client.status}
+                                            size="sm"
+                                            className="w-full justify-between"
+                                        />
+                                    ) : (
+                                        <ClientStatusBadge
+                                            status={client.status}
+                                            className="w-full justify-center"
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="mt-5 space-y-0.5">
@@ -227,7 +178,9 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                         label="Documento"
                                         value={formatCpfCnpj(client.document)}
                                         copyable
-                                        emptyHref={canUpdate ? editUrl : undefined}
+                                        emptyHref={
+                                            canUpdate ? editUrl : undefined
+                                        }
                                         emptyLabel={
                                             canUpdate
                                                 ? 'Adicionar documento'
@@ -236,13 +189,15 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                     />
                                     <SidebarContactRow
                                         icon={Mail}
-                                        label="Email"
+                                        label="E-mail"
                                         value={client.email}
                                         copyable
-                                        emptyHref={canUpdate ? editUrl : undefined}
+                                        emptyHref={
+                                            canUpdate ? editUrl : undefined
+                                        }
                                         emptyLabel={
                                             canUpdate
-                                                ? 'Adicionar email'
+                                                ? 'Adicionar e-mail'
                                                 : undefined
                                         }
                                     />
@@ -251,7 +206,9 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                         label="Telefone"
                                         value={formatPhone(client.phone)}
                                         copyable
-                                        emptyHref={canUpdate ? editUrl : undefined}
+                                        emptyHref={
+                                            canUpdate ? editUrl : undefined
+                                        }
                                         emptyLabel={
                                             canUpdate
                                                 ? 'Adicionar telefone'
@@ -275,146 +232,143 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                                         address={defaultAddress}
                                     />
                                 </div>
-                            </div>
+                            </CardContent>
 
-                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
-                                <p>Criado · {formatDate(client.created_at)}</p>
+                            <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground tabular-nums">
+                                <p>Criado em {formatDate(client.created_at)}</p>
                                 <p className="mt-1">
-                                    Atualizado · {formatDate(client.updated_at)}
+                                    Atualizado em{' '}
+                                    {formatDate(client.updated_at)}
                                 </p>
                             </div>
-                        </div>
+                        </Card>
                     </aside>
 
                     <main className="min-w-0">
-                        <Tabs
-                            defaultValue="overview"
-                            className="gap-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[var(--shadow-app-panel)]"
-                        >
-                            <div className="border-b border-border/70 bg-muted/35">
-                                <TabsList className="h-11 w-full justify-start gap-0 overflow-x-auto rounded-none border-0 bg-transparent p-0">
-                                    {clientTabs.map((tab) => {
-                                        const Icon = tab.icon;
-
-                                        return (
-                                            <TabsTrigger
-                                                key={tab.value}
-                                                value={tab.value}
-                                                className={tabTriggerClass}
-                                            >
-                                                <Icon className="size-3.5 opacity-70 group-data-[state=active]:opacity-100" />
-                                                <span>{tab.label}</span>
-                                                {tab.count ? (
-                                                    <span className="rounded-md bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums ring-1 ring-border/60 group-data-[state=active]:text-foreground">
-                                                        {addresses.length}
-                                                    </span>
-                                                ) : null}
-                                            </TabsTrigger>
-                                        );
-                                    })}
-                                </TabsList>
-                            </div>
-
-                            <TabsContent
-                                value="overview"
-                                className="mt-0 space-y-6 p-5 outline-none sm:p-6"
+                        <Tabs defaultValue="overview" className="space-y-4">
+                            <TabsList
+                                aria-label="Seções do cliente"
+                                className="max-w-full overflow-x-auto"
                             >
-                                {canUpdate ? (
-                                    <Section title="Dados rápidos">
-                                        <div className="rounded-lg border border-border/70 px-3.5 py-3.5">
-                                            <ClientQuickUpdatePanel
-                                                key={`${client.uuid}:${client.updated_at}`}
-                                                client={client}
-                                                columns={quickUpdateColumns}
-                                            />
-                                        </div>
-                                    </Section>
-                                ) : null}
-
-                                <Section title="Classificação">
-                                    <FieldGrid
-                                        items={profileItems}
-                                        variant="rows"
+                                {clientTabs.map((tab) => (
+                                    <TabItem
+                                        key={tab.value}
+                                        value={tab.value}
+                                        icon={tab.icon}
+                                        label={
+                                            tab.count
+                                                ? `${tab.label} (${addresses.length})`
+                                                : tab.label
+                                        }
                                     />
-                                </Section>
-                            </TabsContent>
+                                ))}
+                            </TabsList>
 
-                            <TabsContent
-                                value="addresses"
-                                className="mt-0 p-5 outline-none sm:p-6"
-                            >
-                                <AddressManager
-                                    model="client"
-                                    modelId={client.uuid}
-                                    initialAddresses={addresses}
-                                    variant="plain"
-                                    title="Lista de endereços"
-                                    emptyMessage="Cadastre o endereço de cobrança ou entrega deste cliente."
-                                />
-                            </TabsContent>
+                            <TabPanel value="overview">
+                                <Card>
+                                    <CardContent className="space-y-6">
+                                        {canUpdate ? (
+                                            <Section title="Dados rápidos">
+                                                <div className="rounded-lg border border-border px-3.5 py-3.5">
+                                                    <ClientQuickUpdatePanel
+                                                        key={`${client.uuid}:${client.updated_at}`}
+                                                        client={client}
+                                                        columns={
+                                                            quickUpdateColumns
+                                                        }
+                                                    />
+                                                </div>
+                                            </Section>
+                                        ) : null}
 
-                            <TabsContent
-                                value="notes"
-                                className="mt-0 space-y-6 p-5 outline-none sm:p-6"
-                            >
-                                <Section
-                                    title="Observações"
-                                    action={
-                                        canUpdate ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link href={editUrl}>
-                                                    Editar
-                                                </Link>
-                                            </Button>
-                                        ) : null
-                                    }
-                                >
-                                    {isBlank(client.notes) ? (
-                                        <div className="flex min-h-36 flex-col items-start justify-center gap-3 rounded-lg border border-dashed bg-muted/25 px-4 py-8">
-                                            <p className="text-sm text-muted-foreground">
-                                                Nenhuma observação cadastrada.
-                                            </p>
-                                            {canUpdate ? (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link href={editUrl}>
-                                                        Adicionar observação
-                                                    </Link>
-                                                </Button>
-                                            ) : null}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-lg border border-border/70 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-foreground">
-                                            {client.notes}
-                                        </div>
-                                    )}
-                                </Section>
+                                        <Section title="Classificação">
+                                            <FieldGrid
+                                                items={profileItems}
+                                                variant="rows"
+                                            />
+                                        </Section>
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
 
-                                <TechnicalIdsDisclosure
-                                    items={technicalItems}
-                                />
-                            </TabsContent>
+                            <TabPanel value="addresses">
+                                <Card>
+                                    <CardContent>
+                                        <AddressManager
+                                            model="client"
+                                            modelId={client.uuid}
+                                            initialAddresses={addresses}
+                                            variant="plain"
+                                            title="Lista de endereços"
+                                            emptyMessage="Cadastre o endereço de cobrança ou entrega deste cliente."
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
 
-                            <TabsContent
-                                value="activity"
-                                className="mt-0 p-5 outline-none sm:p-6"
-                            >
-                                <ActivityTimeline
-                                    showHeader={false}
-                                    modelType={timelineSubject.type}
-                                    modelId={timelineSubject.id}
-                                    title=""
-                                    allowAttachments
-                                    className="m-0 border-0 bg-transparent p-0 shadow-none"
-                                />
-                            </TabsContent>
+                            <TabPanel value="notes">
+                                <Card>
+                                    <CardContent className="space-y-6">
+                                        <Section
+                                            title="Observações"
+                                            action={
+                                                canUpdate ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        asChild
+                                                    >
+                                                        <Link href={editUrl}>
+                                                            <SquarePen
+                                                                className="size-4"
+                                                                aria-hidden="true"
+                                                            />
+                                                            Editar
+                                                        </Link>
+                                                    </Button>
+                                                ) : null
+                                            }
+                                        >
+                                            {isBlank(client.notes) ? (
+                                                <div className="rounded-lg border border-dashed border-border">
+                                                    <EmptyState
+                                                        icon={MessageSquareText}
+                                                        title="Nenhuma observação cadastrada"
+                                                        description={
+                                                            canUpdate
+                                                                ? 'Registre combinados e preferências deste cliente.'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-lg border border-border px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-foreground">
+                                                    {client.notes}
+                                                </div>
+                                            )}
+                                        </Section>
+
+                                        <TechnicalIdsDisclosure
+                                            items={technicalItems}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
+
+                            <TabPanel value="activity">
+                                <Card>
+                                    <CardContent>
+                                        <ActivityTimeline
+                                            showHeader={false}
+                                            modelType={timelineSubject.type}
+                                            modelId={timelineSubject.id}
+                                            title=""
+                                            allowAttachments
+                                            className="m-0 border-0 bg-transparent p-0 shadow-none"
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
                         </Tabs>
                     </main>
                 </div>

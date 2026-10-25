@@ -1,9 +1,16 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import {
+    Bell,
+    CheckCheck,
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 import * as NotificationController from '@/actions/App/Http/Controllers/NotificationController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { NotificationItem } from '@/components/notification-item';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,11 +18,13 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/hooks/use-notifications';
-import type { NotificationFilters, NotificationType } from '@/types/notification';
+import type {
+    NotificationFilters,
+    NotificationType,
+} from '@/types/notification';
 
 const TYPE_OPTIONS: { value: NotificationType | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos os tipos' },
@@ -38,10 +47,15 @@ const READ_OPTIONS = [
 
 export default function NotificationsPage() {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Notificações', href: NotificationController.index.url() }],
+        breadcrumbs: [
+            { title: 'Notificações', href: NotificationController.index.url() },
+        ],
     });
 
-    const [filters, setFilters] = useState<NotificationFilters>({});
+    const [filters, setFilters] = useState<NotificationFilters>({ page: 1 });
+    const handlePageChange = useCallback((page: number) => {
+        setFilters((current) => ({ ...current, page }));
+    }, []);
     const {
         notifications,
         pagination,
@@ -53,11 +67,12 @@ export default function NotificationsPage() {
         markAllAsRead,
         deleteNotification,
         executeAction,
-    } = useNotifications(filters);
+    } = useNotifications(filters, handlePageChange);
 
     const handleTypeChange = (value: string) => {
         setFilters((prev) => ({
             ...prev,
+            page: 1,
             type: value === 'all' ? undefined : (value as NotificationType),
         }));
     };
@@ -65,6 +80,7 @@ export default function NotificationsPage() {
     const handleReadChange = (value: string) => {
         setFilters((prev) => ({
             ...prev,
+            page: 1,
             read: value === 'all' ? undefined : (value as 'true' | 'false'),
         }));
     };
@@ -73,53 +89,58 @@ export default function NotificationsPage() {
         <>
             <Head title="Notificações" />
 
+            <Header
+                title="Notificações"
+                subtitle={
+                    unreadCount > 0
+                        ? `Você tem ${unreadCount} ${unreadCount > 1 ? 'notificações não lidas' : 'notificação não lida'}.`
+                        : 'Todas as notificações estão em dia.'
+                }
+            >
+                <div className="flex shrink-0 gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={refresh}
+                        disabled={loading}
+                    >
+                        <RefreshCw
+                            className={`mr-1.5 size-3.5 ${loading ? 'animate-spin' : ''}`}
+                        />
+                        Atualizar
+                    </Button>
+                    {unreadCount > 0 && (
+                        <Button
+                            size="sm"
+                            onClick={() => void markAllAsRead()}
+                            disabled={loading}
+                        >
+                            <CheckCheck className="mr-1.5 size-3.5" />
+                            Marcar todas como lidas
+                        </Button>
+                    )}
+                </div>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    {/* Header */}
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <Heading
-                            title="Notificações"
-                            description={
-                                unreadCount > 0
-                                    ? `Você tem ${unreadCount} notificação${unreadCount > 1 ? 'ões' : ''} não lida${unreadCount > 1 ? 's' : ''}.`
-                                    : 'Todas as notificações estão em dia.'
-                            }
-                        />
-                        <div className="flex shrink-0 gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={refresh}
-                                disabled={loading}
-                            >
-                                <RefreshCw className={`mr-1.5 size-3.5 ${loading ? 'animate-spin' : ''}`} />
-                                Atualizar
-                            </Button>
-                            {unreadCount > 0 && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => void markAllAsRead()}
-                                    disabled={loading}
-                                >
-                                    <CheckCheck className="mr-1.5 size-3.5" />
-                                    Marcar todas como lidas
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
                     {/* Filters */}
                     <div className="flex flex-wrap gap-3">
                         <Select
                             value={filters.type ?? 'all'}
                             onValueChange={handleTypeChange}
                         >
-                            <SelectTrigger className="w-40">
-                                <SelectValue placeholder="Tipo" />
-                            </SelectTrigger>
+                            <SelectTrigger
+                                className="w-40"
+                                placeholder="Tipo"
+                            />
                             <SelectContent>
-                                {TYPE_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                {TYPE_OPTIONS.map((opt, optIndex) => (
+                                    <SelectItem
+                                        key={opt.value}
+                                        index={optIndex}
+                                        value={opt.value}
+                                    >
                                         {opt.label}
                                     </SelectItem>
                                 ))}
@@ -130,12 +151,17 @@ export default function NotificationsPage() {
                             value={filters.read ?? 'all'}
                             onValueChange={handleReadChange}
                         >
-                            <SelectTrigger className="w-36">
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
+                            <SelectTrigger
+                                className="w-36 min-w-0"
+                                placeholder="Status"
+                            />
                             <SelectContent>
-                                {READ_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                {READ_OPTIONS.map((opt, optIndex) => (
+                                    <SelectItem
+                                        key={opt.value}
+                                        index={optIndex}
+                                        value={opt.value}
+                                    >
                                         {opt.label}
                                     </SelectItem>
                                 ))}
@@ -145,7 +171,7 @@ export default function NotificationsPage() {
 
                     {/* Error */}
                     {error && (
-                        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                        <div className="rounded-lg border border-destructive-soft-foreground/20 bg-destructive-soft px-4 py-3 text-sm text-destructive-soft-foreground">
                             {error}
                         </div>
                     )}
@@ -154,7 +180,10 @@ export default function NotificationsPage() {
                     <div className="flex flex-col gap-3">
                         {loading ? (
                             Array.from({ length: 5 }).map((_, i) => (
-                                <div key={i} className="flex gap-3 rounded-lg border p-3">
+                                <div
+                                    key={i}
+                                    className="flex gap-3 rounded-lg border p-3"
+                                >
                                     <Skeleton className="size-8 shrink-0 rounded-full" />
                                     <div className="flex-1 space-y-2">
                                         <Skeleton className="h-3.5 w-1/3" />
@@ -164,26 +193,28 @@ export default function NotificationsPage() {
                                 </div>
                             ))
                         ) : notifications.length === 0 ? (
-                            <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed py-16 text-center">
-                                <div className="flex size-14 items-center justify-center rounded-full border bg-muted/30">
-                                    <Bell className="size-6 text-muted-foreground/50" />
-                                </div>
-                                <div>
-                                    <p className="font-medium text-muted-foreground">Nenhuma notificação encontrada</p>
-                                    <p className="mt-1 text-sm text-muted-foreground/70">
-                                        {Object.values(filters).some(Boolean)
+                            <div className="rounded-lg border border-dashed border-border">
+                                <EmptyState
+                                    icon={Bell}
+                                    title="Nenhuma notificação"
+                                    description={
+                                        filters.type || filters.read
                                             ? 'Tente remover os filtros para ver mais resultados.'
-                                            : 'Você está em dia com tudo.'}
-                                    </p>
-                                </div>
+                                            : 'Você está em dia com tudo.'
+                                    }
+                                />
                             </div>
                         ) : (
                             notifications.map((notification) => (
                                 <NotificationItem
                                     key={notification.uuid}
                                     notification={notification}
-                                    onMarkAsRead={(uuid) => void markAsRead(uuid)}
-                                    onDelete={(uuid) => void deleteNotification(uuid)}
+                                    onMarkAsRead={(uuid) =>
+                                        void markAsRead(uuid)
+                                    }
+                                    onDelete={(uuid) =>
+                                        void deleteNotification(uuid)
+                                    }
                                     onExecuteAction={executeAction}
                                 />
                             ))
@@ -192,8 +223,56 @@ export default function NotificationsPage() {
 
                     {/* Pagination info */}
                     {pagination && pagination.total > 0 && (
-                        <div className="text-center text-sm text-muted-foreground">
-                            Exibindo {pagination.from ?? 0}–{pagination.to ?? 0} de {pagination.total} notificações
+                        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+                            <span>
+                                Exibindo {pagination.from ?? 0}–
+                                {pagination.to ?? 0} de {pagination.total}{' '}
+                                notificações
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={
+                                        loading || pagination.current_page <= 1
+                                    }
+                                    onClick={() =>
+                                        handlePageChange(
+                                            pagination.current_page - 1,
+                                        )
+                                    }
+                                >
+                                    <ChevronLeft
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    Anterior
+                                </Button>
+                                <span aria-live="polite">
+                                    Página {pagination.current_page} de{' '}
+                                    {pagination.last_page}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={
+                                        loading ||
+                                        pagination.current_page >=
+                                            pagination.last_page
+                                    }
+                                    onClick={() =>
+                                        handlePageChange(
+                                            pagination.current_page + 1,
+                                        )
+                                    }
+                                >
+                                    <ChevronRight
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    Próxima
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>

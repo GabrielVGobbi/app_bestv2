@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+@php($branding = app(\App\Services\BrandingService::class))
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--brand-hue: {{ $branding->hue() }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light dark">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
@@ -23,11 +25,13 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: oklch(0.975 0.004 var(--brand-hue, 215));
+                color-scheme: light;
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: oklch(0.19 0.01 var(--brand-hue, 215));
+                color-scheme: dark;
             }
 
             #boot-shell {
@@ -37,33 +41,35 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: #0d0d0d;
+                background: oklch(0.975 0.004 var(--brand-hue, 215));
+                color: oklch(0.48 0.11 var(--brand-hue, 215));
             }
 
-            #boot-loading {
+            html.dark #boot-shell {
+                background: oklch(0.19 0.01 var(--brand-hue, 215));
+                color: oklch(0.78 0.1 var(--brand-hue, 215));
+            }
+
+            #boot-loading,
+            #noscript-notice {
                 position: fixed;
-                right: 20px;
-                bottom: 20px;
+                bottom: 16px;
                 z-index: 10000;
                 padding: 8px 14px;
                 border-radius: 8px;
-                background: #ffffff;
-                color: #666666;
+                background: oklch(1 0 0);
+                color: oklch(0.46 0.02 var(--brand-hue, 215));
                 box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-                font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif;
+                font: 13px/1.4 system-ui, sans-serif;
             }
 
-            #noscript-notice {
-                position: fixed;
-                bottom: 12px;
-                left: 12px;
-                z-index: 10000;
-                padding: 6px 12px;
-                border-radius: 6px;
-                background: rgba(255, 255, 255, 0.9);
-                color: #999999;
-                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-                font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif;
+            #boot-loading { right: 16px; }
+            #noscript-notice { left: 16px; }
+
+            html.dark #boot-loading,
+            html.dark #noscript-notice {
+                background: oklch(0.27 0.012 var(--brand-hue, 215));
+                color: oklch(0.72 0.015 var(--brand-hue, 215));
             }
 
             #boot-error {
@@ -75,38 +81,34 @@
                 max-height: 40vh;
                 overflow: auto;
                 padding: 10px 14px;
-                border: 1px solid #5c2b2e;
+                border: 1px solid oklch(0.38 0.14 25);
                 border-radius: 8px;
-                background: #2a1215;
-                color: #ff8a80;
+                background: oklch(0.95 0.03 20);
+                color: oklch(0.38 0.14 25);
                 font: 12px/1.4 ui-monospace, monospace;
                 white-space: pre-wrap;
             }
         </style>
 
+        <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
         <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ $branding->name() }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
         <div id="boot-shell" aria-hidden="true">
-            <svg width="240" height="160" viewBox="0 0 240 160" role="img" aria-label="Runey">
-                <rect width="240" height="160" fill="#0d0d0d" />
-                <circle cx="120" cy="76" r="32" fill="#ededed" />
-                <text x="120" y="90" fill="#0d0d0d" font-family="Poppins, -apple-system, BlinkMacSystemFont, sans-serif" font-size="38" font-weight="700" text-anchor="middle">R</text>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" role="img" aria-label="{{ $branding->name() }}">
+                <rect x="9" y="2" width="13" height="13" rx="3.5" fill="currentColor" opacity="0.55" />
+                <rect x="2" y="9" width="13" height="13" rx="3.5" fill="currentColor" />
             </svg>
         </div>
 
-        <div id="boot-loading" role="status">Rendering...</div>
+        <div id="boot-loading" role="status">Carregando...</div>
 
         <noscript>
             <style>
@@ -114,7 +116,7 @@
                     display: none;
                 }
             </style>
-            <div id="noscript-notice">This page requires JavaScript to display.</div>
+            <div id="noscript-notice">Esta página precisa de JavaScript.</div>
         </noscript>
 
         <x-inertia::app />
@@ -129,7 +131,7 @@
                     document.body.appendChild(panel);
                 }
 
-                panel.textContent += (panel.textContent ? '\n' : '') + 'Error: ' + event.message;
+                panel.textContent += (panel.textContent ? '\n' : '') + 'Erro: ' + event.message;
             });
         </script>
     </body>

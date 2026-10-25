@@ -52,10 +52,19 @@ class SecurityController extends Controller implements HasMiddleware
     {
         $user = $request->user();
 
-        $user->update([
-            'password' => $request->password,
-            'must_change_password' => false,
-        ]);
+        $user->getConnection()->transaction(function () use ($request, $user): void {
+            $user->refreshForUpdate();
+            $wasRequired = $user->must_change_password;
+
+            $user->update([
+                'password' => $request->validated('password'),
+                'must_change_password' => false,
+            ]);
+
+            if ($wasRequired) {
+                $user->tokens()->delete();
+            }
+        });
 
         $guard = auth()->guard('web');
         $request->session()->put(

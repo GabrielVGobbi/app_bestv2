@@ -4,24 +4,29 @@ import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-import type { DataTableAppearance, DataTableSize } from '../core/types';
-
-const HEADER_SIZE_STYLES: Record<DataTableSize, string> = {
-    sm: 'h-9 px-2.5 text-xs',
-    md: 'h-11 px-3 text-xs',
-};
+import { clampColumnWidth } from '../core/table-layout';
+import type { StickyGeometry } from '../core/table-layout';
+import type { DataTableAppearance } from '../core/types';
+import { useColumnResize } from '../hooks/use-column-resize';
 
 interface DataTableHeaderProps<TData> {
     headerGroups: HeaderGroup<TData>[];
     appearance: Required<DataTableAppearance>;
     isScrolled?: boolean;
+    geometry?: StickyGeometry;
+    widths: Record<string, number>;
+    onAutosize?: (id: string) => void;
 }
 
 export function DataTableHeader<TData>({
     headerGroups,
     appearance,
     isScrolled = false,
+    geometry = {},
+    widths,
+    onAutosize,
 }: DataTableHeaderProps<TData>) {
+    const startResize = useColumnResize();
     const showHorizontalLines =
         appearance.gridLines === 'horizontal' ||
         appearance.gridLines === 'both';
@@ -29,40 +34,47 @@ export function DataTableHeader<TData>({
         appearance.gridLines === 'vertical' || appearance.gridLines === 'both';
 
     return (
-        <thead className="sticky top-0 z-10 bg-table-background">
+        <thead className="sticky top-0 z-10 bg-muted">
             {headerGroups.map((headerGroup) => (
                 <tr
                     key={headerGroup.id}
                     className={cn(showHorizontalLines && 'border-b')}
                 >
-                    {headerGroup.headers.map((header) => {
+                    {headerGroup.headers.map((header, index, headers) => {
                         const canSort = header.column.getCanSort();
                         const sorted = header.column.getIsSorted();
                         const align =
                             header.column.columnDef.meta?.align ?? 'left';
 
-                        const isSticky =
-                            header.column.columnDef.meta?.sticky === 'right';
+                        const sticky = geometry[header.column.id];
+                        const isSticky = Boolean(sticky);
+                        const label =
+                            header.column.columnDef.meta?.label ??
+                            header.column.id;
 
                         return (
                             <th
                                 key={header.id}
+                                draggable={false}
+                                data-column-id={header.column.id}
                                 className={cn(
-                                    'relative overflow-hidden font-medium whitespace-nowrap text-table-text',
-                                    HEADER_SIZE_STYLES[appearance.size],
+                                    'relative overflow-hidden text-xs font-semibold whitespace-nowrap text-muted-foreground',
+                                    appearance.size === 'sm'
+                                        ? 'h-9 px-3 text-xs'
+                                        : 'h-11 px-4 text-xs',
                                     showVerticalLines &&
                                         'border-r last:border-r-0',
                                     align === 'center' && 'text-center',
-                                    align === 'right' &&
-                                        'text-right font-tabular',
-                                    isSticky &&
-                                        'sticky right-0 z-20 border-l bg-table-background',
+                                    align === 'right' && 'text-right',
+                                    header.column.id === 'actions' &&
+                                        'select-none',
+                                    isSticky && 'sticky z-20 bg-muted',
                                 )}
                                 style={{
-                                    width: header.getSize(),
+                                    ...sticky,
                                     ...(isSticky && {
                                         boxShadow: isScrolled
-                                            ? '-12px 0 16px -4px rgba(0,0,0,0.1)'
+                                            ? `${sticky?.left !== undefined ? 8 : -8}px 0 12px -8px rgba(0,0,0,0.2)`
                                             : 'none',
                                     }),
                                 }}
@@ -108,13 +120,94 @@ export function DataTableHeader<TData>({
                                     </span>
                                 )}
 
-                                {header.column.getCanResize() && (
-                                    <div
-                                        onMouseDown={header.getResizeHandler()}
-                                        onTouchStart={header.getResizeHandler()}
-                                        className="absolute top-0 right-0 h-full w-1 cursor-col-resize touch-none hover:bg-primary/60"
-                                    />
-                                )}
+                                {header.column.getCanResize() &&
+                                    header.column.id !== 'actions' &&
+                                    headerGroup.headers[index + 1]?.column
+                                        .id !== 'actions' && (
+                                        <div
+                                            role="separator"
+                                            tabIndex={0}
+                                            aria-orientation="vertical"
+                                            aria-label={`Largura de ${label}`}
+                                            aria-valuenow={Math.round(
+                                                widths[header.column.id],
+                                            )}
+                                            aria-valuemin={
+                                                header.column.columnDef
+                                                    .minSize ?? 60
+                                            }
+                                            aria-valuemax={
+                                                header.column.columnDef
+                                                    .maxSize ?? 1200
+                                            }
+                                            onPointerDown={(event) =>
+                                                startResize(event, {
+                                                    size: header.column.getSize(),
+                                                    minSize:
+                                                        header.column.columnDef
+                                                            .minSize,
+                                                    maxSize:
+                                                        header.column.columnDef
+                                                            .maxSize,
+                                                    fillColumnId:
+                                                        headers.findLast(
+                                                            (item) =>
+                                                                item.column.getCanResize(),
+                                                        )?.column.id,
+                                                    onComplete: (sizes) =>
+                                                        header
+                                                            .getContext()
+                                                            .table.setColumnSizing(
+                                                                (current) => ({
+                                                                    ...current,
+                                                                    ...sizes,
+                                                                }),
+                                                            ),
+                                                })
+                                            }
+                                            onDoubleClick={() =>
+                                                onAutosize?.(header.column.id)
+                                            }
+                                            onKeyDown={(event) => {
+                                                if (
+                                                    event.key === 'ArrowLeft' ||
+                                                    event.key === 'ArrowRight'
+                                                ) {
+                                                    event.preventDefault();
+                                                    const step = event.shiftKey
+                                                        ? 50
+                                                        : 10;
+                                                    const size =
+                                                        clampColumnWidth(
+                                                            widths[
+                                                                header.column.id
+                                                            ] +
+                                                                (event.key ===
+                                                                'ArrowRight'
+                                                                    ? step
+                                                                    : -step),
+                                                            header.column
+                                                                .columnDef
+                                                                .minSize,
+                                                            header.column
+                                                                .columnDef
+                                                                .maxSize,
+                                                        );
+                                                    header
+                                                        .getContext()
+                                                        .table.setColumnSizing(
+                                                            (current) => ({
+                                                                ...current,
+                                                                ...widths,
+                                                                [header.column
+                                                                    .id]: size,
+                                                            }),
+                                                        );
+                                                }
+                                            }}
+                                            className="absolute top-0 right-0 z-30 h-full w-2.5 cursor-col-resize touch-none select-none after:absolute after:inset-y-1 after:right-0 after:w-0.5 after:rounded-full after:bg-primary after:opacity-0 after:transition-opacity after:duration-150 after:ease-out hover:after:opacity-100 focus-visible:outline-2 focus-visible:outline-ring focus-visible:after:opacity-100 data-[resizing=true]:after:opacity-100 motion-reduce:after:transition-none"
+                                        />
+                                    )}
                             </th>
                         );
                     })}

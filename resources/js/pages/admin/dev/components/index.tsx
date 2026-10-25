@@ -26,7 +26,7 @@ import {
     richTextEditor,
     toasts,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -56,7 +56,7 @@ const componentItems = [
     {
         title: 'Async select',
         description:
-            'Select com busca remota, modo estatico, selecao unica e multipla.',
+            'Select com busca remota, modo estatico, seleção única e múltipla.',
         href: asyncSelect.url(),
         status: 'Pronto',
         icon: Search,
@@ -64,7 +64,7 @@ const componentItems = [
     {
         title: 'Form playground',
         description:
-            'Galeria de FormField, formularios em card, inline, filtros e estados de validacao.',
+            'Galeria de FormField, formularios em card, inline, filtros e estados de validação.',
         href: formPlayground.url(),
         status: 'Pronto',
         icon: FileText,
@@ -88,7 +88,7 @@ const componentItems = [
     {
         title: 'Activity Actions',
         description:
-            'Catálogo configuravel para auditar login, logout e acoes de dominio com playground de logs reais.',
+            'Catálogo configurável para auditar login, logout e ações de domínio com playground de logs reais.',
         href: activityActions.url(),
         status: 'Pronto',
         icon: History,
@@ -96,7 +96,7 @@ const componentItems = [
     {
         title: 'Activity Timeline',
         description:
-            'Timeline reutilizavel para comentarios, replies, anexos e eventos de auditoria por model.',
+            'Timeline reutilizável para comentários, replies, anexos e eventos de auditoria por model.',
         href: activityTimeline.url(),
         status: 'Novo',
         icon: MessageSquare,
@@ -128,13 +128,13 @@ export default function ComponentsIndex() {
         <>
             <Head title="Components" />
 
+            <Header
+                title="Components"
+                subtitle="Catálogo interno para organizar componentes, exemplos e decisões de uso."
+            />
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <Heading
-                        title="Components"
-                        description="Catálogo interno para organizar componentes, exemplos e decisoes de uso."
-                    />
-
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {componentItems.map((item) => (
                             <Link key={item.title} href={item.href} prefetch>
@@ -168,7 +168,7 @@ export default function ComponentsIndex() {
                                 <CardTitle>Proximos componentes</CardTitle>
                                 <CardDescription>
                                     Novas entradas entram aqui com demo, API e
-                                    exemplos de integracao.
+                                    exemplos de integração.
                                 </CardDescription>
                             </CardHeader>
                         </Card>

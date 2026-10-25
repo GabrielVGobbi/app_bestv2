@@ -10,14 +10,14 @@ use App\Modules\Email\Models\EmailLog;
 interface EmailServiceInterface
 {
     /**
-     * Dispatch the email as a queued job.
+     * Dispatch the email as a queued job after the outer transaction commits.
      * Returns null if the kill switch is active or the email is a duplicate.
      */
     public function queue(SendEmailDTO $dto): ?EmailLog;
 
     /**
-     * Send the email synchronously (bypasses queue).
-     * Returns null if the kill switch is active.
+     * Send without queueing, after the outer transaction commits.
+     * Returns null if disabled, duplicate or unsafe to retry; may return queued until commit.
      */
     public function sendNow(SendEmailDTO $dto): ?EmailLog;
 }

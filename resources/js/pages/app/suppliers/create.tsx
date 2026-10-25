@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/actions/App/Modules/Suppliers/Http/Controllers/SupplierController';
 import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 import SupplierFormFields from './partials/supplier-form-fields';
 
@@ -22,78 +22,76 @@ export default function CreateSupplier() {
     });
 
     return (
-        <>
+        <div className="flex min-h-full flex-col">
             <Head title="Novo fornecedor" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">Novo fornecedor</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Cadastrar contraparte de contas a pagar
-                        </p>
-                    </div>
-                </div>
-            </Header>
+            <Header
+                title="Novo fornecedor"
+                subtitle="Cadastre uma contraparte de contas a pagar"
+                backHref={index.url()}
+            />
 
-            <div className="page-wrapper-sm">
-                <Form
-                    action={store.url()}
-                    method="post"
-                    options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatórios.')}
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <div className="space-y-4">
-                            <div className="flex flex-1 flex-col gap-6">
+            <Form
+                action={store.url()}
+                method="post"
+                options={{ preserveScroll: true }}
+                onError={() => toast.error('Verifique os campos obrigatórios.')}
+                className="flex flex-1 flex-col"
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="page-wrapper-md flex-1 pb-8">
+                            <section className="grid gap-x-10 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                                <div className="md:pt-6">
+                                    <h2 className="text-sm font-semibold">
+                                        Dados do fornecedor
+                                    </h2>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Identificação, status e canais de
+                                        contato usados nas contas a pagar.
+                                    </p>
+                                </div>
                                 <Card>
-                                    <CardHeader>
-                                        <CardTitle>Dados do Fornecedor</CardTitle>
-                                    </CardHeader>
                                     <CardContent>
                                         <SupplierFormFields errors={errors} />
                                     </CardContent>
                                 </Card>
-                            </div>
+                            </section>
+                        </div>
 
-                            <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-                                <div className="flex items-center justify-between gap-3 py-3">
-                                    <p className="text-xs text-muted-foreground">
-                                        Campos marcados com{' '}
-                                        <span className="text-destructive">*</span>{' '}
-                                        são obrigatórios.
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                            disabled={processing}
-                                        >
-                                            <Link href={index.url()}>Cancelar</Link>
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            size="sm"
-                                            disabled={processing}
-                                        >
-                                            <Save />
-                                            {processing ? 'Salvando...' : 'Salvar'}
-                                        </Button>
-                                    </div>
+                        {/* Encaixado na base da área de conteúdo: visível com formulário curto ou longo. */}
+                        <div className="sticky bottom-0 z-10 border-t border-border bg-card/95">
+                            <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                                <p className="hidden text-xs text-muted-foreground sm:block">
+                                    Campos marcados com{' '}
+                                    <span className="text-destructive">*</span>{' '}
+                                    são obrigatórios
+                                </p>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        asChild
+                                        disabled={processing}
+                                    >
+                                        <Link href={index.url()}>
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Cancelar
+                                        </Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        <Save aria-hidden="true" />
+                                        {processing ? 'Salvando...' : 'Salvar'}
+                                    </Button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </Form>
-            </div>
-        </>
+                    </>
+                )}
+            </Form>
+        </div>
     );
 }

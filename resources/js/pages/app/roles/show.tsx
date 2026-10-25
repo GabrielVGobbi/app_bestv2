@@ -1,8 +1,8 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays, KeyRound, Pencil, Shield, Trash2, Users } from 'lucide-react';
+import { KeyRound, Shield, Trash2, Users, X } from 'lucide-react';
 import { useState } from 'react';
-
-import { edit, index, show } from '@/routes/roles';
+import { toast } from 'sonner';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,13 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { usePrivateState } from '@/contexts/private-state-context';
+
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpDelete } from '@/lib/http';
+import { httpDelete, toApiError } from '@/lib/http';
+import { index, show } from '@/routes/roles';
 import type { Permission } from '@/types/app/permission';
 import type { Role } from '@/types/app/role';
-import { toast } from 'sonner';
 
 import { RoleSubNav } from './components/role-sub-nav';
 
@@ -31,10 +33,21 @@ function formatDate(dateString: string | null | undefined): string {
     if (!dateString) {
         return '-';
     }
-    return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
 }
 
-function InfoField({ label, value }: { label: string; value: string | null | undefined }) {
+function InfoField({
+    label,
+    value,
+}: {
+    label: string;
+    value: string | null | undefined;
+}) {
     return (
         <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -44,6 +57,7 @@ function InfoField({ label, value }: { label: string; value: string | null | und
 }
 
 export default function ShowRole({ roleData }: ShowProps) {
+    const { scope } = usePrivateState();
     const role = roleData.data;
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -56,12 +70,17 @@ export default function ShowRole({ roleData }: ShowProps) {
     });
 
     const rolePermissions = role.permissions ?? [];
-    const groupedPermissions = rolePermissions.reduce<Record<string, Permission[]>>((acc, perm) => {
+    const groupedPermissions = rolePermissions.reduce<
+        Record<string, Permission[]>
+    >((acc, perm) => {
         const group = perm.group || 'Geral';
+
         if (!acc[group]) {
             acc[group] = [];
         }
+
         acc[group].push(perm);
+
         return acc;
     }, {});
 
@@ -69,11 +88,25 @@ export default function ShowRole({ roleData }: ShowProps) {
 
     const handleDelete = async () => {
         setDeleting(true);
+
         try {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpDelete(apiRoutes.roles.destroy(role.id));
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Papel removido com sucesso!');
             router.visit(index.url());
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao remover papel.');
             setDeleting(false);
         }
@@ -83,46 +116,32 @@ export default function ShowRole({ roleData }: ShowProps) {
         <>
             <Head title={role.name} />
 
+            <Header title={role.name} backHref={index.url()}>
+                <div className="flex items-center gap-2">
+                    <RoleSubNav roleId={role.id} currentPage="show" />
+                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteOpen(true)}
+                    >
+                        <Trash2 className="mr-2 size-4" />
+                        Excluir
+                    </Button>
+                </div>
+            </Header>
+
             <div className="page-wrapper-lg">
                 <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Button variant="outline" size="icon" className="size-8" asChild>
-                                <Link href={index.url()}>
-                                    <ArrowLeft className="size-4" />
-                                </Link>
-                            </Button>
-                            <h1 className="text-xl font-semibold">Detalhes do Papel</h1>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <RoleSubNav roleId={role.id} currentPage="show" />
-                            <Separator orientation="vertical" className="mx-1 h-6" />
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteOpen(true)}
-                            >
-                                <Trash2 className="mr-2 size-4" />
-                                Excluir
-                            </Button>
-                            <Button size="sm" asChild>
-                                <Link href={edit.url(role.id)}>
-                                    <Pencil className="mr-2 size-4" />
-                                    Editar
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-
                     <div className="flex flex-col gap-6 md:flex-row">
                         {/* Sidebar */}
                         <aside className="w-full shrink-0 space-y-6 md:w-72">
                             <Card>
                                 <CardContent className="flex flex-col gap-5 p-6">
                                     <div className="flex flex-col items-center">
-                                        <div className="mb-3 flex size-20 items-center justify-center rounded-2xl bg-primary/10">
-                                            <Shield className="size-10 text-primary" />
+                                        <div className="mb-3 flex size-20 items-center justify-center rounded-2xl bg-primary-soft text-primary-soft-foreground">
+                                            <Shield className="size-10" />
                                         </div>
                                         <h2 className="w-full text-center text-lg font-bold [word-break:break-word]">
                                             {role.name}
@@ -143,22 +162,36 @@ export default function ShowRole({ roleData }: ShowProps) {
                                                 <KeyRound className="size-4 shrink-0" />
                                                 <span>Permissões</span>
                                             </div>
-                                            <Badge variant="secondary">{rolePermissions.length}</Badge>
+                                            <Badge variant="secondary">
+                                                {rolePermissions.length}
+                                            </Badge>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <Users className="size-4 shrink-0" />
                                                 <span>Usuários</span>
                                             </div>
-                                            <Badge variant={hasUsers ? 'default' : 'secondary'}>
+                                            <Badge
+                                                variant={
+                                                    hasUsers
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
+                                            >
                                                 {role.users_count ?? 0}
                                             </Badge>
                                         </div>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-xs text-muted-foreground">
-                                        <p>Criado em {formatDate(role.created_at)}</p>
-                                        <p>Atualizado em {formatDate(role.updated_at)}</p>
+                                        <p>
+                                            Criado em{' '}
+                                            {formatDate(role.created_at)}
+                                        </p>
+                                        <p>
+                                            Atualizado em{' '}
+                                            {formatDate(role.updated_at)}
+                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -174,10 +207,19 @@ export default function ShowRole({ roleData }: ShowProps) {
                                     <InfoField label="Nome" value={role.name} />
                                     <InfoField label="Slug" value={role.slug} />
                                     <div className="sm:col-span-2">
-                                        <InfoField label="Descrição" value={role.description} />
+                                        <InfoField
+                                            label="Descrição"
+                                            value={role.description}
+                                        />
                                     </div>
-                                    <InfoField label="Criado em" value={formatDate(role.created_at)} />
-                                    <InfoField label="Atualizado em" value={formatDate(role.updated_at)} />
+                                    <InfoField
+                                        label="Criado em"
+                                        value={formatDate(role.created_at)}
+                                    />
+                                    <InfoField
+                                        label="Atualizado em"
+                                        value={formatDate(role.updated_at)}
+                                    />
                                 </CardContent>
                             </Card>
 
@@ -188,8 +230,14 @@ export default function ShowRole({ roleData }: ShowProps) {
                                             <KeyRound className="size-5" />
                                             Permissões Atribuídas
                                         </CardTitle>
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/roles/${role.id}/permissions`}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={`/roles/${role.id}/permissions`}
+                                            >
                                                 <KeyRound className="mr-2 size-4" />
                                                 Gerenciar
                                             </Link>
@@ -199,11 +247,18 @@ export default function ShowRole({ roleData }: ShowProps) {
                                 <CardContent>
                                     {rolePermissions.length > 0 ? (
                                         <div className="space-y-6">
-                                            {Object.entries(groupedPermissions).map(([group, perms]) => (
+                                            {Object.entries(
+                                                groupedPermissions,
+                                            ).map(([group, perms]) => (
                                                 <div key={group}>
                                                     <div className="mb-3 flex items-center gap-2 border-b pb-2">
-                                                        <span className="text-sm font-semibold">{group}</span>
-                                                        <Badge variant="secondary" className="text-xs">
+                                                        <span className="text-sm font-semibold">
+                                                            {group}
+                                                        </span>
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="text-xs"
+                                                        >
                                                             {perms.length}
                                                         </Badge>
                                                     </div>
@@ -215,12 +270,16 @@ export default function ShowRole({ roleData }: ShowProps) {
                                                             >
                                                                 <KeyRound className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-sm font-medium leading-tight">
-                                                                        {perm.name}
+                                                                    <span className="text-sm leading-tight font-medium">
+                                                                        {
+                                                                            perm.name
+                                                                        }
                                                                     </span>
                                                                     {perm.description && (
                                                                         <span className="text-xs text-muted-foreground">
-                                                                            {perm.description}
+                                                                            {
+                                                                                perm.description
+                                                                            }
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -236,8 +295,19 @@ export default function ShowRole({ roleData }: ShowProps) {
                                             <p className="text-sm text-muted-foreground">
                                                 Nenhuma permissão atribuída.
                                             </p>
-                                            <Button variant="link" size="sm" asChild className="mt-2">
-                                                <Link href={`/roles/${role.id}/permissions`}>
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                asChild
+                                                className="mt-2"
+                                            >
+                                                <Link
+                                                    href={`/roles/${role.id}/permissions`}
+                                                >
+                                                    <KeyRound
+                                                        className="size-4"
+                                                        aria-hidden="true"
+                                                    />
                                                     Atribuir permissões
                                                 </Link>
                                             </Button>
@@ -253,26 +323,37 @@ export default function ShowRole({ roleData }: ShowProps) {
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Excluir Papel</DialogTitle>
+                        <DialogTitle>Excluir papel</DialogTitle>
                         <DialogDescription>
                             {hasUsers ? (
                                 <>
-                                    O papel <strong>{role.name}</strong> possui {role.users_count} usuário(s)
-                                    vinculado(s). Remova os usuários antes de excluí-lo.
+                                    O papel <strong>{role.name}</strong> possui{' '}
+                                    {role.users_count} usuário(s) vinculado(s).
+                                    Remova os usuários antes de excluí-lo.
                                 </>
                             ) : (
                                 <>
-                                    Tem certeza que deseja excluir o papel <strong>{role.name}</strong>? Esta ação não
+                                    Tem certeza que deseja excluir o papel{' '}
+                                    <strong>{role.name}</strong>? Esta ação não
                                     pode ser desfeita.
                                 </>
                             )}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeleteOpen(false)}
+                        >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
-                        <Button variant="destructive" disabled={hasUsers || deleting} onClick={handleDelete}>
+                        <Button
+                            variant="destructive"
+                            disabled={hasUsers || deleting}
+                            onClick={handleDelete}
+                        >
+                            <Trash2 className="size-4" aria-hidden="true" />
                             {deleting ? 'Excluindo...' : 'Excluir'}
                         </Button>
                     </DialogFooter>

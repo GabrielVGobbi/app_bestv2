@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+import { motion, useReducedMotion } from 'motion/react';
+import { spring } from '@/components/ui/fluid/lib/springs';
 import { useNavModule } from '@/contexts/nav-module-context';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
@@ -16,19 +18,20 @@ export function NavModuleSwitcher({
 }: Props) {
     const { modules, activeModule, sidebarView, selectModule } = useNavModule();
     const { isCurrentUrl } = useCurrentUrl();
+    const reduceMotion = useReducedMotion() ?? false;
     const isHeader = variant === 'header';
 
     return (
         <nav
             className={cn(
                 isHeader
-                    ? 'flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-muted/40 p-1 backdrop-blur-sm'
+                    ? 'flex min-w-0 items-center gap-0.5 overflow-x-auto'
                     : 'space-y-0.5',
             )}
             aria-label="Módulos"
         >
             {!isHeader && !isCollapsed && (
-                <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/40 uppercase">
+                <p className="mb-2 px-3 text-2xs font-semibold tracking-wide text-sidebar-muted-foreground uppercase">
                     Módulos
                 </p>
             )}
@@ -36,38 +39,62 @@ export function NavModuleSwitcher({
             {modules.map((mod) => {
                 const isLinkModule = mod.items.length === 0 && !!mod.href;
                 const moduleHref = isLinkModule ? mod.href : mod.defaultHref;
-                const isActive = isLinkModule
-                    ? sidebarView === 'modules' &&
-                      isCurrentUrl(mod.href as string)
-                    : sidebarView === 'items' && mod.slug === activeModule.slug;
+                // No header, o ativo é o módulo cujos itens a sidebar está mostrando.
+                const isActive = isHeader
+                    ? isLinkModule
+                        ? isCurrentUrl(mod.href as string)
+                        : mod.slug === activeModule.slug
+                    : isLinkModule
+                      ? sidebarView === 'modules' &&
+                        isCurrentUrl(mod.href as string)
+                      : sidebarView === 'items' &&
+                        mod.slug === activeModule.slug;
 
                 const sharedClass = cn(
                     'group relative flex items-center font-medium transition-all duration-150 ease-out',
                     isHeader
-                        ? 'h-7 shrink-0 gap-2 rounded-md px-3.5 text-[13px]'
-                        : 'w-full rounded-lg px-3 py-2 text-[13px]',
+                        ? 'h-8 shrink-0 gap-2 rounded-full px-3 text-[13px]'
+                        : 'w-full rounded-full px-3 py-2 text-[13px]',
                     !isHeader &&
                         (isCollapsed ? 'justify-center p-2' : 'gap-2.5'),
                     isHeader
                         ? isActive
-                            ? 'bg-primary font-semibold text-primary-foreground shadow-sm shadow-primary/30'
-                            : 'text-foreground/55 hover:bg-muted hover:text-foreground'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:bg-hover hover:text-foreground'
                         : isActive
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary'
-                          : 'text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                 );
 
                 const inner = (
                     <>
+                        {/* Pílula elevada (superfície do Fluid); desliza entre os módulos. */}
+                        {isHeader && isActive && (
+                            <motion.span
+                                layoutId="header-module-active"
+                                aria-hidden="true"
+                                className="absolute inset-0 rounded-full bg-surface-3 shadow-surface-3"
+                                transition={
+                                    reduceMotion
+                                        ? { duration: 0 }
+                                        : spring.moderate
+                                }
+                            />
+                        )}
                         {mod.icon && (
                             <mod.icon
                                 size={isHeader ? 15 : 16}
-                                className="shrink-0"
+                                className={cn(
+                                    'relative shrink-0',
+                                    isHeader &&
+                                        isActive &&
+                                        'text-module-active',
+                                )}
                             />
                         )}
                         <span
                             className={cn(
-                                'overflow-hidden whitespace-nowrap',
+                                'relative overflow-hidden whitespace-nowrap',
                                 isHeader
                                     ? 'max-w-32 truncate'
                                     : 'transition-[opacity,max-width] duration-200 ease-out',
@@ -83,7 +110,7 @@ export function NavModuleSwitcher({
                         {!isHeader && (
                             <div
                                 className={cn(
-                                    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-bold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] delay-200 duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500',
+                                    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-popover px-2 py-1 text-2xs font-semibold whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-[opacity,transform] delay-200 duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500',
                                     !isCollapsed && 'hidden',
                                 )}
                             >
@@ -98,7 +125,8 @@ export function NavModuleSwitcher({
                         <Link
                             key={mod.slug}
                             href={moduleHref}
-                            prefetch="click"
+                            prefetch
+                            aria-current={isActive ? 'page' : undefined}
                             onClick={() => {
                                 if (!isLinkModule) {
                                     selectModule(mod.slug);

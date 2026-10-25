@@ -19,10 +19,19 @@ class ForcePasswordChangeController extends Controller
     {
         $user = $request->user();
 
-        $user->update([
-            'password' => $request->password,
-            'must_change_password' => false,
-        ]);
+        $user->getConnection()->transaction(function () use ($request, $user): void {
+            $user->refreshForUpdate();
+            $wasRequired = $user->must_change_password;
+
+            $user->update([
+                'password' => $request->validated('password'),
+                'must_change_password' => false,
+            ]);
+
+            if ($wasRequired) {
+                $user->tokens()->delete();
+            }
+        });
 
         // Sanctum's AuthenticateSession middleware stores password_hash_web in the
         // session and compares it on every stateful API call. After a password change

@@ -44,7 +44,7 @@ export function TimelineCommentItem({
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const attachments = item.attachments ?? [];
     const replies = item.replies ?? [];
-    const authorName = item.author?.name ?? 'Usuario';
+    const authorName = item.author?.name ?? 'Usuário';
 
     return (
         <article
@@ -121,7 +121,7 @@ export function TimelineCommentItem({
                             {editing ? (
                                 <CommentComposer
                                     compact
-                                    label="Editar comentario"
+                                    label="Editar comentário"
                                     submitLabel="Salvar"
                                     initialValue={item.body}
                                     initialFormat={item.body_format}
@@ -172,7 +172,7 @@ export function TimelineCommentItem({
                                 compact
                                 autoFocus
                                 label="Resposta"
-                                placeholder="Responder comentario..."
+                                placeholder="Responder comentário..."
                                 submitLabel="Responder"
                                 onCancel={() => setReplying(false)}
                                 onSubmit={async (payload) => {
@@ -204,8 +204,8 @@ export function TimelineCommentItem({
             <DeleteConfirmModal
                 isOpen={confirmingDelete}
                 onClose={() => setConfirmingDelete(false)}
-                title="Excluir comentario"
-                description="Esta acao remove o comentario da timeline."
+                title="Excluir comentário"
+                description="Esta ação remove o comentário da timeline."
                 onConfirm={async () => {
                     await onDelete(item.id);
                     setConfirmingDelete(false);
@@ -231,7 +231,7 @@ function TimelineCommentBody({ item }: { item: TimelineCommentItemType }) {
     if (item.body_format === 'html') {
         return (
             <div
-                className="timeline-comment-html max-w-[72ch] text-sm leading-relaxed break-words text-foreground [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-[0.95rem] [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:list-disc"
+                className="timeline-comment-html max-w-[72ch] text-sm leading-relaxed break-words text-foreground [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-[0.95rem] [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:list-disc"
                 dangerouslySetInnerHTML={{ __html: item.body }}
             />
         );

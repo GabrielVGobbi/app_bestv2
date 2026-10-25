@@ -15,11 +15,9 @@ export type EmailStatus =
 export type EmailCategory = 'auth' | 'export' | 'notification' | 'system';
 
 export interface EmailLog {
-    id: number;
     uuid: string;
     to_email: string;
     to_name: string | null;
-    from_email: string;
     subject: string;
     template: string;
     category: EmailCategory;
@@ -28,11 +26,9 @@ export interface EmailLog {
     attempts: number;
     mailer: string | null;
     message_id: string | null;
-    metadata: Record<string, unknown> | null;
     sent_at: string | null;
     failed_at: string | null;
     created_at: string;
-    updated_at: string;
 }
 
 export interface EmailSettings {

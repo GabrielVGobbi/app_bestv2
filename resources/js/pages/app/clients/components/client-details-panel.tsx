@@ -1,11 +1,13 @@
 import { Link } from '@inertiajs/react';
 import {
+    AlertCircle,
     Edit,
     ExternalLink,
     FileText,
     Mail,
-    MapPin,
+    MousePointerClick,
     Phone,
+    RefreshCw,
     Share2,
     Trash2,
     UserRound,
@@ -17,21 +19,23 @@ import {
     show,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { AddressManager } from '@/components/addresses/address-manager';
-import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { CopyableText } from '@/components/ui/copyable-text';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs';
 import { getErrorMessage, isApiError } from '@/lib/http';
-import { cn, formatCpfCnpj, formatDate, formatPhone } from '@/lib/utils';
-import type { Address } from '@/types/address';
+import { formatCpfCnpj, formatDate, formatPhone } from '@/lib/utils';
 import type { Client } from '@/types/app/client';
+
+import {
+    DefaultAddressSummary,
+    FieldGrid,
+    SidebarContactRow,
+    isBlank,
+} from '../partials/client-show-helpers';
+import type { DetailItem } from '../partials/client-show-helpers';
 import { ClientQuickUpdatePanel } from './client-quick-update-panel';
 import type { ClientQuickUpdateColumn } from './client-quick-update-panel';
 import { ClientStatusMenu } from './client-status-menu';
@@ -46,14 +50,6 @@ interface ClientDetailsPanelProps {
     onRetry: () => void;
 }
 
-type DetailItem = {
-    label: string;
-    value: string | null | undefined;
-};
-
-const tabTriggerClass =
-    'h-12 rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 shadow-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none';
-
 const quickUpdateColumns: ClientQuickUpdateColumn[] = [
     {
         field: 'name',
@@ -65,10 +61,6 @@ const quickUpdateColumns: ClientQuickUpdateColumn[] = [
     },
 ];
 
-function cleanValue(value: string | null | undefined): string {
-    return value && value.trim() !== '' ? value : '-';
-}
-
 function detailsErrorMessage(error: Error | unknown): string {
     if (isApiError(error)) {
         return getErrorMessage(error);
@@ -79,118 +71,14 @@ function detailsErrorMessage(error: Error | unknown): string {
         : 'Não foi possível carregar os detalhes do cliente.';
 }
 
-function FieldGrid({
-    items,
-    columns = 'sm:grid-cols-2 xl:grid-cols-3',
-}: {
-    items: DetailItem[];
-    columns?: string;
-}) {
+function Panel({ title, children }: { title: string; children: ReactNode }) {
     return (
-        <dl className={cn('grid gap-x-8 gap-y-5', columns)}>
-            {items.map((item) => (
-                <div key={item.label} className="min-w-0">
-                    <dt className="text-xs font-medium text-muted-foreground">
-                        {item.label}
-                    </dt>
-                    <dd className="mt-1 min-w-0 text-sm font-medium break-words text-foreground">
-                        {cleanValue(item.value)}
-                    </dd>
-                </div>
-            ))}
-        </dl>
-    );
-}
-
-function Panel({
-    title,
-    children,
-    className,
-}: {
-    title: string;
-    children: ReactNode;
-    className?: string;
-}) {
-    return (
-        <section className={cn('rounded-lg border bg-card', className)}>
-            <header className="flex min-h-10 items-center px-4 pt-4">
-                <h3 className="text-sm font-semibold">{title}</h3>
-            </header>
-            <div className="px-4 pt-3 pb-4">{children}</div>
-        </section>
-    );
-}
-
-function SidebarItem({
-    icon: Icon,
-    label,
-    value,
-    copyable = false,
-    copyValue,
-}: {
-    icon: typeof UserRound;
-    label: string;
-    value: string | null | undefined;
-    copyable?: boolean;
-    copyValue?: string | null | undefined;
-}) {
-    const content = (
-        <>
-            <Icon className="size-4 shrink-0" />
-            <span className="sr-only">{label}</span>
-            <span className="truncate">{cleanValue(value)}</span>
-        </>
-    );
-
-    if (copyable) {
-        return (
-            <CopyableText
-                value={value}
-                copyValue={copyValue}
-                label={label}
-                className="w-full px-2 py-1.5 text-sm text-muted-foreground"
-            >
-                <span className="flex min-w-0 items-center gap-2">
-                    {content}
-                </span>
-            </CopyableText>
-        );
-    }
-
-    return (
-        <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-secondary/60">
-            {content}
-        </div>
-    );
-}
-
-function DefaultAddress({ address }: { address?: Address }) {
-    if (!address) {
-        return (
-            <div className="text-sm text-muted-foreground">
-                Nenhum endereço padrão definido.
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center gap-2">
-                <MapPin className="size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">
-                    {address.name || 'Endereço'}
-                </p>
-                <Badge
-                    variant="secondary"
-                    className="h-5 rounded-sm px-1.5 text-[10px]"
-                >
-                    Padrão
-                </Badge>
-            </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-                {address.full_address}
-            </p>
-        </div>
+        <Card className="gap-4">
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+            </CardHeader>
+            <CardContent>{children}</CardContent>
+        </Card>
     );
 }
 
@@ -198,7 +86,7 @@ function ClientDetailsSkeleton() {
     return (
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside className="space-y-4">
-                <div className="rounded-lg border bg-card p-5">
+                <div className="rounded-lg border border-border bg-card p-5">
                     <Skeleton className="h-28 w-full" />
                     <div className="mt-4 grid gap-2">
                         <Skeleton className="h-4 w-36" />
@@ -207,7 +95,7 @@ function ClientDetailsSkeleton() {
                 </div>
             </aside>
             <main className="space-y-4">
-                <div className="rounded-lg border bg-card p-5">
+                <div className="rounded-lg border border-border bg-card p-5">
                     <Skeleton className="h-4 w-32" />
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {Array.from({ length: 6 }).map((_, index) => (
@@ -215,7 +103,7 @@ function ClientDetailsSkeleton() {
                         ))}
                     </div>
                 </div>
-                <div className="rounded-lg border bg-card p-5">
+                <div className="rounded-lg border border-border bg-card p-5">
                     <Skeleton className="h-4 w-40" />
                     <Skeleton className="mt-4 h-20 w-full" />
                 </div>
@@ -235,23 +123,19 @@ export function ClientDetailsPanel({
 }: ClientDetailsPanelProps) {
     if (selectedUuid === null) {
         return (
-            <section className="grid h-full min-h-72 place-items-center overflow-hidden rounded-lg border border-dashed bg-muted/20 p-8 text-center">
-                <div className="max-w-md space-y-2">
-                    <h2 className="text-lg font-semibold">
-                        Selecione um cliente
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        Clique em um cliente na lista para carregar os dados
-                        detalhados aqui.
-                    </p>
-                </div>
+            <section className="grid h-full min-h-72 place-items-center overflow-hidden rounded-lg border border-dashed border-border bg-muted">
+                <EmptyState
+                    icon={MousePointerClick}
+                    title="Selecione um cliente"
+                    description="Clique em um cliente na lista para carregar os dados detalhados aqui."
+                />
             </section>
         );
     }
 
     if (isLoading || (isFetching && client === null)) {
         return (
-            <section className="h-full min-h-0 overflow-y-auto rounded-lg border bg-background p-4">
+            <section className="h-full min-h-0 overflow-y-auto rounded-lg border border-border bg-background p-4">
                 <ClientDetailsSkeleton />
             </section>
         );
@@ -259,20 +143,22 @@ export function ClientDetailsPanel({
 
     if (error || client === null) {
         return (
-            <section className="grid h-full min-h-72 place-items-center overflow-hidden rounded-lg border bg-background p-8 text-center">
-                <div className="max-w-md space-y-4">
-                    <div className="space-y-2">
-                        <h2 className="text-lg font-semibold">
-                            Detalhes indisponíveis
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            {detailsErrorMessage(error)}
-                        </p>
-                    </div>
-                    <Button type="button" variant="outline" onClick={onRetry}>
-                        Tentar novamente
-                    </Button>
-                </div>
+            <section className="grid h-full min-h-72 place-items-center overflow-hidden rounded-lg border border-border bg-card">
+                <EmptyState
+                    icon={AlertCircle}
+                    title="Detalhes indisponíveis"
+                    description={detailsErrorMessage(error)}
+                    action={
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onRetry}
+                        >
+                            <RefreshCw className="size-4" aria-hidden="true" />
+                            Tentar novamente
+                        </Button>
+                    }
+                />
             </section>
         );
     }
@@ -281,6 +167,9 @@ export function ClientDetailsPanel({
     const addresses = client.addresses ?? [];
     const defaultAddress = addresses.find((address) => address.is_default);
     const clientName = String(client.name ?? client.uuid);
+    const summary =
+        [client.company_name, client.email].find((value) => !isBlank(value)) ??
+        '-';
     const initials = clientName
         .split(' ')
         .map((namePart) => namePart[0])
@@ -297,29 +186,30 @@ export function ClientDetailsPanel({
     ];
 
     return (
-        <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border bg-background">
-            <div className="flex shrink-0 flex-col gap-4 border-b p-4 xl:flex-row xl:items-center xl:justify-between">
+        <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-background">
+            <div className="flex shrink-0 flex-col gap-4 border-b border-border p-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <h2 className="truncate text-xl font-semibold">
-                            {clientName}
-                        </h2>
-                    </div>
+                    <h2 className="truncate text-xl font-semibold text-foreground">
+                        {clientName}
+                    </h2>
                     <p className="truncate text-sm text-muted-foreground">
-                        {cleanValue(client.company_name ?? client.email)}
+                        {summary}
                     </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                     <Button variant="outline" size="sm" asChild>
                         <Link href={show.url(client.uuid)}>
-                            <ExternalLink className="size-4" />
+                            <ExternalLink
+                                className="size-4"
+                                aria-hidden="true"
+                            />
                             Abrir
                         </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                         <Link href={edit.url(client.uuid)}>
-                            <Edit className="size-4" />
+                            <Edit className="size-4" aria-hidden="true" />
                             Editar
                         </Link>
                     </Button>
@@ -333,7 +223,7 @@ export function ClientDetailsPanel({
                         size="sm"
                         onClick={() => onDelete(client)}
                     >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-4" aria-hidden="true" />
                         Excluir
                     </Button>
                 </div>
@@ -341,20 +231,18 @@ export function ClientDetailsPanel({
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-                    <aside className="rounded-lg border bg-card">
-                        <div className="p-5">
-                            <div className="flex h-32 items-center justify-center rounded-lg bg-secondary text-4xl font-semibold text-primary">
+                    <Card className="gap-0 self-start py-0">
+                        <CardContent className="p-5">
+                            <div className="flex h-28 items-center justify-center rounded-lg bg-primary-soft text-3xl font-semibold text-primary-soft-foreground">
                                 {initials}
                             </div>
 
                             <div className="mt-4 space-y-1">
-                                <h3 className="truncate text-base font-semibold">
+                                <h3 className="truncate text-base font-semibold text-foreground">
                                     {clientName}
                                 </h3>
                                 <p className="truncate text-sm text-muted-foreground">
-                                    {cleanValue(
-                                        client.company_name ?? client.email,
-                                    )}
+                                    {summary}
                                 </p>
                             </div>
 
@@ -367,138 +255,114 @@ export function ClientDetailsPanel({
                                 />
                             </div>
 
-                            <div className="mt-5 space-y-1">
-                                <SidebarItem
+                            <div className="mt-5 space-y-0.5">
+                                <SidebarContactRow
                                     icon={UserRound}
                                     label="Cliente"
                                     value={clientName}
                                 />
-                                <SidebarItem
+                                <SidebarContactRow
                                     icon={FileText}
                                     label="Documento"
                                     value={formatCpfCnpj(client.document)}
                                     copyable
                                 />
-                                <SidebarItem
+                                <SidebarContactRow
                                     icon={Mail}
-                                    label="Email"
+                                    label="E-mail"
                                     value={client.email}
                                     copyable
                                 />
-                                <SidebarItem
+                                <SidebarContactRow
                                     icon={Phone}
                                     label="Telefone"
                                     value={formatPhone(client.phone)}
                                     copyable
                                 />
-                                <SidebarItem
+                                <SidebarContactRow
                                     icon={Share2}
                                     label="Compartilhar"
                                     value="Compartilhar"
                                 />
                             </div>
-                        </div>
+                        </CardContent>
 
-                        <div className="border-t px-5 py-4 text-xs text-muted-foreground">
-                            <p>Criado - {formatDate(client.created_at)}</p>
+                        <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground tabular-nums">
+                            <p>Criado em {formatDate(client.created_at)}</p>
                             <p className="mt-1">
-                                Última edição - {formatDate(client.updated_at)}
+                                Última edição em {formatDate(client.updated_at)}
                             </p>
                         </div>
-                    </aside>
+                    </Card>
 
                     <main className="min-w-0">
-                        <Tabs
-                            defaultValue="overview"
-                            className="overflow-hidden rounded-lg border bg-card"
-                        >
-                            <div className="overflow-x-auto border-b px-5">
-                                <TabsList className="h-auto gap-6 rounded-none bg-transparent p-0">
-                                    <TabsTrigger
-                                        value="overview"
-                                        className={tabTriggerClass}
-                                    >
-                                        Detalhes
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="addresses"
-                                        className={tabTriggerClass}
-                                    >
-                                        Endereço
-                                        <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                            {addresses.length}
-                                        </span>
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="notes"
-                                        className={tabTriggerClass}
-                                    >
-                                        Observações
-                                    </TabsTrigger>
-                                </TabsList>
-                            </div>
-
-                            <TabsContent
-                                value="overview"
-                                className="p-5 outline-none"
+                        <Tabs defaultValue="overview" className="space-y-4">
+                            <TabsList
+                                aria-label="Seções do cliente"
+                                className="max-w-full overflow-x-auto"
                             >
-                                <div className="space-y-5">
-                                    <Panel title="Dados do Cliente">
-                                        <div className="space-y-5">
-                                            <ClientQuickUpdatePanel
-                                                key={`${client.uuid}:${client.updated_at}`}
-                                                client={client}
-                                                columns={quickUpdateColumns}
-                                                reloadProps={null}
-                                                onSaved={onRetry}
-                                            />
-                                            <Separator />
-                                            <FieldGrid items={profileItems} />
-                                        </div>
-                                    </Panel>
+                                <TabItem value="overview" label="Detalhes" />
+                                <TabItem
+                                    value="addresses"
+                                    label={`Endereços (${addresses.length})`}
+                                />
+                                <TabItem value="notes" label="Observações" />
+                            </TabsList>
 
-                                    <Panel title="Histórico do cadastro">
-                                        <FieldGrid
-                                            columns="sm:grid-cols-3"
-                                            items={[
-                                                {
-                                                    label: 'Criado em',
-                                                    value: formatDate(
-                                                        client.created_at,
-                                                    ),
-                                                },
-                                                {
-                                                    label: 'Atualizado em',
-                                                    value: formatDate(
-                                                        client.updated_at,
-                                                    ),
-                                                },
-                                                {
-                                                    label: 'Endereços',
-                                                    value: String(
-                                                        addresses.length,
-                                                    ),
-                                                },
-                                            ]}
+                            <TabPanel value="overview" className="space-y-4">
+                                <Panel title="Dados do cliente">
+                                    <div className="space-y-5">
+                                        <ClientQuickUpdatePanel
+                                            key={`${client.uuid}:${client.updated_at}`}
+                                            client={client}
+                                            columns={quickUpdateColumns}
+                                            reloadProps={null}
+                                            onSaved={onRetry}
                                         />
-                                    </Panel>
-                                </div>
-                            </TabsContent>
+                                        <Separator />
+                                        <FieldGrid
+                                            items={profileItems}
+                                            columns="sm:grid-cols-2 xl:grid-cols-3"
+                                        />
+                                    </div>
+                                </Panel>
 
-                            <TabsContent
-                                value="addresses"
-                                className="p-5 outline-none"
-                            >
-                                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+                                <Panel title="Histórico do cadastro">
+                                    <FieldGrid
+                                        columns="sm:grid-cols-3"
+                                        items={[
+                                            {
+                                                label: 'Criado em',
+                                                value: formatDate(
+                                                    client.created_at,
+                                                ),
+                                            },
+                                            {
+                                                label: 'Atualizado em',
+                                                value: formatDate(
+                                                    client.updated_at,
+                                                ),
+                                            },
+                                            {
+                                                label: 'Endereços',
+                                                value: String(addresses.length),
+                                            },
+                                        ]}
+                                    />
+                                </Panel>
+                            </TabPanel>
+
+                            <TabPanel value="addresses">
+                                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
                                     <AddressManager
                                         model="client"
                                         modelId={client.uuid}
                                         initialAddresses={addresses}
                                     />
 
-                                    <div className="space-y-5">
+                                    <div className="space-y-4">
                                         <Panel title="Endereço principal">
-                                            <DefaultAddress
+                                            <DefaultAddressSummary
                                                 address={defaultAddress}
                                             />
                                         </Panel>
@@ -508,7 +372,7 @@ export function ClientDetailsPanel({
                                                 columns="grid-cols-1"
                                                 items={[
                                                     {
-                                                        label: 'Email',
+                                                        label: 'E-mail',
                                                         value: client.email,
                                                     },
                                                     {
@@ -528,13 +392,10 @@ export function ClientDetailsPanel({
                                         </Panel>
                                     </div>
                                 </div>
-                            </TabsContent>
+                            </TabPanel>
 
-                            <TabsContent
-                                value="notes"
-                                className="p-5 outline-none"
-                            >
-                                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+                            <TabPanel value="notes">
+                                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
                                     <Panel title="Observações">
                                         <div className="min-h-40 text-sm leading-6 whitespace-pre-wrap text-muted-foreground">
                                             {client.notes ||
@@ -574,7 +435,7 @@ export function ClientDetailsPanel({
                                         />
                                     </Panel>
                                 </div>
-                            </TabsContent>
+                            </TabPanel>
                         </Tabs>
                     </main>
                 </div>

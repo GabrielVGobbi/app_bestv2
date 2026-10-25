@@ -8,10 +8,12 @@ use App\Events\NotificationCreated;
 use App\Modules\Notifications\DTOs\CreateNotificationDTO;
 use App\Modules\Notifications\Models\AppNotification;
 use Illuminate\Broadcasting\BroadcastException;
+use RuntimeException;
+use Throwable;
 
 class CreateNotificationAction
 {
-    public function handle(CreateNotificationDTO $dto): AppNotification
+    public function handle(CreateNotificationDTO $dto, bool $afterCommit = false): AppNotification
     {
         $notification = AppNotification::create([
             'recipient_id' => $dto->recipientId,
@@ -28,13 +30,29 @@ class CreateNotificationAction
             'action_status' => $dto->actions ? 'pending' : null,
         ]);
 
-        try {
-            broadcast(new NotificationCreated($notification))->toOthers();
-        } catch (BroadcastException) {
-            // Reverb unavailable — notification is persisted, realtime delivery skipped.
-            report(new BroadcastException("Realtime broadcast skipped for notification {$notification->uuid}: Reverb unreachable."));
+        if (! $notification->exists) {
+            throw new RuntimeException('Notification persistence was vetoed.');
+        }
+
+        if ($afterCommit) {
+            $notification->getConnection()->afterCommit(fn () => $this->broadcast($notification, true));
+        } else {
+            $this->broadcast($notification);
         }
 
         return $notification;
+    }
+
+    private function broadcast(AppNotification $notification, bool $afterCommit = false): void
+    {
+        try {
+            broadcast(new NotificationCreated($notification))->toOthers();
+        } catch (Throwable $exception) {
+            if (! $afterCommit && ! $exception instanceof BroadcastException) {
+                throw $exception;
+            }
+            // Reverb unavailable: notification is persisted, realtime delivery skipped.
+            report($exception);
+        }
     }
 }

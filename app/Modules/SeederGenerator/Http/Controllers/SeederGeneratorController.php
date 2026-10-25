@@ -9,17 +9,12 @@ use App\Modules\SeederGenerator\DTOs\SeederBlueprint;
 use App\Modules\SeederGenerator\Http\Requests\SeederGeneratorRequest;
 use App\Modules\SeederGenerator\Services\SeederGeneratorService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SeederGeneratorController extends Controller
 {
-    public function __construct()
-    {
-        abort_unless(app()->isLocal(), 403, 'Disponível apenas em ambiente local.');
-    }
-
     public function index(SeederGeneratorService $service): Response
     {
         return Inertia::render('admin/dev/seeder-generator', [
@@ -49,8 +44,8 @@ class SeederGeneratorController extends Controller
     public function generate(SeederGeneratorRequest $request, SeederGeneratorService $service): JsonResponse
     {
         $blueprint = SeederBlueprint::fromArray($request->validated());
-        $code = $service->generateSeederCode($blueprint);
-        $path = $service->saveSeeder($blueprint, $code);
+        $path = $service->saveSeeder($blueprint);
+        $code = File::get($path);
 
         return response()->json([
             'data' => [
@@ -74,13 +69,9 @@ class SeederGeneratorController extends Controller
         ], $result['exit_code'] === 0 ? 200 : 422);
     }
 
-    public function run(Request $request, SeederGeneratorService $service): JsonResponse
+    public function run(SeederGeneratorRequest $request, SeederGeneratorService $service): JsonResponse
     {
-        $request->validate([
-            'class' => ['required', 'string', 'regex:/^[A-Za-z][A-Za-z0-9\\\\]*Seeder$/'],
-        ]);
-
-        $result = $service->runSeeder($request->string('class')->toString());
+        $result = $service->runSeeder($request->validated('class'));
 
         return response()->json([
             'data' => $result,

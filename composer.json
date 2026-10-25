@@ -10,7 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "dedoc/scramble": "*",
+        "dedoc/scramble": "^0.13.22",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/fortify": "^1.34",
         "laravel/framework": "^13.0",
@@ -28,15 +28,14 @@
         "fakerphp/faker": "^1.24",
         "fruitcake/laravel-debugbar": "^4.2",
         "larastan/larastan": "^3.9",
-        "laravel-lang/lang": "^15.31",
         "laravel/boost": "^2.4",
         "laravel/pail": "^1.2.5",
         "laravel/pint": "^1.27",
         "laravel/sail": "^1.53",
         "laravel/telescope": "^5.20",
+        "lucascudo/laravel-pt-br-localization": "^3.0",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9.3",
-        "nunomaduro/pao": "^1.0.3",
         "phpunit/phpunit": "^12.5.23"
     },
     "autoload": {
@@ -46,7 +45,7 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/supports/helpers.php"
+            "app/Supports/Helpers.php"
         ]
     },
     "autoload-dev": {
@@ -57,9 +56,8 @@
     "scripts": {
         "setup": [
             "composer install",
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
-            "@php artisan key:generate",
-            "@php artisan migrate --force",
+            "@php artisan app:init --skip-storage-link --no-interaction",
+            "@php artisan migrate --force --no-interaction",
             "@docs:init",
             "npm install",
             "npm run build"
@@ -68,29 +66,30 @@
             "@php -r \"is_dir('.docs/project') || mkdir('.docs/project', 0777, true); foreach (['.docs/project/architecture.md', '.docs/project/project.md'] as $file) { file_exists($file) || touch($file); }\""
         ],
         "init:start-kit": [
-            "@php artisan app:init"
+            "@php artisan app:init --no-interaction"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --timeout=960 --tries=3 --backoff=30 --sleep=1\" \"npm run dev\" --names='server,queue,vite'"
         ],
         "lint": [
             "pint --parallel"
         ],
         "lint:check": [
-            "pint --parallel --test"
+            "@php vendor/bin/pint --test"
         ],
         "ci:check": [
             "Composer\\Config::disableProcessTimeout",
+            "@lint:check",
             "npm run lint:check",
             "npm run format:check",
             "npm run types:check",
+            "@analyse",
             "@test"
         ],
         "test": [
             "@php artisan config:clear --ansi",
-            "@lint:check",
-            "@php artisan test"
+            "@php artisan test --compact"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
@@ -101,15 +100,30 @@
             "@php artisan boost:update --ansi"
         ],
         "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+            "@php -r \"if (!file_exists('.env') && !copy('.env.example', '.env')) { exit(1); }\""
         ],
         "post-create-project-cmd": [
-            "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
+            "@php artisan app:init --skip-storage-link --no-interaction",
+            "@php artisan migrate --ansi --no-interaction"
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "test:native": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php tests/ci.php --profile=native"
+        ],
+        "test:all": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php tests/ci.php --profile=all"
+        ],
+        "analyse": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php tests/analyse.php"
+        ],
+        "analyse:raw": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php tests/analyse.php --without-baseline"
         ]
     },
     "extra": {

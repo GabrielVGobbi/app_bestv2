@@ -1,10 +1,10 @@
 import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
 import {
+    DropdownContent,
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
 import {
     SidebarMenu,
     SidebarMenuButton,
@@ -28,18 +28,20 @@ export function NavUser() {
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                            data-test="sidebar-menu-button"
-                        >
-                            <UserInfo user={auth.user} />
-                            <ChevronsUpDown className="ml-auto size-4" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+                    <DropdownTrigger
+                        render={
+                            <SidebarMenuButton
+                                size="lg"
+                                className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
+                                data-test="sidebar-menu-button"
+                            >
+                                <UserInfo user={auth.user} />
+                                <ChevronsUpDown className="ml-auto size-4" />
+                            </SidebarMenuButton>
+                        }
+                    />
+                    <DropdownContent
+                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
                         align="end"
                         side={
                             isMobile
@@ -50,7 +52,7 @@ export function NavUser() {
                         }
                     >
                         <UserMenuContent user={auth.user} />
-                    </DropdownMenuContent>
+                    </DropdownContent>
                 </DropdownMenu>
             </SidebarMenuItem>
         </SidebarMenu>

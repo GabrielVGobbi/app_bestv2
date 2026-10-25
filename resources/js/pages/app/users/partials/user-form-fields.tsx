@@ -1,7 +1,5 @@
-import InputError from '@/components/input-error';
 import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { User } from '@/types/user';
 
 interface Props {
@@ -12,21 +10,18 @@ interface Props {
 export default function UserFormFields({ user, errors }: Props) {
     return (
         <>
-            <div className="grid gap-2">
-                <FormField label="Nome" required error={errors.name}>
-                    <Input
-                        id="name"
-                        name="name"
-                        defaultValue={user?.name ?? ''}
-                        required
-                        autoComplete="name"
-                        placeholder="Full name"
-                    />
-                </FormField>
-            </div>
+            <FormField label="Nome" required error={errors.name}>
+                <Input
+                    id="name"
+                    name="name"
+                    defaultValue={user?.name ?? ''}
+                    required
+                    autoComplete="name"
+                    placeholder="Nome completo"
+                />
+            </FormField>
 
-            <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+            <FormField label="E-mail" required error={errors.email}>
                 <Input
                     id="email"
                     type="email"
@@ -34,10 +29,9 @@ export default function UserFormFields({ user, errors }: Props) {
                     defaultValue={user?.email ?? ''}
                     required
                     autoComplete="email"
-                    placeholder="Email address"
+                    placeholder="nome@empresa.com.br"
                 />
-                <InputError message={errors.email} />
-            </div>
+            </FormField>
         </>
     );
 }
