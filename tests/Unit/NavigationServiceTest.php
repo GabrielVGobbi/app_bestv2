@@ -185,4 +185,24 @@ class NavigationServiceTest extends TestCase
             $labels,
         )));
     }
+
+    public function test_every_navigation_icon_is_registered_in_the_frontend_icon_map(): void
+    {
+        $icons = [];
+        $navigation = require base_path('config/navigation.php');
+        array_walk_recursive(
+            $navigation,
+            function (mixed $value, string|int $key) use (&$icons): void {
+                if ($key === 'icon') {
+                    $icons[] = $value;
+                }
+            },
+        );
+
+        preg_match('/const NAV_ICONS[^{]*\{([^}]*)\}/', file_get_contents(resource_path('js/lib/nav-icons.ts')), $map);
+        $registered = array_filter(array_map('trim', explode(',', $map[1] ?? '')));
+
+        $this->assertNotEmpty($icons);
+        $this->assertSame([], array_values(array_diff(array_unique($icons), $registered)));
+    }
 }
