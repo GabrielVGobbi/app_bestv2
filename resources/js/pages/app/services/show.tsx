@@ -3,7 +3,6 @@ import {
     ArrowLeft,
     CalendarDays,
     CircleDollarSign,
-    FileText,
     PackageCheck,
 } from 'lucide-react';
 
@@ -14,7 +13,6 @@ import {
 } from '@/actions/App/Modules/Services/Http/Controllers/ServiceController';
 import Header from '@/components/dashboard/header';
 import DeleteButton from '@/components/delete-button';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -48,12 +46,14 @@ function InfoField({ label, value }: { label: string; value: string }) {
     return (
         <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-0.5 break-words text-sm">{value}</p>
+            <p className="mt-0.5 text-sm break-words">{value}</p>
         </div>
     );
 }
 
-function metadataSummary(metadata: ServiceResource['data']['metadata']): string {
+function metadataSummary(
+    metadata: ServiceResource['data']['metadata'],
+): string {
     if (!metadata) {
         return '{}';
     }
@@ -88,7 +88,7 @@ export default function ShowService({ serviceData, permissions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{service.name}</h1>
+                        <h1 className="page-heading-title">{service.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {service.slug}
                         </p>
@@ -102,7 +102,10 @@ export default function ShowService({ serviceData, permissions }: Props) {
                     />
                     {permissions.can_delete ? (
                         <>
-                            <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
                             <DeleteButton
                                 url={destroy.url(service.uuid)}
                                 resourceName={service.name}
@@ -115,7 +118,7 @@ export default function ShowService({ serviceData, permissions }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
                         <div className="rounded-lg border bg-card">
                             <div className="p-5">
@@ -124,7 +127,6 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                 </div>
 
                                 <div className="mt-4 space-y-2">
-
                                     <h2 className="truncate text-base font-semibold">
                                         {service.name}
                                     </h2>
@@ -142,17 +144,19 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                             })}
                                         </span>
                                     </div>
-
                                 </div>
                             </div>
 
                             <div className="border-t px-5 py-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="size-3.5" />
-                                    <span>Criado {formatDate(service.created_at)}</span>
+                                    <span>
+                                        Criado {formatDate(service.created_at)}
+                                    </span>
                                 </div>
                                 <p className="mt-1">
-                                    Ultima edicao {formatDate(service.updated_at)}
+                                    Ultima edicao{' '}
+                                    {formatDate(service.updated_at)}
                                 </p>
                             </div>
                         </div>
@@ -161,9 +165,15 @@ export default function ShowService({ serviceData, permissions }: Props) {
                     <main className="min-w-0">
                         <Tabs defaultValue="summary" className="gap-4">
                             <TabsList variant="line">
-                                <TabsTrigger value="summary">Resumo</TabsTrigger>
-                                <TabsTrigger value="config">Configurações</TabsTrigger>
-                                <TabsTrigger value="metadata">Metadata</TabsTrigger>
+                                <TabsTrigger value="summary">
+                                    Resumo
+                                </TabsTrigger>
+                                <TabsTrigger value="config">
+                                    Configurações
+                                </TabsTrigger>
+                                <TabsTrigger value="metadata">
+                                    Metadata
+                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="summary" className="space-y-4">
@@ -182,15 +192,17 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                         />
                                         <InfoField
                                             label="Preço Base"
-                                            value={formatMoney(service.base_price, {
-                                                fromCents: true,
-                                            })}
+                                            value={formatMoney(
+                                                service.base_price,
+                                                {
+                                                    fromCents: true,
+                                                },
+                                            )}
                                         />
                                         <InfoField
                                             label="Moeda"
                                             value={service.currency}
                                         />
-
                                     </CardContent>
                                 </Card>
 
@@ -200,13 +212,13 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                             <CardTitle>Descrição</CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                                                {service.description || 'Sem descrição.'}
+                                            <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                                                {service.description ||
+                                                    'Sem descrição.'}
                                             </p>
                                         </CardContent>
                                     </Card>
                                 )}
-
                             </TabsContent>
 
                             <TabsContent value="config">
@@ -220,7 +232,8 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                         <InfoField
                                             label="Exige periodo"
                                             value={
-                                                service.metadata?.requires_period
+                                                service.metadata
+                                                    ?.requires_period
                                                     ? 'Sim'
                                                     : 'Nao'
                                             }
@@ -258,7 +271,9 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                     <CardContent>
                                         <pre className="max-h-[360px] overflow-auto rounded-md border bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground">
                                             <code>
-                                                {metadataSummary(service.metadata)}
+                                                {metadataSummary(
+                                                    service.metadata,
+                                                )}
                                             </code>
                                         </pre>
                                     </CardContent>
@@ -267,7 +282,7 @@ export default function ShowService({ serviceData, permissions }: Props) {
                         </Tabs>
                     </main>
                 </div>
-            </div >
+            </div>
         </>
     );
 }

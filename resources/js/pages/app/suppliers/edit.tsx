@@ -1,5 +1,12 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, FileText, Mail, Phone, Save, UserRound } from 'lucide-react';
+import {
+    ArrowLeft,
+    FileText,
+    Mail,
+    Phone,
+    Save,
+    UserRound,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -13,7 +20,6 @@ import DeleteButton from '@/components/delete-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { cn, formatDate } from '@/lib/utils';
 import type { Supplier, SupplierResource } from '@/types/app/supplier';
 
@@ -79,13 +85,18 @@ export default function EditSupplier({ supplierData }: Props) {
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={show.url(supplier.uuid)}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{supplierName}</h1>
+                        <h1 className="page-heading-title">{supplierName}</h1>
                         <p className="text-sm text-muted-foreground">
                             {supplier.uuid}
                         </p>
@@ -102,7 +113,7 @@ export default function EditSupplier({ supplierData }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
                         <div className="rounded-lg border bg-card">
                             <div className="p-5">
@@ -128,7 +139,8 @@ export default function EditSupplier({ supplierData }: Props) {
                                     </div>
                                     <p className="truncate text-sm text-muted-foreground">
                                         {cleanValue(
-                                            supplier.company_name ?? supplier.email,
+                                            supplier.company_name ??
+                                                supplier.email,
                                         )}
                                     </p>
                                 </div>
@@ -158,9 +170,12 @@ export default function EditSupplier({ supplierData }: Props) {
                             </div>
 
                             <div className="border-t px-5 py-4 text-xs text-muted-foreground">
-                                <p>Criado - {formatDate(supplier.created_at)}</p>
+                                <p>
+                                    Criado - {formatDate(supplier.created_at)}
+                                </p>
                                 <p className="mt-1">
-                                    Última edição - {formatDate(supplier.updated_at)}
+                                    Última edição -{' '}
+                                    {formatDate(supplier.updated_at)}
                                 </p>
                             </div>
                         </div>
@@ -178,7 +193,7 @@ export default function EditSupplier({ supplierData }: Props) {
                         >
                             {({ errors, processing }) => (
                                 <div className="flex flex-1 flex-col gap-4">
-                                    <Card>
+                                    <Card variant="form">
                                         <CardContent>
                                             <SupplierFormFields
                                                 supplier={supplier}
@@ -209,7 +224,11 @@ export default function EditSupplier({ supplierData }: Props) {
                                                     asChild
                                                     disabled={processing}
                                                 >
-                                                    <Link href={show.url(supplier.uuid)}>
+                                                    <Link
+                                                        href={show.url(
+                                                            supplier.uuid,
+                                                        )}
+                                                    >
                                                         Cancelar
                                                     </Link>
                                                 </Button>

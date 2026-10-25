@@ -14,6 +14,7 @@ import {
     restore,
     show,
 } from '@/actions/App/Modules/Services/Http/Controllers/ServiceController';
+import ContentHeader from '@/components/content-header';
 import { DataTable, InlineCellEditor } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -24,7 +25,6 @@ import type {
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
@@ -33,10 +33,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { formatMoney } from '@/lib/utils';
-import type { Paginated } from '@/types/pagination';
 import type { Service } from '@/types/app/service';
+import type { Paginated } from '@/types/pagination';
 
 interface Props {
     permissions: {
@@ -119,7 +120,9 @@ export default function ServiceIndex({ permissions }: Props) {
     });
 
     const queryClient = useQueryClient();
-    const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+    const [serviceToDelete, setServiceToDelete] = useState<Service | null>(
+        null,
+    );
 
     const columns = useMemo<ColumnDef<Service>[]>(
         () => [
@@ -184,7 +187,9 @@ export default function ServiceIndex({ permissions }: Props) {
                 accessorKey: 'is_active',
                 header: 'Status',
                 cell: ({ row }) => (
-                    <Badge variant={row.original.is_active ? 'default' : 'outline'}>
+                    <Badge
+                        variant={row.original.is_active ? 'default' : 'outline'}
+                    >
                         {row.original.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
                 ),
@@ -210,71 +215,68 @@ export default function ServiceIndex({ permissions }: Props) {
         [],
     );
 
-    const actions = useMemo<DataTableAction<Service>[]>(
-        () => {
-            const tableActions: DataTableAction<Service>[] = [
-                {
-                    label: 'Visualizar',
-                    icon: <Eye className="size-4" />,
-                    variant: 'outline',
-                    href: (service) => show.url(service.uuid),
-                    showLabel: false,
-                    tooltip: 'Visualizar',
+    const actions = useMemo<DataTableAction<Service>[]>(() => {
+        const tableActions: DataTableAction<Service>[] = [
+            {
+                label: 'Visualizar',
+                icon: <Eye className="size-4" />,
+                variant: 'outline',
+                href: (service) => show.url(service.uuid),
+                showLabel: false,
+                tooltip: 'Visualizar',
+            },
+        ];
+
+        if (permissions.can_update) {
+            tableActions.push({
+                label: 'Editar',
+                icon: <Pencil className="size-4" />,
+                variant: 'outline',
+                href: (service) => edit.url(service.uuid),
+                showLabel: false,
+                tooltip: 'Editar',
+            });
+        }
+
+        if (permissions.can_restore) {
+            tableActions.push({
+                label: 'Reativar',
+                icon: <RotateCcw className="size-4" />,
+                variant: 'outline',
+                showLabel: false,
+                tooltip: 'Reativar',
+                disabled: (service) => service.is_active,
+                onClick: (service) => {
+                    router.patch(restore.url(service.uuid), undefined, {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            void queryClient.invalidateQueries({
+                                queryKey: ['services'],
+                            });
+                        },
+                    });
                 },
-            ];
+            });
+        }
 
-            if (permissions.can_update) {
-                tableActions.push({
-                    label: 'Editar',
-                    icon: <Pencil className="size-4" />,
-                    variant: 'outline',
-                    href: (service) => edit.url(service.uuid),
-                    showLabel: false,
-                    tooltip: 'Editar',
-                });
-            }
+        if (permissions.can_delete) {
+            tableActions.push({
+                label: 'Excluir',
+                icon: <Trash2 className="size-4" />,
+                variant: 'destructive',
+                showLabel: false,
+                tooltip: 'Excluir',
+                onClick: (service) => setServiceToDelete(service),
+            });
+        }
 
-            if (permissions.can_restore) {
-                tableActions.push({
-                    label: 'Reativar',
-                    icon: <RotateCcw className="size-4" />,
-                    variant: 'outline',
-                    showLabel: false,
-                    tooltip: 'Reativar',
-                    disabled: (service) => service.is_active,
-                    onClick: (service) => {
-                        router.patch(restore.url(service.uuid), undefined, {
-                            preserveScroll: true,
-                            onSuccess: () => {
-                                void queryClient.invalidateQueries({
-                                    queryKey: ['services'],
-                                });
-                            },
-                        });
-                    },
-                });
-            }
-
-            if (permissions.can_delete) {
-                tableActions.push({
-                    label: 'Excluir',
-                    icon: <Trash2 className="size-4" />,
-                    variant: 'destructive',
-                    showLabel: false,
-                    tooltip: 'Excluir',
-                    onClick: (service) => setServiceToDelete(service),
-                });
-            }
-
-            return tableActions;
-        },
-        [
-            permissions.can_delete,
-            permissions.can_restore,
-            permissions.can_update,
-            queryClient,
-        ],
-    );
+        return tableActions;
+    }, [
+        permissions.can_delete,
+        permissions.can_restore,
+        permissions.can_update,
+        queryClient,
+    ]);
 
     function deleteService(): void {
         if (!serviceToDelete) {
@@ -294,33 +296,35 @@ export default function ServiceIndex({ permissions }: Props) {
         <>
             <Head title="Serviços" />
 
+            <ContentHeader>
+                <Heading
+                    title="Serviços"
+                    description="Catálogo comercial de Serviços vendaveis"
+                />
+                {permissions.can_create ? (
+                    <Button asChild>
+                        <Link prefetch href={create.url()}>
+                            <Plus className="size-4" />
+                            Novo Serviço
+                        </Link>
+                    </Button>
+                ) : null}
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Serviços"
-                            description="Catálogo comercial de Serviços vendaveis"
-                        />
-                        {permissions.can_create ? (
-                            <Button asChild>
-                                <Link prefetch href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Novo Serviço
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
+                <div className="page-section">
                     <Dialog
                         open={serviceToDelete !== null}
-                        onOpenChange={(open) => !open && setServiceToDelete(null)}
+                        onOpenChange={(open) =>
+                            !open && setServiceToDelete(null)
+                        }
                     >
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Arquivar Serviço</DialogTitle>
                                 <DialogDescription>
-                                    Esta acao remove o Serviço de novas consultas
-                                    operacionais, preservando o historico.
+                                    Esta acao remove o Serviço de novas
+                                    consultas operacionais, preservando o
+                                    historico.
                                 </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -330,7 +334,10 @@ export default function ServiceIndex({ permissions }: Props) {
                                 >
                                     Cancelar
                                 </Button>
-                                <Button variant="destructive" onClick={deleteService}>
+                                <Button
+                                    variant="destructive"
+                                    onClick={deleteService}
+                                >
                                     Arquivar
                                 </Button>
                             </DialogFooter>

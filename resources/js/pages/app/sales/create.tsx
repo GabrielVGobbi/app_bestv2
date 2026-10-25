@@ -40,7 +40,7 @@ export default function CreateSale({ formOptions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">Nova venda</h1>
+                        <h1 className="page-heading-title">Nova venda</h1>
                         <p className="text-sm text-muted-foreground">
                             Criar rascunho comercial sem financeiro
                         </p>

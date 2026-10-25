@@ -1,9 +1,17 @@
 import { Deferred, Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowRight, Check, RefreshCw } from 'lucide-react';
-import type { ReactNode } from 'react';
+import {
+    ArrowRight,
+    Check,
+    CircleAlert,
+    ListMusic,
+    RefreshCw,
+    ShoppingBag,
+    Wallet,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { dashboard } from '@/actions/App/Http/Controllers/AppController';
+import ContentHeader from '@/components/content-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { index as reconciliationIndex } from '@/routes/financial-reconciliation/imports';
@@ -13,21 +21,13 @@ import { index as deliveryTasksIndex } from '@/routes/playlists/delivery-tasks';
 import { index as salesIndex } from '@/routes/sales';
 import type { OperationalDashboard } from '@/types';
 
-type DashboardProps = {
-    operationalDashboard?: OperationalDashboard | null;
-};
-
-type SummaryItem = {
-    label: string;
-    value: string;
-    tone?: 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted';
-};
-
+type DashboardProps = { operationalDashboard?: OperationalDashboard | null };
+type SummaryItem = { label: string; value: string; attention?: boolean };
 type Priority = {
     label: string;
     value: string;
     href: string;
-    tone?: 'warning' | 'destructive';
+    overdue?: boolean;
 };
 
 function currency(value: number): string {
@@ -37,373 +37,324 @@ function currency(value: number): string {
     }).format(value / 100);
 }
 
-function OpenLink({ href }: { href: string }) {
-    return (
-        <Link
-            href={href}
-            className="group inline-flex h-7 items-center gap-1.5 rounded-full pr-1 pl-3 text-[11px] font-medium tracking-wide text-muted-foreground transition-[color,background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-muted hover:text-foreground active:scale-[0.98]"
-        >
-            Abrir
-            <span className="flex size-5 items-center justify-center rounded-full bg-foreground/[0.06] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5">
-                <ArrowRight className="size-3" />
-            </span>
-        </Link>
-    );
-}
-
-function SummaryGroup({
+function OverviewSection({
     title,
+    description,
     href,
-    delayClass,
-    children,
+    icon: Icon,
+    items,
 }: {
     title: string;
+    description: string;
     href: string;
-    delayClass?: string;
-    children: ReactNode;
+    icon: LucideIcon;
+    items: SummaryItem[];
 }) {
     return (
-        <section
-            className={cn(
-                'animate-in fade-in slide-in-from-bottom-2 duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]',
-                delayClass,
-            )}
-        >
-            <Card className="gap-4 py-5">
-                <CardHeader className="flex-row items-center justify-between gap-3 px-6">
-                    <CardTitle className="text-[13px] tracking-[0.08em] uppercase">
-                        {title}
-                    </CardTitle>
-                    <OpenLink href={href} />
-                </CardHeader>
-                <CardContent>{children}</CardContent>
-            </Card>
-        </section>
-    );
-}
-
-function SummaryValues({ items }: { items: SummaryItem[] }) {
-    const columns =
-        items.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2';
-
-    return (
-        <dl className={cn('grid gap-6 sm:gap-0', columns)}>
-            {items.map((item) => (
-                <div
-                    key={item.label}
-                    className="min-w-0 sm:border-l sm:border-border/70 sm:px-6 first:border-l-0 first:pl-0"
-                >
-                    <dt className="text-[11px] leading-none font-medium tracking-[0.14em] text-muted-foreground uppercase">
-                        {item.label}
-                    </dt>
-                    <dd
-                        className={cn(
-                            'mt-3 text-[1.75rem] leading-none font-semibold tracking-[-0.04em] tabular-nums',
-                            item.tone === 'inflow' && 'text-inflow',
-                            item.tone === 'outflow' && 'text-outflow',
-                            item.tone === 'warning' &&
-                                'text-warning-soft-foreground',
-                            item.tone === 'destructive' && 'text-destructive',
-                            item.tone === 'muted' && 'text-muted-foreground',
-                            !item.tone && 'text-foreground',
-                        )}
-                    >
-                        {item.value}
-                    </dd>
+        <section className="overview-section">
+            <div className="mb-5 flex items-center gap-3">
+                <Icon
+                    className="size-5 text-muted-foreground"
+                    strokeWidth={1.6}
+                />
+                <div className="min-w-0 flex-1">
+                    <h2 className="text-lg font-semibold">{title}</h2>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {description}
+                    </p>
                 </div>
-            ))}
-        </dl>
+                <Button variant="ghost" size="sm" asChild>
+                    <Link href={href} aria-label={'Abrir ' + title}>
+                        Abrir
+                        <ArrowRight className="size-3.5" />
+                    </Link>
+                </Button>
+            </div>
+            <dl className="overview-metrics">
+                {items.map((item) => (
+                    <div key={item.label} className="min-w-0">
+                        <dt className="text-sm leading-6 text-muted-foreground">
+                            {item.label}
+                        </dt>
+                        <dd
+                            className={cn(
+                                'mt-2 text-[30px] leading-tight font-medium tracking-tight tabular-nums',
+                                item.attention && 'text-destructive',
+                            )}
+                        >
+                            {item.value}
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </section>
     );
 }
 
 function DashboardSkeleton() {
     return (
-        <div className="space-y-4" aria-label="Carregando resumo">
-            {['Vendas', 'Playlists', 'Financeiro'].map((group) => (
-                <Card key={group} className="gap-4 py-5">
-                    <CardHeader className="flex-row items-center justify-between px-6">
-                        <Skeleton className="h-3 w-20" />
-                        <Skeleton className="h-7 w-16 rounded-full" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-6 sm:grid-cols-3 sm:gap-0">
-                            {Array.from({ length: 3 }).map((_, index) => (
-                                <div
-                                    key={index}
-                                    className="space-y-3 sm:border-l sm:border-border/70 sm:px-6 first:border-l-0 first:pl-0"
-                                >
-                                    <Skeleton className="h-3 w-28" />
-                                    <Skeleton className="h-8 w-16" />
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
+        <div
+            className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px]"
+            aria-label="Carregando resumo"
+            role="status"
+        >
+            <div className="space-y-8">
+                {Array.from({ length: 3 }, (_, i) => (
+                    <div key={i} className="space-y-4">
+                        <Skeleton className="h-6 w-36" />
+                        <Skeleton className="h-4 w-64" />
+                        <Skeleton className="h-24 w-full rounded-xl" />
+                    </div>
+                ))}
+            </div>
+            <Skeleton className="h-80 rounded-xl" />
         </div>
     );
 }
 
 function OperationalSummary() {
-    const { operationalDashboard } = usePage<DashboardProps>().props;
+    const { operationalDashboard: data } = usePage<DashboardProps>().props;
 
-    if (!operationalDashboard) {
+    if (!data) {
         return (
-            <Card className="flex-row items-center justify-between gap-4 px-6 py-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border p-6">
                 <p className="text-sm text-muted-foreground">
                     Não foi possível carregar o resumo.
                 </p>
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() =>
                         router.reload({ only: ['operationalDashboard'] })
                     }
                 >
-                    <RefreshCw className="size-4" /> Recarregar
+                    <RefreshCw className="size-4" />
+                    Recarregar
                 </Button>
-            </Card>
+            </div>
         );
     }
 
     const priorities: Priority[] = [];
 
-    if (operationalDashboard.sales?.awaiting_quotes) {
+    if (data.sales?.awaiting_quotes) {
         priorities.push({
             label: 'Orçamentos aguardando avanço',
-            value: String(operationalDashboard.sales.awaiting_quotes),
+            value: String(data.sales.awaiting_quotes),
             href: salesIndex().url,
-            tone: 'warning',
         });
     }
 
-    if (operationalDashboard.playlists?.pending_deliveries) {
+    if (data.playlists?.pending_deliveries) {
         priorities.push({
             label: 'Entregas de playlist pendentes',
-            value: String(operationalDashboard.playlists.pending_deliveries),
+            value: String(data.playlists.pending_deliveries),
             href: deliveryTasksIndex().url,
-            tone: 'warning',
         });
     }
 
-    if (operationalDashboard.finance?.pending_reconciliations) {
+    if (data.finance?.pending_reconciliations) {
         priorities.push({
             label: 'Conciliações para revisar',
-            value: String(operationalDashboard.finance.pending_reconciliations),
+            value: String(data.finance.pending_reconciliations),
             href: reconciliationIndex().url,
-            tone: 'warning',
+        });
+    }
+
+    if (data.finance?.overdue_receivables) {
+        priorities.push({
+            label: 'Recebimentos em atraso',
+            value: currency(data.finance.overdue_receivables),
+            href: financialReportsIndex().url,
+            overdue: true,
+        });
+    }
+
+    if (data.finance?.overdue_payables) {
+        priorities.push({
+            label: 'Pagamentos em atraso',
+            value: currency(data.finance.overdue_payables),
+            href: financialReportsIndex().url,
+            overdue: true,
         });
     }
 
     return (
-        <>
-            <div className="space-y-4">
-                {operationalDashboard.sales && (
-                    <SummaryGroup
-                        title="Vendas"
-                        href={salesIndex().url}
-                        delayClass="delay-75"
-                    >
-                        <SummaryValues
-                            items={[
-                                {
-                                    label: 'Campanhas ativas',
-                                    value: String(
-                                        operationalDashboard.sales
-                                            .active_campaigns,
-                                    ),
-                                },
-                                {
-                                    label: 'Orçamentos em espera',
-                                    value: String(
-                                        operationalDashboard.sales
-                                            .awaiting_quotes,
-                                    ),
-                                    tone:
-                                        operationalDashboard.sales
-                                            .awaiting_quotes > 0
-                                            ? 'warning'
-                                            : 'muted',
-                                },
-                                ...(operationalDashboard.sales.month_amount !==
-                                undefined
-                                    ? [
-                                          {
-                                              label: 'Confirmado no mês',
-                                              value: currency(
-                                                  operationalDashboard.sales
-                                                      .month_amount,
-                                              ),
-                                          },
-                                      ]
-                                    : []),
-                            ]}
-                        />
-                    </SummaryGroup>
-                )}
-
-                {operationalDashboard.playlists && (
-                    <SummaryGroup
-                        title="Playlists"
-                        href={playlistsIndex().url}
-                        delayClass="delay-150"
-                    >
-                        <SummaryValues
-                            items={[
-                                {
-                                    label: 'Entregas pendentes',
-                                    value: String(
-                                        operationalDashboard.playlists
-                                            .pending_deliveries,
-                                    ),
-                                    tone:
-                                        operationalDashboard.playlists
-                                            .pending_deliveries > 0
-                                            ? 'warning'
-                                            : 'muted',
-                                },
-                                {
-                                    label: 'Slots ativos',
-                                    value: String(
-                                        operationalDashboard.playlists
-                                            .active_slots,
-                                    ),
-                                },
-                            ]}
-                        />
-                    </SummaryGroup>
-                )}
-
-                {operationalDashboard.finance && (
-                    <SummaryGroup
-                        title="Financeiro"
-                        href={financialReportsIndex().url}
-                        delayClass="delay-200"
-                    >
-                        <SummaryValues
-                            items={[
-                                {
-                                    label: 'A receber em atraso',
-                                    value: currency(
-                                        operationalDashboard.finance
-                                            .overdue_receivables,
-                                    ),
-                                    tone:
-                                        operationalDashboard.finance
-                                            .overdue_receivables > 0
-                                            ? 'destructive'
-                                            : 'muted',
-                                },
-                                {
-                                    label: 'A pagar em atraso',
-                                    value: currency(
-                                        operationalDashboard.finance
-                                            .overdue_payables,
-                                    ),
-                                    tone:
-                                        operationalDashboard.finance
-                                            .overdue_payables > 0
-                                            ? 'destructive'
-                                            : 'muted',
-                                },
-                                {
-                                    label: 'Conciliações pendentes',
-                                    value: String(
-                                        operationalDashboard.finance
-                                            .pending_reconciliations,
-                                    ),
-                                    tone:
-                                        operationalDashboard.finance
-                                            .pending_reconciliations > 0
-                                            ? 'warning'
-                                            : 'muted',
-                                },
-                            ]}
-                        />
-                    </SummaryGroup>
-                )}
-            </div>
-
-            <section
-                className="animate-in fade-in slide-in-from-bottom-2 mt-8 duration-500 delay-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        <div className="overview-layout">
+            <aside
+                className="overview-priorities xl:col-start-2 xl:row-start-1"
                 aria-labelledby="priorities-title"
             >
-                <Card className="gap-4 py-5">
-                    <CardHeader className="px-6">
-                        <CardTitle
-                            id="priorities-title"
-                            className="text-[13px] tracking-[0.08em] uppercase"
-                        >
-                            Pendências
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {priorities.length > 0 ? (
-                            <ul className="divide-y divide-border/70">
-                                {priorities.map((priority) => (
-                                    <li key={priority.label}>
-                                        <Link
-                                            href={priority.href}
-                                            className="group flex min-h-12 items-center gap-4 py-3 text-sm first:pt-0 last:pb-0"
-                                        >
-                                            <span className="min-w-0 flex-1 text-foreground">
-                                                {priority.label}
-                                            </span>
-                                            <span
-                                                className={cn(
-                                                    'font-semibold tabular-nums',
-                                                    priority.tone ===
-                                                        'warning' &&
-                                                        'text-warning-soft-foreground',
-                                                    priority.tone ===
-                                                        'destructive' &&
-                                                        'text-destructive',
-                                                    !priority.tone &&
-                                                        'text-foreground',
-                                                )}
-                                            >
-                                                {priority.value}
-                                            </span>
-                                            <span className="flex size-6 items-center justify-center rounded-full bg-foreground/[0.06] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5">
-                                                <ArrowRight className="size-3 text-muted-foreground" />
-                                            </span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                <span className="flex size-7 items-center justify-center rounded-full bg-primary/8 text-primary">
-                                    <Check className="size-3.5" />
-                                </span>
-                                Nenhuma pendência agora.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </section>
-        </>
+                <div className="overview-priorities-header">
+                    <CircleAlert className="size-5 opacity-70" />
+                    <h2
+                        id="priorities-title"
+                        className="overview-priorities-title"
+                    >
+                        Precisa de atenção
+                    </h2>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-sm font-medium tabular-nums">
+                        {priorities.length}
+                    </span>
+                </div>
+                {priorities.length ? (
+                    <ul className="overview-priorities-list">
+                        {priorities.map((item) => (
+                            <li key={item.label}>
+                                <Link
+                                    href={item.href}
+                                    className="group flex items-start gap-3 rounded-md py-7 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <span
+                                        className={cn(
+                                            'mt-1.5 size-1.5 shrink-0 rounded-full',
+                                            item.overdue
+                                                ? 'bg-destructive'
+                                                : 'bg-warning',
+                                        )}
+                                    />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block text-base leading-6">
+                                            {item.label}
+                                        </span>
+                                        <span className="mt-3 block text-xl font-medium tabular-nums">
+                                            {item.value}
+                                        </span>
+                                    </span>
+                                    <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div className="px-5 py-8">
+                        <Check className="mb-4 size-6 text-success" />
+                        <p className="text-sm font-medium">
+                            Tudo em dia por aqui
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            As pendências da operação aparecem neste espaço.
+                        </p>
+                    </div>
+                )}
+                <div className="border-t px-7 py-5">
+                    <p className="text-xs leading-5 text-muted-foreground">
+                        Acesse um item para conferir os detalhes e continuar de
+                        onde parou.
+                    </p>
+                </div>
+            </aside>
+            <div className="min-w-0 xl:col-start-1 xl:row-start-1">
+                {data.sales && (
+                    <OverviewSection
+                        title="Comercial"
+                        description="Campanhas, orçamentos e vendas do mês."
+                        href={salesIndex().url}
+                        icon={ShoppingBag}
+                        items={[
+                            {
+                                label: 'Campanhas ativas',
+                                value: String(data.sales.active_campaigns),
+                            },
+                            {
+                                label: 'Orçamentos em espera',
+                                value: String(data.sales.awaiting_quotes),
+                            },
+                            ...(data.sales.month_amount !== undefined
+                                ? [
+                                      {
+                                          label: 'Confirmado no mês',
+                                          value: currency(
+                                              data.sales.month_amount,
+                                          ),
+                                      },
+                                  ]
+                                : []),
+                        ]}
+                    />
+                )}
+                {data.playlists && (
+                    <OverviewSection
+                        title="Playlists"
+                        description="Acompanhe as entregas e os espaços ativos."
+                        href={playlistsIndex().url}
+                        icon={ListMusic}
+                        items={[
+                            {
+                                label: 'Entregas pendentes',
+                                value: String(
+                                    data.playlists.pending_deliveries,
+                                ),
+                            },
+                            {
+                                label: 'Slots ativos',
+                                value: String(data.playlists.active_slots),
+                            },
+                        ]}
+                    />
+                )}
+                {data.finance && (
+                    <OverviewSection
+                        title="Financeiro"
+                        description="Valores em atraso e conciliação."
+                        href={financialReportsIndex().url}
+                        icon={Wallet}
+                        items={[
+                            {
+                                label: 'A receber em atraso',
+                                value: currency(
+                                    data.finance.overdue_receivables,
+                                ),
+                                attention: data.finance.overdue_receivables > 0,
+                            },
+                            {
+                                label: 'A pagar em atraso',
+                                value: currency(data.finance.overdue_payables),
+                                attention: data.finance.overdue_payables > 0,
+                            },
+                            {
+                                label: 'Conciliações pendentes',
+                                value: String(
+                                    data.finance.pending_reconciliations,
+                                ),
+                            },
+                        ]}
+                    />
+                )}
+                {!data.sales && !data.playlists && !data.finance && (
+                    <p className="py-8 text-sm text-muted-foreground">
+                        Os resumos aparecem aqui conforme os módulos disponíveis
+                        para sua conta.
+                    </p>
+                )}
+            </div>
+        </div>
     );
 }
 
 export default function Dashboard() {
     return (
         <>
-            <Head title="Dashboard" />
-
-            <div className="mx-auto w-full max-w-[52rem] px-5 pt-12 pb-20 sm:px-8 md:pt-16">
-                <header className="animate-in fade-in slide-in-from-bottom-1 mb-10 duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-                    <p className="text-[10px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-                        Operação
+            <Head title="Visão geral" />
+            <ContentHeader>
+                <div className="page-heading">
+                    <h1 className="overview-title">Visão geral</h1>
+                    <p className="page-heading-description">
+                        Um olhar sobre o que acontece na sua operação.
                     </p>
-                    <h1 className="font-brand mt-3 text-[2.35rem] leading-[1.05] font-semibold tracking-[-0.04em] text-balance text-foreground">
-                        Visão geral
-                    </h1>
-                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                        Dados atualizados da operação.
-                    </p>
-                </header>
-
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                        router.reload({ only: ['operationalDashboard'] })
+                    }
+                >
+                    <RefreshCw className="size-3.5" />
+                    Atualizar resumo
+                </Button>
+            </ContentHeader>
+            <div className="page-wrapper-lg">
                 <Deferred
                     data="operationalDashboard"
                     fallback={<DashboardSkeleton />}
@@ -414,7 +365,6 @@ export default function Dashboard() {
         </>
     );
 }
-
 Dashboard.layout = {
-    breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
+    breadcrumbs: [{ title: 'Visão geral', href: dashboard() }],
 };

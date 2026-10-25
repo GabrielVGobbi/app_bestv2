@@ -10,6 +10,7 @@ import {
     show,
     split as splitView,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
 import Heading from '@/components/heading';
@@ -140,58 +141,55 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
         <>
             <Head title="Clientes" />
 
+            <ContentHeader>
+                <Heading
+                    title="Clientes"
+                    description="Gerencie contatos comerciais e contratantes"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                    <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        size="sm"
+                        value="table"
+                        onValueChange={(value) => {
+                            if (value === 'split') {
+                                selectSplitView();
+                            }
+                        }}
+                        aria-label="Visualização de clientes"
+                        className="rounded-lg"
+                    >
+                        <ToggleGroupItem
+                            value="table"
+                            aria-label="Visualização em tabela"
+                            className="gap-2 px-3"
+                        >
+                            <Table2 className="size-4" />
+                            <span>Tabela</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value="split"
+                            aria-label="Visualização em duas colunas"
+                            className="gap-2 px-3"
+                        >
+                            <Columns2 className="size-4" />
+                            <span className="text-muted-foreground">
+                                Duas colunas
+                            </span>
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+
+                    <Button asChild>
+                        <Link href={create.url()}>
+                            <Plus className="size-4" />
+                            Novo cliente
+                        </Link>
+                    </Button>
+                </div>
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Clientes"
-                            description="Gerencie contatos comerciais e contratantes"
-                        />
-                        <div className="flex flex-wrap items-center gap-2">
-                            <ToggleGroup
-                                type="single"
-                                variant="outline"
-                                size="sm"
-                                value="table"
-                                onValueChange={(value) => {
-                                    if (value === 'split') {
-                                        selectSplitView();
-                                    }
-                                }}
-                                aria-label="Visualizacao de clientes"
-                                className="rounded-lg"
-                            >
-                                {/*
-                                <ToggleGroupItem
-                                    value="table"
-                                    aria-label="Visualizacao em tabela"
-                                    className="gap-2 px-3"
-                                >
-                                    <Table2 className="size-4" />
-                                    <span>Tabela</span>
-                                </ToggleGroupItem>
-                                <ToggleGroupItem
-                                    value="split"
-                                    aria-label="Visualizacao em duas colunas"
-                                    className="gap-2 px-3"
-                                >
-                                    <Columns2 className="size-4" />
-                                    <span className="text-muted-foreground">
-                                        Duas colunas
-                                    </span>
-                                </ToggleGroupItem>
-                                */}
-                            </ToggleGroup>
-
-                            <Button asChild>
-                                <Link href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Novo cliente
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-
+                <div className="page-section">
                     <ClientDeleteDialog
                         client={clientToDelete}
                         onCancel={() => setClientToDelete(null)}

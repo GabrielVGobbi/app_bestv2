@@ -81,7 +81,7 @@ export function DataTableToolbar<TData>({
             <div className="flex items-start gap-2">
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                     {features.search && (
-                        <div className="relative w-full shrink-0 md:max-w-64">
+                        <div className="relative w-full shrink-0 md:max-w-80">
                             <Search className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={search}
@@ -89,7 +89,8 @@ export function DataTableToolbar<TData>({
                                     onSearchChange(event.target.value)
                                 }
                                 placeholder={searchPlaceholder}
-                                className="h-9 pr-9 pl-9"
+                                aria-label={searchPlaceholder}
+                                className="h-10 bg-background pr-9 pl-10"
                             />
                             {search.length > 0 && (
                                 <button

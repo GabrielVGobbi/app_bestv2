@@ -54,8 +54,10 @@ export default function EditCompany({ companyData, permissions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{companyName}</h1>
-                        <p className="text-sm text-muted-foreground">{company.uuid}</p>
+                        <h1 className="page-heading-title">{companyName}</h1>
+                        <p className="text-sm text-muted-foreground">
+                            {company.uuid}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -66,7 +68,10 @@ export default function EditCompany({ companyData, permissions }: Props) {
                     />
                     {permissions.can_manage ? (
                         <>
-                            <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
                             <DeleteButton
                                 url={destroy.url(company.uuid)}
                                 resourceName={companyName}
@@ -83,7 +88,9 @@ export default function EditCompany({ companyData, permissions }: Props) {
                     action={update.url(company.uuid)}
                     method="post"
                     options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatorios.')}
+                    onError={() =>
+                        toast.error('Verifique os campos obrigatorios.')
+                    }
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
@@ -91,7 +98,7 @@ export default function EditCompany({ companyData, permissions }: Props) {
                             <input type="hidden" name="_method" value="put" />
 
                             <div className="flex flex-1 flex-col gap-6">
-                                <Card>
+                                <Card variant="form">
                                     <CardHeader>
                                         <CardTitle>Dados da empresa</CardTitle>
                                     </CardHeader>
@@ -104,12 +111,14 @@ export default function EditCompany({ companyData, permissions }: Props) {
                                 </Card>
                             </div>
 
-                            <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                            <div className="sticky bottom-0 border-t bg-background">
                                 <div className="flex items-center justify-between gap-3 py-3">
                                     <p className="text-xs text-muted-foreground">
                                         Campos marcados com{' '}
-                                        <span className="text-destructive">*</span> sao
-                                        obrigatorios.
+                                        <span className="text-destructive">
+                                            *
+                                        </span>{' '}
+                                        sao obrigatorios.
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <Button
@@ -119,7 +128,9 @@ export default function EditCompany({ companyData, permissions }: Props) {
                                             asChild
                                             disabled={processing}
                                         >
-                                            <Link href={show.url(company.uuid)}>Cancelar</Link>
+                                            <Link href={show.url(company.uuid)}>
+                                                Cancelar
+                                            </Link>
                                         </Button>
                                         <Button
                                             type="submit"
@@ -127,7 +138,9 @@ export default function EditCompany({ companyData, permissions }: Props) {
                                             disabled={processing}
                                         >
                                             <Save />
-                                            {processing ? 'Salvando...' : 'Salvar'}
+                                            {processing
+                                                ? 'Salvando...'
+                                                : 'Salvar'}
                                         </Button>
                                     </div>
                                 </div>

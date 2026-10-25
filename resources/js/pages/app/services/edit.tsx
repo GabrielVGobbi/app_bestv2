@@ -26,10 +26,7 @@ interface Props {
     };
 }
 
-export default function EditService({
-    serviceData,
-    permissions,
-}: Props) {
+export default function EditService({ serviceData, permissions }: Props) {
     const service = serviceData.data;
 
     setLayoutProps({
@@ -57,7 +54,7 @@ export default function EditService({
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{service.name}</h1>
+                        <h1 className="page-heading-title">{service.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {service.slug}
                         </p>
@@ -71,7 +68,10 @@ export default function EditService({
                     />
                     {permissions.can_delete ? (
                         <>
-                            <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
                             <DeleteButton
                                 url={destroy.url(service.uuid)}
                                 resourceName={service.name}
@@ -88,13 +88,15 @@ export default function EditService({
                     action={update.url(service.uuid)}
                     method="put"
                     options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatorios.')}
+                    onError={() =>
+                        toast.error('Verifique os campos obrigatorios.')
+                    }
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
                         <div className="space-y-4">
                             <div className="flex flex-1 flex-col gap-6">
-                                <Card>
+                                <Card variant="form">
                                     <CardContent>
                                         <ServiceFormFields
                                             service={service}
@@ -104,12 +106,14 @@ export default function EditService({
                                 </Card>
                             </div>
 
-                            <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                            <div className="sticky bottom-0 border-t bg-background">
                                 <div className="flex items-center justify-between gap-3 py-3">
                                     <p className="text-xs text-muted-foreground">
                                         Campos marcados com{' '}
-                                        <span className="text-destructive">*</span> sao
-                                        obrigatorios.
+                                        <span className="text-destructive">
+                                            *
+                                        </span>{' '}
+                                        sao obrigatorios.
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <Button
@@ -129,7 +133,9 @@ export default function EditService({
                                             disabled={processing}
                                         >
                                             <Save />
-                                            {processing ? 'Salvando...' : 'Salvar'}
+                                            {processing
+                                                ? 'Salvando...'
+                                                : 'Salvar'}
                                         </Button>
                                     </div>
                                 </div>

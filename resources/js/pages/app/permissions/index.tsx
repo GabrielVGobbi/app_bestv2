@@ -1,9 +1,15 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Edit, Eye, KeyRound, Plus, Trash2 } from 'lucide-react';
+import { Edit, Eye, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import PermissionController, { destroy, edit, index, show } from '@/actions/App/Http/Controllers/PermissionController';
+import { toast } from 'sonner';
+import {
+    edit,
+    index,
+    show,
+} from '@/actions/App/Http/Controllers/PermissionController';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
 import Heading from '@/components/heading';
@@ -20,11 +26,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiRoutes } from '@/lib/api/api-routes';
-import { formatDate } from '@/lib/utils';
 import { httpDelete, httpPost } from '@/lib/http';
+import { formatDate } from '@/lib/utils';
 import type { Permission } from '@/types/app/permission';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 
 const columns: ColumnDef<Permission>[] = [
     {
@@ -35,7 +39,9 @@ const columns: ColumnDef<Permission>[] = [
         cell: ({ row }) => (
             <div className="flex flex-col">
                 <span className="font-medium">{row.original.name}</span>
-                <span className="font-mono text-xs text-muted-foreground">{row.original.slug}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                    {row.original.slug}
+                </span>
             </div>
         ),
         meta: { label: 'Nome' },
@@ -60,7 +66,9 @@ const columns: ColumnDef<Permission>[] = [
         accessorKey: 'description',
         header: 'Descrição',
         cell: ({ row }) => (
-            <span className="text-sm text-muted-foreground">{row.original.description || '—'}</span>
+            <span className="text-sm text-muted-foreground">
+                {row.original.description || '—'}
+            </span>
         ),
         meta: { label: 'Descrição' },
     },
@@ -81,12 +89,19 @@ export default function PermissionsIndex() {
 
     const queryClient = useQueryClient();
     const [createOpen, setCreateOpen] = useState(false);
-    const [permissionToDelete, setPermissionToDelete] = useState<Permission | null>(null);
-    const [form, setForm] = useState({ name: '', slug: '', group: '', description: '' });
+    const [permissionToDelete, setPermissionToDelete] =
+        useState<Permission | null>(null);
+    const [form, setForm] = useState({
+        name: '',
+        slug: '',
+        group: '',
+        description: '',
+    });
     const [submitting, setSubmitting] = useState(false);
 
     const handleCreate = async () => {
         setSubmitting(true);
+
         try {
             await httpPost(apiRoutes.permissions.store, form);
             toast.success('Permissão criada com sucesso!');
@@ -146,10 +161,16 @@ export default function PermissionsIndex() {
             <Head title="Permissões" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex items-center justify-between gap-4">
-                        <Heading title="Permissões" description="Gerencie as permissões do sistema" />
-                        <Button type="button" onClick={() => setCreateOpen(true)}>
+                        <Heading
+                            title="Permissões"
+                            description="Gerencie as permissões do sistema"
+                        />
+                        <Button
+                            type="button"
+                            onClick={() => setCreateOpen(true)}
+                        >
                             <Plus className="size-4" />
                             Nova Permissão
                         </Button>
@@ -160,14 +181,21 @@ export default function PermissionsIndex() {
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle>Nova Permissão</DialogTitle>
-                                <DialogDescription>Crie uma nova permissão de acesso.</DialogDescription>
+                                <DialogDescription>
+                                    Crie uma nova permissão de acesso.
+                                </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                                 <div className="space-y-1">
                                     <Label>Nome *</Label>
                                     <Input
                                         value={form.name}
-                                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                name: e.target.value,
+                                            }))
+                                        }
                                         placeholder="Ex: Gerenciar Usuários"
                                         disabled={submitting}
                                     />
@@ -177,7 +205,12 @@ export default function PermissionsIndex() {
                                     <Label>Grupo</Label>
                                     <Input
                                         value={form.group}
-                                        onChange={(e) => setForm((f) => ({ ...f, group: e.target.value }))}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                group: e.target.value,
+                                            }))
+                                        }
                                         placeholder="Ex: Usuários"
                                         disabled={submitting}
                                     />
@@ -186,17 +219,29 @@ export default function PermissionsIndex() {
                                     <Label>Descrição</Label>
                                     <Input
                                         value={form.description}
-                                        onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                description: e.target.value,
+                                            }))
+                                        }
                                         placeholder="Descrição da permissão"
                                         disabled={submitting}
                                     />
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" disabled={submitting} onClick={() => setCreateOpen(false)}>
+                                <Button
+                                    variant="outline"
+                                    disabled={submitting}
+                                    onClick={() => setCreateOpen(false)}
+                                >
                                     Cancelar
                                 </Button>
-                                <Button onClick={handleCreate} disabled={submitting || !form.name }>
+                                <Button
+                                    onClick={handleCreate}
+                                    disabled={submitting || !form.name}
+                                >
                                     {submitting ? 'Criando...' : 'Criar'}
                                 </Button>
                             </DialogFooter>
@@ -206,23 +251,32 @@ export default function PermissionsIndex() {
                     {/* Delete dialog */}
                     <Dialog
                         open={permissionToDelete !== null}
-                        onOpenChange={(open) => !open && setPermissionToDelete(null)}
+                        onOpenChange={(open) =>
+                            !open && setPermissionToDelete(null)
+                        }
                     >
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Excluir Permissão</DialogTitle>
                                 <DialogDescription>
                                     Tem certeza que deseja excluir a permissão{' '}
-                                    <strong>{permissionToDelete?.name}</strong>? Esta ação não pode ser desfeita.
+                                    <strong>{permissionToDelete?.name}</strong>?
+                                    Esta ação não pode ser desfeita.
                                 </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setPermissionToDelete(null)}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setPermissionToDelete(null)}
+                                >
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
-                                    onClick={() => permissionToDelete && handleDelete(permissionToDelete)}
+                                    onClick={() =>
+                                        permissionToDelete &&
+                                        handleDelete(permissionToDelete)
+                                    }
                                 >
                                     Excluir
                                 </Button>
@@ -236,12 +290,29 @@ export default function PermissionsIndex() {
                         mode="infinite-scroll"
                         columns={columns}
                         keyExtractor={(permission) => permission.id}
-                        features={{ search: true, columnVisibility: true, refresh: true }}
+                        features={{
+                            search: true,
+                            columnVisibility: true,
+                            refresh: true,
+                        }}
                         actions={actions}
-                        actionsConfig={{ display: 'inline', label: 'Ações', buttonSize: 'icon', showTooltips: true }}
-                        infiniteScrollConfig={{ fitViewport: true, viewportBottomOffset: 96, minHeight: 320 }}
+                        actionsConfig={{
+                            display: 'inline',
+                            label: 'Ações',
+                            buttonSize: 'icon',
+                            showTooltips: true,
+                        }}
+                        infiniteScrollConfig={{
+                            fitViewport: true,
+                            viewportBottomOffset: 96,
+                            minHeight: 320,
+                        }}
                         searchPlaceholder="Buscar por nome, slug ou grupo..."
-                        appearance={{ size: 'md', gridLines: 'none', rowStyle: 'soft-striped' }}
+                        appearance={{
+                            size: 'md',
+                            gridLines: 'none',
+                            rowStyle: 'soft-striped',
+                        }}
                     />
                 </div>
             </div>

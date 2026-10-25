@@ -9,8 +9,6 @@ import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { apiRoutes } from '@/lib/api/api-routes';
-import type { FinancialAccount } from '@/types/app/financial-account';
 import {
     Select,
     SelectContent,
@@ -18,6 +16,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { apiRoutes } from '@/lib/api/api-routes';
+import type { FinancialAccount } from '@/types/app/financial-account';
 import type { StatusPresenter } from '@/types/status';
 
 interface BankStatementImport {
@@ -115,7 +115,7 @@ export default function FinancialReconciliationImportsIndex({
             <Head title="Conciliação financeira" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Heading
                         title="Conciliação financeira"
                         description="Importe extratos para gerar sugestões de match com movimentos financeiros."
@@ -149,8 +149,12 @@ export default function FinancialReconciliationImportsIndex({
                                 </Select>
 
                                 <AsyncSelect
-                                    value={form.data.financial_account_id || null}
-                                    endpoint={apiRoutes.financialAccounts.options}
+                                    value={
+                                        form.data.financial_account_id || null
+                                    }
+                                    endpoint={
+                                        apiRoutes.financialAccounts.options
+                                    }
                                     params={{ active: '1' }}
                                     transformOption={financialAccountOption}
                                     placeholder="Conta financeira"

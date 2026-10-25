@@ -61,13 +61,18 @@ export default function ShowPaymentMethod({ paymentMethodData }: Props) {
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={index.url()}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="page-heading-title">
                             {paymentMethod.name}
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -78,7 +83,7 @@ export default function ShowPaymentMethod({ paymentMethodData }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[1fr_22rem]">
+                <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
                     <div className="space-y-4">
                         <Card>
                             <CardHeader className="flex-row items-center justify-between gap-3">
@@ -90,12 +95,20 @@ export default function ShowPaymentMethod({ paymentMethodData }: Props) {
                                             : 'secondary'
                                     }
                                 >
-                                    {paymentMethod.is_active ? 'Ativo' : 'Inativo'}
+                                    {paymentMethod.is_active
+                                        ? 'Ativo'
+                                        : 'Inativo'}
                                 </Badge>
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-2">
-                                <Info label="Tipo" value={paymentMethod.type_label} />
-                                <Info label="Codigo" value={paymentMethod.code} />
+                                <Info
+                                    label="Tipo"
+                                    value={paymentMethod.type_label}
+                                />
+                                <Info
+                                    label="Codigo"
+                                    value={paymentMethod.code}
+                                />
                                 <Info
                                     label="Escopo"
                                     value={
@@ -151,7 +164,10 @@ export default function ShowPaymentMethod({ paymentMethodData }: Props) {
                                 <CardTitle>Acoes</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <Button className="w-full justify-start" asChild>
+                                <Button
+                                    className="w-full justify-start"
+                                    asChild
+                                >
                                     <Link href={edit.url(paymentMethod.uuid)}>
                                         <Pencil className="size-4" />
                                         Editar
@@ -168,7 +184,9 @@ export default function ShowPaymentMethod({ paymentMethodData }: Props) {
                                     ) : (
                                         <Power className="size-4" />
                                     )}
-                                    {paymentMethod.is_active ? 'Inativar' : 'Ativar'}
+                                    {paymentMethod.is_active
+                                        ? 'Inativar'
+                                        : 'Ativar'}
                                 </Button>
                                 <Button
                                     type="button"
@@ -197,7 +215,7 @@ export default function ShowPaymentMethod({ paymentMethodData }: Props) {
 function Info({ label, value }: { label: string; value: string }) {
     return (
         <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </p>
             <p className="text-sm">{value}</p>

@@ -151,7 +151,7 @@ export default function UserPermissions({
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="page-heading-title">
                             Gerenciar Permissões
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -175,7 +175,7 @@ export default function UserPermissions({
             </Header>
 
             <div className="page-wrapper-sm">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">

@@ -1,9 +1,14 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
-import { destroy, index, show, update } from '@/actions/App/Http/Controllers/UserController';
-import DeleteButton from '@/components/delete-button';
+import {
+    destroy,
+    index,
+    show,
+    update,
+} from '@/actions/App/Http/Controllers/UserController';
 import Header from '@/components/dashboard/header';
+import DeleteButton from '@/components/delete-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -33,14 +38,21 @@ export default function Edit({ userData }: Props) {
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={index.url()}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{user.name}</h1>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <h1 className="page-heading-title">{user.name}</h1>
+                        <p className="text-sm text-muted-foreground">
+                            {user.email}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -56,8 +68,8 @@ export default function Edit({ userData }: Props) {
             </Header>
 
             <div className="page-wrapper-sm">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <Card>
+                <div className="page-section">
+                    <Card variant="form">
                         <CardHeader>
                             <CardTitle>Informações do Usuário</CardTitle>
                         </CardHeader>
@@ -70,14 +82,23 @@ export default function Edit({ userData }: Props) {
                             >
                                 {({ errors, processing }) => (
                                     <>
-                                        <UserFormFields user={user} errors={errors} />
+                                        <UserFormFields
+                                            user={user}
+                                            errors={errors}
+                                        />
 
                                         <div className="flex gap-3">
                                             <Button disabled={processing}>
-                                                {processing ? 'Salvando...' : 'Salvar alterações'}
+                                                {processing
+                                                    ? 'Salvando...'
+                                                    : 'Salvar alterações'}
                                             </Button>
                                             <Button variant="outline" asChild>
-                                                <Link href={show.url(user.uuid)}>Cancelar</Link>
+                                                <Link
+                                                    href={show.url(user.uuid)}
+                                                >
+                                                    Cancelar
+                                                </Link>
                                             </Button>
                                         </div>
                                     </>

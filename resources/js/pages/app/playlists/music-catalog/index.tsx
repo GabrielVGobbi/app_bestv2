@@ -21,10 +21,7 @@ import {
     storeSubgenre,
     update as updateGenre,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/MusicGenreController';
-import {
-    update as updateSubgenre,
-    updateStatus as updateSubgenreStatus,
-} from '@/actions/App/Modules/Playlists/Http/Controllers/MusicSubgenreController';
+import { update as updateSubgenre } from '@/actions/App/Modules/Playlists/Http/Controllers/MusicSubgenreController';
 import { index as playlistsIndex } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
@@ -42,10 +39,9 @@ import {
     httpDelete,
     httpPatch,
     httpPost,
-    type ApiResponse,
-    type ValidationErrors,
     isApiError,
 } from '@/lib/http';
+import type { ApiResponse, ValidationErrors } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import type { MusicGenre, MusicSubgenre } from '@/types/app/playlist';
 
@@ -459,8 +455,14 @@ export default function MusicCatalogIndex({
         }
     }
 
-    async function linkExistingSubgenre(subgenre: MusicSubgenre): Promise<void> {
-        if (!selectedGenre || !permissions.can_create || linkedIds.has(subgenre.id)) {
+    async function linkExistingSubgenre(
+        subgenre: MusicSubgenre,
+    ): Promise<void> {
+        if (
+            !selectedGenre ||
+            !permissions.can_create ||
+            linkedIds.has(subgenre.id)
+        ) {
             return;
         }
 
@@ -509,6 +511,7 @@ export default function MusicCatalogIndex({
 
         if (exactExistingSubgenre) {
             await linkExistingSubgenre(exactExistingSubgenre);
+
             return;
         }
 
@@ -552,31 +555,6 @@ export default function MusicCatalogIndex({
         }
     }
 
-    async function toggleSubgenre(subgenre: MusicSubgenre): Promise<void> {
-        if (!permissions.can_update) {
-            return;
-        }
-
-        setBusyKey(`subgenre:status:${subgenre.uuid}`);
-
-        try {
-            const response = await httpPatch<ApiResponse<MusicSubgenre>>(
-                updateSubgenreStatus.url(subgenre.uuid),
-                { is_active: !subgenre.is_active },
-            );
-            replaceSubgenreEverywhere(response.data);
-            toast.success(
-                response.data.is_active
-                    ? 'Subgênero ativado.'
-                    : 'Subgênero pausado.',
-            );
-        } catch (error) {
-            toast.error(catalogErrorMessage(error));
-        } finally {
-            setBusyKey(null);
-        }
-    }
-
     return (
         <>
             <Head title="Catálogo Musical" />
@@ -594,9 +572,7 @@ export default function MusicCatalogIndex({
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
-                            Catálogo Musical
-                        </h1>
+                        <h1 className="page-heading-title">Catálogo Musical</h1>
                         <p className="text-sm text-muted-foreground">
                             Gêneros selecionam subgêneros do catálogo global.
                         </p>
@@ -606,7 +582,7 @@ export default function MusicCatalogIndex({
 
             <div className="page-wrapper-lg">
                 <div className="grid gap-4 xl:h-[calc(100dvh-12.5rem)] xl:grid-cols-[21rem_minmax(0,1fr)_22rem]">
-                    <Card className="overflow-hidden xl:flex  xl:flex-col">
+                    <Card className="overflow-hidden xl:flex xl:flex-col">
                         <CardHeader className="shrink-0 gap-3 border-b bg-card/95 pb-4">
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-base">
@@ -614,7 +590,8 @@ export default function MusicCatalogIndex({
                                     Gêneros
                                 </CardTitle>
                                 <CardDescription>
-                                    Selecione um gênero para gerenciar subgêneros.
+                                    Selecione um gênero para gerenciar
+                                    subgêneros.
                                 </CardDescription>
                             </div>
                             <div className="flex gap-2">
@@ -680,10 +657,10 @@ export default function MusicCatalogIndex({
                         </CardContent>
                     </Card>
 
-                    <Card className="min-h-128 overflow-hidden xl:flex  xl:flex-col">
+                    <Card className="min-h-128 overflow-hidden xl:flex xl:flex-col">
                         {selectedGenre ? (
                             <>
-                                <CardHeader className="shrink-0 gap-4 border-b bg-card/95  pb-4">
+                                <CardHeader className="shrink-0 gap-4 border-b bg-card/95 pb-4">
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div>
                                             <CardTitle className="flex items-center gap-2">
@@ -698,7 +675,6 @@ export default function MusicCatalogIndex({
                                             </CardDescription>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
-
                                             {permissions.can_update ? (
                                                 <>
                                                     <Button
@@ -717,7 +693,6 @@ export default function MusicCatalogIndex({
                                                         <Pencil />
                                                         Editar
                                                     </Button>
-
                                                 </>
                                             ) : null}
                                         </div>
@@ -759,7 +734,6 @@ export default function MusicCatalogIndex({
                                             </Button>
                                         </div>
                                     ) : null}
-
                                 </CardHeader>
 
                                 <CardContent className="custom-scrollbar min-h-0 overflow-y-auto p-4">
@@ -831,15 +805,15 @@ export default function MusicCatalogIndex({
                         )}
                     </Card>
 
-                    <Card className="min-h-112 overflow-hidden xl:flex  xl:flex-col">
-                        <CardHeader className="shrink-0 gap-3 border-b bg-card/95  pb-4">
+                    <Card className="min-h-112 overflow-hidden xl:flex xl:flex-col">
+                        <CardHeader className="shrink-0 gap-3 border-b bg-card/95 pb-4">
                             <div>
                                 <CardTitle className="text-base">
                                     Catálogo global
                                 </CardTitle>
                                 <CardDescription>
-                                    Subgêneros existem uma vez e podem ser usados
-                                    em vários gêneros.
+                                    Subgêneros existem uma vez e podem ser
+                                    usados em vários gêneros.
                                 </CardDescription>
                             </div>
 
@@ -889,8 +863,9 @@ export default function MusicCatalogIndex({
                                                     ) : (
                                                         <Plus />
                                                     )}
-                                                    Criar “{subgenreSearch.trim()}
-                                                    ” e vincular
+                                                    Criar “
+                                                    {subgenreSearch.trim()}” e
+                                                    vincular
                                                 </Button>
                                             ) : exactExistingSubgenre &&
                                               !linkedIds.has(
@@ -918,7 +893,8 @@ export default function MusicCatalogIndex({
                                                 </Button>
                                             ) : exactExistingSubgenre ? (
                                                 <p className="text-xs text-muted-foreground">
-                                                    “{exactExistingSubgenre.name}
+                                                    “
+                                                    {exactExistingSubgenre.name}
                                                     ”{' '}
                                                     {linkedIds.has(
                                                         exactExistingSubgenre.id,
@@ -1078,7 +1054,7 @@ export default function MusicCatalogIndex({
                                                                 >
                                                                     <Pencil className="size-4" />
                                                                 </Button>
-                                                                    {/*
+                                                                {/*
 
                                                                 <Button
                                                                     type="button"
@@ -1100,7 +1076,6 @@ export default function MusicCatalogIndex({
                                                                         : 'Ativar'}
                                                                 </Button>
                                                                         */}
-
                                                             </>
                                                         ) : null}
                                                     </div>
@@ -1126,7 +1101,6 @@ export default function MusicCatalogIndex({
                     </Card>
                 </div>
             </div>
-
         </>
     );
 }

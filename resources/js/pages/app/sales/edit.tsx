@@ -45,7 +45,7 @@ export default function EditSale({ saleData, formOptions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">Editar venda</h1>
+                        <h1 className="page-heading-title">Editar venda</h1>
                         <p className="text-sm text-muted-foreground">
                             {sale.order_number}
                         </p>

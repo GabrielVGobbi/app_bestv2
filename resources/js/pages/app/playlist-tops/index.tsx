@@ -11,6 +11,7 @@ import {
     restore,
     show,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/TopController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -97,9 +98,7 @@ export default function PlaylistTopIndex({ permissions }: Props) {
                 header: 'Status',
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.is_active ? 'default' : 'outline'
-                        }
+                        variant={row.original.is_active ? 'default' : 'outline'}
                     >
                         {row.original.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
@@ -177,7 +176,11 @@ export default function PlaylistTopIndex({ permissions }: Props) {
         }
 
         return tableActions;
-    }, [permissions.can_delete, permissions.can_restore, permissions.can_update]);
+    }, [
+        permissions.can_delete,
+        permissions.can_restore,
+        permissions.can_update,
+    ]);
 
     function deleteTop(): void {
         if (!topToDelete) {
@@ -194,23 +197,22 @@ export default function PlaylistTopIndex({ permissions }: Props) {
         <>
             <Head title="TOPs" />
 
+            <ContentHeader>
+                <Heading
+                    title="TOPs"
+                    description="Catálogo de posições comerciais reutilizáveis em playlists."
+                />
+                {permissions.can_create ? (
+                    <Button asChild>
+                        <Link prefetch href={create.url()}>
+                            <Plus className="size-4" />
+                            Novo TOP
+                        </Link>
+                    </Button>
+                ) : null}
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="TOPs"
-                            description="Catálogo de posições comerciais reutilizáveis em playlists."
-                        />
-                        {permissions.can_create ? (
-                            <Button asChild>
-                                <Link prefetch href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Novo TOP
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
+                <div className="page-section">
                     <Dialog
                         open={topToDelete !== null}
                         onOpenChange={(open) => !open && setTopToDelete(null)}

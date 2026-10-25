@@ -10,6 +10,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Sales/Http/Controllers/SaleController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -247,23 +248,22 @@ export default function SaleIndex({ permissions, filters }: Props) {
         <>
             <Head title="Vendas" />
 
+            <ContentHeader>
+                <Heading
+                    title="Vendas"
+                    description="Rascunhos, orçamentos e campanhas comerciais."
+                />
+                {permissions.can_create ? (
+                    <Button asChild>
+                        <Link prefetch href={create.url()}>
+                            <Plus className="size-4" />
+                            Nova venda
+                        </Link>
+                    </Button>
+                ) : null}
+            </ContentHeader>
             <div className="page-wrapper-xl">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Vendas"
-                            description="Rascunhos, orçamentos e campanhas comerciais."
-                        />
-                        {permissions.can_create ? (
-                            <Button asChild>
-                                <Link prefetch href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Nova venda
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
+                <div className="page-section">
                     <Dialog
                         open={saleToDelete !== null}
                         onOpenChange={(open) => !open && setSaleToDelete(null)}

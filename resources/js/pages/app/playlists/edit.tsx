@@ -13,7 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import PlaylistFormFields from '@/pages/app/playlists/partials/playlist-form-fields';
-import type { PlaylistFormOptions, PlaylistResource } from '@/types/app/playlist';
+import type {
+    PlaylistFormOptions,
+    PlaylistResource,
+} from '@/types/app/playlist';
 
 import { PlaylistSubNav } from './components/playlist-sub-nav';
 
@@ -65,7 +68,7 @@ export default function EditPlaylist({
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{playlist.name}</h1>
+                        <h1 className="page-heading-title">{playlist.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {playlist.slug}
                         </p>
@@ -79,7 +82,10 @@ export default function EditPlaylist({
                     />
                     {permissions.can_delete ? (
                         <>
-                            <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
                             <Button
                                 type="button"
                                 variant="destructive"
@@ -99,13 +105,15 @@ export default function EditPlaylist({
                     action={update.url(playlist.uuid)}
                     method="put"
                     options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatórios.')}
+                    onError={() =>
+                        toast.error('Verifique os campos obrigatórios.')
+                    }
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
                         <div className="space-y-4">
                             <div className="flex flex-1 flex-col gap-6">
-                                <Card>
+                                <Card variant="form">
                                     <CardContent>
                                         <PlaylistFormFields
                                             playlist={playlist}
@@ -116,12 +124,14 @@ export default function EditPlaylist({
                                 </Card>
                             </div>
 
-                            <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                            <div className="sticky bottom-0 border-t bg-background">
                                 <div className="flex items-center justify-between gap-3 py-3">
                                     <p className="text-xs text-muted-foreground">
                                         Campos marcados com{' '}
-                                        <span className="text-destructive">*</span> são
-                                        obrigatórios.
+                                        <span className="text-destructive">
+                                            *
+                                        </span>{' '}
+                                        são obrigatórios.
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <Button
@@ -131,7 +141,9 @@ export default function EditPlaylist({
                                             asChild
                                             disabled={processing}
                                         >
-                                            <Link href={show.url(playlist.uuid)}>
+                                            <Link
+                                                href={show.url(playlist.uuid)}
+                                            >
                                                 Cancelar
                                             </Link>
                                         </Button>
@@ -141,7 +153,9 @@ export default function EditPlaylist({
                                             disabled={processing}
                                         >
                                             <Save />
-                                            {processing ? 'Salvando...' : 'Salvar'}
+                                            {processing
+                                                ? 'Salvando...'
+                                                : 'Salvar'}
                                         </Button>
                                     </div>
                                 </div>

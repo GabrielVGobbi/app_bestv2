@@ -30,7 +30,9 @@ export function DirectionBadge({
             <span
                 className={cn(
                     'inline-flex size-8 items-center justify-center',
-                    outflow ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400',
+                    outflow
+                        ? 'text-destructive'
+                        : 'text-emerald-600 dark:text-emerald-400',
                     className,
                 )}
                 aria-label={label}
@@ -42,11 +44,14 @@ export function DirectionBadge({
     }
 
     return (
-        <Badge
-            variant={outflow ? 'outflow' : 'inflow'}
-            className={cn('rounded-md', className)}
-        >
-            <Icon className="size-3" aria-hidden="true" />
+        <Badge variant="outline" className={cn('rounded-md', className)}>
+            <span
+                aria-hidden="true"
+                className={cn(
+                    'size-1.5 rounded-full',
+                    outflow ? 'bg-outflow' : 'bg-inflow',
+                )}
+            />
             {label}
         </Badge>
     );

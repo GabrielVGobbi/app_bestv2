@@ -129,7 +129,7 @@ export default function ComponentsIndex() {
             <Head title="Components" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Heading
                         title="Components"
                         description="Catálogo interno para organizar componentes, exemplos e decisoes de uso."

@@ -43,13 +43,18 @@ export default function EditPaymentMethod({
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={show.url(paymentMethod.uuid)}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="page-heading-title">
                             Editar metodo de pagamento
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -64,12 +69,14 @@ export default function EditPaymentMethod({
                     action={update.url(paymentMethod.uuid)}
                     method="put"
                     options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatorios.')}
+                    onError={() =>
+                        toast.error('Verifique os campos obrigatorios.')
+                    }
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
                         <div className="space-y-4">
-                            <Card>
+                            <Card variant="form">
                                 <CardHeader>
                                     <CardTitle>Dados do metodo</CardTitle>
                                 </CardHeader>
@@ -82,7 +89,7 @@ export default function EditPaymentMethod({
                                 </CardContent>
                             </Card>
 
-                            <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                            <div className="sticky bottom-0 border-t bg-background">
                                 <div className="flex items-center justify-between gap-3 py-3">
                                     <Button
                                         type="button"
@@ -91,7 +98,9 @@ export default function EditPaymentMethod({
                                         asChild
                                         disabled={processing}
                                     >
-                                        <Link href={show.url(paymentMethod.uuid)}>
+                                        <Link
+                                            href={show.url(paymentMethod.uuid)}
+                                        >
                                             Cancelar
                                         </Link>
                                     </Button>

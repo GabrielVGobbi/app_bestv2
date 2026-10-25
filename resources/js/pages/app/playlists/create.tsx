@@ -1,10 +1,5 @@
 ﻿import { Form, Head, Link, setLayoutProps, useHttp } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    ArrowLeft,
-    CheckCircle2,
-    Save,
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Save } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -78,7 +73,7 @@ function CreateFormSection({
     children,
 }: CreateFormSectionProps) {
     return (
-        <section className="grid grid-cols-1 gap-x-8 gap-y-4 py-6 md:grid-cols-[minmax(0,240px)_minmax(0,1fr)] lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+        <section className="grid grid-cols-1 gap-x-6 gap-y-3 border-b py-6 last:border-0 md:grid-cols-[220px_minmax(0,1fr)]">
             <div className="px-1 md:px-0">
                 <h2 className="text-sm leading-6 font-semibold">{title}</h2>
                 <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
@@ -275,7 +270,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">Nova Playlist</h1>
+                        <h1 className="page-heading-title">Nova Playlist</h1>
                         <p className="text-sm text-muted-foreground">
                             Cadastrar canal musical comercializável
                         </p>
@@ -368,9 +363,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                             ) : (
                                 <Button
                                     type="button"
-                                    onClick={() =>
-                                        setSpotifyPreviewIssue(null)
-                                    }
+                                    onClick={() => setSpotifyPreviewIssue(null)}
                                 >
                                     Entendi
                                 </Button>
@@ -380,7 +373,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                 </DialogContent>
             </Dialog>
 
-            <div className="page-wrapper-lg p-4 sm:p-6">
+            <div className="page-wrapper-md">
                 <CreateFormSection
                     title="Origem da playlist"
                     description="Importe pelo Spotify para preencher capa e métricas, ou cadastre manualmente."
@@ -390,7 +383,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                         value={origin}
                         onValueChange={handleOriginChange}
                         variant="outline"
-                        className="w-full sm:w-auto"
+                        className="w-fit max-w-full"
                     >
                         <ToggleGroupItem
                             value="spotify"
@@ -449,7 +442,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                                     }
                                 />
 
-                                <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80 md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                                <div className="sticky bottom-0 border-t bg-background md:pl-[244px]">
                                     <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                                         <p className="text-xs text-muted-foreground">
                                             Campos marcados com{' '}
@@ -487,7 +480,7 @@ export default function CreatePlaylist({ formOptions }: Props) {
                         )}
                     </Form>
                 ) : (
-                    <p className="py-8 text-sm text-muted-foreground md:pl-[calc(240px+2rem)] lg:pl-[calc(300px+2rem)]">
+                    <p className="py-5 text-sm text-muted-foreground md:pl-[244px]">
                         Cole o link para puxar capa e métricas, ou use o
                         cadastro manual.
                     </p>

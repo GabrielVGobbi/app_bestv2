@@ -23,7 +23,7 @@ export default function Create() {
             <Head title="New User" />
 
             <div className="container mx-auto max-w-3xl">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex items-center justify-between">
                         <Heading
                             title="New User"
@@ -34,7 +34,7 @@ export default function Create() {
                         </Button>
                     </div>
 
-                    <Card>
+                    <Card variant="form">
                         <CardHeader>
                             <CardTitle>User Information</CardTitle>
                         </CardHeader>

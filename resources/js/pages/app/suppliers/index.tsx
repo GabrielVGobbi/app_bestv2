@@ -9,6 +9,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Suppliers/Http/Controllers/SupplierController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
 import Heading from '@/components/heading';
@@ -69,22 +70,21 @@ export default function SupplierIndex() {
         <>
             <Head title="Fornecedores" />
 
+            <ContentHeader>
+                <Heading
+                    title="Fornecedores"
+                    description="Cadastre contrapartes de contas a pagar"
+                />
+
+                <Button asChild>
+                    <Link href={create.url()}>
+                        <Plus className="size-4" />
+                        Novo fornecedor
+                    </Link>
+                </Button>
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Fornecedores"
-                            description="Cadastre contrapartes de contas a pagar"
-                        />
-
-                        <Button asChild>
-                            <Link href={create.url()}>
-                                <Plus className="size-4" />
-                                Novo fornecedor
-                            </Link>
-                        </Button>
-                    </div>
-
+                <div className="page-section">
                     <SupplierDeleteDialog
                         supplier={supplierToDelete}
                         onCancel={() => setSupplierToDelete(null)}

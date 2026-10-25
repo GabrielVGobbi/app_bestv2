@@ -54,8 +54,8 @@ export function DataTableBody<TData>({
     const showVerticalLines =
         appearance.gridLines === 'vertical' || appearance.gridLines === 'both';
     const cellPadding = appearance.size === 'sm' ? 'px-3' : 'px-4';
-    const cellHeight = appearance.size === 'sm' ? 'h-12' : 'h-15';
-    const bodyTextSize = appearance.size === 'sm' ? 'text-xs' : 'text-sm';
+    const cellHeight = appearance.size === 'sm' ? 'h-12' : 'h-16';
+    const bodyTextSize = appearance.size === 'sm' ? 'text-sm' : 'text-[15px]';
 
     if (isLoading) {
         return (
@@ -132,8 +132,7 @@ export function DataTableBody<TData>({
                     visibleCells.map((cell) => ({
                         id: cell.column.id,
                         size: cell.column.getSize(),
-                        sticky:
-                            cell.column.columnDef.meta?.sticky === 'right',
+                        sticky: cell.column.columnDef.meta?.sticky === 'right',
                     })),
                 );
 
@@ -190,8 +189,7 @@ export function DataTableBody<TData>({
                                         align === 'center' && 'text-center',
                                         align === 'right' &&
                                             'text-right font-tabular',
-                                        isSticky &&
-                                            'sticky z-[1] border-l bg-card',
+                                        isSticky && 'sticky z-[1] bg-card',
                                     )}
                                     style={{
                                         width: cell.column.getSize(),

@@ -9,8 +9,8 @@ import { getStickyRightLayout } from '../core/sticky';
 import type { DataTableAppearance, DataTableSize } from '../core/types';
 
 const HEADER_SIZE_STYLES: Record<DataTableSize, string> = {
-    sm: 'h-9 px-2.5 text-xs',
-    md: 'h-11 px-3 text-xs',
+    sm: 'h-11 px-3 text-xs',
+    md: 'h-12 px-4 text-sm',
 };
 
 interface DataTableHeaderProps<TData> {
@@ -33,7 +33,7 @@ export function DataTableHeader<TData>({
         appearance.gridLines === 'vertical' || appearance.gridLines === 'both';
 
     return (
-        <thead className="sticky top-0 z-10 border-b border-white/10 bg-data-table-head">
+        <thead className="sticky top-0 z-10 border-b border-border bg-data-table-head">
             {headerGroups.map((headerGroup) => {
                 const visibleHeaders = headerGroup.headers.filter((header) =>
                     isColumnVisible(header.column.id, columnVisibility),
@@ -69,7 +69,7 @@ export function DataTableHeader<TData>({
                                 <th
                                     key={header.id}
                                     className={cn(
-                                        'relative overflow-hidden font-medium whitespace-nowrap text-sidebar-foreground',
+                                        'relative overflow-hidden font-medium whitespace-nowrap text-muted-foreground',
                                         HEADER_SIZE_STYLES[appearance.size],
                                         showVerticalLines &&
                                             'border-r last:border-r-0',
@@ -77,7 +77,7 @@ export function DataTableHeader<TData>({
                                         align === 'right' &&
                                             'text-right font-tabular',
                                         isSticky &&
-                                            'sticky z-20 border-l border-white/10 bg-data-table-head',
+                                            'sticky z-20 bg-data-table-head',
                                     )}
                                     style={{
                                         width: header.getSize(),

@@ -91,7 +91,10 @@ const cardIcons = {
     pending_reconciliation: ReceiptText,
 };
 
-const cardTone: Record<(typeof cardOrder)[number], 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted'> = {
+const cardTone: Record<
+    (typeof cardOrder)[number],
+    'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted'
+> = {
     open_receivables: 'inflow',
     overdue_receivables: 'destructive',
     open_payables: 'outflow',
@@ -101,15 +104,22 @@ const cardTone: Record<(typeof cardOrder)[number], 'inflow' | 'outflow' | 'warni
 };
 
 const cardIconTone: Record<(typeof cardOrder)[number], string> = {
-    open_receivables: 'border-inflow/25 bg-inflow-soft text-inflow-soft-foreground',
-    overdue_receivables: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
-    open_payables: 'border-outflow/25 bg-outflow-soft text-outflow-soft-foreground',
-    overdue_payables: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
+    open_receivables:
+        'border-inflow/25 bg-inflow-soft text-inflow-soft-foreground',
+    overdue_receivables:
+        'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
+    open_payables:
+        'border-outflow/25 bg-outflow-soft text-outflow-soft-foreground',
+    overdue_payables:
+        'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
     monthly_settlements: 'border bg-muted/30 text-muted-foreground',
-    pending_reconciliation: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
+    pending_reconciliation:
+        'border-warning/25 bg-warning-soft text-warning-soft-foreground',
 };
 
-function moneyAmountTone(tone: 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted'): string {
+function moneyAmountTone(
+    tone: 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted',
+): string {
     if (tone === 'inflow') {
         return 'text-inflow';
     }
@@ -188,13 +198,13 @@ export default function FinancialReportsIndex({
             <Head title="Relatórios financeiros" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Heading
                         title="Relatórios financeiros"
                         description="Visão consolidada de saldos, baixas e pendências de conciliação."
                     />
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 xl:grid-cols-3">
                         {cardOrder.map((key) => {
                             const card = dashboard.cards[key];
                             const Icon = cardIcons[key];
@@ -204,7 +214,10 @@ export default function FinancialReportsIndex({
                             }
 
                             return (
-                                <Card key={key} className="gap-4 py-5">
+                                <Card
+                                    key={key}
+                                    className="gap-4 rounded-none border-0 py-5"
+                                >
                                     <CardHeader className="flex-row items-center justify-between gap-3">
                                         <CardTitle>{card.label}</CardTitle>
                                         <span
@@ -251,30 +264,34 @@ export default function FinancialReportsIndex({
                         </CardHeader>
                         <CardContent>
                             {dashboard.account_balances?.length ? (
-                                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                                    {dashboard.account_balances.map((account) => (
-                                        <div
-                                            key={account.uuid}
-                                            className="rounded-md border px-3 py-2"
-                                        >
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-medium">
-                                                    {account.name}
-                                                </p>
-                                                <p className="truncate text-xs text-muted-foreground">
-                                                    {account.type_label}
+                                <div className="divide-y">
+                                    {dashboard.account_balances.map(
+                                        (account) => (
+                                            <div
+                                                key={account.uuid}
+                                                className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {account.name}
+                                                    </p>
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {account.type_label}
+                                                    </p>
+                                                </div>
+                                                <p className="text-base font-medium tabular-nums">
+                                                    <MoneyAmount
+                                                        value={
+                                                            account.current_balance_amount
+                                                        }
+                                                        currency={
+                                                            account.currency
+                                                        }
+                                                    />
                                                 </p>
                                             </div>
-                                            <p className="mt-3 text-base font-semibold">
-                                                <MoneyAmount
-                                                    value={
-                                                        account.current_balance_amount
-                                                    }
-                                                    currency={account.currency}
-                                                />
-                                            </p>
-                                        </div>
-                                    ))}
+                                        ),
+                                    )}
                                 </div>
                             ) : (
                                 <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -307,9 +324,9 @@ export default function FinancialReportsIndex({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-hidden rounded-md border">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-muted/50 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            <div className="overflow-x-auto rounded-lg border">
+                                <table className="w-full min-w-[600px] text-sm">
+                                    <thead className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
                                         <tr>
                                             <th className="px-3 py-3">
                                                 Vencimento
@@ -455,9 +472,9 @@ export default function FinancialReportsIndex({
                             <CardTitle>Relatórios iniciais</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-hidden rounded-md border">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-muted/50 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            <div className="overflow-x-auto rounded-lg border">
+                                <table className="w-full min-w-[600px] text-sm">
+                                    <thead className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
                                         <tr>
                                             <th className="px-3 py-3">
                                                 Relatório

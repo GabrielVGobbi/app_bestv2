@@ -40,6 +40,12 @@ import { Input } from '@/components/ui/input';
 import { InputMoney } from '@/components/ui/input-money';
 import { Label } from '@/components/ui/label';
 import {
+    PanelTable,
+    PanelTableBody,
+    PanelTableHead,
+    PanelTableRow,
+} from '@/components/ui/panel-table';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -47,12 +53,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import {
-    PanelTable,
-    PanelTableBody,
-    PanelTableHead,
-    PanelTableRow,
-} from '@/components/ui/panel-table';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -743,9 +743,7 @@ export default function ShowPlaylist({
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
-                            {playlist.name}
-                        </h1>
+                        <h1 className="page-heading-title">{playlist.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {playlist.slug}
                         </p>
@@ -758,7 +756,9 @@ export default function ShowPlaylist({
                         canUpdate={permissions.can_update}
                     />
                     <Button variant="outline" size="sm" asChild>
-                        <Link href={`/playlists/metrics?search=${encodeURIComponent(playlist.name)}`}>
+                        <Link
+                            href={`/playlists/metrics?search=${encodeURIComponent(playlist.name)}`}
+                        >
                             <BarChart3 className="size-4" />
                             Métricas
                         </Link>
@@ -784,7 +784,7 @@ export default function ShowPlaylist({
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
                         <div className="rounded-lg border bg-card">
                             <div className="p-5">

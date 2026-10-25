@@ -10,6 +10,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -159,7 +160,8 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                 header: 'Seguidores',
                 size: 130,
                 minSize: 120,
-                cell: ({ row }) => formatFollowers(row.original.followers_count),
+                cell: ({ row }) =>
+                    formatFollowers(row.original.followers_count),
                 meta: { label: 'Seguidores', align: 'center', type: 'number' },
             },
             {
@@ -256,23 +258,22 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
         <>
             <Head title="Playlists" />
 
+            <ContentHeader>
+                <Heading
+                    title="Playlists"
+                    description="Cadastro comercial de canais musicais e métricas operacionais."
+                />
+                {permissions.can_create ? (
+                    <Button asChild>
+                        <Link prefetch href={create.url()}>
+                            <Plus className="size-4" />
+                            Nova Playlist
+                        </Link>
+                    </Button>
+                ) : null}
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Playlists"
-                            description="Cadastro comercial de canais musicais e métricas operacionais."
-                        />
-                        {permissions.can_create ? (
-                            <Button asChild>
-                                <Link prefetch href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Nova Playlist
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
+                <div className="page-section">
                     <Dialog
                         open={playlistToDelete !== null}
                         onOpenChange={(open) =>

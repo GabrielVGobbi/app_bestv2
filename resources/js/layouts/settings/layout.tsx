@@ -40,8 +40,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 description="Gerencie seu perfil, segurança e preferências da conta."
             />
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-                <aside className="h-fit rounded-xl border border-app-line/80 bg-card p-3 shadow-[var(--shadow-app-panel)]">
+            <div className="mt-8 grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
+                <aside className="h-fit">
                     <nav
                         className="grid gap-1 sm:grid-cols-3 lg:grid-cols-1"
                         aria-label="Configurações"
@@ -52,16 +52,16 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 variant="ghost"
                                 asChild
                                 className={cn(
-                                    'h-auto w-full justify-start gap-3 rounded-lg border border-transparent px-3 py-3 text-left text-[13px] font-medium text-muted-foreground',
+                                    'h-11 w-full justify-start gap-3 rounded-lg px-3 text-left text-sm font-medium text-muted-foreground',
                                     {
-                                        'border-primary/15 bg-brand-surface text-primary shadow-xs':
+                                        'bg-secondary text-foreground':
                                             isCurrentOrParentUrl(item.href),
                                     },
                                 )}
                             >
                                 <Link href={item.href} prefetch="click">
                                     {item.icon && (
-                                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background text-current shadow-xs">
+                                        <span className="flex size-5 shrink-0 items-center justify-center text-current">
                                             <item.icon className="size-4" />
                                         </span>
                                     )}
@@ -74,7 +74,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
 
                 <Separator className="lg:hidden" />
 
-                <div className="min-w-0 rounded-xl border border-app-line/80 bg-card p-5 shadow-[var(--shadow-app-panel)] sm:p-7">
+                <div className="min-w-0 border-t pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
                     <section className="max-w-2xl space-y-12">
                         {children}
                     </section>

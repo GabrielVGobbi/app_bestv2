@@ -71,13 +71,18 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={index.url()}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="page-heading-title">
                             {financialAccount.name}
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -88,7 +93,7 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[1fr_22rem]">
+                <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
                     <div className="space-y-4">
                         <Card>
                             <CardHeader className="flex-row items-center justify-between gap-3">
@@ -100,7 +105,9 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
                                             : 'secondary'
                                     }
                                 >
-                                    {financialAccount.active ? 'Ativa' : 'Inativa'}
+                                    {financialAccount.active
+                                        ? 'Ativa'
+                                        : 'Inativa'}
                                 </Badge>
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -118,7 +125,10 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
                                         financialAccount.currency,
                                     )}
                                 />
-                                <Info label="Tipo" value={financialAccount.type_label} />
+                                <Info
+                                    label="Tipo"
+                                    value={financialAccount.type_label}
+                                />
                                 <Info
                                     label="Empresa"
                                     value={`Empresa #${financialAccount.company_id}`}
@@ -188,8 +198,8 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
                                             Conciliação
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            Extratos e movimentos só conciliam dentro
-                                            desta mesma conta.
+                                            Extratos e movimentos só conciliam
+                                            dentro desta mesma conta.
                                         </p>
                                     </div>
                                 </div>
@@ -203,8 +213,13 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
                                 <CardTitle>Ações</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <Button className="w-full justify-start" asChild>
-                                    <Link href={edit.url(financialAccount.uuid)}>
+                                <Button
+                                    className="w-full justify-start"
+                                    asChild
+                                >
+                                    <Link
+                                        href={edit.url(financialAccount.uuid)}
+                                    >
                                         <Pencil className="size-4" />
                                         Editar
                                     </Link>
@@ -220,7 +235,9 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
                                     ) : (
                                         <Power className="size-4" />
                                     )}
-                                    {financialAccount.active ? 'Inativar' : 'Ativar'}
+                                    {financialAccount.active
+                                        ? 'Inativar'
+                                        : 'Ativar'}
                                 </Button>
                                 <Button
                                     type="button"
@@ -249,7 +266,7 @@ export default function ShowFinancialAccount({ financialAccountData }: Props) {
 function Info({ label, value }: { label: string; value: string }) {
     return (
         <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </p>
             <p className="text-sm">{value}</p>

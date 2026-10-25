@@ -1,0 +1,57 @@
+{
+  "authority": "User supplied reference images; replaces previous visual rules",
+  "sources": [
+    {
+      "file": "HRoD5KjXsAI1BxH.jfif",
+      "pixels": [
+        3840,
+        2880
+      ],
+      "measured_dominant_colors": [
+        "#ffffff",
+        "#f6f6f6",
+        "#161618"
+      ],
+      "use": "Primary application shell, navigation, data tables"
+    },
+    {
+      "file": "HRor-5CbIAAGcF7.jfif",
+      "pixels": [
+        3840,
+        4096
+      ],
+      "measured_dominant_colors": [
+        "#f8f8f6",
+        "#fcfcfc",
+        "#333333"
+      ],
+      "use": "Context menus and secondary surfaces"
+    },
+    {
+      "file": "HRor_pmbUAAlMMR.jfif",
+      "pixels": [
+        3840,
+        4096
+      ],
+      "measured_dominant_colors": [
+        "#f2f1ed",
+        "#f8f7f3",
+        "#333333"
+      ],
+      "use": "Featured panels"
+    }
+  ],
+  "reconstruction": {
+    "scale": "Inferred from cropped enlarged screenshots; not source CSS",
+    "font": "Inter for operational UI; Lora limited to featured panels. Exact source fonts cannot be identified from pixels alone.",
+    "rail_width_px": 64,
+    "context_navigation_width_px": 248,
+    "navigation_font_px": 15,
+    "table_row_height_px": 64,
+    "control_radius_px": 10,
+    "control_height_px": 40,
+    "page_header": "Full content area width",
+    "forms_max_width_px": 1024,
+    "outer_presentation_margins": "Excluded from full-screen application; rail retains its own rounded inset."
+  }
+}

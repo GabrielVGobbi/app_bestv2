@@ -1,4 +1,5 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
+import axios from 'axios';
 import {
     AlertCircle,
     BookOpen,
@@ -41,7 +42,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import axios from 'axios';
 
 interface EmailLog {
     uuid: string;
@@ -209,6 +209,7 @@ function statusColor(status: string): string {
         scheduled: 'bg-slate-500/10 text-slate-600',
         suppressed: 'bg-stone-500/10 text-stone-600',
     };
+
     return map[status] ?? 'bg-muted text-muted-foreground';
 }
 
@@ -310,6 +311,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
 
     async function handlePreview() {
         setPreviewing(true);
+
         try {
             const response = await axios.post<string>(previewEmail.url(), {
                 template,
@@ -319,7 +321,9 @@ export default function EmailPage({ recentLogs, settings }: Props) {
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
             const msg = error.response?.data?.message ?? 'Erro ao renderizar.';
-            setPreviewHtml(`<html><body style="font-family:monospace;padding:24px;color:#dc2626"><strong>Erro:</strong> ${msg}</body></html>`);
+            setPreviewHtml(
+                `<html><body style="font-family:monospace;padding:24px;color:#dc2626"><strong>Erro:</strong> ${msg}</body></html>`,
+            );
         } finally {
             setPreviewing(false);
         }
@@ -357,7 +361,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
             <Head title="Email" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     {/* Header */}
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <Heading
@@ -430,6 +434,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                     },
                                 ].map(({ key, label }) => {
                                     const isOn = settings[key] !== false;
+
                                     return (
                                         <div
                                             key={key}
@@ -569,12 +574,12 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                 </Label>
                                 <textarea
                                     id="pt-variables"
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                     rows={6}
                                     value={variables}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                                        setVariables(e.target.value)
-                                    }
+                                    onChange={(
+                                        e: React.ChangeEvent<HTMLTextAreaElement>,
+                                    ) => setVariables(e.target.value)}
                                 />
                                 <p className="text-xs text-muted-foreground">
                                     Injetadas na view Blade como variáveis PHP.
@@ -603,7 +608,9 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                     }
                                 >
                                     <Send className="mr-2 size-4" />
-                                    {sending ? 'Enviando…' : 'Enviar email de teste'}
+                                    {sending
+                                        ? 'Enviando…'
+                                        : 'Enviar email de teste'}
                                 </Button>
 
                                 {result && (
@@ -641,7 +648,10 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                         Preview do template
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge
+                                            variant="secondary"
+                                            className="text-xs"
+                                        >
                                             {template}
                                         </Badge>
                                         <Button
@@ -654,7 +664,9 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                     </div>
                                 </div>
                                 <CardDescription>
-                                    Renderizado no servidor com as variáveis atuais. Atualiza ao clicar em Preview novamente.
+                                    Renderizado no servidor com as variáveis
+                                    atuais. Atualiza ao clicar em Preview
+                                    novamente.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
@@ -708,7 +720,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                                     {log.category}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
+                                            <div className="flex shrink-0 items-center gap-2">
                                                 <span
                                                     className={`rounded px-2 py-0.5 text-xs font-medium ${statusColor(log.status)}`}
                                                 >

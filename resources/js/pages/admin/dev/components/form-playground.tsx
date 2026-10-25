@@ -1,5 +1,4 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import type { ComponentType, ReactNode } from 'react';
 import {
     Building2,
     Check,
@@ -14,6 +13,7 @@ import {
     SlidersHorizontal,
     User,
 } from 'lucide-react';
+import type { ComponentType, ReactNode } from 'react';
 
 import { components } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
 import Heading from '@/components/heading';
@@ -572,7 +572,7 @@ export default function FormPlayground() {
             <Head title="Form playground" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <Heading
                             title="Form playground"

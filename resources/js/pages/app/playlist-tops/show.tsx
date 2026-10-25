@@ -1,5 +1,11 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays, Hash, ListOrdered, Pencil } from 'lucide-react';
+import {
+    ArrowLeft,
+    CalendarDays,
+    Hash,
+    ListOrdered,
+    Pencil,
+} from 'lucide-react';
 
 import {
     edit,
@@ -36,7 +42,7 @@ function InfoField({ label, value }: { label: string; value: string }) {
     return (
         <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-0.5 break-words text-sm">{value}</p>
+            <p className="mt-0.5 text-sm break-words">{value}</p>
         </div>
     );
 }
@@ -68,7 +74,7 @@ export default function ShowTop({ topData, permissions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{top.name}</h1>
+                        <h1 className="page-heading-title">{top.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {top.slug}
                         </p>
@@ -85,7 +91,7 @@ export default function ShowTop({ topData, permissions }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
                         <div className="rounded-lg border bg-card">
                             <div className="p-5">
@@ -129,7 +135,9 @@ export default function ShowTop({ topData, permissions }: Props) {
                             <div className="border-t px-5 py-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="size-3.5" />
-                                    <span>Criado {formatDate(top.created_at)}</span>
+                                    <span>
+                                        Criado {formatDate(top.created_at)}
+                                    </span>
                                 </div>
                                 <p className="mt-1">
                                     Última edição {formatDate(top.updated_at)}
@@ -173,7 +181,7 @@ export default function ShowTop({ topData, permissions }: Props) {
                                     <CardTitle>Descrição</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
                                         {top.description}
                                     </p>
                                 </CardContent>

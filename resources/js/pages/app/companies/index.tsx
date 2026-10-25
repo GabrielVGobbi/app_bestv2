@@ -11,6 +11,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Companies/Http/Controllers/CompanyController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -97,47 +98,46 @@ export default function CompanyIndex({ permissions }: Props) {
     });
 
     const queryClient = useQueryClient();
-    const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
-
-    const actions = useMemo<DataTableAction<Company>[]>(
-        () => {
-            const tableActions: DataTableAction<Company>[] = [
-                {
-                    label: 'Visualizar',
-                    icon: <Eye className="size-4" />,
-                    variant: 'outline',
-                    href: (company) => show.url(company.uuid),
-                    showLabel: false,
-                    tooltip: 'Visualizar',
-                },
-            ];
-
-            if (!permissions.can_manage) {
-                return tableActions;
-            }
-
-            tableActions.push({
-                label: 'Editar',
-                icon: <Pencil className="size-4" />,
-                variant: 'outline',
-                href: (company) => edit.url(company.uuid),
-                showLabel: false,
-                tooltip: 'Editar',
-            });
-
-            tableActions.push({
-                label: 'Excluir',
-                icon: <Trash2 className="size-4" />,
-                variant: 'destructive',
-                showLabel: false,
-                tooltip: 'Excluir',
-                onClick: (company) => setCompanyToDelete(company),
-            });
-
-            return tableActions;
-        },
-        [permissions.can_manage],
+    const [companyToDelete, setCompanyToDelete] = useState<Company | null>(
+        null,
     );
+
+    const actions = useMemo<DataTableAction<Company>[]>(() => {
+        const tableActions: DataTableAction<Company>[] = [
+            {
+                label: 'Visualizar',
+                icon: <Eye className="size-4" />,
+                variant: 'outline',
+                href: (company) => show.url(company.uuid),
+                showLabel: false,
+                tooltip: 'Visualizar',
+            },
+        ];
+
+        if (!permissions.can_manage) {
+            return tableActions;
+        }
+
+        tableActions.push({
+            label: 'Editar',
+            icon: <Pencil className="size-4" />,
+            variant: 'outline',
+            href: (company) => edit.url(company.uuid),
+            showLabel: false,
+            tooltip: 'Editar',
+        });
+
+        tableActions.push({
+            label: 'Excluir',
+            icon: <Trash2 className="size-4" />,
+            variant: 'destructive',
+            showLabel: false,
+            tooltip: 'Excluir',
+            onClick: (company) => setCompanyToDelete(company),
+        });
+
+        return tableActions;
+    }, [permissions.can_manage]);
 
     function deleteCompany(): void {
         if (!companyToDelete) {
@@ -157,32 +157,34 @@ export default function CompanyIndex({ permissions }: Props) {
         <>
             <Head title="Empresas" />
 
+            <ContentHeader>
+                <Heading
+                    title="Empresas"
+                    description="Gerencie as empresas internas prestadoras do grupo BestPlay"
+                />
+                {permissions.can_manage ? (
+                    <Button asChild>
+                        <Link href={create.url()}>
+                            <Plus className="size-4" />
+                            Nova Empresa
+                        </Link>
+                    </Button>
+                ) : null}
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Empresas"
-                            description="Gerencie as empresas internas prestadoras do grupo BestPlay"
-                        />
-                        {permissions.can_manage ? (
-                            <Button asChild>
-                                <Link href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Nova Empresa
-                                </Link>
-                            </Button>
-                        ) : null}
-                    </div>
-
+                <div className="page-section">
                     <Dialog
                         open={companyToDelete !== null}
-                        onOpenChange={(open) => !open && setCompanyToDelete(null)}
+                        onOpenChange={(open) =>
+                            !open && setCompanyToDelete(null)
+                        }
                     >
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Excluir empresa</DialogTitle>
                                 <DialogDescription>
-                                    Esta acao arquiva a empresa e remove ela das consultas operacionais.
+                                    Esta acao arquiva a empresa e remove ela das
+                                    consultas operacionais.
                                 </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -192,7 +194,10 @@ export default function CompanyIndex({ permissions }: Props) {
                                 >
                                     Cancelar
                                 </Button>
-                                <Button variant="destructive" onClick={deleteCompany}>
+                                <Button
+                                    variant="destructive"
+                                    onClick={deleteCompany}
+                                >
                                     Excluir
                                 </Button>
                             </DialogFooter>

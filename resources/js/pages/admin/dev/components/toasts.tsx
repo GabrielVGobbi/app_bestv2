@@ -148,7 +148,7 @@ export default function Toasts() {
             <Head title="Toasts" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Heading
                         title="Toasts"
                         description="Tela interna para validar notificacoes locais e estados especiais do Sonner."

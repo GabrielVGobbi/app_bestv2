@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { BadgeCheck, Music2, UserRoundCheck } from 'lucide-react';
-
+import { createElement } from 'react';
+import { show } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import type {
     DataTableDateColumn,
     DataTableExportConfig,
@@ -8,6 +9,8 @@ import type {
     DataTableFilterOption,
     DataTableQuickFilter,
 } from '@/components/data-table';
+import { RecordIdentity } from '@/components/record-identity';
+
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { Client } from '@/types/app/client';
 
@@ -21,13 +24,21 @@ export const columns: ColumnDef<Client>[] = [
         id: 'name',
         accessorKey: 'name',
         header: 'Nome',
+        size: 300,
+        cell: ({ row }) =>
+            createElement(RecordIdentity, {
+                name: row.original.name,
+                description: row.original.company_name,
+                href: show.url(row.original.uuid),
+            }),
         meta: { label: 'Nome' },
     },
     {
         id: 'email',
         accessorKey: 'email',
         header: 'Email',
-        meta: { label: 'Email' },
+        size: 260,
+        meta: { label: 'Email', truncate: true },
     },
     {
         id: 'phone',

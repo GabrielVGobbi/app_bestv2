@@ -71,11 +71,11 @@ function ClientCard({
     return (
         <article
             className={cn(
-                'rounded-lg border bg-card transition-colors hover:border-primary/50 hover:bg-muted/40',
-                selected && 'border-primary bg-primary/5 shadow-sm',
+                'rounded-lg transition-colors hover:bg-secondary/60',
+                selected && 'bg-secondary',
             )}
         >
-            <div className="flex items-start gap-2 p-4">
+            <div className="flex items-start gap-2 px-3 py-4">
                 <button
                     type="button"
                     onClick={() => onSelect(client)}
@@ -96,7 +96,7 @@ function ClientCard({
                         <Badge
                             variant={
                                 client.status === 'active'
-                                    ? 'default'
+                                    ? 'success'
                                     : 'secondary'
                             }
                             className="shrink-0 rounded-full"
@@ -168,7 +168,7 @@ export function ClientCardList({
     } = useClientCardList(search);
 
     return (
-        <aside className="flex h-full min-h-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card p-3">
+        <aside className="flex h-full min-h-0 flex-col gap-4 overflow-hidden rounded-xl border bg-card p-4">
             <div className="space-y-1">
                 <h2 className="text-sm font-semibold">Clientes</h2>
                 <p className="text-xs text-muted-foreground">
@@ -182,6 +182,7 @@ export function ClientCardList({
                     value={search}
                     onChange={(event) => onSearchChange(event.target.value)}
                     placeholder="Buscar clientes..."
+                    aria-label="Buscar clientes"
                     className="pl-9"
                 />
             </div>
@@ -201,7 +202,7 @@ export function ClientCardList({
                 </div>
             ) : null}
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="min-h-0 flex-1 divide-y overflow-y-auto">
                 {isLoading ? (
                     Array.from({ length: 6 }).map((_, index) => (
                         <ClientCardSkeleton key={index} />

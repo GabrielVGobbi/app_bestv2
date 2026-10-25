@@ -82,7 +82,9 @@ function deltaClass(value: number): string {
     return 'text-muted-foreground';
 }
 
-function syncPriorityLabel(value: PlaylistMetricRow['spotify_sync_priority']): string {
+function syncPriorityLabel(
+    value: PlaylistMetricRow['spotify_sync_priority'],
+): string {
     const labels: Record<PlaylistMetricRow['spotify_sync_priority'], string> = {
         high: 'Alta',
         normal: 'Normal',
@@ -230,7 +232,7 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
+                        <h1 className="page-heading-title">
                             Métricas de playlists
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -276,7 +278,9 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                     <SelectItem value="7">7 dias</SelectItem>
                                     <SelectItem value="30">30 dias</SelectItem>
                                     <SelectItem value="90">90 dias</SelectItem>
-                                    <SelectItem value="365">12 meses</SelectItem>
+                                    <SelectItem value="365">
+                                        12 meses
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -323,7 +327,9 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Todos</SelectItem>
-                                    <SelectItem value="active">Ativa</SelectItem>
+                                    <SelectItem value="active">
+                                        Ativa
+                                    </SelectItem>
                                     <SelectItem value="inactive">
                                         Inativa
                                     </SelectItem>
@@ -354,9 +360,7 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                             value={signedNumber(dashboard.summary.net_growth)}
                             detail={`Últimos ${filters.period_days} dias`}
                             tone={
-                                dashboard.summary.net_growth < 0
-                                    ? 'down'
-                                    : 'up'
+                                dashboard.summary.net_growth < 0 ? 'down' : 'up'
                             }
                         />
                         <SummaryCard
@@ -401,7 +405,10 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                             </CardHeader>
                             <CardContent>
                                 <div className="h-80">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
                                         <AreaChart data={dashboard.series}>
                                             <defs>
                                                 <linearGradient
@@ -536,7 +543,8 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                                 )}
                                             </p>
                                             <p className="text-sm tabular-nums lg:text-right">
-                                                {row.spotify_tracks_total ?? '-'}
+                                                {row.spotify_tracks_total ??
+                                                    '-'}
                                             </p>
                                             <Badge variant="outline">
                                                 {row.status_label}
@@ -560,7 +568,9 @@ export default function PlaylistMetricsIndex({ dashboard, filters }: Props) {
                                                 {row.spotify_sync_failures_count >
                                                     0 && (
                                                     <p className="text-red-600 dark:text-red-400">
-                                                        {row.spotify_sync_failures_count}{' '}
+                                                        {
+                                                            row.spotify_sync_failures_count
+                                                        }{' '}
                                                         falha(s)
                                                     </p>
                                                 )}

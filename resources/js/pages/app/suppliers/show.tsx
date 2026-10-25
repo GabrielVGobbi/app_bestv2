@@ -178,7 +178,7 @@ export default function ShowSupplier({ supplierData, timelineSubject }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{supplierName}</h1>
+                        <h1 className="page-heading-title">{supplierName}</h1>
                         <p className="text-sm text-muted-foreground">
                             {supplier.uuid}
                         </p>
@@ -214,7 +214,7 @@ export default function ShowSupplier({ supplierData, timelineSubject }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="rounded-lg border bg-card">
                         <div className="p-5">
                             <div className="flex h-32 items-center justify-center rounded-lg bg-secondary text-4xl font-semibold text-primary">
@@ -284,7 +284,8 @@ export default function ShowSupplier({ supplierData, timelineSubject }: Props) {
                         <div className="border-t px-5 py-4 text-xs text-muted-foreground">
                             <p>Criado - {formatDate(supplier.created_at)}</p>
                             <p className="mt-1">
-                                Última edição - {formatDate(supplier.updated_at)}
+                                Última edição -{' '}
+                                {formatDate(supplier.updated_at)}
                             </p>
                         </div>
                     </aside>

@@ -42,7 +42,7 @@ export default function CreateClient({ formOptions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">Novo cliente</h1>
+                        <h1 className="page-heading-title">Novo cliente</h1>
                         <p className="text-sm text-muted-foreground">
                             Cadastrar contato comercial
                         </p>
@@ -64,7 +64,7 @@ export default function CreateClient({ formOptions }: Props) {
                         <>
                             <div className="space-y-4">
                                 <div className="flex flex-1 flex-col gap-6">
-                                    <Card>
+                                    <Card variant="form">
                                         <CardHeader>
                                             <CardTitle>
                                                 Dados do Cliente
@@ -82,7 +82,7 @@ export default function CreateClient({ formOptions }: Props) {
                                     </Card>
                                 </div>
 
-                                <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                                <div className="sticky bottom-0 border-t bg-background">
                                     <div className="flex items-center justify-between gap-3 py-3">
                                         <p className="text-xs text-muted-foreground">
                                             Campos marcados com{' '}

@@ -9,6 +9,8 @@ import {
     index,
     split as splitView,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
+import ContentHeader from '@/components/content-header';
+import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { Client } from '@/types/app/client';
@@ -108,14 +110,18 @@ export default function ClientSplitIndex() {
         <>
             <Head title="Clientes - Duas colunas" />
 
-            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden px-0 pb-0 md:px-2">
+            <div className="flex min-h-full min-w-0 flex-1 flex-col lg:h-full lg:overflow-hidden">
                 <ClientDeleteDialog
                     client={clientToDelete}
                     onCancel={() => setClientToDelete(null)}
                     onConfirm={deleteClient}
                 />
 
-                <div className="flex shrink-0 justify-end px-2 pt-2 pb-3">
+                <ContentHeader>
+                    <Heading
+                        title="Clientes"
+                        description="Explore seus contatos e consulte os detalhes lado a lado."
+                    />
                     <div className="flex flex-wrap items-center gap-2">
                         <ToggleGroup
                             type="single"
@@ -157,9 +163,9 @@ export default function ClientSplitIndex() {
                             </Link>
                         </Button>
                     </div>
-                </div>
+                </ContentHeader>
 
-                <div className="min-h-0 flex-1 overflow-hidden px-2 pb-2">
+                <div className="min-h-0 flex-1 overflow-hidden px-4 pb-4 md:px-6">
                     <ClientSplitView
                         selectedUuid={selectedUuid}
                         selectedClient={selectedClient}

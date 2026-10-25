@@ -72,8 +72,8 @@ export default function SpotifyPlaylistImporter({
     }
 
     return (
-        <Card className="overflow-hidden py-0 shadow-xs">
-            <CardContent className="space-y-4 p-4 sm:p-6">
+        <Card variant="form" className="overflow-hidden">
+            <CardContent className="space-y-4">
                 <form
                     className="grid gap-3 sm:grid-cols-[1fr_auto]"
                     onSubmit={handleSubmit}
@@ -102,7 +102,7 @@ export default function SpotifyPlaylistImporter({
                             </p>
                         )}
                     </div>
-                    <div className="flex items-end">
+                    <div className="flex items-start sm:pt-6">
                         <Button
                             type="submit"
                             className="w-full sm:w-auto"

@@ -31,7 +31,7 @@ function ContentHeader({
     return (
         <header
             className={cn(
-                'sticky top-0 z-20 flex min-h-16 w-full shrink-0 flex-col gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:flex-row sm:flex-wrap sm:items-center sm:justify-between md:px-6',
+                'flex min-h-20 w-full max-w-none shrink-0 flex-col gap-4 bg-background px-5 pt-7 pb-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between md:px-8',
                 className,
             )}
         >
@@ -52,10 +52,10 @@ function ContentHeader({
                         ) : null}
                         <div className="min-w-0">
                             {title ? (
-                                <h1 className="text-xl font-semibold">{title}</h1>
+                                <h1 className="page-heading-title">{title}</h1>
                             ) : null}
                             {description ? (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="page-heading-description">
                                     {description}
                                 </p>
                             ) : null}
@@ -63,9 +63,7 @@ function ContentHeader({
                     </div>
                 ) : null)}
 
-            {actions ? (
-                <div className="flex flex-wrap items-center gap-2">{actions}</div>
-            ) : null}
+            {actions ? <div className="page-actions">{actions}</div> : null}
         </header>
     );
 }

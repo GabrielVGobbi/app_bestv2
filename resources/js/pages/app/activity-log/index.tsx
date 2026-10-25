@@ -161,7 +161,7 @@ function resolveAction(
         return log.action;
     }
 
-    return log.event ? FALLBACK_ACTIONS[log.event] ?? null : null;
+    return log.event ? (FALLBACK_ACTIONS[log.event] ?? null) : null;
 }
 
 function ActionBadge({
@@ -177,8 +177,7 @@ function ActionBadge({
 
     const Icon = ICONS[action?.icon ?? 'Activity'] ?? Activity;
     const className =
-        SEVERITY_CLASS[action?.severity ?? 'muted'] ??
-        SEVERITY_CLASS.muted;
+        SEVERITY_CLASS[action?.severity ?? 'muted'] ?? SEVERITY_CLASS.muted;
 
     return (
         <span
@@ -216,7 +215,7 @@ function CauserCell({ log }: { log: ActivityLog }) {
                 {initials}
             </div>
             <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-medium leading-tight">
+                <span className="truncate text-sm leading-tight font-medium">
                     {log.causer.name}
                 </span>
                 {log.causer.email && (
@@ -260,7 +259,13 @@ function formatValue(value: unknown): string {
     return String(value);
 }
 
-function DiffTable({ old: oldValues, attrs }: { old: Properties; attrs: Properties }) {
+function DiffTable({
+    old: oldValues,
+    attrs,
+}: {
+    old: Properties;
+    attrs: Properties;
+}) {
     const keys = Array.from(
         new Set([...Object.keys(oldValues), ...Object.keys(attrs)]),
     );
@@ -307,7 +312,7 @@ function DiffTable({ old: oldValues, attrs }: { old: Properties; attrs: Properti
                                 </td>
                                 <td className="px-3 py-2 align-top">
                                     <span
-                                        className={`break-all font-mono text-xs ${
+                                        className={`font-mono text-xs break-all ${
                                             changed
                                                 ? 'text-red-700'
                                                 : 'text-muted-foreground'
@@ -323,7 +328,7 @@ function DiffTable({ old: oldValues, attrs }: { old: Properties; attrs: Properti
                                 </td>
                                 <td className="px-3 py-2 align-top">
                                     <span
-                                        className={`break-all font-mono text-xs ${
+                                        className={`font-mono text-xs break-all ${
                                             changed
                                                 ? 'font-semibold text-emerald-700'
                                                 : 'text-muted-foreground'
@@ -350,7 +355,7 @@ function AttributesTable({ label, data }: { label: string; data: Properties }) {
 
     return (
         <div>
-            <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
                 {label}
             </p>
             <div className="overflow-hidden rounded-md border">
@@ -366,7 +371,7 @@ function AttributesTable({ label, data }: { label: string; data: Properties }) {
                                 <td className="w-1/3 px-3 py-2 font-mono text-xs text-muted-foreground">
                                     {key}
                                 </td>
-                                <td className="break-all px-3 py-2 font-mono text-xs">
+                                <td className="px-3 py-2 font-mono text-xs break-all">
                                     {formatValue(value)}
                                 </td>
                             </tr>
@@ -424,7 +429,10 @@ function ActivityLogDetailSheet({
 
     return (
         <Sheet open={open} onOpenChange={(value) => !value && onClose()}>
-            <SheetContent className="flex w-full flex-col sm:max-w-lg" side="right">
+            <SheetContent
+                className="flex w-full flex-col sm:max-w-lg"
+                side="right"
+            >
                 <SheetHeader className="shrink-0 pb-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <ActionBadge action={action} event={log.event} />
@@ -442,7 +450,7 @@ function ActivityLogDetailSheet({
                 <div className="flex-1 overflow-y-auto">
                     <div className="space-y-5 px-4 py-3">
                         <div>
-                            <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
                                 Causador
                             </p>
                             <CauserCell log={log} />
@@ -450,7 +458,7 @@ function ActivityLogDetailSheet({
 
                         {log.subject_type && (
                             <div>
-                                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                                <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
                                     Alvo
                                 </p>
                                 <div className="flex items-center gap-3 rounded-md border p-3">
@@ -459,7 +467,8 @@ function ActivityLogDetailSheet({
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-sm font-medium">
-                                            {log.subject?.name ?? `#${log.subject_id}`}
+                                            {log.subject?.name ??
+                                                `#${log.subject_id}`}
                                         </p>
                                         {log.subject?.email && (
                                             <p className="text-xs text-muted-foreground">
@@ -467,7 +476,10 @@ function ActivityLogDetailSheet({
                                             </p>
                                         )}
                                     </div>
-                                    <Badge variant="outline" className="shrink-0 text-xs">
+                                    <Badge
+                                        variant="outline"
+                                        className="shrink-0 text-xs"
+                                    >
                                         {log.subject_type}
                                     </Badge>
                                 </div>
@@ -495,7 +507,9 @@ function buildColumns(
             cell: ({ row }) => {
                 const action = resolveAction(row.original, catalog);
 
-                return <ActionBadge action={action} event={row.original.event} />;
+                return (
+                    <ActionBadge action={action} event={row.original.event} />
+                );
             },
             meta: { label: 'Acao' },
         },
@@ -570,7 +584,9 @@ function buildQuickFilters(
         new Set(
             actions
                 .map((action) => action.subject_type)
-                .filter((subjectType): subjectType is string => Boolean(subjectType)),
+                .filter((subjectType): subjectType is string =>
+                    Boolean(subjectType),
+                ),
         ),
     );
 
@@ -657,7 +673,7 @@ export default function ActivityLogIndex({
             />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Heading
                         title="Activity Log"
                         description="Historico de todas as acoes realizadas no sistema"

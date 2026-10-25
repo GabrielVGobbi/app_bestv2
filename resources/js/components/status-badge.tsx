@@ -41,21 +41,21 @@ import { cn } from '@/lib/utils';
 import type { StatusPresenter } from '@/types/status';
 
 const colorClasses: Record<string, string> = {
-    amber: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
-    orange: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
-    yellow: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
-    emerald: 'border-success/25 bg-success-soft text-success-soft-foreground',
-    green: 'border-success/25 bg-success-soft text-success-soft-foreground',
-    red: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
-    rose: 'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
-    blue: 'border-info/25 bg-info-soft text-info-soft-foreground',
-    sky: 'border-info/25 bg-info-soft text-info-soft-foreground',
-    cyan: 'border-info/25 bg-info-soft text-info-soft-foreground',
-    indigo: 'border-info/25 bg-info-soft text-info-soft-foreground',
-    violet: 'border-info/25 bg-info-soft text-info-soft-foreground',
-    zinc: 'border-border/70 bg-secondary text-muted-foreground',
-    slate: 'border-border/70 bg-secondary text-muted-foreground',
-    stone: 'border-border/70 bg-secondary text-muted-foreground',
+    amber: 'text-warning',
+    orange: 'text-warning',
+    yellow: 'text-warning',
+    emerald: 'text-success',
+    green: 'text-success',
+    red: 'text-destructive',
+    rose: 'text-destructive',
+    blue: 'text-info',
+    sky: 'text-info',
+    cyan: 'text-info',
+    indigo: 'text-info',
+    violet: 'text-info',
+    zinc: 'text-muted-foreground',
+    slate: 'text-muted-foreground',
+    stone: 'text-muted-foreground',
 };
 
 const icons: Record<string, LucideIcon> = {
@@ -114,15 +114,25 @@ export function StatusBadge({
     return (
         <Badge
             variant="outline"
-            className={cn(
-                'rounded-md',
-                colorClasses[presenter.color] ?? colorClasses.zinc,
-                className,
-            )}
+            className={cn('rounded-md bg-card text-foreground', className)}
         >
             {showIcon && Icon ? (
-                <Icon className={cn('size-3', shouldSpin && 'animate-spin')} />
-            ) : null}
+                <Icon
+                    className={cn(
+                        'size-3',
+                        colorClasses[presenter.color] ?? colorClasses.zinc,
+                        shouldSpin && 'animate-spin',
+                    )}
+                />
+            ) : (
+                <span
+                    aria-hidden="true"
+                    className={cn(
+                        'size-1.5 shrink-0 rounded-full bg-current',
+                        colorClasses[presenter.color] ?? colorClasses.zinc,
+                    )}
+                />
+            )}
             {presenter.label}
         </Badge>
     );

@@ -155,7 +155,7 @@ export default function ActivityTimelineDevReference({
             <Head title="Activity Timeline - Referencia" />
 
             <main className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <Heading
                             title="Activity Timeline"

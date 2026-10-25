@@ -106,7 +106,7 @@ function renderInlineActions<TData>(
     }
 
     return (
-        <div className="flex items-center justify-end gap-2.5">
+        <div className="flex items-center justify-end gap-1">
             {actions.map((action) => {
                 const disabled = action.disabled?.(row) ?? false;
                 const showLabel = shouldShowLabel(action);
@@ -122,7 +122,16 @@ function renderInlineActions<TData>(
                         <Button
                             key={action.label}
                             type="button"
-                            variant={action.variant ?? 'ghost'}
+                            variant={
+                                showLabel
+                                    ? (action.variant ?? 'ghost')
+                                    : 'ghost'
+                            }
+                            className={
+                                !showLabel && action.variant === 'destructive'
+                                    ? 'text-muted-foreground hover:bg-destructive-soft hover:text-destructive'
+                                    : undefined
+                            }
                             size={actionSize}
                             asChild
                             aria-label={action.label}
@@ -144,7 +153,14 @@ function renderInlineActions<TData>(
                     <Button
                         key={action.label}
                         type="button"
-                        variant={action.variant ?? 'ghost'}
+                        variant={
+                            showLabel ? (action.variant ?? 'ghost') : 'ghost'
+                        }
+                        className={
+                            !showLabel && action.variant === 'destructive'
+                                ? 'text-muted-foreground hover:bg-destructive-soft hover:text-destructive'
+                                : undefined
+                        }
                         size={actionSize}
                         disabled={disabled}
                         onClick={() => action.onClick?.(row)}

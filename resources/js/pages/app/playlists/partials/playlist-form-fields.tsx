@@ -65,8 +65,8 @@ function PlaylistFormSection({
                         {description}
                     </p>
                 </div>
-                <Card className="min-w-0 overflow-hidden py-0 shadow-xs">
-                    <CardContent className="p-4 sm:p-6">{children}</CardContent>
+                <Card variant="form" className="min-w-0">
+                    <CardContent>{children}</CardContent>
                 </Card>
             </section>
         );

@@ -1,11 +1,11 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays, KeyRound, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, KeyRound, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { destroy, edit, index, show } from '@/routes/permissions';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -17,8 +17,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { httpDelete } from '@/lib/http';
+import { edit, index, show } from '@/routes/permissions';
 import type { Permission } from '@/types/app/permission';
-import { toast } from 'sonner';
 
 interface ShowProps {
     permissionData: { data: Permission };
@@ -28,10 +28,21 @@ function formatDate(dateString: string | null | undefined): string {
     if (!dateString) {
         return '-';
     }
-    return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
 }
 
-function InfoField({ label, value }: { label: string; value: string | null | undefined }) {
+function InfoField({
+    label,
+    value,
+}: {
+    label: string;
+    value: string | null | undefined;
+}) {
     return (
         <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
@@ -54,6 +65,7 @@ export default function ShowPermission({ permissionData }: ShowProps) {
 
     const handleDelete = async () => {
         setDeleting(true);
+
         try {
             await httpDelete(apiRoutes.permissions.destroy(permission.id));
             toast.success('Permissão removida com sucesso!');
@@ -69,15 +81,22 @@ export default function ShowPermission({ permissionData }: ShowProps) {
             <Head title={permission.name} />
 
             <div className="container mx-auto max-w-3xl">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Button variant="outline" size="icon" className="size-8" asChild>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="size-8"
+                                asChild
+                            >
                                 <Link href={index.url()}>
                                     <ArrowLeft className="size-4" />
                                 </Link>
                             </Button>
-                            <h1 className="text-xl font-semibold">Detalhes da Permissão</h1>
+                            <h1 className="page-heading-title">
+                                Detalhes da Permissão
+                            </h1>
                         </div>
                         <div className="flex items-center gap-2">
                             <Button
@@ -105,11 +124,18 @@ export default function ShowPermission({ permissionData }: ShowProps) {
                                     <KeyRound className="size-6 text-primary" />
                                 </div>
                                 <div>
-                                    <h2 className="font-bold">{permission.name}</h2>
-                                    <p className="font-mono text-sm text-muted-foreground">{permission.slug}</p>
+                                    <h2 className="font-bold">
+                                        {permission.name}
+                                    </h2>
+                                    <p className="font-mono text-sm text-muted-foreground">
+                                        {permission.slug}
+                                    </p>
                                 </div>
                                 {permission.group && (
-                                    <Badge variant="secondary" className="ml-auto">
+                                    <Badge
+                                        variant="secondary"
+                                        className="ml-auto"
+                                    >
                                         {permission.group}
                                     </Badge>
                                 )}
@@ -117,17 +143,35 @@ export default function ShowPermission({ permissionData }: ShowProps) {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <InfoField label="Nome" value={permission.name} />
-                                <InfoField label="Slug" value={permission.slug} />
-                                <InfoField label="Grupo" value={permission.group} />
+                                <InfoField
+                                    label="Nome"
+                                    value={permission.name}
+                                />
+                                <InfoField
+                                    label="Slug"
+                                    value={permission.slug}
+                                />
+                                <InfoField
+                                    label="Grupo"
+                                    value={permission.group}
+                                />
                                 <div className="sm:col-span-2">
-                                    <InfoField label="Descrição" value={permission.description} />
+                                    <InfoField
+                                        label="Descrição"
+                                        value={permission.description}
+                                    />
                                 </div>
                             </div>
                             <Separator />
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <InfoField label="Criado em" value={formatDate(permission.created_at)} />
-                                <InfoField label="Atualizado em" value={formatDate(permission.updated_at)} />
+                                <InfoField
+                                    label="Criado em"
+                                    value={formatDate(permission.created_at)}
+                                />
+                                <InfoField
+                                    label="Atualizado em"
+                                    value={formatDate(permission.updated_at)}
+                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -139,15 +183,23 @@ export default function ShowPermission({ permissionData }: ShowProps) {
                     <DialogHeader>
                         <DialogTitle>Excluir Permissão</DialogTitle>
                         <DialogDescription>
-                            Tem certeza que deseja excluir a permissão <strong>{permission.name}</strong>? Esta ação não
+                            Tem certeza que deseja excluir a permissão{' '}
+                            <strong>{permission.name}</strong>? Esta ação não
                             pode ser desfeita.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeleteOpen(false)}
+                        >
                             Cancelar
                         </Button>
-                        <Button variant="destructive" disabled={deleting} onClick={handleDelete}>
+                        <Button
+                            variant="destructive"
+                            disabled={deleting}
+                            onClick={handleDelete}
+                        >
                             {deleting ? 'Excluindo...' : 'Excluir'}
                         </Button>
                     </DialogFooter>

@@ -45,7 +45,7 @@ export default function EditTop({ topData }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{top.name}</h1>
+                        <h1 className="page-heading-title">{top.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {top.slug}
                         </p>
@@ -65,13 +65,13 @@ export default function EditTop({ topData }: Props) {
                 >
                     {({ errors, processing }) => (
                         <div className="space-y-4">
-                            <Card>
+                            <Card variant="form">
                                 <CardContent>
                                     <TopFormFields top={top} errors={errors} />
                                 </CardContent>
                             </Card>
 
-                            <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                            <div className="sticky bottom-0 border-t bg-background">
                                 <div className="flex items-center justify-between gap-3 py-3">
                                     <p className="text-xs text-muted-foreground">
                                         Campos marcados com{' '}

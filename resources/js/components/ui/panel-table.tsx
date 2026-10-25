@@ -9,7 +9,7 @@ interface PanelTableProps {
 
 function PanelTable({ className, children }: PanelTableProps) {
     return (
-        <div className={cn('overflow-hidden rounded-md border', className)}>
+        <div className={cn('overflow-hidden', className)}>
             {children}
         </div>
     );
@@ -31,7 +31,7 @@ function PanelTableHead({ columns, className }: PanelTableHeadProps) {
     return (
         <div
             className={cn(
-                'hidden gap-3 border-b border-white/10 bg-data-table-head px-4 py-2 text-xs font-medium text-sidebar-foreground lg:grid',
+                'hidden gap-3 border-b border-border bg-data-table-head px-4 py-4 text-sm font-medium text-muted-foreground lg:grid',
                 className,
             )}
         >
@@ -79,7 +79,7 @@ function PanelTableRow({
     return (
         <Comp
             className={cn(
-                'grid gap-3 px-4 py-3 lg:items-center',
+                'grid gap-3 px-4 py-5 lg:items-center',
                 className,
             )}
         >

@@ -14,18 +14,33 @@ interface PageProps {
 }
 
 function formatBytes(bytes: number | null): string {
-    if (!bytes) return '—';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (!bytes) {
+        return '—';
+    }
+
+    if (bytes < 1024) {
+        return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatModelClass(modelClass: string | undefined): string {
-    if (!modelClass) return '—';
+    if (!modelClass) {
+        return '—';
+    }
+
     return modelClass.split('\\').pop() ?? modelClass;
 }
 
-const EXPORT_STATUS_PRESENTERS: Record<ExportRecord['status'], StatusPresenter> = {
+const EXPORT_STATUS_PRESENTERS: Record<
+    ExportRecord['status'],
+    StatusPresenter
+> = {
     completed: {
         value: 'completed',
         label: 'Concluído',
@@ -53,18 +68,18 @@ const EXPORT_STATUS_PRESENTERS: Record<ExportRecord['status'], StatusPresenter> 
 };
 
 function ExportStatusBadge({ status }: { status: ExportRecord['status'] }) {
-    return <StatusBadge presenter={EXPORT_STATUS_PRESENTERS[status]} showIcon />;
+    return (
+        <StatusBadge presenter={EXPORT_STATUS_PRESENTERS[status]} showIcon />
+    );
 }
 
 function DownloadCell({ record }: { record: ExportRecord }) {
     if (record.status !== 'completed') {
-        return <span className="text-muted-foreground text-xs">—</span>;
+        return <span className="text-xs text-muted-foreground">—</span>;
     }
 
     if (!record.download_url) {
-        return (
-            <span className="text-muted-foreground text-xs">Expirado</span>
-        );
+        return <span className="text-xs text-muted-foreground">Expirado</span>;
     }
 
     return (
@@ -79,7 +94,9 @@ function DownloadCell({ record }: { record: ExportRecord }) {
 
 export default function ExportsIndex({ exports }: PageProps) {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Histórico de Exportações', href: '/exportacoes' }],
+        breadcrumbs: [
+            { title: 'Histórico de Exportações', href: '/exportacoes' },
+        ],
     });
 
     return (
@@ -87,7 +104,7 @@ export default function ExportsIndex({ exports }: PageProps) {
             <Head title="Histórico de Exportações" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Heading
                         title="Histórico de Exportações"
                         description="Todos os arquivos gerados nos últimos 50 registros. Arquivos ficam disponíveis por 1 hora após a conclusão."
@@ -95,8 +112,8 @@ export default function ExportsIndex({ exports }: PageProps) {
 
                     {exports.length === 0 ? (
                         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-                            <FileText className="text-muted-foreground mb-3 size-10" />
-                            <p className="text-muted-foreground text-sm">
+                            <FileText className="mb-3 size-10 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
                                 Nenhuma exportação encontrada.
                             </p>
                         </div>
@@ -104,26 +121,26 @@ export default function ExportsIndex({ exports }: PageProps) {
                         <div className="overflow-hidden rounded-lg border">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="bg-muted/50 border-b">
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                    <tr className="border-b bg-muted/50">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Status
                                         </th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Modelo
                                         </th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Arquivo
                                         </th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Registros
                                         </th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Tamanho
                                         </th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Criado em
                                         </th>
-                                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                                             Expira em
                                         </th>
                                         <th className="px-4 py-3" />
@@ -134,32 +151,45 @@ export default function ExportsIndex({ exports }: PageProps) {
                                         <tr
                                             key={exp.uuid}
                                             className={
-                                                i % 2 === 0 ? 'bg-background' : 'bg-muted/20'
+                                                i % 2 === 0
+                                                    ? 'bg-background'
+                                                    : 'bg-muted/20'
                                             }
                                         >
                                             <td className="px-4 py-3">
-                                                <ExportStatusBadge status={exp.status} />
+                                                <ExportStatusBadge
+                                                    status={exp.status}
+                                                />
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="font-medium">
-                                                        {formatModelClass(exp.model_class)}
+                                                        {formatModelClass(
+                                                            exp.model_class,
+                                                        )}
                                                     </span>
-                                                    <Badge variant="secondary" className="text-[10px]">
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="text-[10px]"
+                                                    >
                                                         {exp.format.toUpperCase()}
                                                     </Badge>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className="text-muted-foreground font-mono text-xs">
+                                                <span className="font-mono text-xs text-muted-foreground">
                                                     {exp.file_name ?? '—'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 tabular-nums">
                                                 {exp.total_records != null ? (
-                                                    exp.total_records.toLocaleString('pt-BR')
+                                                    exp.total_records.toLocaleString(
+                                                        'pt-BR',
+                                                    )
                                                 ) : (
-                                                    <span className="text-muted-foreground">—</span>
+                                                    <span className="text-muted-foreground">
+                                                        —
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 tabular-nums">
@@ -174,7 +204,11 @@ export default function ExportsIndex({ exports }: PageProps) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="text-muted-foreground">
-                                                    {exp.expires_at ? formatDate(exp.expires_at) : '—'}
+                                                    {exp.expires_at
+                                                        ? formatDate(
+                                                              exp.expires_at,
+                                                          )
+                                                        : '—'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">

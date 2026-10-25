@@ -127,7 +127,7 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
             />
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
                     <ClientProfileSidebar
                         client={client}
                         showEmptyContactLinks
@@ -136,7 +136,7 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
                     <main className="min-w-0">
                         <Tabs
                             defaultValue="overview"
-                            className="gap-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[var(--shadow-app-panel)]"
+                            className="gap-0 overflow-hidden rounded-xl border border-border bg-card"
                         >
                             <div className="border-b border-border/70 bg-muted/35">
                                 <TabsList className="h-11 w-full justify-start gap-0 overflow-x-auto rounded-none border-0 bg-transparent p-0">

@@ -14,12 +14,7 @@ import {
     Search,
     Trash2,
 } from 'lucide-react';
-import {
-    useCallback,
-    useDeferredValue,
-    useMemo,
-    useState,
-} from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 
 import {
     create,
@@ -75,7 +70,9 @@ interface CategoryTreeNodeProps {
     onDelete: (category: FinancialCategory) => void;
 }
 
-function flattenCategories(categories: FinancialCategory[]): FinancialCategory[] {
+function flattenCategories(
+    categories: FinancialCategory[],
+): FinancialCategory[] {
     return categories.flatMap((category) => [
         category,
         ...flattenCategories(category.children ?? []),
@@ -163,7 +160,10 @@ function getExpandedIds(categories: FinancialCategory[]): Set<number> {
     return ids;
 }
 
-function buildTreeUrl(typeFilter: TypeFilter, statusFilter: StatusFilter): string {
+function buildTreeUrl(
+    typeFilter: TypeFilter,
+    statusFilter: StatusFilter,
+): string {
     const params = new URLSearchParams();
 
     if (typeFilter !== 'all') {
@@ -464,7 +464,7 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
             <Head title="Categorias financeiras" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <Heading
                             title="Categorias financeiras"
@@ -548,7 +548,9 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                         Profundidade
                                     </p>
                                     <p className="text-2xl font-semibold">
-                                        {stats.total > 0 ? stats.maxDepth + 1 : 0}
+                                        {stats.total > 0
+                                            ? stats.maxDepth + 1
+                                            : 0}
                                     </p>
                                 </div>
                                 <Filter className="size-5 text-amber-600" />
@@ -565,7 +567,7 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                         </CardHeader>
                         <CardContent className="grid gap-3 md:grid-cols-[1fr_180px_180px_auto]">
                             <div className="relative">
-                                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     value={search}
                                     onChange={(event) =>
@@ -610,7 +612,9 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="active">Ativas</SelectItem>
+                                    <SelectItem value="active">
+                                        Ativas
+                                    </SelectItem>
                                     <SelectItem value="inactive">
                                         Inativas
                                     </SelectItem>

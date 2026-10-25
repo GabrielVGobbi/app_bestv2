@@ -14,7 +14,7 @@ if (import.meta.env.DEV) {
     void import('react-grab');
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = 'BestPlay';
 const queryClient = new QueryClient();
 
 void createInertiaApp({

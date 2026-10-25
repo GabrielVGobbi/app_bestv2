@@ -38,7 +38,7 @@ export function Section({
             {title || action ? (
                 <header className="flex min-h-7 items-center justify-between gap-3">
                     {title ? (
-                        <h2 className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                        <h2 className="text-xs font-medium text-muted-foreground">
                             {title}
                         </h2>
                     ) : (
@@ -66,10 +66,7 @@ export function Panel({
 }) {
     return (
         <section
-            className={cn(
-                'rounded-xl border border-border/80 bg-card shadow-[var(--shadow-app-panel)]',
-                className,
-            )}
+            className={cn('rounded-xl border border-border bg-card', className)}
         >
             <header className="flex min-h-10 items-center justify-between gap-3 px-5 pt-4">
                 <h2 className="text-sm font-semibold">{title}</h2>
@@ -202,7 +199,9 @@ export function SidebarContactRow({
                 label={label}
                 className="w-full px-2 py-1.5 text-sm text-muted-foreground"
             >
-                <span className="flex min-w-0 items-center gap-2">{content}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                    {content}
+                </span>
             </CopyableText>
         );
     }
@@ -289,7 +288,9 @@ export function DefaultAddressPanel({ address }: { address?: Address }) {
         <div className="space-y-2">
             <div className="flex items-center gap-2">
                 <MapPin className="size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">{address.name || 'Endereço'}</p>
+                <p className="text-sm font-medium">
+                    {address.name || 'Endereço'}
+                </p>
                 <Badge
                     variant="secondary"
                     className="h-5 rounded-sm px-1.5 text-[10px]"

@@ -1,0 +1,325 @@
+@theme {
+    --font-sans:
+        'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+    --font-mono:
+        ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
+    --font-brand: 'Lora', Georgia, serif;
+    --font-editorial: 'Lora', Georgia, serif;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+
+    --radius: 0.75rem;
+    --radius-xs: 0.375rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.625rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-card-background: var(--card-background);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-light: var(--primary-light);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-soft: var(--success-soft);
+    --color-success-soft-foreground: var(--success-soft-foreground);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-soft-foreground: var(--warning-soft-foreground);
+
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-soft: var(--info-soft);
+    --color-info-soft-foreground: var(--info-soft-foreground);
+
+    --color-inflow: var(--inflow);
+    --color-inflow-foreground: var(--inflow-foreground);
+    --color-inflow-soft: var(--inflow-soft);
+    --color-inflow-soft-foreground: var(--inflow-soft-foreground);
+
+    --color-outflow: var(--outflow);
+    --color-outflow-foreground: var(--outflow-foreground);
+    --color-outflow-soft: var(--outflow-soft);
+    --color-outflow-soft-foreground: var(--outflow-soft-foreground);
+
+    --color-destructive-soft: var(--destructive-soft);
+    --color-destructive-soft-foreground: var(--destructive-soft-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-muted: var(--sidebar-muted);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-canvas: var(--canvas);
+
+    --color-brand-pink: var(--brand-pink);
+    --color-brand-red: var(--brand-red);
+    --color-brand-blue: var(--brand-blue);
+    --color-brand-teal: var(--brand-pink);
+    --color-brand-surface: var(--brand-surface);
+    --color-brand-surface-strong: var(--brand-surface-strong);
+    --color-brand-muted: var(--brand-muted);
+    --color-brand-focus: var(--brand-focus);
+    --color-brand-danger: var(--brand-danger);
+    --color-runey-orange: var(--orange);
+
+    --color-app-surface: var(--app-surface);
+    --color-app-surface-raised: var(--app-surface-raised);
+    --color-app-surface-foreground: var(--app-surface-foreground);
+    --color-app-line: var(--app-line);
+
+    --shadow-app-panel: 0 8px 30px -24px rgb(0 0 0 / 18%);
+    --shadow-app-floating: 0 28px 80px -34px rgb(0 0 0 / 24%);
+    --shadow-app-header: 0 12px 32px -30px rgb(0 0 0 / 18%);
+
+    --z-header: 30;
+    --z-sidebar: 40;
+    --z-overlay: 50;
+    --z-modal: 60;
+
+    --container-8xl: 88rem;
+    --container-9xl: 96rem;
+    --container-10xl: 100rem;
+
+    --spacing-header: 3.75rem;
+    --color-header-background: var(--header-background);
+    --color-header-foreground: var(--header-foreground);
+    --color-header-border: var(--header-border);
+
+    --color-table-background: var(--table-background);
+    --color-table-text: var(--table-text);
+}
+
+:root {
+    color-scheme: light;
+
+    --background: #ffffff;
+    --foreground: #171717;
+    --card: #ffffff;
+    --card-foreground: #171717;
+    --popover: #ffffff;
+    --popover-foreground: #171717;
+
+    --primary: #eb0459;
+    --primary-light: #ff6699;
+    --primary-foreground: #ffffff;
+
+    --secondary: #f3f3f3;
+    --secondary-foreground: #171717;
+    --muted: #f6f6f6;
+    --muted-foreground: #737373;
+    --accent: #efefec;
+    --accent-foreground: #252522;
+
+    --destructive: #e60023;
+    --destructive-foreground: #ffffff;
+    --destructive-soft: color-mix(in oklab, #e60023 12%, white);
+    --destructive-soft-foreground: #b0001b;
+    --success: #008f5f;
+    --success-foreground: #ffffff;
+    --success-soft: color-mix(in oklab, #008f5f 12%, white);
+    --success-soft-foreground: #086647;
+    --warning: #f59e0b;
+    --warning-foreground: #2d1800;
+    --warning-soft: color-mix(in oklab, #f59e0b 18%, white);
+    --warning-soft-foreground: #8a5a00;
+    --info: #3654d4;
+    --info-foreground: #ffffff;
+    --info-soft: color-mix(in oklab, #3654d4 12%, white);
+    --info-soft-foreground: #2a3fa8;
+    --inflow: #278569;
+    --inflow-foreground: #ffffff;
+    --inflow-soft: var(--success-soft);
+    --inflow-soft-foreground: var(--success-soft-foreground);
+    --outflow: #b94141;
+    --outflow-foreground: #ffffff;
+    --outflow-soft: var(--destructive-soft);
+    --outflow-soft-foreground: var(--destructive-soft-foreground);
+    --orange: #f97316;
+
+    --border: #e9e9e9;
+    --input: #dedede;
+    --ring: rgb(235 4 89 / 42%);
+
+    --chart-1: #eb0459;
+    --chart-2: #3654d4;
+    --chart-3: #f97316;
+    --chart-4: #0f9f7a;
+    --chart-5: #a855f7;
+
+    --brand-pink: #eb0459;
+    --brand-red: #b80643;
+    --brand-blue: #3654d4;
+    --brand-teal: var(--brand-pink);
+    --brand-surface: #fff7fb;
+    --brand-surface-strong: #ffe0ec;
+    --brand-muted: #52525b;
+    --brand-focus: rgb(235 4 89 / 42%);
+    --brand-danger: #e60023;
+    --brand-shadow-primary: 0 12px 28px -16px rgb(235 4 89 / 70%);
+
+    --app-surface: #ffffff;
+    --app-surface-raised: #f7f7f5;
+    --app-surface-foreground: #171717;
+    --app-line: #e5e5e5;
+
+    --canvas: #f6f6f3;
+
+    --sidebar: #f6f6f6;
+    --sidebar-foreground: #252522;
+    --sidebar-primary: #eb0459;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #ffffff;
+    --sidebar-accent-foreground: #20201e;
+    --sidebar-muted: #6c6c65;
+    --sidebar-border: #e7e7e2;
+    --sidebar-ring: rgb(235 4 89 / 42%);
+
+    --header-background: #ffffff;
+    --header-foreground: #252522;
+    --header-border: #e7e7e2;
+
+    --table-background: #ffffff;
+    --table-text: #666660;
+    --card-background: var(--secondary);
+}
+
+.dark {
+    color-scheme: dark;
+
+    --background: #101010;
+    --foreground: #f6f7fb;
+    --card: #171717;
+    --card-foreground: #f6f7fb;
+    --popover: #1b1b1b;
+    --popover-foreground: #f6f7fb;
+
+    --primary: #ff2b73;
+    --primary-light: #ff7aa6;
+    --primary-foreground: #10080d;
+
+    --secondary: #282828;
+    --secondary-foreground: #f6f7fb;
+    --muted: #202020;
+    --muted-foreground: #a3a3a3;
+    --accent: #30302d;
+    --accent-foreground: #f5f5ef;
+
+    --destructive: #ff4d5f;
+    --destructive-foreground: #130509;
+    --destructive-soft: color-mix(in oklab, #ff4d5f 22%, #171717);
+    --destructive-soft-foreground: #ff8a94;
+    --success: #31c48d;
+    --success-foreground: #06120d;
+    --success-soft: color-mix(in oklab, #31c48d 22%, #171717);
+    --success-soft-foreground: #6ee7b7;
+    --warning: #fbbf24;
+    --warning-foreground: #1f1600;
+    --warning-soft: color-mix(in oklab, #fbbf24 22%, #171717);
+    --warning-soft-foreground: #fcd34d;
+    --info: #7c8cff;
+    --info-foreground: #0b1024;
+    --info-soft: color-mix(in oklab, #7c8cff 22%, #171717);
+    --info-soft-foreground: #c4cbff;
+    --inflow: #31c48d;
+    --inflow-foreground: #06120d;
+    --inflow-soft: var(--success-soft);
+    --inflow-soft-foreground: var(--success-soft-foreground);
+    --outflow: #ff4d5f;
+    --outflow-foreground: #130509;
+    --outflow-soft: var(--destructive-soft);
+    --outflow-soft-foreground: var(--destructive-soft-foreground);
+    --orange: #fb923c;
+
+    --border: #303030;
+    --input: #383838;
+    --ring: rgb(255 43 115 / 48%);
+
+    --chart-1: #ff2b73;
+    --chart-2: #7c8cff;
+    --chart-3: #fb923c;
+    --chart-4: #31c48d;
+    --chart-5: #c084fc;
+
+    --brand-pink: #ff2b73;
+    --brand-red: #d90b4e;
+    --brand-blue: #7c8cff;
+    --brand-teal: var(--brand-pink);
+    --brand-surface: #23131d;
+    --brand-surface-strong: #351927;
+    --brand-muted: #9aa4b2;
+    --brand-focus: rgb(255 43 115 / 48%);
+    --brand-danger: #ff4d5f;
+    --brand-shadow-primary: 0 14px 30px -18px rgb(255 43 115 / 80%);
+
+    --app-surface: #171717;
+    --app-surface-raised: #202020;
+    --app-surface-foreground: #f6f7fb;
+    --app-line: #303030;
+
+    --canvas: #101010;
+
+    --sidebar: #202020;
+    --sidebar-foreground: #f6f7fb;
+    --sidebar-primary: #ff2b73;
+    --sidebar-primary-foreground: #10080d;
+    --sidebar-accent: #30302e;
+    --sidebar-accent-foreground: #f5f5f3;
+    --sidebar-muted: #a1a1aa;
+    --sidebar-border: #303030;
+    --sidebar-ring: var(--brand-focus);
+
+    --header-background: #171717;
+    --header-foreground: #f6f7fb;
+    --header-border: #2a2a2a;
+
+    --table-background: #202020;
+    --table-text: #f5f5f5;
+    --card-background: var(--secondary);
+
+    --shadow-app-panel: 0 18px 48px -36px rgb(0 0 0 / 55%);
+    --shadow-app-floating: 0 24px 56px -32px rgb(0 0 0 / 65%);
+    --shadow-app-header: 0 12px 32px -28px rgb(0 0 0 / 50%);
+}

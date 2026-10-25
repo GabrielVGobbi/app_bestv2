@@ -42,7 +42,7 @@ export default function EditClient({ clientData }: Props) {
             />
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
                     <ClientProfileSidebar client={client} />
 
                     <main className="min-w-0">
@@ -51,15 +51,13 @@ export default function EditClient({ clientData }: Props) {
                             method="put"
                             options={{ preserveScroll: true }}
                             onError={() =>
-                                toast.error(
-                                    'Verifique os campos obrigatórios.',
-                                )
+                                toast.error('Verifique os campos obrigatórios.')
                             }
                             className="flex h-full flex-col"
                         >
                             {({ errors, processing }) => (
                                 <div className="flex flex-1 flex-col gap-4">
-                                    <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-[var(--shadow-app-panel)]">
+                                    <div className="overflow-hidden rounded-xl border border-border bg-card">
                                         <div className="p-5 sm:p-6">
                                             <ClientFormFields
                                                 client={client}

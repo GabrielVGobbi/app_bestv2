@@ -16,8 +16,8 @@ import {
     richTextEditor,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
 import { storeImage } from '@/actions/App/Http/Controllers/Api/UploadController';
-import { RichTextEditor } from '@/components/rich-text-editor';
 import Heading from '@/components/heading';
+import { RichTextEditor } from '@/components/rich-text-editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -231,7 +231,9 @@ function PropRow({
     return (
         <div className="grid gap-1 border-b py-3 last:border-b-0">
             <div className="flex flex-wrap items-center gap-2">
-                <code className="text-sm font-semibold text-primary">{name}</code>
+                <code className="text-sm font-semibold text-primary">
+                    {name}
+                </code>
                 {required && <Badge variant="outline">obrigatorio</Badge>}
             </div>
             <code className="w-fit rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
@@ -269,6 +271,7 @@ export default function RichTextEditorPage() {
             },
         });
         const data = (await res.json()) as { url: string };
+
         return data.url;
     }
 
@@ -277,8 +280,7 @@ export default function RichTextEditorPage() {
             <Head title="Rich Text Editor" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-
+                <div className="page-section">
                     {/* Header */}
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <Heading
@@ -326,7 +328,9 @@ export default function RichTextEditorPage() {
                                 <div className="flex flex-wrap gap-2">
                                     <Button
                                         type="button"
-                                        variant={disabled ? 'default' : 'outline'}
+                                        variant={
+                                            disabled ? 'default' : 'outline'
+                                        }
                                         size="sm"
                                         onClick={() => setDisabled((d) => !d)}
                                     >
@@ -336,7 +340,11 @@ export default function RichTextEditorPage() {
                                         <Button
                                             key={h}
                                             type="button"
-                                            variant={minHeight === h ? 'default' : 'outline'}
+                                            variant={
+                                                minHeight === h
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
                                             size="sm"
                                             onClick={() => setMinHeight(h)}
                                         >
@@ -360,7 +368,7 @@ export default function RichTextEditorPage() {
                                 <div className="mb-1 text-xs font-medium text-muted-foreground">
                                     HTML gerado (value)
                                 </div>
-                                <code className="break-all text-xs">
+                                <code className="text-xs break-all">
                                     {body || (
                                         <span className="text-muted-foreground">
                                             vazio
@@ -420,39 +428,49 @@ export default function RichTextEditorPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="mb-4 rounded-lg border bg-muted/20 p-4 text-sm">
-                                <p className="font-medium">Por que uma tabela separada?</p>
+                                <p className="font-medium">
+                                    Por que uma tabela separada?
+                                </p>
                                 <ul className="mt-2 list-disc space-y-1 pl-4 text-muted-foreground">
                                     <li>
-                                        Um campo <code>LONGTEXT</code> com HTML/JSON pesado é
-                                        transmitido em <strong>todo SELECT</strong> mesmo que
+                                        Um campo <code>LONGTEXT</code> com
+                                        HTML/JSON pesado é transmitido em{' '}
+                                        <strong>todo SELECT</strong> mesmo que
                                         você nunca use o conteúdo na listagem.
                                     </li>
                                     <li>
-                                        Com a tabela separada, listagens de posts/artigos
-                                        ficam leves. O conteúdo é carregado{' '}
-                                        <strong>apenas na show page</strong> com uma query extra.
+                                        Com a tabela separada, listagens de
+                                        posts/artigos ficam leves. O conteúdo é
+                                        carregado{' '}
+                                        <strong>apenas na show page</strong> com
+                                        uma query extra.
                                     </li>
                                     <li>
-                                        A relação polimórfica permite reutilizar em{' '}
-                                        <code>Post</code>, <code>Task</code>,{' '}
-                                        <code>Comment</code> ou qualquer outro model sem
-                                        criar novas tabelas.
+                                        A relação polimórfica permite reutilizar
+                                        em <code>Post</code>, <code>Task</code>,{' '}
+                                        <code>Comment</code> ou qualquer outro
+                                        model sem criar novas tabelas.
                                     </li>
                                     <li>
-                                        O campo <code>field</code> permite múltiplos blocos
-                                        ricos por entidade (ex: <em>body</em>,{' '}
-                                        <em>summary</em>, <em>notes</em>).
+                                        O campo <code>field</code> permite
+                                        múltiplos blocos ricos por entidade (ex:{' '}
+                                        <em>body</em>, <em>summary</em>,{' '}
+                                        <em>notes</em>).
                                     </li>
                                 </ul>
                             </div>
 
                             <div className="grid gap-4 xl:grid-cols-2">
                                 <div className="space-y-4">
-                                    <p className="text-sm font-medium">Schema SQL</p>
+                                    <p className="text-sm font-medium">
+                                        Schema SQL
+                                    </p>
                                     <CodeBlock code={sqlSchemaCode} />
                                 </div>
                                 <div className="space-y-4">
-                                    <p className="text-sm font-medium">Trait + Controller</p>
+                                    <p className="text-sm font-medium">
+                                        Trait + Controller
+                                    </p>
                                     <CodeBlock code={traitUsageCode} />
                                 </div>
                             </div>
@@ -480,8 +498,8 @@ export default function RichTextEditorPage() {
                                     Imagens: S3 vs base64
                                 </CardTitle>
                                 <CardDescription>
-                                    Nunca salve base64 no banco. Sempre faça upload
-                                    e salve a URL.
+                                    Nunca salve base64 no banco. Sempre faça
+                                    upload e salve a URL.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -490,9 +508,17 @@ export default function RichTextEditorPage() {
                                         base64 no banco — problemas:
                                     </p>
                                     <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
-                                        <li>Tamanho 33% maior que o arquivo original</li>
-                                        <li>Sem CDN, sem cache de borda, sem resize automático</li>
-                                        <li>Tabela cresce até GBs rapidamente</li>
+                                        <li>
+                                            Tamanho 33% maior que o arquivo
+                                            original
+                                        </li>
+                                        <li>
+                                            Sem CDN, sem cache de borda, sem
+                                            resize automático
+                                        </li>
+                                        <li>
+                                            Tabela cresce até GBs rapidamente
+                                        </li>
                                         <li>Backup lento, dump pesado</li>
                                     </ul>
                                 </div>
@@ -501,10 +527,22 @@ export default function RichTextEditorPage() {
                                         S3 / storage + URL — recomendado:
                                     </p>
                                     <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
-                                        <li>Upload via endpoint dedicado, retorna URL pública</li>
-                                        <li>CDN entrega direto ao cliente (sem passar pelo PHP)</li>
-                                        <li>Resize e otimização via Imgproxy / Cloudflare Images</li>
-                                        <li>Banco armazena apenas uma string pequena</li>
+                                        <li>
+                                            Upload via endpoint dedicado,
+                                            retorna URL pública
+                                        </li>
+                                        <li>
+                                            CDN entrega direto ao cliente (sem
+                                            passar pelo PHP)
+                                        </li>
+                                        <li>
+                                            Resize e otimização via Imgproxy /
+                                            Cloudflare Images
+                                        </li>
+                                        <li>
+                                            Banco armazena apenas uma string
+                                            pequena
+                                        </li>
                                     </ul>
                                 </div>
                                 <CodeBlock code={imageStorageCode} />
@@ -566,7 +604,8 @@ export default function RichTextEditorPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Layers className="size-5" />
-                                WYSIWYG vs Editor de Blocos — quando usar cada um
+                                WYSIWYG vs Editor de Blocos — quando usar cada
+                                um
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -576,14 +615,25 @@ export default function RichTextEditorPage() {
                                         WYSIWYG (este componente — TipTap)
                                     </p>
                                     <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
-                                        <li>Ideal para: posts, artigos, descrições, e-mails</li>
-                                        <li>Output: HTML limpo — fácil de exibir e indexar</li>
-                                        <li>Curva de aprendizado: zero para o usuário final</li>
                                         <li>
-                                            Bibliotecas:{' '}
-                                            <strong>TipTap</strong> (headless, extensível) →{' '}
-                                            <strong>Quill 2</strong> (simples, maduro) →{' '}
-                                            <strong>CKEditor 5</strong> (enterprise)
+                                            Ideal para: posts, artigos,
+                                            descrições, e-mails
+                                        </li>
+                                        <li>
+                                            Output: HTML limpo — fácil de exibir
+                                            e indexar
+                                        </li>
+                                        <li>
+                                            Curva de aprendizado: zero para o
+                                            usuário final
+                                        </li>
+                                        <li>
+                                            Bibliotecas: <strong>TipTap</strong>{' '}
+                                            (headless, extensível) →{' '}
+                                            <strong>Quill 2</strong> (simples,
+                                            maduro) →{' '}
+                                            <strong>CKEditor 5</strong>{' '}
+                                            (enterprise)
                                         </li>
                                     </ul>
                                 </div>
@@ -593,16 +643,24 @@ export default function RichTextEditorPage() {
                                     </p>
                                     <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
                                         <li>
-                                            Ideal para: wikis, bases de conhecimento,
-                                            construtores de páginas, docs internos
+                                            Ideal para: wikis, bases de
+                                            conhecimento, construtores de
+                                            páginas, docs internos
                                         </li>
-                                        <li>Output: JSON estruturado por bloco</li>
-                                        <li>Mais flexível para reordenar e transformar blocos</li>
+                                        <li>
+                                            Output: JSON estruturado por bloco
+                                        </li>
+                                        <li>
+                                            Mais flexível para reordenar e
+                                            transformar blocos
+                                        </li>
                                         <li>
                                             Bibliotecas:{' '}
-                                            <strong>BlockNote</strong> (TipTap por baixo, pronto) →{' '}
-                                            <strong>Editor.js</strong> (leve, modular) →{' '}
-                                            <strong>Plate</strong> (Slate, altamente customizável)
+                                            <strong>BlockNote</strong> (TipTap
+                                            por baixo, pronto) →{' '}
+                                            <strong>Editor.js</strong> (leve,
+                                            modular) → <strong>Plate</strong>{' '}
+                                            (Slate, altamente customizável)
                                         </li>
                                     </ul>
                                 </div>
@@ -610,14 +668,14 @@ export default function RichTextEditorPage() {
 
                             <div className="mt-4 rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
                                 <strong>Dica de arquitetura:</strong> a tabela{' '}
-                                <code>rich_texts</code> suporta ambos via o campo{' '}
-                                <code>format</code> (<code>html</code> para WYSIWYG,{' '}
-                                <code>tiptap_json</code> para blocos). Se migrar para
-                                blocos no futuro, só muda o frontend — o banco continua o mesmo.
+                                <code>rich_texts</code> suporta ambos via o
+                                campo <code>format</code> (<code>html</code>{' '}
+                                para WYSIWYG, <code>tiptap_json</code> para
+                                blocos). Se migrar para blocos no futuro, só
+                                muda o frontend — o banco continua o mesmo.
                             </div>
                         </CardContent>
                     </Card>
-
                 </div>
             </div>
         </>

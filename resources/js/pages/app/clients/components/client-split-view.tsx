@@ -29,7 +29,7 @@ export function ClientSplitView({
     onRetryDetails,
 }: ClientSplitViewProps) {
     return (
-        <div className="grid h-full min-h-0 flex-1 grid-rows-[minmax(22rem,0.8fr)_minmax(28rem,1.2fr)] gap-4 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)] lg:grid-rows-none">
+        <div className="grid min-h-0 flex-1 grid-rows-[24rem_auto] gap-5 lg:h-full lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-none lg:overflow-hidden">
             <ClientCardList
                 selectedUuid={selectedUuid}
                 search={search}

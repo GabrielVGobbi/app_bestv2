@@ -96,7 +96,7 @@ export default function ActivityActionsPlayground({
             <Head title="Activity Actions playground" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <Heading
                             title="Activity Actions"
@@ -115,7 +115,8 @@ export default function ActivityActionsPlayground({
                                     Catálogo central
                                 </CardTitle>
                                 <CardDescription>
-                                    Labels, eventos, canais, icones e severidade saem do backend.
+                                    Labels, eventos, canais, icones e severidade
+                                    saem do backend.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -126,7 +127,8 @@ export default function ActivityActionsPlayground({
                                     Logs reais
                                 </CardTitle>
                                 <CardDescription>
-                                    Os testes gravam em activity_log com properties.test=true.
+                                    Os testes gravam em activity_log com
+                                    properties.test=true.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -137,7 +139,9 @@ export default function ActivityActionsPlayground({
                                     Relatorios
                                 </CardTitle>
                                 <CardDescription>
-                                    Os filtros por usuario, data, canal, evento e action_key usam a mesma API da tela principal.
+                                    Os filtros por usuario, data, canal, evento
+                                    e action_key usam a mesma API da tela
+                                    principal.
                                 </CardDescription>
                             </CardHeader>
                         </Card>
@@ -147,7 +151,8 @@ export default function ActivityActionsPlayground({
                         <CardHeader>
                             <CardTitle>Açõesconfiguradas</CardTitle>
                             <CardDescription>
-                                Clique para emitir um log de teste com o seu usuario como causador.
+                                Clique para emitir um log de teste com o seu
+                                usuario como causador.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -190,7 +195,9 @@ export default function ActivityActionsPlayground({
                                                 size="sm"
                                                 variant="outline"
                                                 disabled={loading !== null}
-                                                onClick={() => void seed(action.key)}
+                                                onClick={() =>
+                                                    void seed(action.key)
+                                                }
                                             >
                                                 {loading === action.key ? (
                                                     <RefreshCw className="size-3.5 animate-spin" />
@@ -246,13 +253,17 @@ export default function ActivityActionsPlayground({
                                                             log.event}
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
-                                                        {log.causer?.name ?? 'Sistema'}
+                                                        {log.causer?.name ??
+                                                            'Sistema'}
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
-                                                        {log.subject?.name ?? '-'}
+                                                        {log.subject?.name ??
+                                                            '-'}
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
-                                                        {formatDate(log.created_at)}
+                                                        {formatDate(
+                                                            log.created_at,
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}

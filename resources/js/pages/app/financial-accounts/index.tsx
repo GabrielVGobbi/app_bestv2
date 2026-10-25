@@ -9,6 +9,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialAccountController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
 import Heading from '@/components/heading';
@@ -71,22 +72,21 @@ export default function FinancialAccountsIndex() {
         <>
             <Head title="Contas financeiras" />
 
+            <ContentHeader>
+                <Heading
+                    title="Contas financeiras"
+                    description="Cadastre bancos, caixas, carteiras e gateways usados em baixas e conciliação"
+                />
+
+                <Button asChild>
+                    <Link href={create.url()}>
+                        <Plus className="size-4" />
+                        Nova conta
+                    </Link>
+                </Button>
+            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Contas financeiras"
-                            description="Cadastre bancos, caixas, carteiras e gateways usados em baixas e conciliação"
-                        />
-
-                        <Button asChild>
-                            <Link href={create.url()}>
-                                <Plus className="size-4" />
-                                Nova conta
-                            </Link>
-                        </Button>
-                    </div>
-
+                <div className="page-section">
                     <FinancialAccountDeleteDialog
                         financialAccount={financialAccountToDelete}
                         onCancel={() => setFinancialAccountToDelete(null)}
@@ -98,7 +98,9 @@ export default function FinancialAccountsIndex() {
                         endpoint={apiRoutes.financialAccounts.index}
                         mode="infinite-scroll"
                         columns={columns}
-                        keyExtractor={(financialAccount) => financialAccount.uuid}
+                        keyExtractor={(financialAccount) =>
+                            financialAccount.uuid
+                        }
                         features={{
                             search: true,
                             filters: true,

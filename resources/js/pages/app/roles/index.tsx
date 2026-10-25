@@ -168,7 +168,7 @@ export default function RolesIndex() {
             <Head title="Papéis" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex items-center justify-between gap-4">
                         <Heading
                             title="Papéis"
@@ -233,9 +233,7 @@ export default function RolesIndex() {
                                 </Button>
                                 <Button
                                     onClick={handleCreate}
-                                    disabled={
-                                        submitting || !form.name
-                                    }
+                                    disabled={submitting || !form.name}
                                 >
                                     {submitting ? 'Criando...' : 'Criar'}
                                 </Button>

@@ -37,8 +37,11 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: #0d0d0d;
+                background: #f6f6f3;
+                color: #252522;
             }
+
+            html.dark #boot-shell { background: #171717; color: #f5f5f5; }
 
             #boot-loading {
                 position: fixed;
@@ -88,25 +91,20 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>BestPlay</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
         <div id="boot-shell" aria-hidden="true">
-            <svg width="240" height="160" viewBox="0 0 240 160" role="img" aria-label="Runey">
-                <rect width="240" height="160" fill="#0d0d0d" />
-                <circle cx="120" cy="76" r="32" fill="#ededed" />
-                <text x="120" y="90" fill="#0d0d0d" font-family="Poppins, -apple-system, BlinkMacSystemFont, sans-serif" font-size="38" font-weight="700" text-anchor="middle">R</text>
-            </svg>
+            <span style="font: 600 24px/1.4 system-ui, sans-serif; letter-spacing: -0.04em">BestPlay<span style="color: #eb0459">.</span></span>
         </div>
 
-        <div id="boot-loading" role="status">Rendering...</div>
+        <div id="boot-loading" role="status">Carregando BestPlay…</div>
 
         <noscript>
             <style>
@@ -114,7 +112,7 @@
                     display: none;
                 }
             </style>
-            <div id="noscript-notice">This page requires JavaScript to display.</div>
+            <div id="noscript-notice">Ative o JavaScript para acessar a BestPlay.</div>
         </noscript>
 
         <x-inertia::app />

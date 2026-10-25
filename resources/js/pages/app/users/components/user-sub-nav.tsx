@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react';
 import { Eye, KeyRound, Pencil, Shield } from 'lucide-react';
 
 import {
@@ -7,7 +6,7 @@ import {
     show,
     userPermissions,
 } from '@/actions/App/Http/Controllers/UserController';
-import { cn } from '@/lib/utils';
+import { SubNavigation } from '@/components/sub-navigation';
 
 type UserPage = 'show' | 'edit' | 'roles' | 'permissions';
 
@@ -24,7 +23,7 @@ const navItems: {
 }[] = [
     {
         key: 'show',
-        label: 'Visão Geral',
+        label: 'Visão geral',
         icon: Eye,
         getHref: (uuid) => show.url(uuid),
     },
@@ -50,26 +49,12 @@ const navItems: {
 
 export function UserSubNav({ userUuid, currentPage }: UserSubNavProps) {
     return (
-        <nav className="flex gap-1 rounded-lg border bg-muted/30 p-1">
-            {navItems.map(({ key, label, icon: Icon, getHref }) => {
-                const isActive = key === currentPage;
-
-                return (
-                    <Link
-                        key={key}
-                        href={getHref(userUuid)}
-                        className={cn(
-                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                            isActive
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
-                        )}
-                    >
-                        <Icon className="size-3.5" />
-                        <span className="hidden sm:inline">{label}</span>
-                    </Link>
-                );
-            })}
-        </nav>
+        <SubNavigation
+            current={currentPage}
+            items={navItems.map((item) => ({
+                ...item,
+                href: item.getHref(userUuid),
+            }))}
+        />
     );
 }

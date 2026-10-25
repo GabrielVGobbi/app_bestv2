@@ -4,12 +4,13 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Check, ExternalLink, Eye, Music2 } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { index as playlistsIndex } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import {
     complete,
     index,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistDeliveryTaskController';
-import { index as playlistsIndex } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import { show as showSale } from '@/actions/App/Modules/Sales/Http/Controllers/SaleController';
+import ContentHeader from '@/components/content-header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -169,7 +170,8 @@ export default function PlaylistDeliveryTaskIndex({
                             {row.original.sale_order_number ?? '-'}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                            {row.original.client_name ?? 'Cliente não informado'}
+                            {row.original.client_name ??
+                                'Cliente não informado'}
                         </p>
                     </div>
                 ),
@@ -247,7 +249,11 @@ export default function PlaylistDeliveryTaskIndex({
                 disabled: (task) => !task.playlist?.spotify_url,
                 onClick: (task) => {
                     if (task.playlist?.spotify_url) {
-                        window.open(task.playlist.spotify_url, '_blank', 'noopener,noreferrer');
+                        window.open(
+                            task.playlist.spotify_url,
+                            '_blank',
+                            'noopener,noreferrer',
+                        );
                     }
                 },
             },
@@ -275,7 +281,8 @@ export default function PlaylistDeliveryTaskIndex({
             showLabel: false,
             tooltip: 'Ver venda',
             disabled: (task) => !task.sale?.uuid,
-            href: (task) => (task.sale?.uuid ? showSale.url(task.sale.uuid) : '#'),
+            href: (task) =>
+                task.sale?.uuid ? showSale.url(task.sale.uuid) : '#',
         });
 
         if (permissions.can_complete) {
@@ -306,21 +313,20 @@ export default function PlaylistDeliveryTaskIndex({
         <>
             <Head title="Fila de Playlists" />
 
+            <ContentHeader>
+                <Heading
+                    title="Fila de Playlists"
+                    description="Checklist operacional para adicionar, remover e trocar músicas manualmente no Spotify."
+                />
+                <Button variant="outline" asChild>
+                    <Link href={playlistsIndex.url()}>
+                        <Music2 className="size-4" />
+                        Playlists
+                    </Link>
+                </Button>
+            </ContentHeader>
             <div className="page-wrapper-xl">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Fila de Playlists"
-                            description="Checklist operacional para adicionar, remover e trocar músicas manualmente no Spotify."
-                        />
-                        <Button variant="outline" asChild>
-                            <Link href={playlistsIndex.url()}>
-                                <Music2 className="size-4" />
-                                Playlists
-                            </Link>
-                        </Button>
-                    </div>
-
+                <div className="page-section">
                     <DataTable<PlaylistDeliveryTask>
                         queryKey={tableQueryKey}
                         endpoint={apiRoutes.playlistDeliveryTasks.index}

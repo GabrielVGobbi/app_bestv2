@@ -27,13 +27,18 @@ export default function CreateSupplier() {
 
             <Header>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8"
+                        asChild
+                    >
                         <Link href={index.url()}>
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">Novo fornecedor</h1>
+                        <h1 className="page-heading-title">Novo fornecedor</h1>
                         <p className="text-sm text-muted-foreground">
                             Cadastrar contraparte de contas a pagar
                         </p>
@@ -46,15 +51,19 @@ export default function CreateSupplier() {
                     action={store.url()}
                     method="post"
                     options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatórios.')}
+                    onError={() =>
+                        toast.error('Verifique os campos obrigatórios.')
+                    }
                     className="flex h-full flex-col"
                 >
                     {({ errors, processing }) => (
                         <div className="space-y-4">
                             <div className="flex flex-1 flex-col gap-6">
-                                <Card>
+                                <Card variant="form">
                                     <CardHeader>
-                                        <CardTitle>Dados do Fornecedor</CardTitle>
+                                        <CardTitle>
+                                            Dados do Fornecedor
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <SupplierFormFields errors={errors} />
@@ -62,11 +71,13 @@ export default function CreateSupplier() {
                                 </Card>
                             </div>
 
-                            <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
+                            <div className="sticky bottom-0 border-t bg-background">
                                 <div className="flex items-center justify-between gap-3 py-3">
                                     <p className="text-xs text-muted-foreground">
                                         Campos marcados com{' '}
-                                        <span className="text-destructive">*</span>{' '}
+                                        <span className="text-destructive">
+                                            *
+                                        </span>{' '}
                                         são obrigatórios.
                                     </p>
                                     <div className="flex items-center gap-2">
@@ -77,7 +88,9 @@ export default function CreateSupplier() {
                                             asChild
                                             disabled={processing}
                                         >
-                                            <Link href={index.url()}>Cancelar</Link>
+                                            <Link href={index.url()}>
+                                                Cancelar
+                                            </Link>
                                         </Button>
                                         <Button
                                             type="submit"
@@ -85,7 +98,9 @@ export default function CreateSupplier() {
                                             disabled={processing}
                                         >
                                             <Save />
-                                            {processing ? 'Salvando...' : 'Salvar'}
+                                            {processing
+                                                ? 'Salvando...'
+                                                : 'Salvar'}
                                         </Button>
                                     </div>
                                 </div>

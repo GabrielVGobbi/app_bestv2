@@ -113,9 +113,7 @@ export default function UserRoles({ userData, allRoles }: RolesProps) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">
-                            Gerenciar Papéis
-                        </h1>
+                        <h1 className="page-heading-title">Gerenciar Papéis</h1>
                         <p className="text-sm text-muted-foreground">
                             {user.name}
                         </p>
@@ -134,7 +132,7 @@ export default function UserRoles({ userData, allRoles }: RolesProps) {
             </Header>
 
             <div className="page-wrapper-sm">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">

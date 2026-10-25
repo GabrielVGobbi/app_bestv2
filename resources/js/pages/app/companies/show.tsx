@@ -55,7 +55,7 @@ function InfoField({ label, value }: { label: string; value: string }) {
     return (
         <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            <p className="mt-0.5 break-words text-sm">{value}</p>
+            <p className="mt-0.5 text-sm break-words">{value}</p>
         </div>
     );
 }
@@ -94,8 +94,10 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-xl font-semibold">{companyName}</h1>
-                        <p className="text-sm text-muted-foreground">{company.uuid}</p>
+                        <h1 className="page-heading-title">{companyName}</h1>
+                        <p className="text-sm text-muted-foreground">
+                            {company.uuid}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -106,7 +108,10 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                     />
                     {permissions.can_manage ? (
                         <>
-                            <Separator orientation="vertical" className="mx-1 h-6" />
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
                             <DeleteButton
                                 url={destroy.url(company.uuid)}
                                 resourceName={companyName}
@@ -119,7 +124,7 @@ export default function ShowCompany({ companyData, permissions }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
                         <div className="rounded-lg border bg-card">
                             <div className="p-5">
@@ -158,10 +163,13 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                             <div className="border-t px-5 py-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="size-3.5" />
-                                    <span>Criado {formatDate(company.created_at)}</span>
+                                    <span>
+                                        Criado {formatDate(company.created_at)}
+                                    </span>
                                 </div>
                                 <p className="mt-1">
-                                    Ultima edicao {formatDate(company.updated_at)}
+                                    Ultima edicao{' '}
+                                    {formatDate(company.updated_at)}
                                 </p>
                             </div>
                         </div>
@@ -174,7 +182,10 @@ export default function ShowCompany({ companyData, permissions }: Props) {
                             </CardHeader>
                             <CardContent className="grid gap-4 sm:grid-cols-2">
                                 <InfoField label="Nome" value={company.name} />
-                                <InfoField label="Apelido" value={company.nickname} />
+                                <InfoField
+                                    label="Apelido"
+                                    value={company.nickname}
+                                />
                                 <InfoField
                                     label="CNPJ"
                                     value={maskCnpj(company.cnpj)}

@@ -161,7 +161,7 @@ function SpecPanel({
 }) {
     return (
         <section className="grid h-full min-w-0 grid-rows-[auto_minmax(0,1fr)]">
-            <h4 className="mb-2 text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+            <h4 className="mb-2 text-xs font-medium text-muted-foreground">
                 {title}
             </h4>
             <dl className="h-full divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70 bg-background/70">
@@ -171,13 +171,7 @@ function SpecPanel({
     );
 }
 
-function SpecRow({
-    label,
-    children,
-}: {
-    label: string;
-    children: ReactNode;
-}) {
+function SpecRow({ label, children }: { label: string; children: ReactNode }) {
     return (
         <div className="grid grid-cols-[4.75rem_minmax(0,1fr)] items-start gap-3 px-3 py-2">
             <dt className="text-[11px] text-muted-foreground">{label}</dt>
@@ -758,7 +752,7 @@ export default function ShowSale({ saleData, permissions }: Props) {
                     </Button>
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-xl font-semibold">
+                            <h1 className="page-heading-title">
                                 {sale.order_number}
                             </h1>
                             <StatusBadge presenter={sale.status_presenter} />

@@ -5,7 +5,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-    "inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-[11px] font-semibold tracking-[0.01em] w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/20 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+    "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/20 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
     {
         variants: {
             variant: {
@@ -14,19 +14,19 @@ const badgeVariants = cva(
                 secondary:
                     "border-border/60 bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/80",
                 destructive:
-                    "border-destructive/25 bg-destructive-soft text-destructive-soft-foreground [a&]:hover:bg-destructive-soft/80",
+                    "border-border bg-card text-foreground before:size-1.5 before:shrink-0 before:rounded-full before:bg-destructive",
                 outline:
                     "border-border/80 bg-card text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
                 success:
-                    "border-success/25 bg-success-soft text-success-soft-foreground [a&]:hover:bg-success-soft/80",
+                    "border-border bg-card text-foreground before:size-1.5 before:shrink-0 before:rounded-full before:bg-success",
                 warning:
-                    "border-warning/25 bg-warning-soft text-warning-soft-foreground [a&]:hover:bg-warning-soft/80",
+                    "border-border bg-card text-foreground before:size-1.5 before:shrink-0 before:rounded-full before:bg-warning",
                 info:
-                    "border-info/25 bg-info-soft text-info-soft-foreground [a&]:hover:bg-info-soft/80",
+                    "border-border bg-card text-foreground before:size-1.5 before:shrink-0 before:rounded-full before:bg-info",
                 inflow:
-                    "border-inflow/25 bg-inflow-soft text-inflow-soft-foreground [a&]:hover:bg-inflow-soft/80",
+                    "border-border bg-card text-foreground before:size-1.5 before:shrink-0 before:rounded-full before:bg-inflow",
                 outflow:
-                    "border-outflow/25 bg-outflow-soft text-outflow-soft-foreground [a&]:hover:bg-outflow-soft/80",
+                    "border-border bg-card text-foreground before:size-1.5 before:shrink-0 before:rounded-full before:bg-outflow",
                 muted:
                     "border-border/70 bg-secondary text-muted-foreground [a&]:hover:bg-secondary/80",
             },

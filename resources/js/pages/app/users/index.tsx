@@ -204,7 +204,7 @@ export default function Index() {
     const actions = useMemo<DataTableAction<User>[]>(
         () => [
             {
-                label: 'View',
+                label: 'Visualizar',
                 icon: <Eye className="size-4" />,
                 variant: 'outline',
                 href: (user) => show.url(user.uuid),
@@ -212,7 +212,7 @@ export default function Index() {
                 tooltip: 'Visualizar',
             },
             {
-                label: 'Edit',
+                label: 'Editar',
                 icon: <Edit className="size-4" />,
                 variant: 'outline',
                 href: (user) => edit.url(user.uuid),
@@ -220,7 +220,7 @@ export default function Index() {
                 tooltip: 'Editar',
             },
             {
-                label: 'Delete',
+                label: 'Excluir',
                 icon: <Trash2 className="size-4" />,
                 variant: 'destructive',
                 showLabel: false,
@@ -249,14 +249,14 @@ export default function Index() {
 
     return (
         <>
-            <Head title="Users" />
+            <Head title="Usuários" />
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="page-section">
                     <div className="flex items-center justify-between gap-4">
                         <Heading
-                            title="Users"
-                            description="Manage user accounts"
+                            title="Usuários"
+                            description="Gerencie os usuários e os acessos à plataforma."
                         />
                         <Button
                             type="button"

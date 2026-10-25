@@ -1,31 +1,35 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import type { MouseEvent } from 'react';
-import { NavModuleItems } from '@/components/nav-module-items';
-import { NavModuleSwitcher } from '@/components/nav-module-switcher';
+import {
+    ArrowUpRight,
+    ChevronDown,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Settings2,
+} from 'lucide-react';
+import { useId, useState } from 'react';
+import AppLogo from '@/components/app-logo';
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetTitle,
+} from '@/components/ui/sheet';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useNavModule } from '@/contexts/nav-module-context';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { resolveNavItems, resolveNavModules } from '@/lib/resolve-nav-items';
-import { cn } from '@/lib/utils';
-import type { NavItem } from '@/types';
-
-// Tooltip class shared across all sidebar tooltips.
-// - delay-200: prevents tooltip from appearing during the 200ms collapse animation.
-// - group-hover:delay-500: tooltip appears 500ms after hover (avoids flash on quick moves).
-const TOOLTIP_CLS =
-    'pointer-events-none absolute left-full z-50 ml-2 translate-x-2 rounded-md bg-foreground px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-background opacity-0 shadow-xl transition-[opacity,transform] duration-150 delay-200 group-hover:translate-x-0 group-hover:opacity-100 group-hover:delay-500';
-
-const SECTION_LABEL_CLS =
-    'px-3 pb-2.5 pt-1 text-[11px] font-semibold tracking-[0.08em] text-sidebar-muted uppercase';
-
-const NAV_ITEM_BASE =
-    'group relative flex w-full min-h-10 items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors';
-
-const navItemState = (isActive: boolean) =>
-    isActive
-        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-        : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground';
+import { resolveNavItems } from '@/lib/resolve-nav-items';
+import { cn, toUrl } from '@/lib/utils';
+import { dashboard } from '@/routes/app';
+import { index as financialAgenda } from '@/routes/financial-entries';
+import { index as payableAgenda } from '@/routes/financial-installments/payable';
+import { index as receivableAgenda } from '@/routes/financial-installments/receivable';
+import { edit as profile } from '@/routes/profile';
+import type { NavItem, NavModule } from '@/types';
 
 type Props = {
     isCollapsed: boolean;
@@ -34,252 +38,429 @@ type Props = {
     onMobileClose?: () => void;
 };
 
-// ---------------------------------------------------------------------------
-// Module Switcher — lista de módulos (tela inicial)
-// ---------------------------------------------------------------------------
+function firstDestination(items: NavItem[]): NavItem['href'] | undefined {
+    for (const item of items) {
+        if (item.href && item.href !== '#') {
+            return item.href;
+        }
 
-// ---------------------------------------------------------------------------
-// Module Items View — itens do módulo ativo com cabeçalho + back
-// ---------------------------------------------------------------------------
+        const child = firstDestination(item.items ?? []);
 
-function ModuleItemsView() {
-    const { activeModule } = useNavModule();
-
-    return (
-        <div className="space-y-3">
-            {/* Itens do módulo — key isola o re-mount por módulo sem arrastar o header */}
-            <div
-                key={activeModule.slug}
-                className="animate-in duration-100 fade-in"
-            >
-                <NavModuleItems variant="sidebar" />
-            </div>
-        </div>
-    );
+        if (child) {
+            return child;
+        }
+    }
 }
 
-// ---------------------------------------------------------------------------
-// Flat variant — lista única sem módulos
-// ---------------------------------------------------------------------------
+function moduleDestination(module: NavModule): NavItem['href'] | undefined {
+    return module.defaultHref ?? module.href ?? firstDestination(module.items);
+}
 
-function FlatNavItem({
+function moduleNavigationItems(module: NavModule): NavItem[] {
+    if (module.items.length > 0) {
+        return module.items;
+    }
+
+    const href = moduleDestination(module);
+
+    return href ? [{ title: module.label, href, icon: module.icon }] : [];
+}
+
+function NavigationItem({
     item,
-    isCollapsed,
-    depth = 0,
+    activeHref,
+    nested = false,
 }: {
     item: NavItem;
-    isCollapsed: boolean;
-    depth?: number;
+    activeHref?: string;
+    nested?: boolean;
 }) {
-    const { isCurrentUrl } = useCurrentUrl();
-    const hasChildren = !!item.items?.length;
-    const anyChildActive = (items: NavItem[]): boolean =>
-        items.some(
-            (c) =>
-                (!!c.href && isCurrentUrl(c.href as string)) ||
-                (c.items ? anyChildActive(c.items) : false),
-        );
-    const childActive = hasChildren && anyChildActive(item.items!);
-    const [open, setOpen] = useState(childActive);
+    const [expanded, setExpanded] = useState(true);
+    const Icon = item.icon;
+    const subtreeId = useId();
+    const label =
+        item.title === 'Lançamentos Financeiros' ? 'Lançamentos' : item.title;
+    const itemClassName = cn(
+        'workspace-nav-item',
+        nested && 'workspace-nav-subitem',
+    );
 
-    if (item.type === 'section') {
+    if (item.items?.length) {
+        const isSection = item.type === 'section';
+
         return (
-            <div className={cn('space-y-0.5', !isCollapsed && 'pt-3')}>
-                {!isCollapsed && (
-                    <div className={SECTION_LABEL_CLS}>{item.title}</div>
+            <div
+                className={
+                    isSection ? 'workspace-nav-group' : 'workspace-nav-branch'
+                }
+            >
+                {isSection ? (
+                    <p className="workspace-nav-label">{label}</p>
+                ) : (
+                    <div className="relative">
+                        {item.href && item.href !== '#' ? (
+                            <Link
+                                href={item.href}
+                                prefetch
+                                className={cn(itemClassName, 'pr-8')}
+                                aria-current={
+                                    toUrl(item.href) === activeHref
+                                        ? 'page'
+                                        : undefined
+                                }
+                            >
+                                {Icon && !nested && (
+                                    <Icon className="size-4 shrink-0" />
+                                )}
+                                <span
+                                    className="min-w-0 flex-1 truncate"
+                                    title={item.title}
+                                >
+                                    {label}
+                                </span>
+                            </Link>
+                        ) : (
+                            <span className={cn(itemClassName, 'pr-8')}>
+                                {Icon && !nested && (
+                                    <Icon className="size-4 shrink-0" />
+                                )}
+                                <span>{label}</span>
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
+                            aria-label={
+                                (expanded ? 'Recolher ' : 'Expandir ') +
+                                item.title
+                            }
+                            aria-expanded={expanded}
+                            aria-controls={subtreeId}
+                            onClick={() => setExpanded(!expanded)}
+                        >
+                            <ChevronDown
+                                className={cn(
+                                    'size-3.5 transition-transform',
+                                    !expanded && '-rotate-90',
+                                )}
+                            />
+                        </button>
+                    </div>
                 )}
-                {item.items?.map((child) => (
-                    <FlatNavItem
-                        key={child.title}
-                        item={child}
-                        isCollapsed={isCollapsed}
-                        depth={depth}
-                    />
-                ))}
+                {(isSection || expanded) && (
+                    <ul
+                        id={subtreeId}
+                        className={
+                            isSection ? 'space-y-0.5' : 'workspace-nav-sublist'
+                        }
+                    >
+                        {item.items.map((child) => (
+                            <li key={child.title}>
+                                <NavigationItem
+                                    item={child}
+                                    activeHref={activeHref}
+                                    nested={!isSection || nested}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         );
     }
 
-    if (!item.href && !item.items?.length) {
+    if (!item.href || item.href === '#') {
         return null;
     }
 
-    const sharedClass = cn(
-        NAV_ITEM_BASE,
-        isCollapsed ? 'justify-center p-2' : 'gap-2.5',
-        depth > 0 && !isCollapsed && 'pl-4',
-    );
-
-    if (hasChildren) {
-        return (
-            <div>
-                <button
-                    onClick={() => setOpen((v) => !v)}
-                    className={cn(
-                        sharedClass,
-                        childActive
-                            ? 'text-sidebar-accent-foreground'
-                            : 'text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground',
-                    )}
-                >
-                    {item.icon && <item.icon size={18} className="shrink-0" />}
-                    <span
-                        className={cn(
-                            'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                            isCollapsed
-                                ? 'max-w-0 opacity-0'
-                                : 'max-w-40 opacity-100',
-                        )}
-                    >
-                        {item.title}
-                    </span>
-                    {!isCollapsed && (
-                        <ChevronRight
-                            size={12}
-                            className={cn(
-                                'ml-auto shrink-0 transition-transform duration-200',
-                                open && 'rotate-90',
-                            )}
-                        />
-                    )}
-                </button>
-                {open && !isCollapsed && (
-                    <div className="mt-0.5 ml-2 space-y-0.5 border-l border-sidebar-border pl-3">
-                        {item.items!.map((child) => (
-                            <FlatNavItem
-                                key={child.title}
-                                item={child}
-                                isCollapsed={isCollapsed}
-                                depth={depth + 1}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    const isActive = isCurrentUrl(item.href as string);
-    const isExternal =
-        typeof item.href === 'string' && item.href.startsWith('http');
-
-    const inner = (
+    const href = toUrl(item.href);
+    const isExternal = /^https?:\/\//.test(href);
+    const active = !isExternal && href === activeHref;
+    const content = (
         <>
-            {item.icon && <item.icon size={18} className="shrink-0" />}
-            <span
-                className={cn(
-                    'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                    isCollapsed ? 'max-w-0 opacity-0' : 'max-w-40 opacity-100',
-                )}
-            >
-                {item.title}
+            {Icon && !nested && (
+                <Icon
+                    className={cn(
+                        'size-4 shrink-0',
+                        item.tone === 'inflow' && 'text-inflow',
+                        item.tone === 'outflow' && 'text-outflow',
+                    )}
+                />
+            )}
+            <span className="min-w-0 flex-1 truncate" title={item.title}>
+                {label}
             </span>
-            {/* Tooltip colapsado */}
-            <div className={cn(TOOLTIP_CLS, !isCollapsed && 'hidden')}>
-                {item.title}
-            </div>
+            {isExternal && (
+                <ArrowUpRight className="size-3.5 text-muted-foreground" />
+            )}
         </>
     );
 
-    const cls = cn(sharedClass, navItemState(isActive));
-
-    if (isExternal) {
-        return (
-            <a
-                href={item.href as string}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cls}
-            >
-                {inner}
-            </a>
-        );
-    }
-
-    return (
-        <Link href={item.href ?? '#'} prefetch className={cls}>
-            {inner}
+    return isExternal ? (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={itemClassName}
+        >
+            {content}
+        </a>
+    ) : (
+        <Link
+            href={item.href}
+            prefetch
+            className={itemClassName}
+            aria-current={active ? 'page' : undefined}
+        >
+            {content}
         </Link>
     );
 }
 
-function FlatSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
-    const { nav } = usePage().props;
-    const modules = useMemo(
-        () => resolveNavModules(nav.modules),
-        [nav.modules],
+function ModuleRail({
+    isCollapsed,
+    onExpand,
+}: {
+    isCollapsed: boolean;
+    onExpand: () => void;
+}) {
+    const { modules, activeModule, selectModule } = useNavModule();
+
+    return (
+        <nav aria-label="Módulos" className="workspace-module-rail">
+            <Link
+                href={dashboard()}
+                prefetch
+                className="mb-3 flex size-10 items-center justify-center text-white"
+                aria-label="BestPlay — visão geral"
+            >
+                <AppLogo showText={false} />
+            </Link>
+            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+                {modules.map((module) => {
+                    const destination = moduleDestination(module);
+                    const Icon = module.icon;
+                    const active = activeModule?.slug === module.slug;
+                    const content = (
+                        <>
+                            {Icon && (
+                                <Icon className="size-5" strokeWidth={1.5} />
+                            )}
+                            <span className="sr-only">{module.label}</span>
+                        </>
+                    );
+
+                    return (
+                        <Tooltip key={module.slug}>
+                            <TooltipTrigger asChild>
+                                {destination ? (
+                                    <Link
+                                        href={destination}
+                                        prefetch
+                                        className="workspace-module-button"
+                                        data-active={active}
+                                        aria-label={module.label}
+                                        aria-current={
+                                            active ? 'true' : undefined
+                                        }
+                                    >
+                                        {content}
+                                    </Link>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="workspace-module-button"
+                                        data-active={active}
+                                        aria-label={module.label}
+                                        onClick={() => {
+                                            selectModule(module.slug);
+
+                                            if (isCollapsed) {
+                                                onExpand();
+                                            }
+                                        }}
+                                    >
+                                        {content}
+                                    </button>
+                                )}
+                            </TooltipTrigger>
+                            <TooltipContent side="right" sideOffset={14}>
+                                {module.label}
+                            </TooltipContent>
+                        </Tooltip>
+                    );
+                })}
+            </div>
+            <div className="mt-5 flex flex-col gap-3 border-t border-white/15 pt-4">
+                {isCollapsed && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                className="workspace-module-button"
+                                onClick={onExpand}
+                                aria-label="Expandir menu"
+                            >
+                                <PanelLeftOpen className="size-5" />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            Expandir menu
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Link
+                            href={profile()}
+                            className="workspace-module-button"
+                            aria-label="Configurações"
+                        >
+                            <Settings2 className="size-5" />
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Configurações</TooltipContent>
+                </Tooltip>
+            </div>
+        </nav>
+    );
+}
+
+function findActiveHref(
+    items: NavItem[],
+    currentPath: string,
+): string | undefined {
+    const candidates: string[] = [];
+
+    for (const item of items) {
+        const href = toUrl(item.href);
+
+        if (href.startsWith('/')) {
+            const path = href.split('?')[0];
+
+            if (currentPath === path || currentPath.startsWith(path + '/')) {
+                candidates.push(href);
+            }
+        }
+
+        const child = findActiveHref(item.items ?? [], currentPath);
+
+        if (child) {
+            candidates.push(child);
+        }
+    }
+
+    return candidates.sort((a, b) => b.length - a.length)[0];
+}
+
+function ContextNavigation({
+    onCollapse,
+    mobile = false,
+}: {
+    onCollapse: () => void;
+    mobile?: boolean;
+}) {
+    const page = usePage();
+    const { nav, auth } = page.props;
+    const { activeModule, modules } = useNavModule();
+    const globalItems = resolveNavItems(nav.global);
+    const { currentUrl } = useCurrentUrl();
+    const navigationItems =
+        nav.style === 'flat'
+            ? modules.flatMap(moduleNavigationItems)
+            : activeModule
+              ? moduleNavigationItems(activeModule)
+              : [];
+    const direction = new URLSearchParams(page.url.split('?')[1]).get(
+        'direction',
+    );
+    const activePath =
+        currentUrl === financialAgenda.url()
+            ? direction === 'receivable'
+                ? receivableAgenda.url()
+                : direction === 'payable'
+                  ? payableAgenda.url()
+                  : currentUrl
+            : currentUrl;
+    const activeHref = findActiveHref(
+        [...globalItems, ...navigationItems],
+        activePath,
     );
 
     return (
-        <div className="space-y-4">
-            {modules.map((m) => {
-                // Módulo sem items + com href → link direto sem label de seção
-                if (m.items.length === 0 && m.href) {
-                    return (
-                        <FlatNavItem
-                            key={m.slug}
-                            item={{
-                                title: m.label,
-                                href: m.href,
-                                icon: m.icon ?? undefined,
-                            }}
-                            isCollapsed={isCollapsed}
+        <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex h-16 shrink-0 items-center justify-between gap-2 px-4">
+                <Link
+                    href={dashboard()}
+                    className="flex items-center gap-2 font-sans text-lg font-semibold tracking-tight"
+                    aria-label="BestPlay"
+                >
+                    BestPlay
+                    <span className="size-1.5 rounded-full bg-brand-pink" />
+                </Link>
+                {!mobile && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onCollapse}
+                        aria-label="Recolher menu"
+                    >
+                        <PanelLeftClose className="size-4" />
+                    </Button>
+                )}
+            </div>
+            <nav
+                aria-label={activeModule?.label ?? 'Navegação'}
+                className="min-h-0 flex-1 overflow-y-auto px-3 pb-4"
+            >
+                <p className="px-3 pt-1 pb-2 text-xs font-medium text-muted-foreground">
+                    {nav.style === 'flat'
+                        ? 'Navegação'
+                        : (activeModule?.label ?? 'Seu espaço')}
+                </p>
+                <div className="space-y-1">
+                    {globalItems.map((item) => (
+                        <NavigationItem
+                            key={item.title}
+                            item={item}
+                            activeHref={activeHref}
                         />
-                    );
-                }
-
-                if (m.items.length === 0) {
-                    return null;
-                }
-
-                return (
-                    <div key={m.slug} className="space-y-0.5">
-                        {!isCollapsed && (
-                            <p className={cn(SECTION_LABEL_CLS, 'mb-1')}>
-                                {m.label}
-                            </p>
-                        )}
-                        {m.items.map((item) => (
-                            <FlatNavItem
-                                key={item.title}
-                                item={item}
-                                isCollapsed={isCollapsed}
-                            />
-                        ))}
-                    </div>
-                );
-            })}
+                    ))}
+                    {nav.style === 'flat'
+                        ? modules.map((module) => (
+                              <div
+                                  key={module.slug}
+                                  className="workspace-nav-group"
+                              >
+                                  <p className="workspace-nav-label">
+                                      {module.label}
+                                  </p>
+                                  {moduleNavigationItems(module).map((item) => (
+                                      <NavigationItem
+                                          key={item.title}
+                                          item={item}
+                                          activeHref={activeHref}
+                                      />
+                                  ))}
+                              </div>
+                          ))
+                        : navigationItems.map((item) => (
+                              <NavigationItem
+                                  key={item.title}
+                                  item={item}
+                                  activeHref={activeHref}
+                              />
+                          ))}
+                </div>
+            </nav>
+            <div className="mx-5 flex items-center gap-2 border-t py-4 text-xs text-muted-foreground">
+                <span className="size-1.5 shrink-0 rounded-full bg-brand-pink" />
+                <span className="truncate">{auth.user?.name}</span>
+                <span className="ml-auto shrink-0">BestPlay</span>
+            </div>
         </div>
     );
 }
-
-// ---------------------------------------------------------------------------
-// Modules sidebar content — requer NavModuleProvider na árvore
-// ---------------------------------------------------------------------------
-
-function ModulesSidebarContent({ isCollapsed }: { isCollapsed: boolean }) {
-    const { sidebarView } = useNavModule();
-    const { nav } = usePage().props;
-
-    if (nav.modulesMenuPosition === 'header') {
-        return <ModuleItemsView />;
-    }
-
-    return sidebarView === 'modules' ? (
-        <div
-            key="modules"
-            className="animate-in duration-150 fade-in slide-in-from-bottom-1"
-        >
-            <NavModuleSwitcher isCollapsed={isCollapsed} />
-        </div>
-    ) : (
-        <ModuleItemsView />
-    );
-}
-
-// ---------------------------------------------------------------------------
-// DashboardSidebar
-// ---------------------------------------------------------------------------
 
 export function DashboardSidebar({
     isCollapsed,
@@ -287,151 +468,55 @@ export function DashboardSidebar({
     mobileOpen = false,
     onMobileClose,
 }: Props) {
-    const { nav } = usePage().props;
-    const { isCurrentUrl } = useCurrentUrl();
-
-    // Memoize resolved items — nav props are stable within a page and only
-    // change on Inertia navigations, so useMemo avoids re-computing every render.
-    const globalItems = useMemo(
-        () => resolveNavItems(nav.global),
-        [nav.global],
-    );
-
-    useEffect(() => {
-        if (!mobileOpen) {
-            return;
-        }
-
-        const previousOverflow = document.body.style.overflow;
-        const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                onMobileClose?.();
-                document.getElementById('mobile-navigation-trigger')?.focus();
-            }
-        };
-
-        document.body.style.overflow = 'hidden';
-        document.addEventListener('keydown', closeOnEscape);
-
-        return () => {
-            document.body.style.overflow = previousOverflow;
-            document.removeEventListener('keydown', closeOnEscape);
-        };
-    }, [mobileOpen, onMobileClose]);
-    const closeMobileOnNavClick = (event: MouseEvent<HTMLElement>) => {
-        if (!mobileOpen) {
-            return;
-        }
-
-        if ((event.target as HTMLElement).closest('a[href]')) {
-            onMobileClose?.();
-        }
-    };
-
     return (
         <>
-            <div
-                className={cn(
-                    'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden',
-                    mobileOpen
-                        ? 'opacity-100'
-                        : 'pointer-events-none opacity-0',
-                )}
-                onClick={onMobileClose}
-            />
-
-            <aside
-                className={cn(
-                    'fixed inset-y-0 start-0 z-50 flex w-72 flex-col border-e border-sidebar-border bg-sidebar shadow-lg select-none',
-                    'transition-transform duration-300 ease-out',
-                    mobileOpen ? 'translate-x-0' : '-translate-x-full',
-                    'md:static md:z-auto md:shrink-0 md:translate-x-0 md:transition-[width] md:duration-200',
-                    isCollapsed ? 'md:w-16' : 'md:w-[264px]',
-                )}
-            >
-                {/* Toggle */}
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    className="absolute top-1/2 -right-3 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md transition-[background,color,transform] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:flex"
-                    aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
-                >
-                    <ChevronLeft
-                        size={15}
-                        className={cn(
-                            'transition-transform duration-200 ease-out',
-                            isCollapsed && 'rotate-180',
-                        )}
-                    />
-                </button>
-
-                <nav
-                    className="flex h-full flex-col px-3.5 py-6"
-                    id="nav-sidebar"
-                    onClickCapture={closeMobileOnNavClick}
-                >
-                    {/* Conteúdo principal — scrollável */}
-                    <div className="min-h-0 sidebar-scrollbar flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1">
-                        {/* Itens globais — sempre visíveis acima dos módulos */}
-                        {globalItems.length > 0 && (
-                            <div className="space-y-0.5">
-                                {globalItems.map((item) => (
-                                    <Link
-                                        key={item.title}
-                                        href={item.href as string}
-                                        prefetch
-                                        className={cn(
-                                            NAV_ITEM_BASE,
-                                            isCollapsed
-                                                ? 'justify-center p-2'
-                                                : 'gap-2.5',
-                                            navItemState(
-                                                isCurrentUrl(
-                                                    item.href as string,
-                                                ),
-                                            ),
-                                        )}
-                                    >
-                                        {item.icon && (
-                                            <item.icon
-                                                size={18}
-                                                className="shrink-0"
-                                            />
-                                        )}
-                                        <span
-                                            className={cn(
-                                                'overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-200 ease-out',
-                                                isCollapsed
-                                                    ? 'max-w-0 opacity-0'
-                                                    : 'max-w-40 opacity-100',
-                                            )}
-                                        >
-                                            {item.title}
-                                        </span>
-                                        {/* Tooltip colapsado */}
-                                        <div
-                                            className={cn(
-                                                TOOLTIP_CLS,
-                                                !isCollapsed && 'hidden',
-                                            )}
-                                        >
-                                            {item.title}
-                                        </div>
-                                    </Link>
-                                ))}
-                                <div className="mx-3 border-t border-sidebar-border" />
-                            </div>
-                        )}
-
-                        {nav.style === 'modules' ? (
-                            <ModulesSidebarContent isCollapsed={isCollapsed} />
-                        ) : (
-                            <FlatSidebarContent isCollapsed={isCollapsed} />
-                        )}
+            <aside className="hidden shrink-0 md:flex">
+                <ModuleRail isCollapsed={isCollapsed} onExpand={onToggle} />
+                {!isCollapsed && (
+                    <div className="flex w-[228px] flex-col">
+                        <ContextNavigation onCollapse={onToggle} />
                     </div>
-
-                </nav>
+                )}
             </aside>
+            <Sheet
+                open={mobileOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        onMobileClose?.();
+                    }
+                }}
+            >
+                <SheetContent
+                    side="left"
+                    className="w-[min(360px,calc(100vw-24px))] flex-row gap-0 border-0 bg-sidebar p-0"
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        document
+                            .getElementById('mobile-navigation-trigger')
+                            ?.focus();
+                    }}
+                >
+                    <SheetTitle className="sr-only">
+                        Navegação BestPlay
+                    </SheetTitle>
+                    <SheetDescription className="sr-only">
+                        Escolha um módulo e acesse suas páginas.
+                    </SheetDescription>
+                    <div
+                        className="flex min-h-0 w-full"
+                        onClickCapture={(event) => {
+                            if (
+                                (event.target as HTMLElement).closest('a[href]')
+                            ) {
+                                onMobileClose?.();
+                            }
+                        }}
+                    >
+                        <ModuleRail isCollapsed={false} onExpand={onToggle} />
+                        <ContextNavigation mobile onCollapse={onToggle} />
+                    </div>
+                </SheetContent>
+            </Sheet>
         </>
     );
 }

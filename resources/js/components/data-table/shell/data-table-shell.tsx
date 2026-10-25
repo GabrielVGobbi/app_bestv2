@@ -1,8 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Card, CardContent } from '@/components/ui/card';
-
 import { isColumnVisible } from '../core/column-visibility';
 import { isActiveFilterValue } from '../core/filter-utils';
 import type { DataTableShellProps } from '../core/types';
@@ -139,9 +137,9 @@ export function DataTableShell<TData>({
 
     return (
         <div className="flex flex-col gap-3">
-            <Card className="overflow-hidden rounded-xl border-app-line py-0 shadow-none">
-                <CardContent className="p-0">
-                    <div className="border-b border-app-line bg-card p-3">
+            <section className="data-list min-w-0">
+                <div>
+                    <div className="bg-background pb-4">
                         <DataTableToolbar
                             table={table}
                             features={features}
@@ -224,8 +222,8 @@ export function DataTableShell<TData>({
                             </div>
                         )}
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </section>
 
             <div className="flex flex-col gap-3 px-1 md:flex-row md:items-center md:justify-between">
                 <DataTableResultSummary
