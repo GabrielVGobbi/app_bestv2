@@ -82,7 +82,7 @@ function DatePicker({
                     disabled={disabled}
                     aria-invalid={ariaInvalid}
                     className={cn(
-                        'h-9 min-w-0 w-full justify-start overflow-hidden text-left font-normal',
+                        'h-10 w-full min-w-0 justify-start overflow-hidden text-left font-normal',
                         !selected && 'text-muted-foreground',
                         className,
                     )}

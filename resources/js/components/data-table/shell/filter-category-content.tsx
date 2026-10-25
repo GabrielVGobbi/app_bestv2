@@ -2,17 +2,21 @@ import { Check, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-import { isActiveFilterValue, rangeValue, valueToString } from '../core/filter-utils';
+import { filterPlaceholder } from '../core/filter-presentation';
+import {
+    isActiveFilterValue,
+    rangeValue,
+    valueToString,
+} from '../core/filter-utils';
 import type {
     DataTableFilterConfig,
     DataTableFilterOption,
@@ -54,15 +58,16 @@ export function CategoryContent({
                         onChange(selectedOption?.value ?? nextValue);
                     }}
                 >
-                    <SelectTrigger className="w-full">
-                        <SelectValue
-                            placeholder={filter.placeholder ?? 'Selecionar'}
-                        />
-                    </SelectTrigger>
+                    <SelectTrigger
+                        className="w-full"
+                        aria-label={filter.label}
+                        placeholder={filterPlaceholder(filter)}
+                    />
                     <SelectContent>
-                        {filter.options?.map((option) => (
+                        {filter.options?.map((option, index) => (
                             <SelectItem
                                 key={String(option.value)}
+                                index={index}
                                 value={String(option.value)}
                             >
                                 <span className="inline-flex items-center gap-2">
@@ -79,6 +84,7 @@ export function CategoryContent({
                         type="button"
                         variant="ghost"
                         size="sm"
+                        aria-label={`Limpar ${filter.label}`}
                         onClick={() => onChange(undefined)}
                     >
                         <X />
@@ -102,7 +108,7 @@ export function CategoryContent({
                         <label
                             key={optionValue}
                             className={cn(
-                                'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent',
+                                'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent',
                                 checked && 'bg-accent',
                             )}
                         >
@@ -110,10 +116,19 @@ export function CategoryContent({
                                 checked={checked}
                                 onCheckedChange={(nextChecked) => {
                                     const nextValues = nextChecked
-                                        ? [...selectedValues, optionValue]
-                                        : selectedValues.filter(
+                                        ? [
+                                              ...(Array.isArray(value)
+                                                  ? value
+                                                  : []),
+                                              option.value,
+                                          ]
+                                        : (Array.isArray(value)
+                                              ? value
+                                              : []
+                                          ).filter(
                                               (selectedValue) =>
-                                                  selectedValue !== optionValue,
+                                                  String(selectedValue) !==
+                                                  optionValue,
                                           );
 
                                     onChange(nextValues);
@@ -143,6 +158,8 @@ export function CategoryContent({
                     </span>
                     <Input
                         type={inputType}
+                        aria-label={`${filter.label}: início`}
+                        placeholder={filterPlaceholder(filter, 'from')}
                         value={currentRange.from ?? ''}
                         onChange={(event) =>
                             onChange({
@@ -158,6 +175,8 @@ export function CategoryContent({
                     </span>
                     <Input
                         type={inputType}
+                        aria-label={`${filter.label}: fim`}
+                        placeholder={filterPlaceholder(filter, 'to')}
                         value={currentRange.to ?? ''}
                         onChange={(event) =>
                             onChange({
@@ -175,7 +194,8 @@ export function CategoryContent({
         return (
             <Input
                 type={filter.type === 'date' ? 'date' : 'number'}
-                placeholder={filter.placeholder}
+                aria-label={filter.label}
+                placeholder={filterPlaceholder(filter)}
                 value={valueToString(value)}
                 onChange={(event) => onChange(event.target.value)}
             />
@@ -184,7 +204,8 @@ export function CategoryContent({
 
     return (
         <Input
-            placeholder={filter.placeholder}
+            aria-label={filter.label}
+            placeholder={filterPlaceholder(filter)}
             value={valueToString(value)}
             onChange={(event) => onChange(event.target.value)}
         />

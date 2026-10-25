@@ -1,9 +1,10 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Check, KeyRound, RotateCcw, Save, X } from 'lucide-react';
+import { Check, KeyRound, RotateCcw, Save, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-
 import { toast } from 'sonner';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,8 +16,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { usePrivateState } from '@/contexts/private-state-context';
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpPut } from '@/lib/http';
+import { httpPut, toApiError } from '@/lib/http';
 import { index as indexRoute, show as showRoute } from '@/routes/roles';
 import type { Permission } from '@/types/app/permission';
 import type { Role } from '@/types/app/role';
@@ -32,6 +34,7 @@ export default function RolePermissions({
     roleData,
     allPermissions,
 }: PermissionsProps) {
+    const { scope } = usePrivateState();
     const role = roleData.data;
     const permissions = allPermissions.data;
 
@@ -111,12 +114,25 @@ export default function RolePermissions({
         setIsSaving(true);
 
         try {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpPut(apiRoutes.roles.syncPermissions(role.id), {
                 permissions: selectedIds,
             });
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Permissões atualizadas com sucesso!');
             router.reload({ only: ['roleData'] });
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao atualizar permissões.');
         } finally {
             setIsSaving(false);
@@ -127,60 +143,38 @@ export default function RolePermissions({
         <>
             <Head title={`Permissões - ${role.name}`} />
 
-            <div className="container mx-auto max-w-4xl">
-                <div className="page-section">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="size-8"
-                                asChild
-                            >
-                                <Link href={showRoute.url(role.id)}>
-                                    <ArrowLeft className="size-4" />
-                                </Link>
-                            </Button>
-                            <div>
-                                <h1 className="page-heading-title">
-                                    Gerenciar Permissões
-                                </h1>
-                                <p className="text-sm text-muted-foreground">
-                                    {role.name}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <RoleSubNav
-                                roleId={role.id}
-                                currentPage="permissions"
-                            />
-                            <Separator
-                                orientation="vertical"
-                                className="mx-1 h-6"
-                            />
-                            {hasChanges && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleReset}
-                                    disabled={isSaving}
-                                >
-                                    <RotateCcw className="mr-2 size-4" />
-                                    Desfazer
-                                </Button>
-                            )}
-                            <Button
-                                size="sm"
-                                onClick={handleSave}
-                                disabled={isSaving || !hasChanges}
-                            >
-                                <Save className="mr-2 size-4" />
-                                {isSaving ? 'Salvando...' : 'Salvar'}
-                            </Button>
-                        </div>
-                    </div>
+            <Header
+                title="Gerenciar Permissões"
+                subtitle={role.name}
+                backHref={showRoute.url(role.id)}
+            >
+                <div className="flex items-center gap-2">
+                    <RoleSubNav roleId={role.id} currentPage="permissions" />
+                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    {hasChanges && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleReset}
+                            disabled={isSaving}
+                        >
+                            <RotateCcw className="mr-2 size-4" />
+                            Desfazer
+                        </Button>
+                    )}
+                    <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={isSaving || !hasChanges}
+                    >
+                        <Save className="mr-2 size-4" />
+                        {isSaving ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                </div>
+            </Header>
 
+            <div className="page-wrapper-sm max-w-4xl">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -295,7 +289,7 @@ export default function RolePermissions({
                                                                     }
                                                                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all ${
                                                                         isSelected
-                                                                            ? 'border-primary/40 bg-primary/5'
+                                                                            ? 'border-primary/40 bg-primary-soft/40'
                                                                             : 'border-transparent hover:bg-muted/50'
                                                                     } ${isSaving ? 'pointer-events-none opacity-60' : ''}`}
                                                                 >
@@ -354,6 +348,10 @@ export default function RolePermissions({
                                         className="mt-2"
                                     >
                                         <Link href="/permissions">
+                                            <KeyRound
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Criar permissões
                                         </Link>
                                     </Button>

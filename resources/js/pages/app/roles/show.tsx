@@ -1,15 +1,8 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    KeyRound,
-    Pencil,
-    Shield,
-    Trash2,
-    Users,
-} from 'lucide-react';
+import { KeyRound, Shield, Trash2, Users, X } from 'lucide-react';
 import { useState } from 'react';
-
 import { toast } from 'sonner';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,9 +15,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { usePrivateState } from '@/contexts/private-state-context';
+
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpDelete } from '@/lib/http';
-import { edit, index, show } from '@/routes/roles';
+import { httpDelete, toApiError } from '@/lib/http';
+import { index, show } from '@/routes/roles';
 import type { Permission } from '@/types/app/permission';
 import type { Role } from '@/types/app/role';
 
@@ -62,6 +57,7 @@ function InfoField({
 }
 
 export default function ShowRole({ roleData }: ShowProps) {
+    const { scope } = usePrivateState();
     const role = roleData.data;
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -94,10 +90,23 @@ export default function ShowRole({ roleData }: ShowProps) {
         setDeleting(true);
 
         try {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpDelete(apiRoutes.roles.destroy(role.id));
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Papel removido com sucesso!');
             router.visit(index.url());
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao remover papel.');
             setDeleting(false);
         }
@@ -107,56 +116,32 @@ export default function ShowRole({ roleData }: ShowProps) {
         <>
             <Head title={role.name} />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="size-8"
-                                asChild
-                            >
-                                <Link href={index.url()}>
-                                    <ArrowLeft className="size-4" />
-                                </Link>
-                            </Button>
-                            <h1 className="page-heading-title">
-                                Detalhes do Papel
-                            </h1>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <RoleSubNav roleId={role.id} currentPage="show" />
-                            <Separator
-                                orientation="vertical"
-                                className="mx-1 h-6"
-                            />
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteOpen(true)}
-                            >
-                                <Trash2 className="mr-2 size-4" />
-                                Excluir
-                            </Button>
-                            <Button size="sm" asChild>
-                                <Link href={edit.url(role.id)}>
-                                    <Pencil className="mr-2 size-4" />
-                                    Editar
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
+            <Header title={role.name} backHref={index.url()}>
+                <div className="flex items-center gap-2">
+                    <RoleSubNav roleId={role.id} currentPage="show" />
+                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteOpen(true)}
+                    >
+                        <Trash2 className="mr-2 size-4" />
+                        Excluir
+                    </Button>
+                </div>
+            </Header>
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="flex flex-col gap-6 md:flex-row">
                         {/* Sidebar */}
                         <aside className="w-full shrink-0 space-y-6 md:w-72">
                             <Card>
                                 <CardContent className="flex flex-col gap-5 p-6">
                                     <div className="flex flex-col items-center">
-                                        <div className="mb-3 flex size-20 items-center justify-center rounded-2xl bg-primary/10">
-                                            <Shield className="size-10 text-primary" />
+                                        <div className="mb-3 flex size-20 items-center justify-center rounded-2xl bg-primary-soft text-primary-soft-foreground">
+                                            <Shield className="size-10" />
                                         </div>
                                         <h2 className="w-full text-center text-lg font-bold [word-break:break-word]">
                                             {role.name}
@@ -319,6 +304,10 @@ export default function ShowRole({ roleData }: ShowProps) {
                                                 <Link
                                                     href={`/roles/${role.id}/permissions`}
                                                 >
+                                                    <KeyRound
+                                                        className="size-4"
+                                                        aria-hidden="true"
+                                                    />
                                                     Atribuir permissões
                                                 </Link>
                                             </Button>
@@ -334,7 +323,7 @@ export default function ShowRole({ roleData }: ShowProps) {
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Excluir Papel</DialogTitle>
+                        <DialogTitle>Excluir papel</DialogTitle>
                         <DialogDescription>
                             {hasUsers ? (
                                 <>
@@ -356,6 +345,7 @@ export default function ShowRole({ roleData }: ShowProps) {
                             variant="outline"
                             onClick={() => setDeleteOpen(false)}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button
@@ -363,6 +353,7 @@ export default function ShowRole({ roleData }: ShowProps) {
                             disabled={hasUsers || deleting}
                             onClick={handleDelete}
                         >
+                            <Trash2 className="size-4" aria-hidden="true" />
                             {deleting ? 'Excluindo...' : 'Excluir'}
                         </Button>
                     </DialogFooter>

@@ -1,5 +1,6 @@
 import * as NotificationApi from '@/actions/App/Http/Controllers/Api/NotificationApiController';
 import { httpDelete, httpGet, httpPatch, httpPost } from '@/lib/http';
+import type { HttpConfig } from '@/lib/http';
 import type { Paginated } from '@/types';
 import type {
     ExecuteActionResponse,
@@ -12,14 +13,23 @@ import type {
 import type { QueryParams } from '@/wayfinder';
 
 export const notificationService = {
-    getNotifications(filters?: NotificationFilters): Promise<Paginated<Notification>> {
+    getNotifications(
+        filters?: NotificationFilters,
+        config?: HttpConfig,
+    ): Promise<Paginated<Notification>> {
         return httpGet<Paginated<Notification>>(
             NotificationApi.index.url({ query: filters as QueryParams }),
+            config,
         );
     },
 
-    getUnreadNotifications(): Promise<UnreadNotificationsResponse> {
-        return httpGet<UnreadNotificationsResponse>(NotificationApi.unread.url());
+    getUnreadNotifications(
+        config?: HttpConfig,
+    ): Promise<UnreadNotificationsResponse> {
+        return httpGet<UnreadNotificationsResponse>(
+            NotificationApi.unread.url(),
+            config,
+        );
     },
 
     getUnreadCount(): Promise<UnreadCountResponse> {
@@ -33,11 +43,15 @@ export const notificationService = {
     },
 
     markAllAsRead(): Promise<MarkAllReadResponse> {
-        return httpPost<MarkAllReadResponse, void>(NotificationApi.markAllAsRead.url());
+        return httpPost<MarkAllReadResponse, void>(
+            NotificationApi.markAllAsRead.url(),
+        );
     },
 
     deleteNotification(notificationUuid: string): Promise<void> {
-        return httpDelete<void>(NotificationApi.destroy.url({ notification: notificationUuid }));
+        return httpDelete<void>(
+            NotificationApi.destroy.url({ notification: notificationUuid }),
+        );
     },
 
     executeAction(
@@ -45,8 +59,13 @@ export const notificationService = {
         actionType: string,
         payload?: Record<string, unknown>,
     ): Promise<ExecuteActionResponse> {
-        return httpPost<ExecuteActionResponse, { action_type: string; payload?: Record<string, unknown> }>(
-            NotificationApi.executeAction.url({ notification: notificationUuid }),
+        return httpPost<
+            ExecuteActionResponse,
+            { action_type: string; payload?: Record<string, unknown> }
+        >(
+            NotificationApi.executeAction.url({
+                notification: notificationUuid,
+            }),
             { action_type: actionType, payload },
         );
     },

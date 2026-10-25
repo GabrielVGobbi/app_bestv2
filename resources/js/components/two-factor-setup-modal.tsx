@@ -1,9 +1,16 @@
 import { Form } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { Check, Copy, ScanLine } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Copy, ScanLine, ArrowRight, ArrowLeft } from 'lucide-react';
+import {
+    useCallback,
+    useEffect,
+    useId,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import AlertError from '@/components/alert-error';
-import InputError from '@/components/input-error';
+import InputError, { errorProps } from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -17,6 +24,7 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useClipboard } from '@/hooks/use-clipboard';
@@ -97,6 +105,7 @@ function TwoFactorSetupStep({
 
                     <div className="flex w-full space-x-5">
                         <Button className="w-full" onClick={onNextStep}>
+                            <ArrowRight className="size-4" aria-hidden="true" />
                             {buttonText}
                         </Button>
                     </div>
@@ -104,7 +113,7 @@ function TwoFactorSetupStep({
                     <div className="relative flex w-full items-center justify-center">
                         <div className="absolute inset-0 top-1/2 h-px w-full bg-border" />
                         <span className="relative bg-card px-2 py-1">
-                            or, enter the code manually
+                            ou digite o código manualmente
                         </span>
                     </div>
 
@@ -118,13 +127,16 @@ function TwoFactorSetupStep({
                                 <>
                                     <input
                                         type="text"
+                                        aria-label="Chave de configuração manual"
                                         readOnly
                                         value={manualSetupKey}
-                                        className="h-full w-full bg-background p-3 text-foreground outline-none"
+                                        className="h-full w-full bg-background p-3 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                                     />
                                     <button
+                                        type="button"
+                                        aria-label="Copiar chave de configuração"
                                         onClick={() => copy(manualSetupKey)}
-                                        className="border-l border-border px-3 hover:bg-muted"
+                                        className="border-l border-border px-3 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
                                     >
                                         <IconComponent className="w-4" />
                                     </button>
@@ -145,13 +157,16 @@ function TwoFactorVerificationStep({
     onClose: () => void;
     onBack: () => void;
 }) {
+    const codeId = useId();
     const [code, setCode] = useState<string>('');
     const pinInputContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             pinInputContainerRef.current?.querySelector('input')?.focus();
         }, 0);
+
+        return () => clearTimeout(timer);
     }, []);
 
     return (
@@ -174,8 +189,16 @@ function TwoFactorVerificationStep({
                         className="relative w-full space-y-3"
                     >
                         <div className="flex w-full flex-col items-center space-y-3 py-2">
+                            <Label htmlFor={codeId} className="sr-only">
+                                Código de autenticação
+                            </Label>
                             <InputOTP
-                                id="otp"
+                                id={codeId}
+                                {...errorProps(
+                                    codeId,
+                                    errors?.confirmTwoFactorAuthentication
+                                        ?.code,
+                                )}
                                 name="code"
                                 maxLength={OTP_MAX_LENGTH}
                                 onChange={setCode}
@@ -195,6 +218,7 @@ function TwoFactorVerificationStep({
                                 </InputOTPGroup>
                             </InputOTP>
                             <InputError
+                                field={codeId}
                                 message={
                                     errors?.confirmTwoFactorAuthentication?.code
                                 }
@@ -209,7 +233,11 @@ function TwoFactorVerificationStep({
                                 onClick={onBack}
                                 disabled={processing}
                             >
-                                Back
+                                <ArrowLeft
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                                Voltar
                             </Button>
                             <Button
                                 type="submit"
@@ -218,7 +246,8 @@ function TwoFactorVerificationStep({
                                     processing || code.length < OTP_MAX_LENGTH
                                 }
                             >
-                                Confirm
+                                <Check className="size-4" aria-hidden="true" />
+                                Confirmar
                             </Button>
                         </div>
                     </div>
@@ -261,27 +290,27 @@ export default function TwoFactorSetupModal({
     }>(() => {
         if (twoFactorEnabled) {
             return {
-                title: 'Two-factor authentication enabled',
+                title: 'Autenticação em duas etapas ativada',
                 description:
-                    'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-                buttonText: 'Close',
+                    'A autenticação em duas etapas está ativa. Leia o QR code ou digite a chave no seu aplicativo autenticador.',
+                buttonText: 'Fechar',
             };
         }
 
         if (showVerificationStep) {
             return {
-                title: 'Verify authentication code',
+                title: 'Confirme o código de autenticação',
                 description:
-                    'Enter the 6-digit code from your authenticator app',
-                buttonText: 'Continue',
+                    'Digite o código de 6 dígitos do seu aplicativo autenticador',
+                buttonText: 'Continuar',
             };
         }
 
         return {
-            title: 'Enable two-factor authentication',
+            title: 'Ativar autenticação em duas etapas',
             description:
-                'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-            buttonText: 'Continue',
+                'Para concluir, leia o QR code ou digite a chave no seu aplicativo autenticador',
+            buttonText: 'Continuar',
         };
     }, [twoFactorEnabled, showVerificationStep]);
 

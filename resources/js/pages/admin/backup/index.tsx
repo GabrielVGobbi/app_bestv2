@@ -8,6 +8,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import Header from '@/components/dashboard/header';
 
 import {
     DatabaseExportDialog,
@@ -22,7 +23,7 @@ import type { DatabaseExportType } from '@/types/database-export';
 interface BackupHistoryItem {
     id: number;
     uuid: string;
-    disk: string;
+    disk: string | null;
     path: string | null;
     file_name: string | null;
     file_size: number | null;
@@ -96,38 +97,27 @@ export default function BackupIndex({ backups }: Props) {
         <>
             <Head title="Backups" />
 
-            <div className="page-wrapper space-y-6 py-6">
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold tracking-tight">
-                            Backups & Dumps
-                        </h1>
-                        <p className="mt-0.5 text-sm text-muted-foreground">
-                            Histórico de backups automáticos e exportações de
-                            banco sob demanda.
-                        </p>
+            <Header
+                title="Backups e dumps"
+                subtitle="Histórico de backups automáticos e exportações de banco sob demanda."
+            >
+                {activeSection === 'dumps' && (
+                    <div className="flex items-center gap-2">
+                        {activeExports.length > 0 && (
+                            <DatabaseExportStatus
+                                activeExports={activeExports}
+                                onDownload={markAsDownloaded}
+                            />
+                        )}
+                        <Button size="sm" onClick={() => setDialogOpen(true)}>
+                            <Plus className="mr-1.5 size-4" />
+                            Gerar dump
+                        </Button>
                     </div>
+                )}
+            </Header>
 
-                    {activeSection === 'dumps' && (
-                        <div className="flex items-center gap-2">
-                            {activeExports.length > 0 && (
-                                <DatabaseExportStatus
-                                    activeExports={activeExports}
-                                    onDownload={markAsDownloaded}
-                                />
-                            )}
-                            <Button
-                                size="sm"
-                                onClick={() => setDialogOpen(true)}
-                            >
-                                <Plus className="mr-1.5 size-4" />
-                                Gerar Dump
-                            </Button>
-                        </div>
-                    )}
-                </div>
-
+            <div className="page-wrapper space-y-6 py-6">
                 {/* Section tabs (manual, no Tabs component available) */}
                 <div className="flex border-b">
                     <button
@@ -157,7 +147,7 @@ export default function BackupIndex({ backups }: Props) {
                             <Database className="size-3.5" />
                             Dumps de Banco
                             {hasActiveExports && (
-                                <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
+                                <span className="flex size-4 items-center justify-center rounded-full bg-primary text-2xs text-primary-foreground">
                                     {
                                         activeExports.filter(
                                             (e) =>
@@ -211,9 +201,9 @@ export default function BackupIndex({ backups }: Props) {
                                                 <div className="flex items-center gap-3">
                                                     {backup.status ===
                                                     'completed' ? (
-                                                        <CheckCircle2 className="size-4 shrink-0 text-green-500" />
+                                                        <CheckCircle2 className="size-4 shrink-0 text-success-soft-foreground" />
                                                     ) : (
-                                                        <XCircle className="size-4 shrink-0 text-red-500" />
+                                                        <XCircle className="size-4 shrink-0 text-destructive-soft-foreground" />
                                                     )}
                                                     <div>
                                                         <p className="text-sm font-medium">
@@ -238,7 +228,7 @@ export default function BackupIndex({ backups }: Props) {
                                                                 <>
                                                                     {' '}
                                                                     ·{' '}
-                                                                    <span className="text-red-500">
+                                                                    <span className="text-destructive-soft-foreground">
                                                                         {
                                                                             backup.error_message
                                                                         }
@@ -326,12 +316,12 @@ export default function BackupIndex({ backups }: Props) {
                                                 <div className="flex items-center gap-3">
                                                     {exp.status ===
                                                     'completed' ? (
-                                                        <CheckCircle2 className="size-4 shrink-0 text-green-500" />
+                                                        <CheckCircle2 className="size-4 shrink-0 text-success-soft-foreground" />
                                                     ) : exp.status ===
                                                       'failed' ? (
-                                                        <XCircle className="size-4 shrink-0 text-red-500" />
+                                                        <XCircle className="size-4 shrink-0 text-destructive-soft-foreground" />
                                                     ) : (
-                                                        <div className="size-4 shrink-0 animate-pulse rounded-full bg-blue-400" />
+                                                        <div className="size-4 shrink-0 animate-pulse rounded-full bg-info" />
                                                     )}
                                                     <div>
                                                         <p className="text-sm font-medium">

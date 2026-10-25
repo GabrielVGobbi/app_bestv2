@@ -1,11 +1,11 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     CalendarDays,
     KeyRound,
     Mail,
     Shield,
     ShieldCheck,
+    ShieldPlus,
 } from 'lucide-react';
 
 import {
@@ -25,6 +25,7 @@ import { UserSubNav } from './components/user-sub-nav';
 
 interface Props {
     userData: UserResource;
+    can: { update: boolean; delete: boolean; authority: boolean };
 }
 
 function formatDate(dateString: string | null | undefined): string {
@@ -54,7 +55,7 @@ function InfoField({
     );
 }
 
-export default function Show({ userData }: Props) {
+export default function Show({ userData, can }: Props) {
     const user = userData.data;
 
     setLayoutProps({
@@ -93,45 +94,46 @@ export default function Show({ userData }: Props) {
             <Head title={user.name} />
 
             {/* Header */}
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{user.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {user.email}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <UserSubNav userUuid={user.uuid} currentPage="show" />
-                    <Separator orientation="vertical" className="mx-1 h-6" />
-                    <DeleteButton
-                        url={destroy.url(user.uuid)}
-                        resourceName={user.name}
-                        resourceType="usuário"
-                        redirectTo={index.url()}
+            <Header
+                title={user.name}
+                subtitle={user.email}
+                backHref={index.url()}
+            >
+                <div className="flex flex-wrap items-center gap-2">
+                    <UserSubNav
+                        userUuid={user.uuid}
+                        currentPage="show"
+                        can={{
+                            view: true,
+                            update: can.update,
+                            authority: can.authority,
+                        }}
                     />
+                    {can.delete && (
+                        <>
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
+                            <DeleteButton
+                                url={destroy.url(user.uuid)}
+                                resourceName={user.name}
+                                resourceType="usuário"
+                                redirectTo={index.url()}
+                            />
+                        </>
+                    )}
                 </div>
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="grid gap-6 md:grid-cols-3">
                         {/* Sidebar */}
                         <aside className="space-y-4 md:col-span-1">
                             <Card>
                                 <CardContent className="flex flex-col items-center gap-4 p-6">
-                                    <div className="flex size-20 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-bold text-primary">
+                                    <div className="flex size-20 items-center justify-center rounded-2xl bg-primary-soft text-2xl font-bold text-primary-soft-foreground">
                                         {initials}
                                     </div>
                                     <div className="text-center">
@@ -145,14 +147,14 @@ export default function Show({ userData }: Props) {
                                     <div className="flex flex-wrap justify-center gap-1.5">
                                         {user.email_verified_at ? (
                                             <Badge
-                                                variant="secondary"
+                                                variant="success"
                                                 className="gap-1"
                                             >
                                                 <ShieldCheck className="size-3" />
                                                 Verificado
                                             </Badge>
                                         ) : (
-                                            <Badge variant="destructive">
+                                            <Badge variant="warning">
                                                 Não verificado
                                             </Badge>
                                         )}
@@ -211,7 +213,7 @@ export default function Show({ userData }: Props) {
                             {/* Account info */}
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Informações da Conta</CardTitle>
+                                    <CardTitle>Informações da conta</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4 sm:grid-cols-2">
                                     <InfoField label="Nome" value={user.name} />
@@ -220,7 +222,7 @@ export default function Show({ userData }: Props) {
                                         value={user.email}
                                     />
                                     <InfoField
-                                        label="Status do E-mail"
+                                        label="Status do e-mail"
                                         value={
                                             user.email_verified_at
                                                 ? 'Verificado'
@@ -246,171 +248,191 @@ export default function Show({ userData }: Props) {
                                 </CardContent>
                             </Card>
 
-                            {/* Roles */}
-                            <Card>
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Shield className="size-5" />
-                                            Papéis Atribuídos
-                                        </CardTitle>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={`/users/${user.uuid}/roles`}
-                                            >
-                                                <Shield className="mr-1.5 size-4" />
-                                                Gerenciar
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    {userRoles.length > 0 ? (
-                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            {userRoles.map((role) => (
-                                                <div
-                                                    key={role.id}
-                                                    className="flex flex-col gap-1 rounded-lg border border-primary/20 bg-primary/5 p-3"
+                            {can.authority && (
+                                <>
+                                    {/* Roles */}
+                                    <Card>
+                                        <CardHeader>
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2">
+                                                    <Shield className="size-5" />
+                                                    Papéis Atribuídos
+                                                </CardTitle>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <Shield className="size-4 text-primary" />
-                                                        <span className="text-sm font-medium">
-                                                            {role.name}
-                                                        </span>
-                                                    </div>
-                                                    <span className="font-mono text-xs text-muted-foreground">
-                                                        {role.slug}
-                                                    </span>
-                                                    {role.description && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {role.description}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-lg border border-dashed p-6 text-center">
-                                            <Shield className="mx-auto mb-2 size-7 text-muted-foreground/50" />
-                                            <p className="text-sm text-muted-foreground">
-                                                Nenhum papel atribuído.
-                                            </p>
-                                            <Button
-                                                variant="link"
-                                                size="sm"
-                                                asChild
-                                                className="mt-1"
-                                            >
-                                                <Link
-                                                    href={`/users/${user.uuid}/roles`}
-                                                >
-                                                    Atribuir papéis
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            {/* Direct Permissions */}
-                            <Card>
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="flex items-center gap-2">
-                                            <KeyRound className="size-5" />
-                                            Permissões Diretas
-                                        </CardTitle>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={`/users/${user.uuid}/permissions`}
-                                            >
-                                                <KeyRound className="mr-1.5 size-4" />
-                                                Gerenciar
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    {userPermissions.length > 0 ? (
-                                        <div className="space-y-6">
-                                            {Object.entries(
-                                                groupedPermissions,
-                                            ).map(([group, perms]) => (
-                                                <div key={group}>
-                                                    <div className="mb-3 flex items-center gap-2 border-b pb-2">
-                                                        <span className="text-sm font-semibold">
-                                                            {group}
-                                                        </span>
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className="text-xs"
+                                                    <Link
+                                                        href={`/users/${user.uuid}/roles`}
+                                                    >
+                                                        <Shield className="mr-1.5 size-4" />
+                                                        Gerenciar
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {userRoles.length > 0 ? (
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                    {userRoles.map((role) => (
+                                                        <div
+                                                            key={role.id}
+                                                            className="flex flex-col gap-1 rounded-lg border border-border bg-muted p-3"
                                                         >
-                                                            {perms.length}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                                        {perms.map((perm) => (
-                                                            <div
-                                                                key={perm.id}
-                                                                className="flex items-start gap-2 rounded-md bg-muted/50 p-2.5"
-                                                            >
-                                                                <KeyRound className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                                                                <div className="flex flex-col gap-0.5">
-                                                                    <span className="text-sm leading-tight font-medium">
-                                                                        {
-                                                                            perm.name
-                                                                        }
-                                                                    </span>
-                                                                    <span className="font-mono text-xs text-muted-foreground">
-                                                                        {
-                                                                            perm.slug
-                                                                        }
-                                                                    </span>
-                                                                    {perm.description && (
-                                                                        <span className="text-xs text-muted-foreground">
-                                                                            {
-                                                                                perm.description
-                                                                            }
-                                                                        </span>
-                                                                    )}
-                                                                </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Shield className="size-4 text-muted-foreground" />
+                                                                <span className="text-sm font-medium">
+                                                                    {role.name}
+                                                                </span>
                                                             </div>
-                                                        ))}
-                                                    </div>
+                                                            <span className="font-mono text-xs text-muted-foreground">
+                                                                {role.slug}
+                                                            </span>
+                                                            {role.description && (
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {
+                                                                        role.description
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-lg border border-dashed p-6 text-center">
-                                            <KeyRound className="mx-auto mb-2 size-7 text-muted-foreground/50" />
-                                            <p className="text-sm text-muted-foreground">
-                                                Nenhuma permissão direta
-                                                atribuída.
-                                            </p>
-                                            <Button
-                                                variant="link"
-                                                size="sm"
-                                                asChild
-                                                className="mt-1"
-                                            >
-                                                <Link
-                                                    href={`/users/${user.uuid}/permissions`}
+                                            ) : (
+                                                <div className="rounded-lg border border-dashed p-6 text-center">
+                                                    <Shield className="mx-auto mb-2 size-7 text-muted-foreground/50" />
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Nenhum papel atribuído.
+                                                    </p>
+                                                    <Button
+                                                        variant="link"
+                                                        size="sm"
+                                                        asChild
+                                                        className="mt-1"
+                                                    >
+                                                        <Link
+                                                            href={`/users/${user.uuid}/roles`}
+                                                        >
+                                                            <ShieldPlus
+                                                                className="size-4"
+                                                                aria-hidden="true"
+                                                            />
+                                                            Atribuir papéis
+                                                        </Link>
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Direct Permissions */}
+                                    <Card>
+                                        <CardHeader>
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="flex items-center gap-2">
+                                                    <KeyRound className="size-5" />
+                                                    Permissões Diretas
+                                                </CardTitle>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
                                                 >
-                                                    Atribuir permissões
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                                    <Link
+                                                        href={`/users/${user.uuid}/permissions`}
+                                                    >
+                                                        <KeyRound className="mr-1.5 size-4" />
+                                                        Gerenciar
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {userPermissions.length > 0 ? (
+                                                <div className="space-y-6">
+                                                    {Object.entries(
+                                                        groupedPermissions,
+                                                    ).map(([group, perms]) => (
+                                                        <div key={group}>
+                                                            <div className="mb-3 flex items-center gap-2 border-b pb-2">
+                                                                <span className="text-sm font-semibold">
+                                                                    {group}
+                                                                </span>
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="text-xs"
+                                                                >
+                                                                    {
+                                                                        perms.length
+                                                                    }
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                                {perms.map(
+                                                                    (perm) => (
+                                                                        <div
+                                                                            key={
+                                                                                perm.id
+                                                                            }
+                                                                            className="flex items-start gap-2 rounded-md bg-muted/50 p-2.5"
+                                                                        >
+                                                                            <KeyRound className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                                                                            <div className="flex flex-col gap-0.5">
+                                                                                <span className="text-sm leading-tight font-medium">
+                                                                                    {
+                                                                                        perm.name
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="font-mono text-xs text-muted-foreground">
+                                                                                    {
+                                                                                        perm.slug
+                                                                                    }
+                                                                                </span>
+                                                                                {perm.description && (
+                                                                                    <span className="text-xs text-muted-foreground">
+                                                                                        {
+                                                                                            perm.description
+                                                                                        }
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-lg border border-dashed p-6 text-center">
+                                                    <KeyRound className="mx-auto mb-2 size-7 text-muted-foreground/50" />
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Nenhuma permissão direta
+                                                        atribuída.
+                                                    </p>
+                                                    <Button
+                                                        variant="link"
+                                                        size="sm"
+                                                        asChild
+                                                        className="mt-1"
+                                                    >
+                                                        <Link
+                                                            href={`/users/${user.uuid}/permissions`}
+                                                        >
+                                                            <KeyRound
+                                                                className="size-4"
+                                                                aria-hidden="true"
+                                                            />
+                                                            Atribuir permissões
+                                                        </Link>
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </>
+                            )}
                         </main>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { Loader2, RotateCcw } from 'lucide-react';
+import { Loader2, RotateCcw, X } from 'lucide-react';
 import { useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -97,7 +97,7 @@ export function SettlementReversalDialog({
             <DialogContent>
                 <DialogHeader>
                     <div className="flex items-center gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-700">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
                             <RotateCcw className="size-5" />
                         </span>
                         <div>
@@ -111,12 +111,9 @@ export function SettlementReversalDialog({
                 </DialogHeader>
 
                 {settlement ? (
-                    <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                        <p className="font-medium">
+                    <div className="rounded-lg border border-border bg-muted p-3 text-sm">
+                        <p className="font-medium tabular-nums">
                             Baixa de {money(settlement.net_amount)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                            UUID {settlement.uuid}
                         </p>
                     </div>
                 ) : null}
@@ -141,6 +138,7 @@ export function SettlementReversalDialog({
                             onClick={close}
                             disabled={processing}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button

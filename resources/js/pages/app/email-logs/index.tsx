@@ -1,12 +1,18 @@
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/react';
 import {
+    AlertTriangle,
     Check,
+    CheckCircle,
     ChevronLeft,
     ChevronRight,
+    Clock,
+    Eye,
     Loader2,
     Mail,
+    MousePointerClick,
     RefreshCw,
     Search,
+    Send,
     Settings2,
     Shield,
     ShieldOff,
@@ -19,10 +25,16 @@ import {
     resend,
     updateSettings,
 } from '@/actions/App/Modules/Email/Http/Controllers/EmailLogController';
-import Heading from '@/components/heading';
-import { StatusBadge } from '@/components/status-badge';
+import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '@/components/ui/fluid/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -39,7 +51,6 @@ import type {
     EmailSettings,
     EmailStatus,
 } from '@/types/app/email-log';
-import type { StatusPresenter } from '@/types/status';
 
 // Laravel's raw paginator shape (returned by ->paginate() passed directly to Inertia)
 interface LaravelPaginator<T> {
@@ -56,74 +67,89 @@ interface LaravelPaginator<T> {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-const EMAIL_STATUS_PRESENTERS: Record<EmailStatus, StatusPresenter> = {
+type StatusConfig = {
+    label: string;
+    icon: React.ReactNode;
+    variant: 'success' | 'warning' | 'destructive' | 'info' | 'secondary';
+};
+
+const STATUS_CONFIG: Record<EmailStatus, StatusConfig> = {
     queued: {
-        value: 'queued',
         label: 'Na fila',
-        color: 'amber',
-        icon: 'Clock',
+        icon: <Clock className="size-3" />,
+        variant: 'warning',
     },
     processing: {
-        value: 'processing',
         label: 'Processando',
-        color: 'blue',
-        icon: 'Loader2',
+        icon: <Loader2 className="size-3 animate-spin" />,
+        variant: 'info',
     },
-    sent: { value: 'sent', label: 'Enviado', color: 'green', icon: 'Send' },
-    failed: { value: 'failed', label: 'Falhou', color: 'red', icon: 'XCircle' },
+    sent: {
+        label: 'Enviado',
+        icon: <Send className="size-3" />,
+        variant: 'success',
+    },
+    failed: {
+        label: 'Falhou',
+        icon: <X className="size-3" />,
+        variant: 'destructive',
+    },
     bounced: {
-        value: 'bounced',
         label: 'Rejeitado',
-        color: 'orange',
-        icon: 'AlertTriangle',
+        icon: <AlertTriangle className="size-3" />,
+        variant: 'destructive',
     },
     delivered: {
-        value: 'delivered',
         label: 'Entregue',
-        color: 'emerald',
-        icon: 'CheckCircle2',
+        icon: <CheckCircle className="size-3" />,
+        variant: 'info',
     },
     delivery_delayed: {
-        value: 'delivery_delayed',
         label: 'Entrega atrasada',
-        color: 'yellow',
-        icon: 'Clock',
+        icon: <Clock className="size-3" />,
+        variant: 'warning',
     },
     complained: {
-        value: 'complained',
         label: 'Spam',
-        color: 'rose',
-        icon: 'AlertTriangle',
+        icon: <AlertTriangle className="size-3" />,
+        variant: 'destructive',
     },
-    opened: { value: 'opened', label: 'Aberto', color: 'cyan', icon: 'Eye' },
+    opened: {
+        label: 'Aberto',
+        icon: <Eye className="size-3" />,
+        variant: 'info',
+    },
     clicked: {
-        value: 'clicked',
         label: 'Clicado',
-        color: 'violet',
-        icon: 'MousePointerClick',
+        icon: <MousePointerClick className="size-3" />,
+        variant: 'info',
     },
     received: {
-        value: 'received',
         label: 'Recebido',
-        color: 'sky',
-        icon: 'Mail',
+        icon: <Mail className="size-3" />,
+        variant: 'info',
     },
     scheduled: {
-        value: 'scheduled',
         label: 'Agendado',
-        color: 'slate',
-        icon: 'Clock',
+        icon: <Clock className="size-3" />,
+        variant: 'secondary',
     },
     suppressed: {
-        value: 'suppressed',
         label: 'Suprimido',
-        color: 'stone',
-        icon: 'ShieldOff',
+        icon: <ShieldOff className="size-3" />,
+        variant: 'secondary',
     },
 };
 
-function EmailStatusBadge({ status }: { status: EmailStatus }) {
-    return <StatusBadge presenter={EMAIL_STATUS_PRESENTERS[status]} showIcon />;
+function StatusBadge({ status }: { status: EmailStatus }) {
+    const cfg = STATUS_CONFIG[status];
+
+    return (
+        <Badge variant={cfg.variant}>
+            {cfg.icon}
+            {cfg.label}
+        </Badge>
+    );
 }
 
 // ─── Category Badge ───────────────────────────────────────────────────────────
@@ -137,7 +163,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function CategoryBadge({ category }: { category: string }) {
     return (
-        <Badge variant="secondary" className="text-[10px]">
+        <Badge variant="secondary" className="text-2xs">
             {CATEGORY_LABELS[category] ?? category}
         </Badge>
     );
@@ -147,7 +173,6 @@ function CategoryBadge({ category }: { category: string }) {
 
 interface KillSwitchPanelProps {
     settings: EmailSettings;
-    globalEnabled: boolean;
 }
 
 function KillSwitchPanel({ settings }: KillSwitchPanelProps) {
@@ -168,11 +193,11 @@ function KillSwitchPanel({ settings }: KillSwitchPanelProps) {
     const globalOn = data.enabled;
 
     return (
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border border-border bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div
-                        className={`flex size-8 items-center justify-center rounded-md ${globalOn ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}
+                        className={`flex size-8 items-center justify-center rounded-md ${globalOn ? 'bg-success-soft text-success-soft-foreground' : 'bg-destructive-soft text-destructive-soft-foreground'}`}
                     >
                         {globalOn ? (
                             <Shield className="size-4" />
@@ -182,7 +207,7 @@ function KillSwitchPanel({ settings }: KillSwitchPanelProps) {
                     </div>
                     <div>
                         <p className="text-sm font-semibold">
-                            Kill Switch de E-mail
+                            Controle de envios
                         </p>
                         <p className="text-xs text-muted-foreground">
                             Ative ou desative o envio em tempo real
@@ -236,9 +261,9 @@ function KillSwitchPanel({ settings }: KillSwitchPanelProps) {
                             className={`flex items-center gap-3 rounded-md border p-3 transition-colors ${
                                 key === 'enabled'
                                     ? isOn
-                                        ? 'border-emerald-200 bg-emerald-50'
-                                        : 'border-red-200 bg-red-50'
-                                    : 'bg-muted/30'
+                                        ? 'border-success-soft-foreground/20 bg-success-soft'
+                                        : 'border-destructive-soft-foreground/20 bg-destructive-soft'
+                                    : 'bg-muted'
                             }`}
                         >
                             <button
@@ -254,7 +279,7 @@ function KillSwitchPanel({ settings }: KillSwitchPanelProps) {
                                 }`}
                             >
                                 <span
-                                    className={`pointer-events-none block size-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                                    className={`pointer-events-none block size-4 rounded-full bg-background shadow-lg ring-0 transition-transform ${
                                         isOn ? 'translate-x-4' : 'translate-x-0'
                                     }`}
                                 />
@@ -314,7 +339,7 @@ function EmailLogDetailSheet({
             >
                 <SheetHeader className="shrink-0 pb-2">
                     <div className="flex flex-wrap items-center gap-2">
-                        <EmailStatusBadge status={log.status} />
+                        <StatusBadge status={log.status} />
                         <CategoryBadge category={log.category} />
                     </div>
                     <SheetTitle className="mt-1 text-base leading-snug break-all">
@@ -337,7 +362,7 @@ function EmailLogDetailSheet({
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { label: 'Template', value: log.template },
-                                { label: 'Mailer', value: log.mailer ?? '—' },
+                                { label: 'Mailer', value: log.mailer ?? '-' },
                                 {
                                     label: 'Tentativas',
                                     value: String(log.attempts),
@@ -346,19 +371,19 @@ function EmailLogDetailSheet({
                                     label: 'Message ID',
                                     value: log.message_id
                                         ? log.message_id.slice(0, 16) + '…'
-                                        : '—',
+                                        : '-',
                                 },
                                 {
                                     label: 'Enviado em',
                                     value: log.sent_at
                                         ? formatDate(log.sent_at)
-                                        : '—',
+                                        : '-',
                                 },
                                 {
                                     label: 'Falhou em',
                                     value: log.failed_at
                                         ? formatDate(log.failed_at)
-                                        : '—',
+                                        : '-',
                                 },
                             ].map(({ label, value }) => (
                                 <div
@@ -377,11 +402,11 @@ function EmailLogDetailSheet({
 
                         {/* Error */}
                         {log.error_message && (
-                            <div className="rounded-md border border-red-200 bg-red-50 p-3">
-                                <p className="mb-1 text-xs font-medium text-red-700">
+                            <div className="rounded-md border border-destructive-soft-foreground/20 bg-destructive-soft p-3">
+                                <p className="mb-1 text-xs font-medium text-destructive-soft-foreground">
                                     Erro
                                 </p>
-                                <p className="font-mono text-xs break-all text-red-600">
+                                <p className="font-mono text-xs break-all text-destructive-soft-foreground">
                                     {log.error_message}
                                 </p>
                             </div>
@@ -452,50 +477,68 @@ function FiltersBar({ filters, statuses, categories }: FiltersBarProps) {
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar por e-mail ou assunto..."
-                        className="h-8 w-56 pl-8 text-xs"
+                        placeholder="Buscar por e-mail ou assunto"
+                        className="h-9 w-64 pl-8"
                     />
                 </div>
             </form>
 
             {/* Status filter */}
-            <select
-                value={filters.status ?? ''}
-                onChange={(e) =>
-                    applyFilters({ status: e.target.value || undefined })
+            <Select
+                value={filters.status ?? 'all'}
+                onValueChange={(value) =>
+                    applyFilters({
+                        status: value === 'all' ? undefined : value,
+                    })
                 }
-                className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none"
             >
-                <option value="">Todos os status</option>
-                {Object.entries(statuses).map(([value, label]) => (
-                    <option key={value} value={value}>
-                        {label}
-                    </option>
-                ))}
-            </select>
+                <SelectTrigger
+                    className="w-44"
+                    aria-label="Filtrar por status"
+                    placeholder="Todos os status"
+                />
+                <SelectContent>
+                    <SelectItem index={0} value="all">
+                        Todos os status
+                    </SelectItem>
+                    {Object.entries(statuses).map(([value, label], index) => (
+                        <SelectItem key={value} index={index + 1} value={value}>
+                            {label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
 
             {/* Category filter */}
-            <select
-                value={filters.category ?? ''}
-                onChange={(e) =>
-                    applyFilters({ category: e.target.value || undefined })
+            <Select
+                value={filters.category ?? 'all'}
+                onValueChange={(value) =>
+                    applyFilters({
+                        category: value === 'all' ? undefined : value,
+                    })
                 }
-                className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none"
             >
-                <option value="">Todas as categorias</option>
-                {Object.entries(categories).map(([value, label]) => (
-                    <option key={value} value={value}>
-                        {label}
-                    </option>
-                ))}
-            </select>
+                <SelectTrigger
+                    className="w-44"
+                    aria-label="Filtrar por categoria"
+                    placeholder="Todas as categorias"
+                />
+                <SelectContent>
+                    <SelectItem index={0} value="all">
+                        Todas as categorias
+                    </SelectItem>
+                    {Object.entries(categories).map(([value, label], index) => (
+                        <SelectItem key={value} index={index + 1} value={value}>
+                            {label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
 
             {/* Clear filters */}
             {(filters.status || filters.category || filters.search) && (
                 <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 text-xs"
                     onClick={() => {
                         setSearch('');
                         applyFilters({
@@ -505,7 +548,7 @@ function FiltersBar({ filters, statuses, categories }: FiltersBarProps) {
                         });
                     }}
                 >
-                    <X className="size-3" />
+                    <X className="size-3.5" />
                     Limpar
                 </Button>
             )}
@@ -589,7 +632,7 @@ export default function EmailLogsIndex({
 
     return (
         <>
-            <Head title="Logs de E-mail" />
+            <Head title="E-mails" />
 
             <EmailLogDetailSheet
                 log={selectedLog}
@@ -597,48 +640,39 @@ export default function EmailLogsIndex({
                 onClose={() => setSelectedLog(null)}
             />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex items-start justify-between gap-4">
-                        <Heading
-                            title="Logs de E-mail"
-                            description="Histórico de todos os e-mails enviados pelo sistema."
-                        />
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowSettings(!showSettings)}
-                            className="shrink-0"
-                        >
-                            <Settings2 className="size-3.5" />
-                            Kill Switch
-                            {!globalEnabled && (
-                                <Badge
-                                    variant="destructive"
-                                    className="ml-1 px-1.5 py-0 text-[10px]"
-                                >
-                                    OFF
-                                </Badge>
-                            )}
-                        </Button>
-                    </div>
-
-                    {/* Kill Switch */}
-                    {showSettings && (
-                        <KillSwitchPanel
-                            settings={settings}
-                            globalEnabled={globalEnabled}
-                        />
+            <Header
+                title="E-mails"
+                subtitle="Histórico de todos os e-mails enviados pelo sistema."
+            >
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    aria-expanded={showSettings}
+                >
+                    <Settings2 className="size-3.5" />
+                    Controle de envios
+                    {!globalEnabled && (
+                        <Badge variant="destructive" className="ml-1">
+                            Desligado
+                        </Badge>
                     )}
+                </Button>
+            </Header>
+
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
+                    {/* Kill Switch */}
+                    {showSettings && <KillSwitchPanel settings={settings} />}
 
                     {/* Global OFF alert */}
                     {!globalEnabled && !showSettings && (
-                        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="flex items-center gap-2 rounded-md border border-destructive-soft-foreground/20 bg-destructive-soft px-4 py-3 text-sm text-destructive-soft-foreground">
                             <ShieldOff className="size-4 shrink-0" />
                             <span>
                                 O envio de e-mails está{' '}
-                                <strong>desativado</strong> globalmente. Clique
-                                em "Kill Switch" para reativar.
+                                <strong>desativado</strong> globalmente. Abra
+                                "Controle de envios" para reativar.
                             </span>
                         </div>
                     )}
@@ -652,33 +686,33 @@ export default function EmailLogsIndex({
 
                     {/* Table */}
                     {logs.data.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-                            <Mail className="mb-3 size-10 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                                Nenhum e-mail encontrado.
-                            </p>
+                        <div className="rounded-lg border border-dashed border-border">
+                            <EmptyState
+                                icon={Mail}
+                                title="Nenhum e-mail encontrado"
+                            />
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-lg border">
+                        <div className="overflow-hidden rounded-lg border border-border bg-card">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                    <tr className="border-b border-border bg-muted">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Status
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Destinatário
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Assunto
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Categoria
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Tentativas
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Data
                                         </th>
                                         <th className="px-4 py-3" />
@@ -690,12 +724,12 @@ export default function EmailLogsIndex({
                                             key={log.uuid}
                                             className={
                                                 i % 2 === 0
-                                                    ? 'bg-background'
-                                                    : 'bg-muted/20'
+                                                    ? 'bg-card'
+                                                    : 'bg-muted/30'
                                             }
                                         >
                                             <td className="px-4 py-3">
-                                                <EmailStatusBadge
+                                                <StatusBadge
                                                     status={log.status}
                                                 />
                                             </td>
@@ -726,7 +760,7 @@ export default function EmailLogsIndex({
                                             </td>
                                             <td className="px-4 py-3 tabular-nums">
                                                 {log.status === 'failed' ? (
-                                                    <span className="text-xs font-medium text-red-600">
+                                                    <span className="text-xs font-medium text-destructive-soft-foreground">
                                                         {log.attempts}×
                                                     </span>
                                                 ) : (
@@ -735,7 +769,7 @@ export default function EmailLogsIndex({
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 tabular-nums">
                                                 <span className="text-xs text-muted-foreground">
                                                     {formatDate(log.created_at)}
                                                 </span>
@@ -747,7 +781,8 @@ export default function EmailLogsIndex({
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                                                            className="h-7 px-2 text-xs"
+                                                            aria-label="Reenviar e-mail"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 router.post(
@@ -772,6 +807,10 @@ export default function EmailLogsIndex({
                                                             setSelectedLog(log)
                                                         }
                                                     >
+                                                        <Eye
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                         Ver
                                                     </Button>
                                                 </div>

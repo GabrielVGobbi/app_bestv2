@@ -1,5 +1,5 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Check, KeyRound, RotateCcw, Save, X } from 'lucide-react';
+import { Check, KeyRound, RotateCcw, Save, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { toast } from 'sonner';
@@ -21,8 +21,10 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { usePrivateState } from '@/contexts/private-state-context';
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpPut } from '@/lib/http';
+import { httpPut, toApiError } from '@/lib/http';
+import { dashboard } from '@/routes/app';
 import type { Permission } from '@/types/app/permission';
 import type { UserResource } from '@/types/user';
 
@@ -30,20 +32,27 @@ import { UserSubNav } from './components/user-sub-nav';
 
 interface PermissionsProps {
     userData: UserResource;
+    can: { view: boolean; update: boolean; delete: boolean };
     allPermissions: { data: Permission[] };
 }
 
 export default function UserPermissions({
     userData,
     allPermissions,
+    can,
 }: PermissionsProps) {
+    const { scope } = usePrivateState();
     const user = userData.data;
     const permissions = allPermissions.data;
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Usuários', href: index.url() },
-            { title: user.name, href: show.url(user.uuid) },
+            ...(can.view
+                ? [
+                      { title: 'Usuários', href: index.url() },
+                      { title: user.name, href: show.url(user.uuid) },
+                  ]
+                : []),
             { title: 'Permissões', href: userPermissions.url(user.uuid) },
         ],
     });
@@ -121,13 +130,27 @@ export default function UserPermissions({
 
         try {
             const currentRoleIds = (user.roles ?? []).map((r) => r.id);
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpPut(apiRoutes.users.syncRolesPermissions(user.uuid), {
                 roles: currentRoleIds,
                 permissions: selectedPermissionIds,
             });
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Permissões atualizadas com sucesso!');
             router.reload({ only: ['userData'] });
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao atualizar permissões.');
         } finally {
             setIsSaving(false);
@@ -138,35 +161,28 @@ export default function UserPermissions({
         <>
             <Head title={`Permissões - ${user.name}`} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={show.url(user.uuid)}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">
-                            Gerenciar Permissões
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {user.name}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
+            <Header
+                title="Gerenciar Permissões"
+                subtitle={user.name}
+                backHref={can.view ? show.url(user.uuid) : dashboard.url()}
+            >
+                <div className="flex flex-wrap items-center gap-2">
                     <UserSubNav
                         userUuid={user.uuid}
                         currentPage="permissions"
+                        can={{
+                            view: can.view,
+                            update: can.update,
+                            authority: true,
+                        }}
                     />
                     <Separator orientation="vertical" className="mx-1 h-6" />
                     <Button variant="outline" size="sm" asChild>
-                        <Link href={show.url(user.uuid)}>
+                        <Link
+                            href={
+                                can.view ? show.url(user.uuid) : dashboard.url()
+                            }
+                        >
                             <X className="mr-1.5 size-4" />
                             Fechar
                         </Link>
@@ -175,7 +191,7 @@ export default function UserPermissions({
             </Header>
 
             <div className="page-wrapper-sm">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -353,6 +369,10 @@ export default function UserPermissions({
                                         className="mt-2"
                                     >
                                         <Link href="/permissions">
+                                            <KeyRound
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Criar permissões
                                         </Link>
                                     </Button>

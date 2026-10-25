@@ -1,13 +1,12 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
-import { Download, FileText } from 'lucide-react';
+import { Check, Clock, Download, FileText, Loader2, X } from 'lucide-react';
 
-import Heading from '@/components/heading';
-import { StatusBadge } from '@/components/status-badge';
+import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
 import type { ExportRecord } from '@/types/export';
-import type { StatusPresenter } from '@/types/status';
 
 interface PageProps {
     exports: ExportRecord[];
@@ -15,7 +14,7 @@ interface PageProps {
 
 function formatBytes(bytes: number | null): string {
     if (!bytes) {
-        return '—';
+        return '-';
     }
 
     if (bytes < 1024) {
@@ -31,51 +30,51 @@ function formatBytes(bytes: number | null): string {
 
 function formatModelClass(modelClass: string | undefined): string {
     if (!modelClass) {
-        return '—';
+        return '-';
     }
 
     return modelClass.split('\\').pop() ?? modelClass;
 }
 
-const EXPORT_STATUS_PRESENTERS: Record<
-    ExportRecord['status'],
-    StatusPresenter
-> = {
-    completed: {
-        value: 'completed',
-        label: 'Concluído',
-        color: 'emerald',
-        icon: 'Check',
-    },
-    failed: {
-        value: 'failed',
-        label: 'Falhou',
-        color: 'red',
-        icon: 'XCircle',
-    },
-    processing: {
-        value: 'processing',
-        label: 'Processando',
-        color: 'blue',
-        icon: 'Loader2',
-    },
-    pending: {
-        value: 'pending',
-        label: 'Aguardando',
-        color: 'amber',
-        icon: 'Clock',
-    },
-};
+function StatusBadge({ status }: { status: ExportRecord['status'] }) {
+    if (status === 'completed') {
+        return (
+            <Badge variant="success">
+                <Check />
+                Concluído
+            </Badge>
+        );
+    }
 
-function ExportStatusBadge({ status }: { status: ExportRecord['status'] }) {
+    if (status === 'failed') {
+        return (
+            <Badge variant="destructive">
+                <X />
+                Falhou
+            </Badge>
+        );
+    }
+
+    if (status === 'processing') {
+        return (
+            <Badge variant="info">
+                <Loader2 className="animate-spin" />
+                Processando
+            </Badge>
+        );
+    }
+
     return (
-        <StatusBadge presenter={EXPORT_STATUS_PRESENTERS[status]} showIcon />
+        <Badge variant="warning">
+            <Clock />
+            Aguardando
+        </Badge>
     );
 }
 
 function DownloadCell({ record }: { record: ExportRecord }) {
     if (record.status !== 'completed') {
-        return <span className="text-xs text-muted-foreground">—</span>;
+        return <span className="text-xs text-muted-foreground">-</span>;
     }
 
     if (!record.download_url) {
@@ -94,53 +93,52 @@ function DownloadCell({ record }: { record: ExportRecord }) {
 
 export default function ExportsIndex({ exports }: PageProps) {
     setLayoutProps({
-        breadcrumbs: [
-            { title: 'Histórico de Exportações', href: '/exportacoes' },
-        ],
+        breadcrumbs: [{ title: 'Exportações', href: '/exportacoes' }],
     });
 
     return (
         <>
-            <Head title="Histórico de Exportações" />
+            <Head title="Exportações" />
+
+            <Header
+                title="Exportações"
+                subtitle="Os 50 arquivos gerados mais recentes. Cada arquivo fica disponível por uma hora após a conclusão."
+            />
 
             <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <Heading
-                        title="Histórico de Exportações"
-                        description="Todos os arquivos gerados nos últimos 50 registros. Arquivos ficam disponíveis por 1 hora após a conclusão."
-                    />
-
+                <div className="flex h-full flex-1 flex-col gap-6">
                     {exports.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-                            <FileText className="mb-3 size-10 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                                Nenhuma exportação encontrada.
-                            </p>
+                        <div className="rounded-lg border border-dashed border-border">
+                            <EmptyState
+                                icon={FileText}
+                                title="Nenhuma exportação"
+                                description="Os arquivos gerados aparecem aqui por uma hora após a conclusão."
+                            />
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-lg border">
+                        <div className="overflow-hidden rounded-lg border border-border bg-card">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                    <tr className="border-b border-border bg-muted">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Status
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Modelo
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Arquivo
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Registros
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Tamanho
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Criado em
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
                                             Expira em
                                         </th>
                                         <th className="px-4 py-3" />
@@ -152,12 +150,12 @@ export default function ExportsIndex({ exports }: PageProps) {
                                             key={exp.uuid}
                                             className={
                                                 i % 2 === 0
-                                                    ? 'bg-background'
-                                                    : 'bg-muted/20'
+                                                    ? 'bg-card'
+                                                    : 'bg-muted/30'
                                             }
                                         >
                                             <td className="px-4 py-3">
-                                                <ExportStatusBadge
+                                                <StatusBadge
                                                     status={exp.status}
                                                 />
                                             </td>
@@ -170,7 +168,7 @@ export default function ExportsIndex({ exports }: PageProps) {
                                                     </span>
                                                     <Badge
                                                         variant="secondary"
-                                                        className="text-[10px]"
+                                                        className="text-2xs"
                                                     >
                                                         {exp.format.toUpperCase()}
                                                     </Badge>
@@ -178,7 +176,7 @@ export default function ExportsIndex({ exports }: PageProps) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="font-mono text-xs text-muted-foreground">
-                                                    {exp.file_name ?? '—'}
+                                                    {exp.file_name ?? '-'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 tabular-nums">
@@ -188,7 +186,7 @@ export default function ExportsIndex({ exports }: PageProps) {
                                                     )
                                                 ) : (
                                                     <span className="text-muted-foreground">
-                                                        —
+                                                        -
                                                     </span>
                                                 )}
                                             </td>
@@ -197,7 +195,7 @@ export default function ExportsIndex({ exports }: PageProps) {
                                                     {formatBytes(exp.file_size)}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 tabular-nums">
                                                 <span className="text-muted-foreground">
                                                     {formatDate(exp.created_at)}
                                                 </span>
@@ -208,7 +206,7 @@ export default function ExportsIndex({ exports }: PageProps) {
                                                         ? formatDate(
                                                               exp.expires_at,
                                                           )
-                                                        : '—'}
+                                                        : '-'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">

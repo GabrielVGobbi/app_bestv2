@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupWasSuccessful;
+use Spatie\Backup\Events\CleanupWasSuccessful;
 
 class BackupServiceProvider extends ServiceProvider
 {
@@ -23,5 +24,6 @@ class BackupServiceProvider extends ServiceProvider
 
         Event::listen(BackupWasSuccessful::class, [$listener, 'handleSuccess']);
         Event::listen(BackupHasFailed::class, [$listener, 'handleFailure']);
+        Event::listen(CleanupWasSuccessful::class, [$listener, 'handleCleanup']);
     }
 }

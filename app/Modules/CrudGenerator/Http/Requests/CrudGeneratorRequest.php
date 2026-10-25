@@ -10,7 +10,7 @@ class CrudGeneratorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('useDeveloperTools') ?? false;
     }
 
     /**
@@ -19,9 +19,9 @@ class CrudGeneratorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'model' => ['required', 'string', 'max:80', 'regex:/^[A-Za-z][A-Za-z0-9_]*$/'],
+            'model' => ['required', 'string', 'max:80', 'regex:/\A[A-Za-z][A-Za-z0-9_]*\z/'],
             'target' => ['nullable', 'string', 'in:app,module'],
-            'module' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z][A-Za-z0-9_]*$/'],
+            'module' => ['nullable', 'string', 'max:80', 'regex:/\A[A-Za-z][A-Za-z0-9_]*\z/'],
             'icon' => ['nullable', 'string', 'max:80'],
             'with_export' => ['boolean'],
             'with_observer' => ['boolean'],
@@ -32,7 +32,7 @@ class CrudGeneratorRequest extends FormRequest
             'register_provider' => ['boolean'],
             'force' => ['boolean'],
             'fields' => ['required', 'array', 'min:1'],
-            'fields.*.name' => ['required', 'string', 'regex:/^[a-z][a-z0-9_]*$/'],
+            'fields.*.name' => ['required', 'string', 'regex:/\A[a-z][a-z0-9_]*\z/'],
             'fields.*.type' => ['required', 'string', 'in:string,text,integer,bigInteger,decimal,float,double,boolean,date,dateTime,timestamp,json'],
             'fields.*.nullable' => ['boolean'],
             'fields.*.unique' => ['boolean'],

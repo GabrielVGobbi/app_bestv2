@@ -17,9 +17,6 @@ export interface AsyncSelectOption {
     label: string;
     description?: string;
     disabled?: boolean;
-    imageUrl?: string | null;
-    avatarInitials?: string | null;
-    avatarColor?: string | null;
 }
 
 interface AsyncSelectResponse {
@@ -32,7 +29,6 @@ interface AsyncSelectResponse {
 
 interface AsyncSelectBaseProps {
     placeholder?: string;
-    fieldLabel?: string;
     searchPlaceholder?: string;
     emptyMessage?: string;
     disabled?: boolean;
@@ -67,28 +63,17 @@ export type AsyncSelectProps =
     | AsyncSelectSingleProps
     | AsyncSelectMultipleProps;
 
-function textOrUndefined(value: unknown): string | undefined {
-    if (typeof value !== 'string' && typeof value !== 'number') {
-        return undefined;
-    }
-
-    const text = String(value).trim();
-
-    return text === '' ? undefined : text;
-}
-
 function defaultTransformOption(item: unknown): AsyncSelectOption {
     if (typeof item === 'object' && item !== null) {
         const record = item as Record<string, unknown>;
 
         return {
             value: String(record.value ?? record.id ?? record.uuid ?? ''),
-            label:
-                textOrUndefined(record.label) ??
-                textOrUndefined(record.name) ??
-                textOrUndefined(record.email) ??
-                '',
-            description: textOrUndefined(record.description),
+            label: String(record.label ?? record.name ?? record.email ?? ''),
+            description:
+                record.description !== undefined
+                    ? String(record.description)
+                    : undefined,
         };
     }
 
@@ -100,52 +85,6 @@ function defaultTransformOption(item: unknown): AsyncSelectOption {
 
 function selectedValues(value: AsyncSelectProps['value']): string[] {
     return Array.isArray(value) ? value : value ? [value] : [];
-}
-
-const avatarColorClasses: Record<string, string> = {
-    rose: 'border-rose-200 bg-rose-50 text-rose-700',
-    amber: 'border-amber-200 bg-amber-50 text-amber-700',
-    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    sky: 'border-sky-200 bg-sky-50 text-sky-700',
-    violet: 'border-violet-200 bg-violet-50 text-violet-700',
-    slate: 'border-slate-200 bg-slate-50 text-slate-700',
-};
-
-function OptionAvatar({
-    option,
-    className,
-}: {
-    option: AsyncSelectOption;
-    className?: string;
-}) {
-    if (!option.imageUrl && !option.avatarInitials) {
-        return null;
-    }
-
-    return (
-        <span
-            className={cn(
-                'flex shrink-0 items-center justify-center overflow-hidden rounded-md border text-[10px] font-semibold leading-none',
-                option.imageUrl
-                    ? 'border-border bg-muted'
-                    : (avatarColorClasses[option.avatarColor ?? ''] ??
-                        avatarColorClasses.rose),
-                className,
-            )}
-            aria-hidden="true"
-        >
-            {option.imageUrl ? (
-                <img
-                    src={option.imageUrl}
-                    alt=""
-                    className="size-full object-cover"
-                    loading="lazy"
-                />
-            ) : (
-                option.avatarInitials
-            )}
-        </span>
-    );
 }
 
 function useDebouncedValue(value: string, delay: number): string {
@@ -166,9 +105,8 @@ function useDebouncedValue(value: string, delay: number): string {
 export function AsyncSelect(props: AsyncSelectProps) {
     const {
         placeholder = 'Selecione...',
-        fieldLabel,
         searchPlaceholder = 'Buscar...',
-        emptyMessage = 'Nenhuma opcao encontrada.',
+        emptyMessage = 'Nenhuma opção encontrada.',
         disabled = false,
         clearable = false,
         className,
@@ -191,14 +129,9 @@ export function AsyncSelect(props: AsyncSelectProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [labelCache, setLabelCache] = useState<Record<string, string>>({});
-    const [optionCache, setOptionCache] = useState<
-        Record<string, AsyncSelectOption>
-    >({});
     const scrollAreaRef = useRef<HTMLDivElement | null>(null);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
     const abortRef = useRef<AbortController | null>(null);
-    const hydrateAbortRef = useRef<AbortController | null>(null);
-    const hydratedValuesRef = useRef<Set<string>>(new Set());
     const isLoadingRef = useRef(false);
     const debouncedSearch = useDebouncedValue(searchTerm, debounceMs);
 
@@ -249,40 +182,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
         return labels;
     }, [asyncOptions, labelCache, options, props]);
 
-    const selectedOptionMap = useMemo(() => {
-        const optionMap = new Map<string, AsyncSelectOption>();
-
-        for (const option of Object.values(optionCache)) {
-            optionMap.set(option.value, option);
-        }
-
-        for (const option of [...(options ?? []), ...asyncOptions]) {
-            optionMap.set(option.value, option);
-        }
-
-        if (
-            !props.multiple &&
-            props.value &&
-            props.initialLabel &&
-            !optionMap.has(props.value)
-        ) {
-            optionMap.set(props.value, {
-                value: props.value,
-                label: props.initialLabel,
-            });
-        }
-
-        if (props.multiple && props.initialLabel) {
-            for (const [value, label] of Object.entries(props.initialLabel)) {
-                if (!optionMap.has(value)) {
-                    optionMap.set(value, { value, label });
-                }
-            }
-        }
-
-        return optionMap;
-    }, [asyncOptions, optionCache, options, props]);
-
     const loadOptions = useCallback(
         async (nextPage: number, append = false): Promise<void> => {
             if (!endpoint || (append && isLoadingRef.current)) {
@@ -303,7 +202,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
             url.searchParams.set('search', debouncedSearch);
             url.searchParams.set('page', String(nextPage));
             url.searchParams.set('limit', String(pageSize));
-            url.searchParams.set('per_page', String(pageSize));
 
             for (const [key, value] of Object.entries(params ?? {})) {
                 if (value !== null && value !== undefined && value !== '') {
@@ -322,7 +220,7 @@ export function AsyncSelect(props: AsyncSelectProps) {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Nao foi possivel carregar as opcoes.');
+                    throw new Error('Não foi possível carregar as opções.');
                 }
 
                 const payload = (await response.json()) as AsyncSelectResponse;
@@ -340,12 +238,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
                     ...currentLabels,
                     ...nextLabels,
                 }));
-                setOptionCache((currentOptions) => ({
-                    ...currentOptions,
-                    ...Object.fromEntries(
-                        nextOptions.map((option) => [option.value, option]),
-                    ),
-                }));
                 setPage(currentPage);
                 setHasMore(currentPage < lastPage);
             } catch (caughtError) {
@@ -353,7 +245,7 @@ export function AsyncSelect(props: AsyncSelectProps) {
                     setError(
                         caughtError instanceof Error
                             ? caughtError.message
-                            : 'Nao foi possivel carregar as opcoes.',
+                            : 'Não foi possível carregar as opções.',
                     );
                 }
             } finally {
@@ -363,97 +255,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
         },
         [debouncedSearch, endpoint, pageSize, params, transformOption],
     );
-
-    const hydrateSelectedOptions = useCallback(
-        async (missingValues: string[]): Promise<void> => {
-            if (!endpoint || missingValues.length === 0) {
-                return;
-            }
-
-            hydrateAbortRef.current?.abort();
-
-            const controller = new AbortController();
-            hydrateAbortRef.current = controller;
-
-            const url = new URL(endpoint, window.location.origin);
-            url.searchParams.set('ids', missingValues.join(','));
-            url.searchParams.set('values', missingValues.join(','));
-            url.searchParams.set('limit', String(missingValues.length));
-            url.searchParams.set(
-                'per_page',
-                String(Math.max(missingValues.length, 1)),
-            );
-
-            for (const value of missingValues) {
-                url.searchParams.append('ids[]', value);
-                url.searchParams.append('values[]', value);
-            }
-
-            for (const [key, value] of Object.entries(params ?? {})) {
-                if (value !== null && value !== undefined && value !== '') {
-                    url.searchParams.set(key, String(value));
-                }
-            }
-
-            try {
-                const response = await fetch(url, {
-                    signal: controller.signal,
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                });
-
-                if (!response.ok) {
-                    throw new Error('Nao foi possivel carregar as opcoes.');
-                }
-
-                const payload = (await response.json()) as AsyncSelectResponse;
-                const nextOptions = payload.data.map(transformOption);
-                const nextLabels = Object.fromEntries(
-                    nextOptions.map((option) => [option.value, option.label]),
-                );
-
-                setLabelCache((currentLabels) => ({
-                    ...currentLabels,
-                    ...nextLabels,
-                }));
-                setOptionCache((currentOptions) => ({
-                    ...currentOptions,
-                    ...Object.fromEntries(
-                        nextOptions.map((option) => [option.value, option]),
-                    ),
-                }));
-            } catch (caughtError) {
-                if (caughtError instanceof DOMException) {
-                    return;
-                }
-
-                for (const value of missingValues) {
-                    hydratedValuesRef.current.delete(value);
-                }
-            }
-        },
-        [endpoint, params, transformOption],
-    );
-
-    useEffect(() => {
-        const missingValues = selected.filter(
-            (value) =>
-                !labelCache[value] && !hydratedValuesRef.current.has(value),
-        );
-
-        if (missingValues.length === 0) {
-            return;
-        }
-
-        for (const value of missingValues) {
-            hydratedValuesRef.current.add(value);
-        }
-
-        void hydrateSelectedOptions(missingValues);
-    }, [hydrateSelectedOptions, labelCache, selected]);
 
     useEffect(() => {
         if (open && endpoint) {
@@ -491,13 +292,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
     const selectedLabels = selected.map(
         (value) => selectedLabelMap.get(value) ?? value,
     );
-    const selectedOptions = selected.map(
-        (value, index) =>
-            selectedOptionMap.get(value) ?? {
-                value,
-                label: selectedLabels[index] ?? value,
-            },
-    );
     const selectedDisplayLimit =
         typeof maxVisibleSelected === 'number'
             ? Math.max(0, maxVisibleSelected)
@@ -523,10 +317,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
         setLabelCache((currentLabels) => ({
             ...currentLabels,
             [option.value]: option.label,
-        }));
-        setOptionCache((currentOptions) => ({
-            ...currentOptions,
-            [option.value]: option,
         }));
 
         if (props.multiple) {
@@ -583,7 +373,7 @@ export function AsyncSelect(props: AsyncSelectProps) {
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                        'h-auto min-h-9 w-full justify-between px-3 py-2 font-normal',
+                        'h-auto min-h-9 w-full justify-between border-input px-3 py-2 font-normal',
                         !hasSelection && 'text-muted-foreground',
                         className,
                     )}
@@ -592,12 +382,6 @@ export function AsyncSelect(props: AsyncSelectProps) {
                         {hasSelection ? (
                             props.multiple ? (
                                 <>
-                                    {fieldLabel && (
-                                        <span className="text-muted-foreground">
-                                            {fieldLabel}
-                                            <span className="px-1">·</span>
-                                        </span>
-                                    )}
                                     {visibleSelectedLabels.map(
                                         (label, index) => (
                                             <Badge
@@ -616,37 +400,15 @@ export function AsyncSelect(props: AsyncSelectProps) {
                                         >
                                             {selectedOverflowLabel
                                                 ? selectedOverflowLabel(
-                                                    hiddenSelectedCount,
-                                                )
+                                                      hiddenSelectedCount,
+                                                  )
                                                 : `+${hiddenSelectedCount}`}
                                         </Badge>
                                     )}
                                 </>
                             ) : (
-                                <span className="flex min-w-0 items-center gap-2">
-                                    {selectedOptions[0] && (
-                                        <OptionAvatar
-                                            option={selectedOptions[0]}
-                                            className="size-6"
-                                        />
-                                    )}
-                                    <span className="min-w-0 truncate">
-                                        {fieldLabel ? (
-                                            <>
-                                                <span className="text-muted-foreground">
-                                                    {fieldLabel}
-                                                </span>
-                                                <span className="text-muted-foreground">
-                                                    {' · '}
-                                                </span>
-                                                <span className="font-medium">
-                                                    {selectedLabels[0]}
-                                                </span>
-                                            </>
-                                        ) : (
-                                            selectedLabels[0]
-                                        )}
-                                    </span>
+                                <span className="truncate">
+                                    {selectedLabels[0]}
                                 </span>
                             )
                         ) : (
@@ -706,19 +468,16 @@ export function AsyncSelect(props: AsyncSelectProps) {
                             type="button"
                             disabled={option.disabled}
                             className={cn(
-                                'flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm outline-none hover:bg-accent disabled:pointer-events-none disabled:opacity-50',
+                                'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm outline-none hover:bg-accent disabled:pointer-events-none disabled:opacity-50',
                                 isSelected(option) && 'bg-accent',
                             )}
                             onClick={() => selectOption(option)}
                         >
-                            {isSelected(option) && (
-                                <span className="flex size-4 items-center justify-center">
+                            <span className="flex size-4 items-center justify-center">
+                                {isSelected(option) && (
                                     <Check className="size-4 text-primary" />
-                                </span>
-                            )}
-                            {!renderOption && (
-                                <OptionAvatar option={option} className="size-7" />
-                            )}
+                                )}
+                            </span>
                             <span className="min-w-0 flex-1">
                                 {renderOption ? (
                                     renderOption(option)

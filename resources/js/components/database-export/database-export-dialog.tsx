@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X, Database } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -44,9 +44,10 @@ export function DatabaseExportDialog({
 
     const { data: tablesData, isLoading: isLoadingTables } = useQuery({
         queryKey: ['database-export-tables'],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             const result = await httpGet<TablesResponse>(
                 apiRoutes.databaseExports.tables,
+                { signal },
             );
 
             return result.data;
@@ -270,6 +271,7 @@ export function DatabaseExportDialog({
                         onClick={onClose}
                         disabled={isSubmitting}
                     >
+                        <X className="size-4" aria-hidden="true" />
                         Cancelar
                     </Button>
                     <Button
@@ -279,10 +281,12 @@ export function DatabaseExportDialog({
                             isSubmitting || (scopeTables && isLoadingTables)
                         }
                     >
-                        {isSubmitting && (
+                        {isSubmitting ? (
                             <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : (
+                            <Database className="size-4" aria-hidden="true" />
                         )}
-                        Gerar Dump
+                        Gerar dump
                     </Button>
                 </DialogFooter>
             </DialogContent>

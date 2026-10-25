@@ -1,7 +1,7 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Plus, Trash2 } from 'lucide-react';
+import { Eye, Plus, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -10,7 +10,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Sales/Http/Controllers/SaleController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -18,7 +18,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -63,7 +62,7 @@ const columns: ColumnDef<Sale>[] = [
         size: 220,
         cell: ({ row }) => (
             <div className="min-w-0">
-                <p className="truncate font-medium">
+                <p className="truncate font-medium tabular-nums">
                     {row.original.order_number}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
@@ -115,11 +114,14 @@ const columns: ColumnDef<Sale>[] = [
         accessorKey: 'total_amount',
         header: 'Total',
         size: 140,
-        cell: ({ row }) =>
-            formatMoney(row.original.total_amount, {
-                fromCents: true,
-                fallback: '-',
-            }),
+        cell: ({ row }) => (
+            <span className="tabular-nums">
+                {formatMoney(row.original.total_amount, {
+                    fromCents: true,
+                    fallback: '-',
+                })}
+            </span>
+        ),
         meta: { label: 'Total' },
     },
     {
@@ -248,11 +250,10 @@ export default function SaleIndex({ permissions, filters }: Props) {
         <>
             <Head title="Vendas" />
 
-            <ContentHeader>
-                <Heading
-                    title="Vendas"
-                    description="Rascunhos, orçamentos e campanhas comerciais."
-                />
+            <Header
+                title="Vendas"
+                subtitle="Rascunhos, orçamentos e campanhas comerciais"
+            >
                 {permissions.can_create ? (
                     <Button asChild>
                         <Link prefetch href={create.url()}>
@@ -261,9 +262,10 @@ export default function SaleIndex({ permissions, filters }: Props) {
                         </Link>
                     </Button>
                 ) : null}
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-xl">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Dialog
                         open={saleToDelete !== null}
                         onOpenChange={(open) => !open && setSaleToDelete(null)}
@@ -282,12 +284,17 @@ export default function SaleIndex({ permissions, filters }: Props) {
                                     variant="outline"
                                     onClick={() => setSaleToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
                                     onClick={deleteSale}
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Excluir
                                 </Button>
                             </DialogFooter>

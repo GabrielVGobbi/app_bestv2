@@ -1,3 +1,11 @@
-# BestPlay — react
+---
+alwaysApply: true
+---
 
-For page behavior, forms, or navigation, use the [Inertia React skill](../../.agents/skills/inertia-react-development/SKILL.md). For a visual-only edit, use the [frontend design skill](../../.agents/skills/frontend-design/SKILL.md).
+# React and Inertia
+
+Read and follow [AGENTS.md](../../AGENTS.md) first, then the [Inertia/React skill](../../.agents/skills/inertia-react-development/SKILL.md) and [Wayfinder skill](../../.agents/skills/wayfinder-development/SKILL.md) for affected navigation and forms.
+
+Reuse the existing typed components, hooks, state utilities, and Inertia form flow. Clean up effects and subscriptions, preserve stable identifiers using the project's compatible UUID helper, and handle loading, empty, validation, and failure states.
+
+Use semantic controls, accessible labels, keyboard interaction, visible focus, and appropriate contrast. Preserve the existing design system and responsive behavior.

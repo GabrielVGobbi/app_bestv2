@@ -1,16 +1,11 @@
-import type {
-    Row,
-    RowSelectionState,
-    VisibilityState,
-} from '@tanstack/react-table';
+import type { Row, RowSelectionState } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-import { isColumnVisible } from '../core/column-visibility';
-import { getStickyRightLayout } from '../core/sticky';
+import type { StickyGeometry } from '../core/table-layout';
 import type { DataTableAppearance } from '../core/types';
 import { DataTableEmptyState } from './data-table-empty-state';
 import { DataTableTruncatedCell } from './data-table-truncated-cell';
@@ -18,7 +13,6 @@ import { DataTableTruncatedCell } from './data-table-truncated-cell';
 interface DataTableBodyProps<TData> {
     rows: Row<TData>[];
     rowSelection?: RowSelectionState;
-    columnVisibility?: VisibilityState;
     visibleColumnCount: number;
     isLoading: boolean;
     appearance: Required<DataTableAppearance>;
@@ -27,6 +21,7 @@ interface DataTableBodyProps<TData> {
     hasSearch?: boolean;
     hasFilters?: boolean;
     isScrolled?: boolean;
+    geometry?: StickyGeometry;
     onClearSearch?: () => void;
     onResetFilters?: () => void;
     onRetry?: () => void;
@@ -35,7 +30,6 @@ interface DataTableBodyProps<TData> {
 export function DataTableBody<TData>({
     rows,
     rowSelection = {},
-    columnVisibility = {},
     visibleColumnCount,
     isLoading,
     appearance,
@@ -44,6 +38,7 @@ export function DataTableBody<TData>({
     hasSearch,
     hasFilters,
     isScrolled = false,
+    geometry = {},
     onClearSearch,
     onResetFilters,
     onRetry,
@@ -54,8 +49,8 @@ export function DataTableBody<TData>({
     const showVerticalLines =
         appearance.gridLines === 'vertical' || appearance.gridLines === 'both';
     const cellPadding = appearance.size === 'sm' ? 'px-3' : 'px-4';
-    const cellHeight = appearance.size === 'sm' ? 'h-12' : 'h-16';
-    const bodyTextSize = appearance.size === 'sm' ? 'text-sm' : 'text-[15px]';
+    const cellHeight = appearance.size === 'sm' ? 'h-10' : 'h-12';
+    const bodyTextSize = appearance.size === 'sm' ? 'text-xs' : 'text-sm';
 
     if (isLoading) {
         return (
@@ -123,42 +118,27 @@ export function DataTableBody<TData>({
         <tbody>
             {rows.map((row) => {
                 const isSelected = !!rowSelection[row.id];
-                const visibleCells = row
-                    .getAllCells()
-                    .filter((cell) =>
-                        isColumnVisible(cell.column.id, columnVisibility),
-                    );
-                const stickyLayout = getStickyRightLayout(
-                    visibleCells.map((cell) => ({
-                        id: cell.column.id,
-                        size: cell.column.getSize(),
-                        sticky: cell.column.columnDef.meta?.sticky === 'right',
-                    })),
-                );
 
                 return (
                     <tr
                         key={row.id}
                         data-state={isSelected ? 'selected' : undefined}
                         className={cn(
-                            'transition-colors hover:bg-muted/70',
-                            showHorizontalLines && 'border-b',
+                            'group/row hover:bg-accent',
+                            showHorizontalLines && 'border-b border-separator',
                             appearance.rowStyle === 'striped' &&
-                                'even:bg-muted/40',
+                                'even:bg-muted/60',
                             appearance.rowStyle === 'soft-striped' &&
-                                'even:bg-muted/20',
-                            isSelected && 'bg-muted/60',
+                                'even:bg-muted/30',
+                            isSelected && 'bg-primary-soft/40',
                         )}
                     >
-                        {visibleCells.map((cell) => {
+                        {row.getVisibleCells().map((cell) => {
                             const meta = cell.column.columnDef.meta;
                             const align = meta?.align ?? 'left';
-                            const isSticky = meta?.sticky === 'right';
+                            const sticky = geometry[cell.column.id];
+                            const isSticky = Boolean(sticky);
                             const isTruncate = meta?.truncate;
-                            const stickyOffset =
-                                stickyLayout.offsets.get(cell.column.id) ?? 0;
-                            const isLeadingSticky =
-                                stickyLayout.leadingId === cell.column.id;
 
                             const cellContent =
                                 cell.column.id === 'select' ? (
@@ -179,6 +159,7 @@ export function DataTableBody<TData>({
                             return (
                                 <td
                                     key={cell.id}
+                                    data-column-id={cell.column.id}
                                     className={cn(
                                         'overflow-hidden whitespace-nowrap',
                                         cellHeight,
@@ -187,18 +168,28 @@ export function DataTableBody<TData>({
                                         showVerticalLines &&
                                             'border-r last:border-r-0',
                                         align === 'center' && 'text-center',
-                                        align === 'right' &&
-                                            'text-right font-tabular',
-                                        isSticky && 'sticky z-[1] bg-card',
+                                        align === 'right' && 'text-right',
+                                        meta?.type === 'number' ||
+                                            meta?.type === 'date'
+                                            ? 'tabular-nums'
+                                            : null,
+                                        // Coluna fixa precisa de fundo opaco; repete listra e hover da linha para irem de borda a borda.
+                                        isSticky &&
+                                            'sticky z-[1] bg-card group-hover/row:bg-accent',
+                                        isSticky &&
+                                            appearance.rowStyle === 'striped' &&
+                                            'group-even/row:bg-[color-mix(in_oklab,var(--color-muted)_60%,var(--color-card))]',
+                                        isSticky &&
+                                            appearance.rowStyle ===
+                                                'soft-striped' &&
+                                            'group-even/row:bg-[color-mix(in_oklab,var(--color-muted)_30%,var(--color-card))]',
                                     )}
                                     style={{
-                                        width: cell.column.getSize(),
+                                        ...sticky,
                                         ...(isSticky && {
-                                            right: stickyOffset,
-                                            boxShadow:
-                                                isScrolled && isLeadingSticky
-                                                    ? '-12px 0 16px -4px rgba(0,0,0,0.1)'
-                                                    : 'none',
+                                            boxShadow: isScrolled
+                                                ? `${sticky?.left !== undefined ? 8 : -8}px 0 12px -8px rgba(0,0,0,0.2)`
+                                                : 'none',
                                         }),
                                     }}
                                 >

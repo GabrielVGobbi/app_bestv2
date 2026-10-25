@@ -18,7 +18,7 @@ import {
     components,
     toasts,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,30 +46,30 @@ const presets: ToastPreset[] = [
     {
         type: 'success',
         title: 'Success',
-        message: 'Operacao concluida com sucesso.',
+        message: 'Operação concluída com sucesso.',
         icon: CheckCircle2,
-        tone: 'text-emerald-600 dark:text-emerald-400',
+        tone: 'text-success-soft-foreground',
     },
     {
         type: 'error',
         title: 'Error',
-        message: 'Nao foi possivel concluir a operacao.',
+        message: 'Não foi possível concluir a operação.',
         icon: XCircle,
-        tone: 'text-red-600 dark:text-red-400',
+        tone: 'text-destructive-soft-foreground',
     },
     {
         type: 'warning',
         title: 'Warning',
         message: 'Revise os dados antes de continuar.',
         icon: AlertTriangle,
-        tone: 'text-amber-600 dark:text-amber-400',
+        tone: 'text-warning-soft-foreground',
     },
     {
         type: 'info',
         title: 'Info',
-        message: 'Ha uma nova informacao disponivel.',
+        message: 'Há uma nova informação disponível.',
         icon: Info,
-        tone: 'text-sky-600 dark:text-sky-400',
+        tone: 'text-info-soft-foreground',
     },
 ];
 
@@ -103,7 +103,7 @@ export default function Toasts() {
 
     function showLoadingToast(): void {
         const id = toast.loading(message || 'Processando...', {
-            description: 'Este toast sera resolvido automaticamente.',
+            description: 'Este toast será resolvido automaticamente.',
         });
 
         window.setTimeout(() => {
@@ -134,10 +134,10 @@ export default function Toasts() {
 
     function showActionToast(): void {
         toast('Registro movido para arquivados.', {
-            description: 'Teste de toast com uma acao contextual.',
+            description: 'Teste de toast com uma ação contextual.',
             action: {
                 label: 'Desfazer',
-                onClick: () => toast.info('Acao desfeita.'),
+                onClick: () => toast.info('Ação desfeita.'),
             },
             duration,
         });
@@ -147,13 +147,13 @@ export default function Toasts() {
         <>
             <Head title="Toasts" />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <Heading
-                        title="Toasts"
-                        description="Tela interna para validar notificacoes locais e estados especiais do Sonner."
-                    />
+            <Header
+                title="Toasts"
+                subtitle="Tela interna para validar notificações locais e estados especiais do Sonner."
+            />
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
                         <Card className="rounded-lg">
                             <CardHeader>
@@ -161,8 +161,8 @@ export default function Toasts() {
                                     <div>
                                         <CardTitle>Disparos rapidos</CardTitle>
                                         <CardDescription>
-                                            Teste variantes Padrão, loading,
-                                            promise e acao.
+                                            Teste variantes padrão, loading,
+                                            promise e ação.
                                         </CardDescription>
                                     </div>
                                     <Badge
@@ -263,7 +263,7 @@ export default function Toasts() {
 
                         <Card className="rounded-lg">
                             <CardHeader>
-                                <CardTitle>Conteudo</CardTitle>
+                                <CardTitle>Conteúdo</CardTitle>
                                 <CardDescription>
                                     Ajuste o texto antes de disparar os
                                     exemplos.

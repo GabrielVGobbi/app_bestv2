@@ -1,9 +1,14 @@
-import { X } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-import type { DataTableBulkAction, DataTableBulkAggregate, DataTableBulkActionsConfig } from '../core/types';
+import type {
+    DataTableBulkAction,
+    DataTableBulkAggregate,
+    DataTableBulkActionsConfig,
+    DataTableSelectionStatus,
+} from '../core/types';
 
 interface DataTableBulkActionsBarProps<TData> {
     selectedRows: TData[];
@@ -12,15 +17,17 @@ interface DataTableBulkActionsBarProps<TData> {
     aggregates?: DataTableBulkAggregate<TData>[];
     config?: DataTableBulkActionsConfig;
     onClear: () => void;
+    status?: DataTableSelectionStatus<TData>;
 }
 
 const variantClasses: Record<string, string> = {
-    destructive: 'text-red-400 hover:text-red-300 hover:bg-red-500/10',
-    default: 'text-white hover:text-white hover:bg-slate-700',
-    outline: 'text-slate-300 hover:text-white hover:bg-slate-700',
-    secondary: 'text-slate-300 hover:text-white hover:bg-slate-700',
-    ghost: 'text-slate-300 hover:text-white hover:bg-slate-700',
-    link: 'text-indigo-400 hover:text-indigo-300',
+    destructive:
+        'text-destructive hover:bg-destructive-soft hover:text-destructive-soft-foreground',
+    default: 'text-foreground hover:bg-accent hover:text-foreground',
+    outline: 'text-muted-foreground hover:bg-accent hover:text-foreground',
+    secondary: 'text-muted-foreground hover:bg-accent hover:text-foreground',
+    ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',
+    link: 'text-primary hover:underline',
 };
 
 export function DataTableBulkActionsBar<TData>({
@@ -30,48 +37,121 @@ export function DataTableBulkActionsBar<TData>({
     aggregates = [],
     config,
     onClear,
+    status,
 }: DataTableBulkActionsBarProps<TData>) {
-    const selectedLabel = config?.selectedLabel ?? (selectedCount === 1 ? 'selecionado' : 'selecionados');
+    const selectedLabel =
+        config?.selectedLabel ??
+        (selectedCount === 1 ? 'selecionado' : 'selecionados');
+    const complete = status?.complete ?? selectedRows.length === selectedCount;
+    const pending = status?.pending ?? false;
+    const exceedsLimit =
+        config?.maxActionCount !== undefined &&
+        selectedCount > config.maxActionCount;
+    const limitMessage = exceedsLimit
+        ? `Selecione até ${config?.maxActionCount} registros para executar esta ação.`
+        : undefined;
 
     // Unmount when nothing is selected so focusable buttons are not in the DOM
-    // while hidden — avoids the "aria-hidden on element with focused descendant" warning.
+    // while hidden: avoids the "aria-hidden on element with focused descendant" warning.
     if (selectedCount === 0) {
         return null;
     }
 
     return (
-        <div
-            className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-0 opacity-100 transition-all duration-200"
-        >
-            <div
-                className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 shadow-2xl shadow-slate-900/30"
-            >
-                <div className="flex items-center gap-2 border-r border-slate-700 pr-4">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-500 text-sm font-bold text-white">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-0 opacity-100 transition-all duration-200">
+            <div className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-border bg-popover px-5 py-3 text-popover-foreground shadow-md">
+                <div className="flex items-center gap-2 border-r border-border pr-4">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground tabular-nums">
                         {selectedCount}
                     </span>
-                    <span className="text-sm font-medium text-slate-300">{selectedLabel}</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                        {selectedLabel}
+                    </span>
                 </div>
 
-                {aggregates.length > 0 && (
-                    <div className="flex items-center gap-3 border-r border-slate-700 pr-4">
-                        {aggregates.map((agg) => {
-                            const raw = agg.fn(selectedRows);
-                            const value = agg.format ? agg.format(raw) : raw;
+                {complete &&
+                    !pending &&
+                    !status?.error &&
+                    aggregates.length > 0 && (
+                        <div className="flex items-center gap-3 border-r border-border pr-4">
+                            {aggregates.map((agg) => {
+                                const raw = agg.fn(selectedRows);
+                                const value = agg.format
+                                    ? agg.format(raw)
+                                    : raw;
 
-                            return (
-                                <span key={agg.id} className="text-sm text-slate-300">
-                                    <span className="mr-1 font-medium text-slate-400">{agg.label}:</span>
-                                    {value}
-                                </span>
-                            );
-                        })}
-                    </div>
-                )}
+                                return (
+                                    <span
+                                        key={agg.id}
+                                        className="text-sm text-foreground"
+                                    >
+                                        <span className="mr-1 font-medium text-muted-foreground">
+                                            {agg.label}:
+                                        </span>
+                                        {value}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                <div
+                    className="max-w-sm text-sm text-muted-foreground"
+                    aria-live="polite"
+                >
+                    {pending && <span>Revisando seleção...</span>}
+                    {status?.reviewed && complete && !pending && (
+                        <span>Seleção revisada.</span>
+                    )}
+                    {!pending && limitMessage && <p>{limitMessage}</p>}
+                    {!pending && !complete && !status?.error && (
+                        <p>
+                            Seleção incompleta. Revise os registros antes de
+                            continuar.
+                        </p>
+                    )}
+                    {!pending && Boolean(status?.unavailableIds.length) && (
+                        <p>
+                            Registros indisponíveis, removidos ou sem acesso:{' '}
+                            {status?.unavailableIds.join(', ')}
+                        </p>
+                    )}
+                    {status?.error && (
+                        <p role="alert">
+                            Erro ao revisar seleção: {status.error}
+                        </p>
+                    )}
+                    {status?.canResolve &&
+                        !pending &&
+                        (exceedsLimit ||
+                            Boolean(status.error) ||
+                            Boolean(status.unavailableIds.length)) && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={status.onResolve}
+                            >
+                                <RefreshCw
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                                {status.error
+                                    ? 'Tentar novamente'
+                                    : 'Revisar seleção'}
+                            </Button>
+                        )}
+                </div>
 
                 <div className="flex items-center gap-1.5">
                     {actions.map((action) => {
-                        const disabled = action.disabled?.(selectedRows) ?? false;
+                        const disabled =
+                            pending ||
+                            exceedsLimit ||
+                            (!complete && !status?.canResolve) ||
+                            (complete &&
+                                !status?.canResolve &&
+                                (action.disabled?.(selectedRows) ?? false));
 
                         return (
                             <Button
@@ -80,22 +160,35 @@ export function DataTableBulkActionsBar<TData>({
                                 size="sm"
                                 variant="ghost"
                                 disabled={disabled}
-                                className={cn('h-9 rounded-xl px-3', variantClasses[action.variant ?? 'ghost'])}
-                                onClick={() => action.onClick(selectedRows, onClear)}
+                                title={limitMessage}
+                                className={cn(
+                                    'h-9 rounded-xl px-3',
+                                    variantClasses[action.variant ?? 'ghost'],
+                                )}
+                                onClick={() =>
+                                    status
+                                        ? status.onAction(action)
+                                        : complete &&
+                                          action.onClick(selectedRows, onClear)
+                                }
                             >
-                                {action.icon && <span className="mr-1.5 flex">{action.icon}</span>}
+                                {action.icon && (
+                                    <span className="mr-1.5 flex">
+                                        {action.icon}
+                                    </span>
+                                )}
                                 {action.label}
                             </Button>
                         );
                     })}
                 </div>
 
-                <div className="border-l border-slate-700 pl-3">
+                <div className="border-l border-border pl-3">
                     <Button
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 rounded-md p-0 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
+                        className="h-8 w-8 rounded-lg p-0 text-muted-foreground hover:bg-accent hover:text-foreground"
                         onClick={onClear}
                         aria-label="Limpar seleção"
                     >

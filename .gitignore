@@ -30,7 +30,27 @@ yarn-error.log
 
 .config
 .docs/*
+!.docs/project/
+.docs/project/*
+!.docs/project/architecture.md
+!.docs/project/project.md
 docs/.start_kit.obs/*
+!docs/.start_kit.obs/Bem-vindo.md
+!docs/.start_kit.obs/Exports/
+docs/.start_kit.obs/Exports/*
+!docs/.start_kit.obs/Exports/async-export-system.md
+!docs/.start_kit.obs/Notifications/
+docs/.start_kit.obs/Notifications/*
+!docs/.start_kit.obs/Notifications/notifications-module.md
+!docs/.start_kit.obs/Email/
+docs/.start_kit.obs/Email/*
+!docs/.start_kit.obs/Email/email-module.md
+!docs/.start_kit.obs/Slack/
+docs/.start_kit.obs/Slack/*
+!docs/.start_kit.obs/Slack/slack-module.md
+!docs/.start_kit.obs/Navigation/
+docs/.start_kit.obs/Navigation/*
+!docs/.start_kit.obs/Navigation/navigation-config.md
 
 .todo
 

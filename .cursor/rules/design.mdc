@@ -1,7 +1,9 @@
 ---
-description: BestPlay visual identity and component conventions.
-globs: "resources/js/**/*.tsx,resources/css/**/*.css"
-alwaysApply: false
+alwaysApply: true
 ---
 
-For visual changes, use the [frontend design skill](../../.agents/skills/frontend-design/SKILL.md). It routes to the existing design system, Brazilian form components, and Tailwind guidance.
+# Interface design
+
+Read and follow [AGENTS.md](../../AGENTS.md) and the canonical [DESIGN.md](../../DESIGN.md) first. The approved reference is Bionexis; preserve its visual composition and the Start Kit business scope. For requested interface work, consult the [frontend design skill](../../.agents/skills/frontend-design/SKILL.md) and relevant component documentation. Generic skill preferences do not replace the approved visual reference.
+
+Preserve the existing components, theme, typography, spacing, and interaction patterns for scoped fixes. Apply a new visual direction when the user requests design work, within that scope. Keep responsive layouts, light/dark behavior, accessible focus and contrast, and clear loading/error feedback. Use motion proportionally and respect reduced motion.

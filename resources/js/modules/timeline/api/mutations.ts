@@ -1,7 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { usePrivateState } from '@/contexts/private-state-context';
 
-import { getErrorMessage, httpDelete, httpPost, httpPut, toApiError } from '@/lib/http';
+import {
+    canceledPrivateRequest,
+    getErrorMessage,
+    httpDelete,
+    httpPost,
+    httpPut,
+    toApiError,
+} from '@/lib/http';
 
 import { timelineEndpoints } from './endpoints';
 import { timelineKeys } from './keys';
@@ -10,57 +18,48 @@ import type {
     ModelId,
     TimelineCommentItem,
     TimelineMessageResponse,
-    TimelineResponse,
 } from './types';
 
 interface CommentResourceResponse {
     data: TimelineCommentItem;
 }
 
-function normalizeCommentFromPayload(
-    comment: TimelineCommentItem,
-    payload: CommentPayload,
-): TimelineCommentItem {
-    return {
-        ...comment,
-        body_format: payload.body_format ?? comment.body_format ?? 'plain',
-    };
-}
-
-function patchTimeline(
-    old: TimelineResponse | undefined,
-    patcher: (items: TimelineResponse['data']) => TimelineResponse['data'],
-): TimelineResponse | undefined {
-    if (!old) {
-return old;
-}
-
-    return {
-        ...old,
-        data: patcher(old.data),
-    };
-}
-
 export function useCreateTimelineComment(modelType: string, modelId: ModelId) {
     const queryClient = useQueryClient();
+    const { scope } = usePrivateState();
 
     return useMutation({
-        mutationFn: (payload: CommentPayload) =>
-            httpPost<CommentResourceResponse>(
+        onMutate: () => ({
+            subjectKey: timelineKeys.subject(modelType, modelId),
+            scope,
+        }),
+        mutationFn: (payload: CommentPayload) => {
+            if (!scope.isCurrent()) {
+                throw canceledPrivateRequest();
+            }
+
+            return httpPost<CommentResourceResponse>(
                 timelineEndpoints.comments(modelType, modelId),
                 payload,
-            ),
-        onSuccess: (response, payload) => {
-            const comment = normalizeCommentFromPayload(response.data, payload);
-
-            queryClient.setQueriesData<TimelineResponse>(
-                { queryKey: timelineKeys.subject(modelType, modelId) },
-                (old) =>
-                    patchTimeline(old, (items) => [...items, comment]),
+                { signal: scope.signal },
             );
+        },
+        onSuccess: (_response, _payload, origin) => {
+            if (!origin?.scope.isCurrent()) {
+                return;
+            }
+
+            void queryClient.invalidateQueries({ queryKey: origin.subjectKey });
             toast.success('Comentario criado.');
         },
-        onError: (error) => {
+        onError: (error, _payload, origin) => {
+            if (
+                !(origin?.scope ?? scope).isCurrent() ||
+                toApiError(error).type === 'canceled'
+            ) {
+                return;
+            }
+
             toast.error(getErrorMessage(toApiError(error)));
         },
     });
@@ -68,47 +67,46 @@ export function useCreateTimelineComment(modelType: string, modelId: ModelId) {
 
 export function useReplyTimelineComment(modelType: string, modelId: ModelId) {
     const queryClient = useQueryClient();
+    const { scope } = usePrivateState();
 
     return useMutation({
+        onMutate: () => ({
+            subjectKey: timelineKeys.subject(modelType, modelId),
+            scope,
+        }),
         mutationFn: ({
             commentId,
             payload,
         }: {
             commentId: number;
             payload: CommentPayload;
-        }) =>
-            httpPost<CommentResourceResponse>(
+        }) => {
+            if (!scope.isCurrent()) {
+                throw canceledPrivateRequest();
+            }
+
+            return httpPost<CommentResourceResponse>(
                 timelineEndpoints.replies(commentId),
                 payload,
-            ),
-        onSuccess: (response, variables) => {
-            const comment = normalizeCommentFromPayload(
-                response.data,
-                variables.payload,
+                { signal: scope.signal },
             );
+        },
+        onSuccess: (_response, _variables, origin) => {
+            if (!origin?.scope.isCurrent()) {
+                return;
+            }
 
-            queryClient.setQueriesData<TimelineResponse>(
-                { queryKey: timelineKeys.subject(modelType, modelId) },
-                (old) =>
-                    patchTimeline(old, (items) =>
-                        items.map((item) => {
-                            if (
-                                item.type !== 'comment' ||
-                                item.id !== variables.commentId
-                            ) {
-                                return item;
-                            }
-
-                            return {
-                                ...item,
-                                replies: [...(item.replies ?? []), comment],
-                            };
-                        }),
-                    ),
-            );
+            void queryClient.invalidateQueries({ queryKey: origin.subjectKey });
             toast.success('Resposta criada.');
         },
-        onError: (error) => {
+        onError: (error, _variables, origin) => {
+            if (
+                !(origin?.scope ?? scope).isCurrent() ||
+                toApiError(error).type === 'canceled'
+            ) {
+                return;
+            }
+
             toast.error(getErrorMessage(toApiError(error)));
         },
     });
@@ -116,52 +114,46 @@ export function useReplyTimelineComment(modelType: string, modelId: ModelId) {
 
 export function useUpdateTimelineComment(modelType: string, modelId: ModelId) {
     const queryClient = useQueryClient();
+    const { scope } = usePrivateState();
 
     return useMutation({
+        onMutate: () => ({
+            subjectKey: timelineKeys.subject(modelType, modelId),
+            scope,
+        }),
         mutationFn: ({
             commentId,
             payload,
         }: {
             commentId: number;
             payload: CommentPayload;
-        }) =>
-            httpPut<CommentResourceResponse>(
+        }) => {
+            if (!scope.isCurrent()) {
+                throw canceledPrivateRequest();
+            }
+
+            return httpPut<CommentResourceResponse>(
                 timelineEndpoints.comment(commentId),
                 payload,
-            ),
-        onSuccess: (response, variables) => {
-            const comment = normalizeCommentFromPayload(
-                response.data,
-                variables.payload,
+                { signal: scope.signal },
             );
+        },
+        onSuccess: (_response, _variables, origin) => {
+            if (!origin?.scope.isCurrent()) {
+                return;
+            }
 
-            queryClient.setQueriesData<TimelineResponse>(
-                { queryKey: timelineKeys.subject(modelType, modelId) },
-                (old) =>
-                    patchTimeline(old, (items) =>
-                        items.map((item) => {
-                            if (item.type !== 'comment') {
-                                return item;
-                            }
-
-                            if (item.id === comment.id) {
-                                return comment;
-                            }
-
-                            return {
-                                ...item,
-                                replies: (item.replies ?? []).map((reply) =>
-                                    reply.id === comment.id
-                                        ? comment
-                                        : reply,
-                                ),
-                            };
-                        }),
-                    ),
-            );
+            void queryClient.invalidateQueries({ queryKey: origin.subjectKey });
             toast.success('Comentario atualizado.');
         },
-        onError: (error) => {
+        onError: (error, _variables, origin) => {
+            if (
+                !(origin?.scope ?? scope).isCurrent() ||
+                toApiError(error).type === 'canceled'
+            ) {
+                return;
+            }
+
             toast.error(getErrorMessage(toApiError(error)));
         },
     });
@@ -169,40 +161,39 @@ export function useUpdateTimelineComment(modelType: string, modelId: ModelId) {
 
 export function useDeleteTimelineComment(modelType: string, modelId: ModelId) {
     const queryClient = useQueryClient();
+    const { scope } = usePrivateState();
 
     return useMutation({
-        mutationFn: (commentId: number) =>
-            httpDelete<TimelineMessageResponse>(
-                timelineEndpoints.comment(commentId),
-            ),
-        onSuccess: (_response, commentId) => {
-            queryClient.setQueriesData<TimelineResponse>(
-                { queryKey: timelineKeys.subject(modelType, modelId) },
-                (old) =>
-                    patchTimeline(old, (items) =>
-                        items
-                            .filter(
-                                (item) =>
-                                    item.type !== 'comment' ||
-                                    item.id !== commentId,
-                            )
-                            .map((item) => {
-                                if (item.type !== 'comment') {
-                                    return item;
-                                }
+        onMutate: () => ({
+            subjectKey: timelineKeys.subject(modelType, modelId),
+            scope,
+        }),
+        mutationFn: (commentId: number) => {
+            if (!scope.isCurrent()) {
+                throw canceledPrivateRequest();
+            }
 
-                                return {
-                                    ...item,
-                                    replies: (item.replies ?? []).filter(
-                                        (reply) => reply.id !== commentId,
-                                    ),
-                                };
-                            }),
-                    ),
+            return httpDelete<TimelineMessageResponse>(
+                timelineEndpoints.comment(commentId),
+                { signal: scope.signal },
             );
+        },
+        onSuccess: (_response, _commentId, origin) => {
+            if (!origin?.scope.isCurrent()) {
+                return;
+            }
+
+            void queryClient.invalidateQueries({ queryKey: origin.subjectKey });
             toast.success('Comentario removido.');
         },
-        onError: (error) => {
+        onError: (error, _commentId, origin) => {
+            if (
+                !(origin?.scope ?? scope).isCurrent() ||
+                toApiError(error).type === 'canceled'
+            ) {
+                return;
+            }
+
             toast.error(getErrorMessage(toApiError(error)));
         },
     });

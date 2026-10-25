@@ -14,27 +14,46 @@ class UploadedPolicy
 
     public function view(User $user, Uploaded $upload): bool
     {
-        return $this->isOwner($user, $upload);
+        if (! $user->hasVerifiedEmail()) {
+            return false;
+        }
+
+        $parentable = $upload->parentable;
+
+        return $parentable !== null && $this->uploads->canViewParent($user, $parentable);
     }
 
     public function update(User $user, Uploaded $upload): bool
     {
-        return $this->isOwner($user, $upload);
+        return $this->canManage($user, $upload);
     }
 
     public function delete(User $user, Uploaded $upload): bool
     {
-        return $this->isOwner($user, $upload);
+        return $this->canManage($user, $upload);
     }
 
-    protected function isOwner(User $user, Uploaded $upload): bool
+    public function setCover(User $user, Uploaded $upload): bool
     {
-        $parentable = $upload->parentable;
-        if ($parentable !== null && $this->uploads->canViewParent($user, $parentable)) {
-            return true;
+        if (! $this->view($user, $upload)) {
+            return false;
         }
 
-        return $upload->uploader_id === $user->id
-            || $upload->user_id === $user->id;
+        $parentable = $upload->parentable;
+
+        return $parentable !== null && $this->uploads->canCreateForParent($user, $parentable);
+    }
+
+    private function canManage(User $user, Uploaded $upload): bool
+    {
+        if (! $this->view($user, $upload)) {
+            return false;
+        }
+
+        $parentable = $upload->parentable;
+
+        return $parentable !== null && ($upload->uploader_id === $user->id
+            || $upload->user_id === $user->id
+            || $this->uploads->canCreateForParent($user, $parentable));
     }
 }

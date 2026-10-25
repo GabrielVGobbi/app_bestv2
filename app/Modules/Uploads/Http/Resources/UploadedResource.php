@@ -17,6 +17,7 @@ class UploadedResource extends JsonResource
         $user = auth()->user();
         $canUpdate = $user?->can('update', $this->resource) ?? false;
         $canDelete = $user?->can('delete', $this->resource) ?? false;
+        $canSetCover = $user?->can('setCover', $this->resource) ?? false;
         $previewUrl = route('uploads.preview', ['upload' => $this->id]);
 
         return [
@@ -47,6 +48,7 @@ class UploadedResource extends JsonResource
             'permissions' => [
                 'can_update' => $canUpdate,
                 'can_delete' => $canDelete,
+                'can_set_cover' => $canSetCover,
             ],
         ];
     }

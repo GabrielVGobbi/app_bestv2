@@ -16,7 +16,7 @@ import {
     richTextEditor,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
 import { storeImage } from '@/actions/App/Http/Controllers/Api/UploadController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -98,7 +98,7 @@ class Article extends Model {
 $article->setRichText($request->body, field: 'body');
 $article->setRichText($request->summary, field: 'summary');
 
-// Ler sob demanda (lazy — não carregado na listagem)
+// Ler sob demanda (lazy, não carregado na listagem)
 $article->getRichText('body')?->toHtml();
 
 // Eager-load para evitar N+1 em show pages
@@ -141,10 +141,10 @@ class Post extends Model
 {
     use HasRichText;
 
-    // rich_texts NÃO fica em $with — só carregado quando explicitado
+    // rich_texts NÃO fica em $with, só carregado quando explicitado
 }
 
-// Controller — listagem (sem body)
+// Controller: listagem (sem body)
 public function index(): Response
 {
     return Inertia::render('posts/index', [
@@ -153,7 +153,7 @@ public function index(): Response
     ]);
 }
 
-// Controller — show page (com body)
+// Controller: show page (com body)
 public function show(Post $post): Response
 {
     return Inertia::render('posts/show', [
@@ -162,7 +162,7 @@ public function show(Post $post): Response
     ]);
 }
 
-// Controller — store
+// Controller: store
 public function store(StorePostRequest $request): RedirectResponse
 {
     $post = Post::create($request->safe()->except('body'));
@@ -171,7 +171,7 @@ public function store(StorePostRequest $request): RedirectResponse
     return redirect()->route('posts.show', $post);
 }`;
 
-const imageStorageCode = `// ❌ NUNCA salve base64 no banco — payload gigante, sem CDN, sem resize
+const imageStorageCode = `// ❌ NUNCA salve base64 no banco: payload gigante, sem CDN, sem resize
 // <img src="data:image/png;base64,iVBORw0KGgo..." />
 
 // ✅ Upload para S3 / storage local e salve só a URL
@@ -234,7 +234,7 @@ function PropRow({
                 <code className="text-sm font-semibold text-primary">
                     {name}
                 </code>
-                {required && <Badge variant="outline">obrigatorio</Badge>}
+                {required && <Badge variant="outline">obrigatório</Badge>}
             </div>
             <code className="w-fit rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                 {type}
@@ -279,18 +279,18 @@ export default function RichTextEditorPage() {
         <>
             <Head title="Rich Text Editor" />
 
+            <Header
+                title="Rich Text Editor"
+                subtitle="Editor WYSIWYG headless baseado em TipTap/ProseMirror. Toolbar completa, upload de imagem, link dialog e saída em HTML."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    resources/js/components/rich-text-editor
+                </Badge>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     {/* Header */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Rich Text Editor"
-                            description="Editor WYSIWYG headless baseado em TipTap/ProseMirror. Toolbar completa, upload de imagem, link dialog e saída em HTML."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            resources/js/components/rich-text-editor
-                        </Badge>
-                    </div>
 
                     {/* Feature cards */}
                     <div className="grid gap-4 md:grid-cols-3">
@@ -307,7 +307,7 @@ export default function RichTextEditorPage() {
                         <FeatureCard
                             icon={Database}
                             title="Banco de dados performático"
-                            description="Tabela rich_texts polimórfica separada. Conteúdo não é carregado em listagens — apenas em show pages."
+                            description="Tabela rich_texts polimórfica separada. Conteúdo não é carregado em listagens, apenas em show pages."
                         />
                     </div>
 
@@ -334,7 +334,7 @@ export default function RichTextEditorPage() {
                                         size="sm"
                                         onClick={() => setDisabled((d) => !d)}
                                     >
-                                        Disabled: {disabled ? 'sim' : 'nao'}
+                                        Disabled: {disabled ? 'sim' : 'não'}
                                     </Button>
                                     {([200, 300, 400] as const).map((h) => (
                                         <Button
@@ -379,7 +379,7 @@ export default function RichTextEditorPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Code examples — 2 columns */}
+                    {/* Code examples: 2 columns */}
                     <div className="grid gap-6 xl:grid-cols-2">
                         <Card className="rounded-lg">
                             <CardHeader>
@@ -505,7 +505,7 @@ export default function RichTextEditorPage() {
                             <CardContent className="space-y-4">
                                 <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm">
                                     <p className="font-medium text-destructive">
-                                        base64 no banco — problemas:
+                                        base64 no banco, problemas:
                                     </p>
                                     <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
                                         <li>
@@ -522,9 +522,9 @@ export default function RichTextEditorPage() {
                                         <li>Backup lento, dump pesado</li>
                                     </ul>
                                 </div>
-                                <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3 text-sm">
-                                    <p className="font-medium text-green-700 dark:text-green-400">
-                                        S3 / storage + URL — recomendado:
+                                <div className="rounded-lg border border-success-soft-foreground/20 bg-success-soft p-3 text-sm">
+                                    <p className="font-medium text-success-soft-foreground">
+                                        S3 / storage + URL, recomendado:
                                     </p>
                                     <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
                                         <li>
@@ -604,15 +604,14 @@ export default function RichTextEditorPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Layers className="size-5" />
-                                WYSIWYG vs Editor de Blocos — quando usar cada
-                                um
+                                WYSIWYG vs Editor de Blocos: quando usar cada um
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="rounded-lg border p-4">
                                     <p className="mb-2 font-semibold">
-                                        WYSIWYG (este componente — TipTap)
+                                        WYSIWYG (este componente, TipTap)
                                     </p>
                                     <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
                                         <li>
@@ -620,7 +619,7 @@ export default function RichTextEditorPage() {
                                             descrições, e-mails
                                         </li>
                                         <li>
-                                            Output: HTML limpo — fácil de exibir
+                                            Output: HTML limpo, fácil de exibir
                                             e indexar
                                         </li>
                                         <li>
@@ -672,7 +671,7 @@ export default function RichTextEditorPage() {
                                 campo <code>format</code> (<code>html</code>{' '}
                                 para WYSIWYG, <code>tiptap_json</code> para
                                 blocos). Se migrar para blocos no futuro, só
-                                muda o frontend — o banco continua o mesmo.
+                                muda o frontend, o banco continua o mesmo.
                             </div>
                         </CardContent>
                     </Card>

@@ -19,10 +19,16 @@ Artisan::command('app:clear', function () {
     $this->info('Todos os caches foram limpos com sucesso!');
 })->purpose('Clear application caches');
 
-Schedule::command('telescope:prune --hours=48')->daily();
-Schedule::command('exports:prune')->daily();
-Schedule::command('rich-text:prune-uploads --hours=24')->daily();
-Schedule::command('backup:run')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
-Schedule::command('database-exports:prune')->daily();
-Schedule::command('playlists:sync-spotify --limit=100 --stale-hours=24')->dailyAt('03:20')->withoutOverlapping()->onOneServer();
-Schedule::command('finance:recalculate-overdue --chunk=200')->dailyAt('00:10')->withoutOverlapping()->onOneServer();
+Schedule::command('telescope:prune --hours=48')->daily()->timezone('UTC')->withoutOverlapping()->onOneServer();
+Schedule::command('exports:prune')->daily()->timezone('UTC')->withoutOverlapping()->onOneServer();
+Schedule::command('uploads:prune-zips')->hourly()->timezone('UTC')->withoutOverlapping()->onOneServer();
+Schedule::command('rich-text:prune-uploads --hours=24')->daily()->timezone('UTC')->withoutOverlapping()->onOneServer();
+Schedule::command('database-exports:prune')->daily()->timezone('UTC')->withoutOverlapping()->onOneServer();
+
+foreach (['backup:run' => '02:00', 'backup:clean' => '03:00', 'backup:monitor' => '04:00'] as $command => $time) {
+    Schedule::command($command)->dailyAt($time)->timezone('UTC')->withoutOverlapping()->onOneServer()
+        ->createMutexNameUsing('framework/schedule-backup-lifecycle');
+}
+
+Schedule::command('playlists:sync-spotify --limit=100 --stale-hours=24')->dailyAt('03:20')->timezone('UTC')->withoutOverlapping()->onOneServer();
+Schedule::command('finance:recalculate-overdue --chunk=200')->dailyAt('00:10')->timezone('UTC')->withoutOverlapping()->onOneServer();

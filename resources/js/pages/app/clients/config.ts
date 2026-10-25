@@ -1,7 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { BadgeCheck, Music2, UserRoundCheck } from 'lucide-react';
-import { createElement } from 'react';
-import { show } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
+
 import type {
     DataTableDateColumn,
     DataTableExportConfig,
@@ -9,8 +8,6 @@ import type {
     DataTableFilterOption,
     DataTableQuickFilter,
 } from '@/components/data-table';
-import { RecordIdentity } from '@/components/record-identity';
-
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { Client } from '@/types/app/client';
 
@@ -24,21 +21,13 @@ export const columns: ColumnDef<Client>[] = [
         id: 'name',
         accessorKey: 'name',
         header: 'Nome',
-        size: 300,
-        cell: ({ row }) =>
-            createElement(RecordIdentity, {
-                name: row.original.name,
-                description: row.original.company_name,
-                href: show.url(row.original.uuid),
-            }),
         meta: { label: 'Nome' },
     },
     {
         id: 'email',
         accessorKey: 'email',
-        header: 'Email',
-        size: 260,
-        meta: { label: 'Email', truncate: true },
+        header: 'E-mail',
+        meta: { label: 'E-mail', truncate: true },
     },
     {
         id: 'phone',
@@ -63,7 +52,7 @@ export const filters: DataTableFilterConfig[] = [
     },
     {
         id: 'email',
-        label: 'Email',
+        label: 'E-mail',
         type: 'text',
         operator: 'contains',
     },
@@ -85,10 +74,14 @@ export const filters: DataTableFilterConfig[] = [
     },
 ];
 
-export function buildQuickFilters({
-    classifications,
-    musicalGenres,
-}: ClientQuickFilterOptions): DataTableQuickFilter[] {
+/**
+ * Filtros rápidos da toolbar. A DataTable só aceita opções prontas, então a
+ * lista de atendentes chega resolvida pela tela (ver `clients/index.tsx`).
+ */
+export function buildQuickFilters(
+    { classifications, musicalGenres }: ClientQuickFilterOptions,
+    responsibleUsers: DataTableFilterOption[],
+): DataTableQuickFilter[] {
     return [
         {
             id: 'classification',
@@ -115,13 +108,7 @@ export function buildQuickFilters({
             label: 'Atendente',
             placeholder: 'Atendente',
             icon: UserRoundCheck,
-            type: 'async-select',
-            asyncSelect: {
-                endpoint: apiRoutes.users.index,
-                params: { role: 'commercial' },
-                searchPlaceholder: 'Buscar por nome ou email...',
-                emptyMessage: 'Nenhum usuário comercial encontrado.',
-            },
+            options: responsibleUsers,
             clearable: true,
         },
     ];

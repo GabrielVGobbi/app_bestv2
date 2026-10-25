@@ -9,6 +9,7 @@ use App\Modules\Backup\Http\Requests\CreateDatabaseExportRequest;
 use App\Modules\Backup\Http\Resources\DatabaseExportResource;
 use App\Modules\Backup\Jobs\ProcessDatabaseExport;
 use App\Modules\Backup\Models\DatabaseExport;
+use App\Supports\DatabaseDumpOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -80,22 +81,13 @@ class DatabaseExportApiController extends Controller
             ->download($databaseExport->file_path, $databaseExport->file_name);
     }
 
-    /**
-     * @return array{data: array<int, array{name: string}>}
-     */
     public function tables(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasRole('developer'), 403);
 
-        $driver = config('database.default');
-
-        $rows = match ($driver) {
-            'sqlite' => DB::select("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"),
-            'pgsql' => DB::select("SELECT tablename as name FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"),
-            default => DB::select('SHOW TABLES'),
-        };
-
-        $tables = array_map(fn ($row) => ['name' => array_values((array) $row)[0]], $rows);
+        $connection = DB::connection();
+        abort_if(DatabaseDumpOptions::supportedTypes($connection->getDriverName()) === [], 422, 'Driver de dump não suportado.');
+        $tables = array_map(fn (string $name): array => ['name' => $name], DatabaseDumpOptions::tables($connection));
 
         return response()->json(['data' => $tables]);
     }

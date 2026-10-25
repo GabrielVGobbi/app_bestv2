@@ -1,9 +1,11 @@
 import { Form } from '@inertiajs/react';
+import { Trash2, TriangleAlert, X } from 'lucide-react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import InputError, { errorProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -23,16 +25,17 @@ export default function DeleteUser() {
         <div className="space-y-6">
             <Heading
                 variant="small"
-                title="Delete account"
-                description="Delete your account and all of its resources"
+                title="Excluir conta"
+                description="Exclui sua conta e todos os seus dados"
             />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
-                </div>
+            <div className="space-y-4">
+                <Alert variant="destructive">
+                    <TriangleAlert />
+                    <AlertTitle>Atenção</AlertTitle>
+                    <AlertDescription>
+                        Esta ação não pode ser desfeita.
+                    </AlertDescription>
+                </Alert>
 
                 <Dialog>
                     <DialogTrigger asChild>
@@ -40,18 +43,17 @@ export default function DeleteUser() {
                             variant="destructive"
                             data-test="delete-user-button"
                         >
-                            Delete account
+                            <Trash2 className="size-4" aria-hidden="true" />
+                            Excluir conta
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogTitle>
-                            Are you sure you want to delete your account?
+                            Tem certeza de que quer excluir sua conta?
                         </DialogTitle>
                         <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
+                            Depois da exclusão, todos os dados serão apagados
+                            definitivamente. Digite sua senha para confirmar.
                         </DialogDescription>
 
                         <Form
@@ -70,18 +72,25 @@ export default function DeleteUser() {
                                             htmlFor="password"
                                             className="sr-only"
                                         >
-                                            Password
+                                            Senha
                                         </Label>
 
                                         <PasswordInput
                                             id="password"
+                                            {...errorProps(
+                                                'password',
+                                                errors.password,
+                                            )}
                                             name="password"
                                             ref={passwordInput}
-                                            placeholder="Password"
+                                            placeholder="Senha"
                                             autoComplete="current-password"
                                         />
 
-                                        <InputError message={errors.password} />
+                                        <InputError
+                                            field="password"
+                                            message={errors.password}
+                                        />
                                     </div>
 
                                     <DialogFooter className="gap-2">
@@ -92,7 +101,11 @@ export default function DeleteUser() {
                                                     resetAndClearErrors()
                                                 }
                                             >
-                                                Cancel
+                                                <X
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Cancelar
                                             </Button>
                                         </DialogClose>
 
@@ -105,7 +118,11 @@ export default function DeleteUser() {
                                                 type="submit"
                                                 data-test="confirm-delete-user-button"
                                             >
-                                                Delete account
+                                                <Trash2
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Excluir conta
                                             </button>
                                         </Button>
                                     </DialogFooter>

@@ -56,11 +56,11 @@ class FinancePermissionsNavigationTest extends TestCase
         $this->assertIsArray($operations);
         $this->assertIsArray($settings);
         $this->assertSame(
-            ['Lançamentos Financeiros', 'Relatórios', 'Conciliação'],
+            ['Lançamentos financeiros', 'Relatórios', 'Conciliação'],
             collect($operations['items'])->pluck('title')->all(),
         );
 
-        $entriesGroup = collect($operations['items'])->firstWhere('title', 'Lançamentos Financeiros');
+        $entriesGroup = collect($operations['items'])->firstWhere('title', 'Lançamentos financeiros');
 
         $this->assertIsArray($entriesGroup);
         $this->assertSame('/financial-entries', $entriesGroup['href']);

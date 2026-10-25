@@ -2,7 +2,7 @@
 
 ## Mass Assignment Protection
 
-Every model must define `$fillable` (whitelist) or `$guarded` (blacklist).
+Follow the canonical [AGENTS.md](../../../../AGENTS.md) and existing model conventions. Protect mass assignment with an explicit allowlist or guarded strategy: Laravel 13 supports `#[Fillable]` / `#[Guarded]` attributes as well as `$fillable` / `$guarded` properties. Do not rewrite a valid existing mechanism merely to use another syntax; only pass validated, authorized attributes.
 
 Incorrect:
 ```php
@@ -90,7 +90,7 @@ Correct:
 
 ## CSRF Protection
 
-Include `@csrf` in all POST/PUT/DELETE Blade forms. In Inertia apps, the `@csrf` directive is automatically applied.
+Include `@csrf` in state-changing Blade forms (POST, PUT, PATCH, DELETE). React/Inertia forms do not receive a Blade directive automatically: Inertia's HTTP client reads Laravel's `XSRF-TOKEN` cookie and sends the `X-XSRF-TOKEN` header. Preserve the existing middleware and transport configuration; a separate HTTP client must send the required token itself. See the [Inertia CSRF documentation](https://inertiajs.com/docs/v3/security/csrf-protection).
 
 Incorrect:
 ```blade
@@ -121,7 +121,7 @@ Route::post('/login', LoginController::class)->middleware('throttle:login');
 
 ## Validate File Uploads
 
-Validate extension, MIME type, and size. The `mimes` rule checks extensions; use `mimetypes` for actual MIME type validation. Never trust client-provided filenames.
+Validate content type and size. Both `mimes` and `mimetypes` inspect file contents: `mimes` guesses the MIME type associated with its listed extensions, while `mimetypes` compares MIME types directly. Neither verifies the client-assigned filename extension; add `extensions` when that filename constraint is required, alongside content validation. Never trust client-provided filenames. See the [file validation documentation](https://laravel.com/docs/13.x/validation#rule-mimes).
 
 ```php
 public function rules(): array

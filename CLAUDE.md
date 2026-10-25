@@ -1,3 +1,7 @@
-# BestPlay
+# Project instructions
 
-Read [AGENTS.md](AGENTS.md) for the shared project instructions if it is not already in context. Load only the skills and references relevant to the task.
+@AGENTS.md
+
+Read [AGENTS.md](AGENTS.md) first. It is the canonical source for this repository's stack, workflows, safety boundaries, testing, browser UUID compatibility, and documentation paths.
+
+Use the relevant project skills and existing domain documentation linked there. This adapter adds no separate implementation policy.

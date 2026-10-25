@@ -1,9 +1,21 @@
-import { router } from '@inertiajs/react';
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 
+import { usePrivateState } from '@/contexts/private-state-context';
 import echo from '@/lib/echo';
+import {
+    canceledPrivateRequest,
+    getErrorMessage,
+    toApiError,
+} from '@/lib/http';
 import { notificationService } from '@/services/notification-service';
 import type { Notification } from '@/types/notification';
 
@@ -11,126 +23,444 @@ interface NotificationBellState {
     unreadCount: number;
     recentNotifications: Notification[];
     loading: boolean;
-    refresh: () => void;
+    revision: number;
+    isCurrentRevision: (revision: number) => boolean;
+    refresh: () => Promise<void>;
     markAsRead: (uuid: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
+    deleteNotification: (uuid: string) => Promise<void>;
+    executeAction: (
+        uuid: string,
+        actionType: string,
+        payload?: Record<string, unknown>,
+    ) => Promise<unknown>;
 }
 
-const NotificationBellContext = createContext<NotificationBellState | null>(null);
+interface NotificationAccess {
+    userId: number | null;
+    canRead: boolean;
+}
 
-const TOAST_TYPES = new Set<Notification['type']>(['warning', 'error', 'system']);
+interface NotificationScope extends NotificationAccess {
+    generation: number;
+}
 
-function showRealtimeToast(notification: Notification): void {
+interface NotificationBellData {
+    generation: number;
+    unreadCount: number;
+    recentNotifications: Notification[];
+    loading: boolean;
+}
+
+interface PendingMutation {
+    signature: string;
+    promise: Promise<unknown>;
+}
+
+const NotificationBellContext = createContext<NotificationBellState | null>(
+    null,
+);
+
+const TOAST_TYPES = new Set<Notification['type']>([
+    'warning',
+    'error',
+    'system',
+]);
+
+function showRealtimeToast(
+    notification: Notification,
+    isCurrent: () => boolean,
+): void {
     if (!TOAST_TYPES.has(notification.type)) {
-return;
-}
+        return;
+    }
 
-    const method = notification.type === 'error' ? 'error' : notification.type === 'warning' ? 'warning' : 'message';
+    const method =
+        notification.type === 'error'
+            ? 'error'
+            : notification.type === 'warning'
+              ? 'warning'
+              : 'message';
 
     toast[method](notification.title, {
         description: notification.body,
         ...(notification.link
-            ? { action: { label: 'Ver', onClick: () => window.location.assign(notification.link!) } }
+            ? {
+                  action: {
+                      label: 'Ver',
+                      onClick: () => {
+                          if (isCurrent() && notification.link) {
+                              window.location.assign(notification.link);
+                          }
+                      },
+                  },
+              }
             : {}),
     });
 }
 
-function readUserIdFromDom(): number | null {
-    try {
-        const el = document.getElementById('app');
-
-        if (!el?.dataset.page) {
-return null;
+function emptyBellData(generation: number): NotificationBellData {
+    return {
+        generation,
+        unreadCount: 0,
+        recentNotifications: [],
+        loading: false,
+    };
 }
 
-        const page = JSON.parse(el.dataset.page) as { props?: { auth?: { user?: { id?: number } } } };
+export function NotificationBellProvider({
+    children,
+}: {
+    children: ReactNode;
+}) {
+    const { scope: privateScope } = usePrivateState();
+    const [access] = useState<NotificationAccess>(() => ({
+        userId: privateScope.userId,
+        canRead: privateScope.canRead,
+    }));
+    const [bellData, setBellData] = useState(() => emptyBellData(0));
+    const scopeRef = useRef<NotificationScope>({ ...access, generation: 0 });
+    const fetchedRef = useRef<number | null>(null);
+    const mountedRef = useRef(false);
+    const leaveChannelRef = useRef<(() => void) | null>(null);
+    const [revision, setRevision] = useState(0);
+    const revisionRef = useRef(0);
+    const requestRef = useRef<AbortController | null>(null);
+    const mutationsRef = useRef(new Map<string, PendingMutation>());
+    const eventsRef = useRef(new Set<string>());
 
-        return page.props?.auth?.user?.id ?? null;
-    } catch {
-        return null;
-    }
-}
+    const isCurrentScope = useCallback(
+        (scope: NotificationScope): boolean => {
+            return (
+                mountedRef.current &&
+                privateScope.isCurrent() &&
+                scope.canRead &&
+                scopeRef.current === scope
+            );
+        },
+        [privateScope],
+    );
 
-export function NotificationBellProvider({ children }: { children: ReactNode }) {
-    const [userId, setUserId] = useState<number | null>(readUserIdFromDom);
+    const updateBell = useCallback(
+        (
+            scope: NotificationScope,
+            update: (current: NotificationBellData) => NotificationBellData,
+        ): void => {
+            if (!isCurrentScope(scope)) {
+                return;
+            }
 
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(false);
-    const fetchedRef = useRef(false);
+            setBellData((current) =>
+                current.generation === scope.generation
+                    ? update(current)
+                    : current,
+            );
+        },
+        [isCurrentScope],
+    );
 
-    // Keep userId in sync with Inertia page props across navigations
+    const showError = useCallback(
+        (scope: NotificationScope, error: unknown): void => {
+            if (isCurrentScope(scope)) {
+                const apiError = toApiError(error);
+
+                if (apiError.type !== 'canceled') {
+                    toast.error(getErrorMessage(apiError));
+                }
+            }
+        },
+        [isCurrentScope],
+    );
+
+    const isCurrentRevision = useCallback(
+        (candidate: number): boolean =>
+            privateScope.isCurrent() && revisionRef.current === candidate,
+        [privateScope],
+    );
+
+    const invalidate = useCallback(
+        (scope: NotificationScope): void => {
+            if (!isCurrentScope(scope)) {
+                return;
+            }
+
+            requestRef.current?.abort();
+            revisionRef.current += 1;
+            setRevision(revisionRef.current);
+        },
+        [isCurrentScope],
+    );
+
     useEffect(() => {
-        return router.on('navigate', (event) => {
-            const props = (event as CustomEvent).detail?.page?.props as
-                | { auth?: { user?: { id?: number } } }
-                | undefined;
-            setUserId(props?.auth?.user?.id ?? null);
-        });
+        mountedRef.current = true;
+        const mutations = mutationsRef.current;
+        const events = eventsRef.current;
+
+        return () => {
+            mountedRef.current = false;
+            scopeRef.current = {
+                ...scopeRef.current,
+                generation: scopeRef.current.generation + 1,
+            };
+            fetchedRef.current = null;
+            requestRef.current?.abort();
+            mutations.clear();
+            events.clear();
+            leaveChannelRef.current?.();
+            leaveChannelRef.current = null;
+        };
     }, []);
 
-    const refresh = useCallback(async () => {
-        if (!userId) {
-return;
-}
+    const refreshBell = useCallback(async (): Promise<void> => {
+        const scope = scopeRef.current;
 
-        setLoading(true);
+        if (!isCurrentScope(scope)) {
+            return;
+        }
+
+        requestRef.current?.abort();
+        const controller = new AbortController();
+        requestRef.current = controller;
+        const requestRevision = revisionRef.current;
+        const isCurrent = (): boolean =>
+            isCurrentScope(scope) &&
+            !controller.signal.aborted &&
+            requestRef.current === controller &&
+            isCurrentRevision(requestRevision);
+
+        updateBell(scope, (current) => ({ ...current, loading: true }));
 
         try {
-            const unreadResult = await notificationService.getUnreadNotifications();
+            const result = await notificationService.getUnreadNotifications({
+                signal: controller.signal,
+            });
 
-            setRecentNotifications(unreadResult.data);
-            setUnreadCount(unreadResult.unread_count);
+            if (!isCurrent()) {
+                return;
+            }
+
+            updateBell(scope, (current) => ({
+                ...current,
+                recentNotifications: result.data,
+                unreadCount: result.unread_count,
+            }));
+        } catch (error: unknown) {
+            if (isCurrent()) {
+                showError(scope, error);
+            }
         } finally {
-            setLoading(false);
+            if (isCurrent()) {
+                updateBell(scope, (current) => ({
+                    ...current,
+                    loading: false,
+                }));
+            }
         }
-    }, [userId]);
+    }, [isCurrentRevision, isCurrentScope, showError, updateBell]);
 
-    // Initial fetch — runs once when userId becomes available
+    const refresh = useCallback(async (): Promise<void> => {
+        invalidate(scopeRef.current);
+        await refreshBell();
+    }, [invalidate, refreshBell]);
+
+    const mutate = useCallback(
+        <T,>(
+            key: string,
+            signature: string,
+            operation: () => Promise<T>,
+        ): Promise<T> => {
+            const scope = scopeRef.current;
+
+            if (!isCurrentScope(scope)) {
+                return Promise.reject(canceledPrivateRequest());
+            }
+
+            const pending = mutationsRef.current.get(key);
+
+            if (pending) {
+                if (pending.signature === signature) {
+                    return pending.promise as Promise<T>;
+                }
+
+                const error = new Error(
+                    'Uma ação desta notificação já está em andamento.',
+                );
+                showError(scope, error);
+
+                return Promise.reject(error);
+            }
+
+            invalidate(scope);
+            const entry: PendingMutation = {
+                signature,
+                promise: Promise.resolve(),
+            };
+            const promise = Promise.resolve()
+                .then(async () => {
+                    try {
+                        if (!isCurrentScope(scope)) {
+                            throw canceledPrivateRequest();
+                        }
+
+                        const result = await operation();
+
+                        if (!isCurrentScope(scope)) {
+                            throw canceledPrivateRequest();
+                        }
+
+                        return result;
+                    } catch (error: unknown) {
+                        showError(scope, error);
+
+                        throw error;
+                    } finally {
+                        if (isCurrentScope(scope)) {
+                            invalidate(scope);
+                            await refreshBell();
+                        }
+                    }
+                })
+                .finally(() => {
+                    if (mutationsRef.current.get(key) === entry) {
+                        mutationsRef.current.delete(key);
+                    }
+                });
+            entry.promise = promise;
+            mutationsRef.current.set(key, entry);
+
+            return promise;
+        },
+        [invalidate, isCurrentScope, refreshBell, showError],
+    );
+
     useEffect(() => {
-        if (!userId || fetchedRef.current) {
-return;
-}
+        const scope = scopeRef.current;
+        let active = true;
 
-        fetchedRef.current = true;
-        void refresh();
-    }, [userId, refresh]);
+        void Promise.resolve().then(() => {
+            if (
+                !active ||
+                !isCurrentScope(scope) ||
+                fetchedRef.current === scope.generation
+            ) {
+                return;
+            }
 
-    // Echo subscription — re-subscribes if userId changes (login/logout)
-    useEffect(() => {
-        if (!userId || !echo) {
-return;
-}
-
-        const activeEcho = echo;
-        const channel = activeEcho.private(`user.${userId}.notifications`);
-
-        channel.listen('.notification.created', (event: { notification: Notification }) => {
-            setRecentNotifications((prev) => [event.notification, ...prev].slice(0, 10));
-            setUnreadCount((c) => c + 1);
-            showRealtimeToast(event.notification);
+            fetchedRef.current = scope.generation;
+            setBellData(emptyBellData(scope.generation));
+            void refreshBell();
         });
 
         return () => {
-            activeEcho.leave(`user.${userId}.notifications`);
+            active = false;
         };
-    }, [userId]);
+    }, [access, isCurrentScope, refreshBell]);
 
-    const markAsRead = useCallback(async (uuid: string) => {
-        await notificationService.markAsRead(uuid);
-        setRecentNotifications((prev) => prev.filter((n) => n.uuid !== uuid));
-        setUnreadCount((c) => Math.max(0, c - 1));
-    }, []);
+    useEffect(() => {
+        const scope = scopeRef.current;
 
-    const markAllAsRead = useCallback(async () => {
-        await notificationService.markAllAsRead();
-        setRecentNotifications([]);
-        setUnreadCount(0);
-    }, []);
+        if (!isCurrentScope(scope) || !echo) {
+            return;
+        }
+
+        const activeEcho = echo;
+        const channelName = `user.${scope.userId}.notifications`;
+        const channel = activeEcho.private(channelName);
+        let active = true;
+        const leave = (): void => {
+            if (active) {
+                active = false;
+                activeEcho.leave(channelName);
+            }
+        };
+        leaveChannelRef.current = leave;
+
+        channel.listen(
+            '.notification.created',
+            (event: { notification: Notification }) => {
+                if (!active || !isCurrentScope(scope)) {
+                    return;
+                }
+
+                if (eventsRef.current.has(event.notification.uuid)) {
+                    return;
+                }
+
+                eventsRef.current.add(event.notification.uuid);
+                invalidate(scope);
+                void refreshBell();
+                showRealtimeToast(event.notification, () =>
+                    isCurrentScope(scope),
+                );
+            },
+        );
+
+        return () => {
+            leave();
+
+            if (leaveChannelRef.current === leave) {
+                leaveChannelRef.current = null;
+            }
+        };
+    }, [access, invalidate, isCurrentScope, refreshBell]);
+
+    const markAsRead = useCallback(
+        async (uuid: string): Promise<void> => {
+            await mutate(`read:${uuid}`, uuid, () =>
+                notificationService.markAsRead(uuid),
+            ).catch(() => undefined);
+        },
+        [mutate],
+    );
+
+    const markAllAsRead = useCallback(async (): Promise<void> => {
+        await mutate('read:all', 'all', () =>
+            notificationService.markAllAsRead(),
+        ).catch(() => undefined);
+    }, [mutate]);
+
+    const deleteNotification = useCallback(
+        async (uuid: string): Promise<void> => {
+            await mutate(`delete:${uuid}`, uuid, () =>
+                notificationService.deleteNotification(uuid),
+            ).catch(() => undefined);
+        },
+        [mutate],
+    );
+
+    const executeAction = useCallback(
+        (
+            uuid: string,
+            actionType: string,
+            payload?: Record<string, unknown>,
+        ): Promise<unknown> =>
+            mutate(
+                `action:${uuid}`,
+                JSON.stringify([actionType, payload ?? {}]),
+                () =>
+                    notificationService.executeAction(
+                        uuid,
+                        actionType,
+                        payload,
+                    ),
+            ),
+        [mutate],
+    );
 
     return (
         <NotificationBellContext.Provider
-            value={{ unreadCount, recentNotifications, loading, refresh, markAsRead, markAllAsRead }}
+            value={{
+                unreadCount: bellData.unreadCount,
+                recentNotifications: bellData.recentNotifications,
+                loading: bellData.loading,
+                revision,
+                isCurrentRevision,
+                refresh,
+                markAsRead,
+                markAllAsRead,
+                deleteNotification,
+                executeAction,
+            }}
         >
             {children}
         </NotificationBellContext.Provider>
@@ -141,8 +471,10 @@ export function useNotificationBellContext(): NotificationBellState {
     const ctx = useContext(NotificationBellContext);
 
     if (!ctx) {
-throw new Error('useNotificationBellContext must be used inside NotificationBellProvider');
-}
+        throw new Error(
+            'useNotificationBellContext must be used inside NotificationBellProvider',
+        );
+    }
 
     return ctx;
 }

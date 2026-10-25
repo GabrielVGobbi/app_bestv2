@@ -41,6 +41,24 @@ export default [
             'react/react-in-jsx-scope': 'off',
             'react/prop-types': 'off',
             'react/no-unescaped-entities': 'off',
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: 'motion/react',
+                            importNames: ['motion'],
+                            message:
+                                'Use `m` from motion/react: app.tsx loads the animation features through LazyMotion.',
+                        },
+                        {
+                            name: 'framer-motion',
+                            message:
+                                'Import `m` from motion/react: app.tsx loads the animation features through LazyMotion.',
+                        },
+                    ],
+                },
+            ],
         },
         settings: {
             react: {
@@ -110,6 +128,10 @@ export default [
             'vendor',
             'node_modules',
             'public',
+            '.docs/**',
+            'output/**',
+            '.codex/**',
+            'tests/Fixtures/**',
             'bootstrap/ssr',
             'tailwind.config.js',
             'vite.config.ts',

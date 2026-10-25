@@ -1,9 +1,15 @@
 <?php
 
+use App\Supports\RedactSlackLogs;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+
+$stackChannels = array_values(array_unique(array_filter([
+    ...explode(',', (string) env('LOG_STACK', 'single')),
+    env('SLACK_ENABLED', false) ? 'slack' : null,
+])));
 
 return [
 
@@ -54,12 +60,8 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => array_values(array_unique(array_filter([
-                // Base channels from LOG_STACK (default: single)
-                ...explode(',', (string) env('LOG_STACK', 'single')),
-                // Automatically include slack channel when SLACK_ENABLED=true
-                env('SLACK_ENABLED', false) ? 'slack' : null,
-            ]))),
+            'channels' => $stackChannels,
+            'tap' => in_array('slack', $stackChannels, true) ? [RedactSlackLogs::class] : [],
             'ignore_exceptions' => false,
         ],
 
@@ -80,11 +82,12 @@ return [
 
         'slack' => [
             'driver' => 'slack',
+            'tap' => [RedactSlackLogs::class],
             // LOG_SLACK_WEBHOOK_URL takes precedence; falls back to SLACK_WEBHOOK_URL
             'url' => env('LOG_SLACK_WEBHOOK_URL', env('SLACK_WEBHOOK_URL')),
             'username' => env('LOG_SLACK_USERNAME', env('APP_NAME', 'Laravel')),
             'emoji' => env('LOG_SLACK_EMOJI', ':x:'),
-            // Default: error — only explicit Log::error() / Log::critical()
+            // Default: error: only explicit Log::error() / Log::critical()
             'level' => env('LOG_SLACK_LEVEL', 'error'),
             'replace_placeholders' => true,
         ],

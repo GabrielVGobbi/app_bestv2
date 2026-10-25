@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { Eye, Pencil } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -5,7 +6,7 @@ import {
     edit,
     show,
 } from '@/actions/App/Modules/Services/Http/Controllers/ServiceController';
-import { SubNavigation } from '@/components/sub-navigation';
+import { cn } from '@/lib/utils';
 
 type ServicePage = 'show' | 'edit';
 
@@ -41,11 +42,33 @@ export function ServiceSubNav({
     canUpdate = false,
 }: ServiceSubNavProps) {
     return (
-        <SubNavigation
-            current={currentPage}
-            items={navItems
-                .filter((item) => item.key !== 'edit' || canUpdate)
-                .map((item) => ({ ...item, href: item.getHref(serviceUuid) }))}
-        />
+        <nav className="flex gap-1 rounded-lg border border-border bg-muted p-1">
+            {navItems.map(({ key, label, icon: Icon, getHref }) => {
+                if (key === 'edit' && !canUpdate) {
+                    return null;
+                }
+
+                const isActive = key === currentPage;
+
+                return (
+                    <Link
+                        key={key}
+                        href={getHref(serviceUuid)}
+                        aria-label={label}
+                        title={label}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={cn(
+                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                            isActive
+                                ? 'bg-card text-foreground shadow-xs'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                        )}
+                    >
+                        <Icon className="size-3.5" />
+                        <span className="hidden sm:inline">{label}</span>
+                    </Link>
+                );
+            })}
+        </nav>
     );
 }

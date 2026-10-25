@@ -4,7 +4,7 @@ import {
     create,
     index,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
-import { ContentHeader } from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import type {
     CounterpartyTypeByDirection,
     FinancialAmountAdjustmentOption,
@@ -25,7 +25,7 @@ export default function CreateFinancialEntry({
 }: Props) {
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Lançamentos Financeiros', href: index.url() },
+            { title: 'Lançamentos financeiros', href: index.url() },
             { title: 'Novo lançamento', href: create.url() },
         ],
     });
@@ -34,13 +34,13 @@ export default function CreateFinancialEntry({
         <>
             <Head title="Novo lançamento financeiro" />
 
-            <ContentHeader
+            <Header
                 title="Novo lançamento financeiro"
-                description="Entrada manual independente de vendas, compras ou fiscal"
+                subtitle="Entrada manual independente de vendas, compras ou fiscal"
                 backHref={index.url()}
             />
 
-            <div className="mx-auto max-w-2xl p-3 sm:p-6">
+            <div className="page-wrapper-md">
                 <FinancialEntryForm
                     directionOptions={directionOptions}
                     amountAdjustmentOptions={amountAdjustmentOptions}

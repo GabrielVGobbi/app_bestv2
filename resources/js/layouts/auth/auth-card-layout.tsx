@@ -1,6 +1,13 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import AppLogo from '@/components/app-logo';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { home } from '@/routes';
 
 export default function AuthCardLayout({
@@ -13,36 +20,27 @@ export default function AuthCardLayout({
     description?: string;
 }>) {
     return (
-        <div className="auth-workspace grid min-h-dvh grid-rows-[auto_1fr_auto] px-5 py-6 sm:px-8">
-            <header>
+        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10 dark:bg-background">
+            <div className="flex w-full max-w-md flex-col gap-6">
                 <Link
                     href={home()}
-                    className="flex w-fit items-center rounded-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="flex items-center gap-2 self-center font-medium"
                 >
-                    <AppLogo text="BestPlay" />
+                    <AppLogo className="text-foreground" />
                 </Link>
-            </header>
 
-            <main className="flex items-center justify-center py-12">
-                <div className="w-full max-w-[29rem] rounded-2xl border bg-card p-6 sm:p-9">
-                    <header className="mb-8">
-                        <h1 className="text-2xl font-semibold text-balance text-foreground">
-                            {title}
-                        </h1>
-                        {description && (
-                            <p className="mt-2 text-sm leading-6 text-pretty text-muted-foreground">
-                                {description}
-                            </p>
-                        )}
-                    </header>
-
-                    {children}
+                <div className="flex flex-col gap-6">
+                    <Card className="rounded-xl">
+                        <CardHeader className="px-10 pt-8 pb-0 text-center">
+                            <CardTitle className="text-xl">{title}</CardTitle>
+                            <CardDescription>{description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="px-10 py-8">
+                            {children}
+                        </CardContent>
+                    </Card>
                 </div>
-            </main>
-
-            <footer className="text-center text-xs text-muted-foreground">
-                BestPlay
-            </footer>
+            </div>
         </div>
     );
 }

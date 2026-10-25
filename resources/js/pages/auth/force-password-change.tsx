@@ -1,7 +1,8 @@
 import { Form, Head } from '@inertiajs/react';
+import { KeyRound } from 'lucide-react';
 import { useRef } from 'react';
 import { update } from '@/actions/App/Http/Controllers/ForcePasswordChangeController';
-import InputError from '@/components/input-error';
+import InputError, { errorProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -14,20 +15,19 @@ export default function ForcePasswordChange() {
 
     return (
         <>
-            <Head title="Trocar senha" />
+            <Head title="Defina uma nova senha" />
 
             <div className="grid gap-6">
                 <Alert>
-                    <AlertTitle>Troca de senha obrigatoria</AlertTitle>
+                    <AlertTitle>Troca de senha obrigatória</AlertTitle>
                     <AlertDescription>
-                        Voce entrou com uma senha temporaria. Confirme essa
+                        Você entrou com uma senha temporária. Confirme essa
                         senha e defina uma nova para continuar.
                     </AlertDescription>
                 </Alert>
 
                 <Form
-                    action={update.url()}
-                    method="put"
+                    {...update.form.put()}
                     resetOnError={[
                         'current_password',
                         'password',
@@ -50,29 +50,40 @@ export default function ForcePasswordChange() {
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="current_password">
-                                    Senha temporaria
+                                    Senha temporária
                                 </Label>
                                 <PasswordInput
                                     id="current_password"
+                                    {...errorProps(
+                                        'current_password',
+                                        errors.current_password,
+                                    )}
                                     ref={currentPasswordInput}
                                     name="current_password"
                                     autoComplete="current-password"
-                                    placeholder="Senha temporaria"
+                                    placeholder="Senha temporária"
                                     autoFocus
                                 />
-                                <InputError message={errors.current_password} />
+                                <InputError
+                                    field="current_password"
+                                    message={errors.current_password}
+                                />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Nova senha</Label>
                                 <PasswordInput
                                     id="password"
+                                    {...errorProps('password', errors.password)}
                                     ref={passwordInput}
                                     name="password"
                                     autoComplete="new-password"
                                     placeholder="Nova senha"
                                 />
-                                <InputError message={errors.password} />
+                                <InputError
+                                    field="password"
+                                    message={errors.password}
+                                />
                             </div>
 
                             <div className="grid gap-2">
@@ -81,11 +92,16 @@ export default function ForcePasswordChange() {
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
+                                    {...errorProps(
+                                        'password_confirmation',
+                                        errors.password_confirmation,
+                                    )}
                                     name="password_confirmation"
                                     autoComplete="new-password"
                                     placeholder="Confirmar nova senha"
                                 />
                                 <InputError
+                                    field="password_confirmation"
                                     message={errors.password_confirmation}
                                 />
                             </div>
@@ -95,8 +111,15 @@ export default function ForcePasswordChange() {
                                 disabled={processing}
                                 data-test="force-password-change-button"
                             >
-                                {processing && <Spinner />}
-                                Trocar senha
+                                {processing ? (
+                                    <Spinner />
+                                ) : (
+                                    <KeyRound
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                )}
+                                Salvar nova senha
                             </Button>
                         </div>
                     )}
@@ -107,6 +130,6 @@ export default function ForcePasswordChange() {
 }
 
 ForcePasswordChange.layout = {
-    title: 'Troque sua senha',
-    description: 'Defina uma nova senha antes de continuar',
+    title: 'Defina uma nova senha',
+    description: 'Sua senha temporária precisa ser trocada antes de continuar',
 };

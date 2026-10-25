@@ -1,5 +1,5 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Check, RotateCcw, Save, Shield, X } from 'lucide-react';
+import { Check, RotateCcw, Save, Shield, X, ShieldPlus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { toast } from 'sonner';
@@ -20,8 +20,10 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { usePrivateState } from '@/contexts/private-state-context';
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpPut } from '@/lib/http';
+import { httpPut, toApiError } from '@/lib/http';
+import { dashboard } from '@/routes/app';
 import type { Role } from '@/types/app/role';
 import type { UserResource } from '@/types/user';
 
@@ -29,17 +31,23 @@ import { UserSubNav } from './components/user-sub-nav';
 
 interface RolesProps {
     userData: UserResource;
+    can: { view: boolean; update: boolean; delete: boolean };
     allRoles: { data: Role[] };
 }
 
-export default function UserRoles({ userData, allRoles }: RolesProps) {
+export default function UserRoles({ userData, allRoles, can }: RolesProps) {
+    const { scope } = usePrivateState();
     const user = userData.data;
     const roles = allRoles.data;
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Usuários', href: index.url() },
-            { title: user.name, href: show.url(user.uuid) },
+            ...(can.view
+                ? [
+                      { title: 'Usuários', href: index.url() },
+                      { title: user.name, href: show.url(user.uuid) },
+                  ]
+                : []),
             { title: 'Papéis', href: userRoles.url(user.uuid) },
         ],
     });
@@ -83,13 +91,27 @@ export default function UserRoles({ userData, allRoles }: RolesProps) {
             const currentPermissionIds = (user.permissions ?? []).map(
                 (p) => p.id,
             );
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpPut(apiRoutes.users.syncRolesPermissions(user.uuid), {
                 roles: selectedRoleIds,
                 permissions: currentPermissionIds,
             });
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Papéis atualizados com sucesso!');
             router.reload({ only: ['userData'] });
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao atualizar papéis.');
         } finally {
             setIsSaving(false);
@@ -100,30 +122,27 @@ export default function UserRoles({ userData, allRoles }: RolesProps) {
         <>
             <Head title={`Papéis - ${user.name}`} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={show.url(user.uuid)}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">Gerenciar Papéis</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {user.name}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <UserSubNav userUuid={user.uuid} currentPage="roles" />
+            <Header
+                title="Gerenciar Papéis"
+                backHref={can.view ? show.url(user.uuid) : dashboard.url()}
+            >
+                <div className="flex flex-wrap items-center gap-2">
+                    <UserSubNav
+                        userUuid={user.uuid}
+                        currentPage="roles"
+                        can={{
+                            view: can.view,
+                            update: can.update,
+                            authority: true,
+                        }}
+                    />
                     <Separator orientation="vertical" className="mx-1 h-6" />
                     <Button variant="outline" size="sm" asChild>
-                        <Link href={show.url(user.uuid)}>
+                        <Link
+                            href={
+                                can.view ? show.url(user.uuid) : dashboard.url()
+                            }
+                        >
                             <X className="mr-1.5 size-4" />
                             Fechar
                         </Link>
@@ -132,7 +151,7 @@ export default function UserRoles({ userData, allRoles }: RolesProps) {
             </Header>
 
             <div className="page-wrapper-sm">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -244,7 +263,13 @@ export default function UserRoles({ userData, allRoles }: RolesProps) {
                                         asChild
                                         className="mt-2"
                                     >
-                                        <Link href="/roles">Criar papéis</Link>
+                                        <Link href="/roles">
+                                            <ShieldPlus
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Criar papéis
+                                        </Link>
                                     </Button>
                                 </div>
                             )}

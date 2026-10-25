@@ -16,23 +16,23 @@
 |   - Route c/ params: ['route' => 'users.show', 'params' => ['user' => 1]]
 |
 | Propriedades do item:
-|   slug           — Identificador único (snake_case)
-|   label          — Texto exibido
-|   icon           — Nome do ícone Lucide (string)
-|   type           — 'link' | 'group' | 'section'
-|   href           — URL ou named route (apenas type='link')
-|   order          — Ordem de exibição (menor = primeiro)
-|   enabled        — false: remove completamente (não enviado ao frontend)
-|   visible        — false: presente mas oculto
-|   items          — Sub-itens (para type='group' ou type='section')
+|   slug           Identificador único (snake_case)
+|   label          Texto exibido
+|   icon           Nome do ícone Lucide (string)
+|   type           'link' | 'group' | 'section'
+|   href           URL ou named route (apenas type='link')
+|   order          Ordem de exibição (menor = primeiro)
+|   enabled        false: remove completamente (não enviado ao frontend)
+|   visible        false: presente mas oculto
+|   items          Sub-itens (para type='group' ou type='section')
 |
 | Propriedades do módulo:
-|   slug           — Identificador único
-|   label          — Nome exibido
-|   icon           — Ícone Lucide
-|   default        — true: módulo padrão quando nenhum prefix bate
-|   route_prefixes — Prefixos de rota para auto-detecção
-|   enabled        — false: módulo oculto
+|   slug           Identificador único
+|   label          Nome exibido
+|   icon           Ícone Lucide
+|   default        true: módulo padrão quando nenhum prefix bate
+|   route_prefixes Prefixos de rota para auto-detecção
+|   enabled        false: módulo oculto
 
 */
 
@@ -43,8 +43,8 @@ return [
     | Navigation Style
     |----------------------------------------------------------------------
     |
-    | 'modules' — sidebar com troca de módulos (drill-down, padrão)
-    | 'flat'    — sidebar tradicional com todos os itens em lista única
+    | 'modules' sidebar com troca de módulos (drill-down, padrão)
+    | 'flat'    sidebar tradicional com todos os itens em lista única
     |
     */
     'style' => 'modules',
@@ -56,8 +56,8 @@ return [
     |
     | Quando style='modules', define onde o seletor/lista de módulos aparece.
     |
-    | 'sidebar' — lista de módulos na sidebar, com drill-down para itens
-    | 'header'  — lista de módulos no header; sidebar mostra itens do módulo ativo
+    | 'sidebar' lista de módulos na sidebar, com drill-down para itens
+    | 'header'  lista de módulos no header; sidebar mostra itens do módulo ativo
     |
     */
     'modules_menu' => [
@@ -66,7 +66,7 @@ return [
 
     /*
     |----------------------------------------------------------------------
-    | Global — Itens fixos acima dos módulos (sempre visíveis na sidebar)
+    | Global Itens fixos acima dos módulos (sempre visíveis na sidebar)
     |----------------------------------------------------------------------
 
     'global' => [
@@ -310,7 +310,7 @@ return [
                     'items' => [
                         [
                             'slug' => 'financeiro_financial_entries',
-                            'label' => 'Lançamentos Financeiros',
+                            'label' => 'Lançamentos financeiros',
                             'icon' => 'ReceiptText',
                             'type' => 'group',
                             'href' => ['route' => 'financial-entries.index'],
@@ -416,7 +416,7 @@ return [
         ],
 
         /*
-        | Admin — Administração da plataforma (ACL e Sistema)
+        | Admin: administração da plataforma (ACL e Sistema)
         */
         [
             'slug' => 'admin',
@@ -486,7 +486,7 @@ return [
                     'items' => [
                         [
                             'slug' => 'admin_activity_log',
-                            'label' => 'Activity Log',
+                            'label' => 'Atividades',
                             'icon' => 'History',
                             'type' => 'link',
                             'href' => ['route' => 'activity-log.index'],
@@ -500,12 +500,13 @@ return [
                             'icon' => 'Mail',
                             'type' => 'link',
                             'href' => ['route' => 'email-logs.index'],
+                            'roles' => ['developer'],
                             'order' => 2,
                             'enabled' => true,
                             'visible' => true,
                         ],
                         [
-                            'slug' => 'admin_exportacoes',
+                            'slug' => 'exportacoes',
                             'label' => 'Exportações',
                             'icon' => 'Download',
                             'type' => 'link',
@@ -530,7 +531,7 @@ return [
         ],
 
         /*
-        | Desenvolvimento — Ferramentas e componentes
+        | Desenvolvimento: ferramentas e componentes
         */
         [
             'slug' => 'desenvolvimento',
@@ -552,7 +553,7 @@ return [
                     'items' => [
                         [
                             'slug' => 'dev_tools',
-                            'label' => 'Dev Tools',
+                            'label' => 'Painel',
                             'icon' => 'Wrench',
                             'type' => 'link',
                             'href' => ['route' => 'admin.dev.dashboard'],
@@ -704,7 +705,7 @@ return [
                         ],
                         [
                             'slug' => 'dev_activity_log',
-                            'label' => 'Activity Log',
+                            'label' => 'Atividades',
                             'icon' => 'History',
                             'type' => 'link',
                             'href' => ['route' => 'activity-log.index'],
@@ -731,14 +732,14 @@ return [
 
     /*
     |----------------------------------------------------------------------
-    | Rodapé — Links externos (sempre visíveis)
+    | Rodapé Links externos (sempre visíveis)
     |----------------------------------------------------------------------
     */
     'footer' => [
 
         [
             'slug' => 'repository',
-            'label' => 'Repository',
+            'label' => 'Repositório',
             'icon' => 'FolderGit2',
             'type' => 'link',
             'href' => 'https://github.com/laravel/react-starter-kit',
@@ -749,7 +750,7 @@ return [
 
         [
             'slug' => 'documentation',
-            'label' => 'Documentation',
+            'label' => 'Documentação',
             'icon' => 'BookOpen',
             'type' => 'link',
             'href' => 'https://laravel.com/docs/starter-kits#react',

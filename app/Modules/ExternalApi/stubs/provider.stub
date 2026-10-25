@@ -1,0 +1,35 @@
+<?php
+
+namespace {{ namespace }}\Providers;
+
+use {{ namespace }}\Configuration\{{ class }}Configuration;
+use {{ namespace }}\Http\{{ class }}HttpClient;
+use {{ namespace }}\Http\{{ class }}MockHttpClient;
+use {{ namespace }}\Services\{{ class }}Manager;
+use Illuminate\Support\ServiceProvider;
+
+class {{ class }}ServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->bind({{ class }}Configuration::class);
+
+        $this->app->bind({{ class }}HttpClient::class, function ($app) {
+            $configuration = $app->make({{ class }}Configuration::class);
+
+            return $configuration->isFake()
+                ? new {{ class }}MockHttpClient($configuration)
+                : new {{ class }}HttpClient($configuration);
+        });
+
+        $this->app->bind({{ class }}Manager::class, function ($app) {
+            return new {{ class }}Manager(
+                $app->make({{ class }}Configuration::class),
+                $app->make({{ class }}HttpClient::class)
+            );
+        });
+
+        $this->app->alias({{ class }}Manager::class, '{{ alias }}');
+    }
+}
+

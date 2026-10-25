@@ -13,9 +13,11 @@ import {
     show,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { AddressManager } from '@/components/addresses/address-manager';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatCpfCnpj, cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
+import { formatCpfCnpj } from '@/lib/utils';
 import { ActivityTimeline } from '@/modules/timeline';
 import type { ClientResource } from '@/types/app/client';
 
@@ -62,16 +64,6 @@ const clientTabs: Array<{
     { value: 'notes', label: 'Observações', icon: MessageSquareText },
     { value: 'activity', label: 'Atividade', icon: History },
 ];
-
-const tabTriggerClass = cn(
-    'group relative h-11 flex-none gap-2 rounded-none border-0 bg-transparent px-3.5',
-    'text-sm font-medium text-muted-foreground shadow-none',
-    'hover:bg-transparent hover:text-foreground',
-    'focus-visible:ring-0 focus-visible:outline-none',
-    'data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none',
-    'after:absolute after:right-2 after:bottom-0 after:left-2 after:h-0.5 after:rounded-full after:bg-transparent after:transition-colors',
-    'data-[state=active]:after:bg-primary',
-);
 
 export default function ShowClient({ clientData, timelineSubject }: Props) {
     const client = clientData.data;
@@ -122,154 +114,151 @@ export default function ShowClient({ clientData, timelineSubject }: Props) {
             <ClientProfileHeader
                 client={client}
                 backHref={index.url()}
-                backAriaLabel="Voltar para clientes"
                 showEditAction
             />
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
                     <ClientProfileSidebar
                         client={client}
                         showEmptyContactLinks
                     />
 
                     <main className="min-w-0">
-                        <Tabs
-                            defaultValue="overview"
-                            className="gap-0 overflow-hidden rounded-xl border border-border bg-card"
-                        >
-                            <div className="border-b border-border/70 bg-muted/35">
-                                <TabsList className="h-11 w-full justify-start gap-0 overflow-x-auto rounded-none border-0 bg-transparent p-0">
-                                    {clientTabs.map((tab) => {
-                                        const Icon = tab.icon;
-
-                                        return (
-                                            <TabsTrigger
-                                                key={tab.value}
-                                                value={tab.value}
-                                                className={tabTriggerClass}
-                                            >
-                                                <Icon className="size-3.5 opacity-70 group-data-[state=active]:opacity-100" />
-                                                <span>{tab.label}</span>
-                                                {tab.count ? (
-                                                    <span className="rounded-md bg-background/80 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground tabular-nums ring-1 ring-border/60 group-data-[state=active]:text-foreground">
-                                                        {addresses.length}
-                                                    </span>
-                                                ) : null}
-                                            </TabsTrigger>
-                                        );
-                                    })}
-                                </TabsList>
-                            </div>
-
-                            <TabsContent
-                                value="overview"
-                                className="mt-0 space-y-6 p-5 outline-none sm:p-6"
+                        <Tabs defaultValue="overview" className="space-y-4">
+                            <TabsList
+                                aria-label="Seções do cliente"
+                                className="max-w-full overflow-x-auto"
                             >
-                                {canUpdate ? (
-                                    <Section title="Dados rápidos">
-                                        <div className="rounded-lg border border-border/70 px-3.5 py-3.5">
-                                            <ClientQuickUpdatePanel
-                                                key={`${client.uuid}:${client.updated_at}`}
-                                                client={client}
-                                                columns={quickUpdateColumns}
-                                            />
-                                        </div>
-                                    </Section>
-                                ) : null}
-
-                                <Section title="Classificação">
-                                    <FieldGrid
-                                        items={profileItems}
-                                        variant="rows"
+                                {clientTabs.map((tab) => (
+                                    <TabItem
+                                        key={tab.value}
+                                        value={tab.value}
+                                        icon={tab.icon}
+                                        label={
+                                            tab.count
+                                                ? `${tab.label} (${addresses.length})`
+                                                : tab.label
+                                        }
                                     />
-                                </Section>
-                            </TabsContent>
+                                ))}
+                            </TabsList>
 
-                            <TabsContent
-                                value="addresses"
-                                className="mt-0 p-5 outline-none sm:p-6"
-                            >
-                                <AddressManager
-                                    model="client"
-                                    modelId={client.uuid}
-                                    initialAddresses={addresses}
-                                    variant="plain"
-                                    title="Lista de endereços"
-                                    emptyMessage="Cadastre o endereço de cobrança ou entrega deste cliente."
-                                />
-                            </TabsContent>
+                            <TabPanel value="overview">
+                                <Card>
+                                    <CardContent className="space-y-6">
+                                        {canUpdate ? (
+                                            <Section title="Dados rápidos">
+                                                <div className="rounded-lg border border-border px-3.5 py-3.5">
+                                                    <ClientQuickUpdatePanel
+                                                        key={`${client.uuid}:${client.updated_at}`}
+                                                        client={client}
+                                                        columns={
+                                                            quickUpdateColumns
+                                                        }
+                                                    />
+                                                </div>
+                                            </Section>
+                                        ) : null}
 
-                            <TabsContent
-                                value="notes"
-                                className="mt-0 space-y-6 p-5 outline-none sm:p-6"
-                            >
-                                <Section
-                                    title="Observações"
-                                    action={
-                                        canUpdate && !isBlank(client.notes) ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setIsNotesDialogOpen(true)
-                                                }
-                                            >
-                                                Editar
-                                            </Button>
-                                        ) : null
-                                    }
-                                >
-                                    {isBlank(client.notes) ? (
-                                        <div className="flex min-h-36 flex-col items-start justify-center gap-3 rounded-lg border border-dashed bg-muted/25 px-4 py-8">
-                                            <p className="text-sm text-muted-foreground">
-                                                Nenhuma observação cadastrada.
-                                            </p>
-                                            {canUpdate ? (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setIsNotesDialogOpen(
-                                                            true,
-                                                        )
+                                        <Section title="Classificação">
+                                            <FieldGrid
+                                                items={profileItems}
+                                                variant="rows"
+                                            />
+                                        </Section>
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
+
+                            <TabPanel value="addresses">
+                                <Card>
+                                    <CardContent>
+                                        <AddressManager
+                                            model="client"
+                                            modelId={client.uuid}
+                                            initialAddresses={addresses}
+                                            variant="plain"
+                                            title="Lista de endereços"
+                                            emptyMessage="Cadastre o endereço de cobrança ou entrega deste cliente."
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
+
+                            <TabPanel value="notes">
+                                <Card>
+                                    <CardContent className="space-y-6">
+                                        <Section
+                                            title="Observações"
+                                            action={
+                                                canUpdate &&
+                                                !isBlank(client.notes) ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setIsNotesDialogOpen(
+                                                                true,
+                                                            )
+                                                        }
+                                                    >
+                                                        Editar
+                                                    </Button>
+                                                ) : null
+                                            }
+                                        >
+                                            {isBlank(client.notes) ? (
+                                                <EmptyState
+                                                    icon={MessageSquareText}
+                                                    title="Nenhuma observação cadastrada"
+                                                    action={
+                                                        canUpdate ? (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    setIsNotesDialogOpen(
+                                                                        true,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Adicionar
+                                                                observação
+                                                            </Button>
+                                                        ) : null
                                                     }
-                                                >
-                                                    Adicionar observação
-                                                </Button>
-                                            ) : null}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-lg border border-border/70 px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-foreground">
-                                            {client.notes}
-                                        </div>
-                                    )}
-                                </Section>
+                                                />
+                                            ) : (
+                                                <div className="rounded-lg border border-border px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-foreground">
+                                                    {client.notes}
+                                                </div>
+                                            )}
+                                        </Section>
 
-                                <TechnicalIdsDisclosure
-                                    items={technicalItems}
-                                />
-                            </TabsContent>
+                                        <TechnicalIdsDisclosure
+                                            items={technicalItems}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabPanel>
 
-                            <TabsContent
-                                value="activity"
-                                className="mt-0 p-5 outline-none sm:p-6"
-                            >
+                            <TabPanel value="activity">
                                 <ActivityTimeline
                                     showHeader={false}
                                     modelType={timelineSubject.type}
                                     modelId={timelineSubject.id}
                                     title=""
                                     allowAttachments
-                                    className="m-0 border-0 bg-transparent p-0 shadow-none"
                                 />
-                            </TabsContent>
+                            </TabPanel>
                         </Tabs>
                     </main>
                 </div>
             </div>
 
-            {canUpdate ? (
+            {/* Montado só enquanto aberto: cada abertura começa com a observação atual. */}
+            {canUpdate && isNotesDialogOpen ? (
                 <ClientNotesDialog
                     client={client}
                     open={isNotesDialogOpen}

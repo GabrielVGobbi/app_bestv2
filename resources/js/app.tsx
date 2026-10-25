@@ -1,10 +1,6 @@
 import { createInertiaApp } from '@inertiajs/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import TemporaryPasswordDialog from '@/components/temporary-password-dialog';
-import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { NotificationBellProvider } from '@/contexts/notification-bell-context';
+import { LazyMotion } from 'motion/react';
+import { PrivateStateLayout } from '@/contexts/private-state-context';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppDashboardLayout from '@/layouts/app-dashboard-layout';
 import AuthLayout from '@/layouts/auth-layout';
@@ -14,41 +10,35 @@ if (import.meta.env.DEV) {
     void import('react-grab');
 }
 
-const appName = 'BestPlay';
-const queryClient = new QueryClient();
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+const loadMotionFeatures = () =>
+    import('@/lib/motion-features').then((module) => module.default);
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
+    // Animation features load after first paint; `strict` rejects a full `motion` component that would undo the split.
+    withApp: (app) => (
+        <LazyMotion features={loadMotionFeatures} strict>
+            {app}
+        </LazyMotion>
+    ),
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
             case name === 'error':
-                return null;
+                return [PrivateStateLayout];
             case name.startsWith('auth/'):
-                return AuthLayout;
+                return [PrivateStateLayout, AuthLayout];
             case name.startsWith('settings/'):
-                return [AppDashboardLayout, SettingsLayout];
+                return [PrivateStateLayout, AppDashboardLayout, SettingsLayout];
             default:
-                return AppDashboardLayout;
+                return [PrivateStateLayout, AppDashboardLayout];
         }
     },
     strictMode: true,
-    withApp(app) {
-        return (
-            <QueryClientProvider client={queryClient}>
-                <TooltipProvider delayDuration={0}>
-                    <NotificationBellProvider>
-                        {app}
-                        <TemporaryPasswordDialog />
-                        <Toaster />
-                    </NotificationBellProvider>
-                </TooltipProvider>
-                <ReactQueryDevtools initialIsOpen={false} />
-            </QueryClientProvider>
-        );
-    },
     progress: {
-        color: '#eb0459',
+        color: '#4B5563',
     },
 }).then(() => {
     document.getElementById('boot-shell')?.remove();

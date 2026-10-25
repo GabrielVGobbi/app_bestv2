@@ -1,6 +1,7 @@
+import { Link } from '@inertiajs/react';
 import { Eye, KeyRound, Pencil } from 'lucide-react';
 
-import { SubNavigation } from '@/components/sub-navigation';
+import { cn } from '@/lib/utils';
 import { show, edit } from '@/routes/roles';
 
 type RolePage = 'show' | 'edit' | 'permissions';
@@ -18,7 +19,7 @@ const navItems: {
 }[] = [
     {
         key: 'show',
-        label: 'Visão geral',
+        label: 'Detalhes',
         icon: Eye,
         getHref: (id) => show.url(id),
     },
@@ -38,12 +39,29 @@ const navItems: {
 
 export function RoleSubNav({ roleId, currentPage }: RoleSubNavProps) {
     return (
-        <SubNavigation
-            current={currentPage}
-            items={navItems.map((item) => ({
-                ...item,
-                href: item.getHref(roleId),
-            }))}
-        />
+        <nav className="flex gap-1 rounded-lg border border-border bg-muted p-1">
+            {navItems.map(({ key, label, icon: Icon, getHref }) => {
+                const isActive = key === currentPage;
+
+                return (
+                    <Link
+                        key={key}
+                        href={getHref(roleId)}
+                        aria-label={label}
+                        title={label}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={cn(
+                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                            isActive
+                                ? 'bg-card text-foreground shadow-xs'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                        )}
+                    >
+                        <Icon className="size-3.5" />
+                        <span className="hidden sm:inline">{label}</span>
+                    </Link>
+                );
+            })}
+        </nav>
     );
 }

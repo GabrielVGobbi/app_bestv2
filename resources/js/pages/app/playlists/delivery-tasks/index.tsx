@@ -10,7 +10,7 @@ import {
     index,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistDeliveryTaskController';
 import { show as showSale } from '@/actions/App/Modules/Sales/Http/Controllers/SaleController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -18,7 +18,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { apiRoutes } from '@/lib/api/api-routes';
@@ -82,7 +81,7 @@ export default function PlaylistDeliveryTaskIndex({
     setLayoutProps({
         breadcrumbs: [
             { title: 'Playlists', href: playlistsIndex.url() },
-            { title: 'Fila de Playlists', href: index.url() },
+            { title: 'Fila de playlists', href: index.url() },
         ],
     });
 
@@ -311,22 +310,22 @@ export default function PlaylistDeliveryTaskIndex({
 
     return (
         <>
-            <Head title="Fila de Playlists" />
+            <Head title="Fila de playlists" />
 
-            <ContentHeader>
-                <Heading
-                    title="Fila de Playlists"
-                    description="Checklist operacional para adicionar, remover e trocar músicas manualmente no Spotify."
-                />
+            <Header
+                title="Fila de playlists"
+                subtitle="Checklist operacional para adicionar, remover e trocar músicas manualmente no Spotify"
+            >
                 <Button variant="outline" asChild>
                     <Link href={playlistsIndex.url()}>
-                        <Music2 className="size-4" />
+                        <Music2 className="size-4" aria-hidden="true" />
                         Playlists
                     </Link>
                 </Button>
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-xl">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <DataTable<PlaylistDeliveryTask>
                         queryKey={tableQueryKey}
                         endpoint={apiRoutes.playlistDeliveryTasks.index}
@@ -361,7 +360,7 @@ export default function PlaylistDeliveryTaskIndex({
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar por música, playlist, cliente ou venda..."
+                        searchPlaceholder="Buscar por música, playlist, cliente ou venda"
                         emptyMessage="Nenhuma tarefa de playlist encontrada."
                     />
                 </div>

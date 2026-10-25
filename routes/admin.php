@@ -3,12 +3,11 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Admin\DevToolsController;
 use App\Http\Controllers\Admin\SlackSettingsController;
-use App\Http\Controllers\ExportController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Modules\Email\Http\Controllers\EmailLogController;
+use App\Modules\Email\Models\EmailLog;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(function () {
@@ -24,29 +23,25 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(functio
 
     Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 
-    Route::get('exportacoes', [ExportController::class, 'index'])->name('exports.index');
-
-    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
-
     Route::prefix('email-logs')->name('email-logs.')->group(function () {
-        Route::get('/', [EmailLogController::class, 'index'])->name('index');
-        Route::post('/{emailLog}/resend', [EmailLogController::class, 'resend'])->name('resend');
-        Route::patch('/settings', [EmailLogController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/', [EmailLogController::class, 'index'])->can('view-email-logs', EmailLog::class)->name('index');
+        Route::post('/{emailLog}/resend', [EmailLogController::class, 'resend'])->can('resend-email-logs', EmailLog::class)->name('resend');
+        Route::patch('/settings', [EmailLogController::class, 'updateSettings'])->can('manage-email-settings', EmailLog::class)->name('settings.update');
     });
 });
 
-Route::name('admin.slack.')->prefix('admin/slack')->middleware(['auth', 'verified', 'role:admin|super-admin'])->group(function () {
+Route::name('admin.slack.')->prefix('admin/slack')->middleware(['auth', 'verified', 'can:manageIntegrationSettings'])->group(function () {
     Route::get('/', [SlackSettingsController::class, 'show'])->name('index');
     Route::put('/', [SlackSettingsController::class, 'update'])->name('update');
     Route::post('/test', [SlackSettingsController::class, 'test'])->name('test');
 });
 
-Route::name('admin.dev.')->prefix('admin/dev')->middleware(['auth', 'verified', 'role:developer'])->group(function () {
+Route::name('admin.dev.')->prefix('admin/dev')->middleware(['auth', 'can:useDeveloperTools'])->group(function () {
     Route::get('/', [DevToolsController::class, 'index'])->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
-    | Dev Tools — Ferramentas de manutenção e desenvolvimento
+    | Dev Tools: ferramentas de manutencao e desenvolvimento
     |--------------------------------------------------------------------------
     */
     Route::prefix('dev-tools')->name('dev-tools.')->group(function () {

@@ -31,7 +31,6 @@ class BuildInstallmentsQueueSummary
      */
     public function handle(CarbonImmutable $monthStart, ?int $companyId = null, ?User $user = null): array
     {
-        $monthEnd = $monthStart->endOfMonth();
         $today = today()->toDateString();
         $receivable = FinancialDirection::Receivable->value;
         $payable = FinancialDirection::Payable->value;
@@ -44,10 +43,9 @@ class BuildInstallmentsQueueSummary
 
         $summary = $query
             ->open()
-            ->whereBetween('due_date', [
-                $monthStart->toDateString(),
-                $monthEnd->toDateString(),
-            ])
+            // Half-open range: SQLite stores date casts with a time part.
+            ->where('due_date', '>=', $monthStart->toDateString())
+            ->where('due_date', '<', $monthStart->addMonthNoOverflow()->toDateString())
             ->when(
                 $companyId !== null,
                 fn (Builder $query): Builder => $query->where('company_id', $companyId),

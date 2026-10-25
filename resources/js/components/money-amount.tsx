@@ -51,13 +51,13 @@ export function MoneyAmount({
     return (
         <span
             className={cn(
-                'inline-flex items-baseline justify-end gap-0.5 font-tabular',
+                'inline-flex items-baseline justify-end gap-0.5 tabular-nums',
                 overdue
                     ? 'font-semibold text-destructive'
                     : isInflow(direction)
-                      ? 'text-inflow'
+                      ? 'text-success'
                       : isOutflow(direction)
-                        ? 'text-outflow'
+                        ? 'text-destructive'
                         : 'text-foreground',
                 className,
             )}

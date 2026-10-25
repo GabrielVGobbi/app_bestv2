@@ -1,9 +1,8 @@
 import { useHttp } from '@inertiajs/react';
-import { Loader2, Plus, UserPlus } from 'lucide-react';
+import { Loader2, Plus, UserPlus, X } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 
-import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,10 +12,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
 import { InputDocument } from '@/components/ui/input-document';
 import { InputPhone } from '@/components/ui/input-phone';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { csrfCookie } from '@/routes/sanctum';
@@ -89,7 +88,8 @@ export function SupplierQuickCreateDialog({
     onCreated,
 }: SupplierQuickCreateDialogProps) {
     const form = useHttp<SupplierQuickCreateForm, SupplierResource>(emptyForm);
-    const { data, errors, processing, post, resetAndClearErrors, setData } = form;
+    const { data, errors, processing, post, resetAndClearErrors, setData } =
+        form;
 
     function updateField<K extends keyof SupplierQuickCreateForm>(
         field: K,
@@ -174,7 +174,9 @@ export function SupplierQuickCreateDialog({
 
                 const body = response.data as { message?: string } | undefined;
 
-                toast.error(body?.message ?? 'Não foi possível criar o fornecedor.');
+                toast.error(
+                    body?.message ?? 'Não foi possível criar o fornecedor.',
+                );
             },
             onNetworkError: () => {
                 toast.error('Falha de conexão ao criar o fornecedor.');
@@ -187,7 +189,7 @@ export function SupplierQuickCreateDialog({
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <div className="flex items-center gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
                             <UserPlus className="size-5" />
                         </span>
                         <div>
@@ -201,10 +203,11 @@ export function SupplierQuickCreateDialog({
 
                 <form onSubmit={submit} className="space-y-5">
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="quick_supplier_name">
-                                Nome <span className="text-destructive">*</span>
-                            </Label>
+                        <FormField
+                            label="Nome"
+                            required
+                            error={errorMessage(errors.name)}
+                        >
                             <Input
                                 id="quick_supplier_name"
                                 value={data.name}
@@ -213,15 +216,13 @@ export function SupplierQuickCreateDialog({
                                 }
                                 autoComplete="organization"
                                 autoFocus
-                                aria-invalid={Boolean(errors.name)}
                             />
-                            <InputError message={errorMessage(errors.name)} />
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="quick_supplier_company_name">
-                                Razão social
-                            </Label>
+                        <FormField
+                            label="Razão social"
+                            error={errorMessage(errors.company_name)}
+                        >
                             <Input
                                 id="quick_supplier_company_name"
                                 value={data.company_name ?? ''}
@@ -232,45 +233,40 @@ export function SupplierQuickCreateDialog({
                                     )
                                 }
                                 autoComplete="organization"
-                                aria-invalid={Boolean(errors.company_name)}
                             />
-                            <InputError
-                                message={errorMessage(errors.company_name)}
-                            />
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="quick_supplier_document">
-                                CPF/CNPJ
-                            </Label>
+                        <FormField
+                            label="CPF/CNPJ"
+                            error={errorMessage(errors.document)}
+                        >
                             <InputDocument
                                 id="quick_supplier_document"
                                 value={data.document ?? ''}
                                 onChange={(value) =>
                                     updateField('document', value)
                                 }
-                                aria-invalid={Boolean(errors.document)}
                             />
-                            <InputError
-                                message={errorMessage(errors.document)}
-                            />
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="quick_supplier_phone">
-                                Telefone
-                            </Label>
+                        <FormField
+                            label="Telefone"
+                            error={errorMessage(errors.phone)}
+                        >
                             <InputPhone
                                 id="quick_supplier_phone"
                                 value={data.phone ?? ''}
-                                onChange={(value) => updateField('phone', value)}
-                                aria-invalid={Boolean(errors.phone)}
+                                onChange={(value) =>
+                                    updateField('phone', value)
+                                }
                             />
-                            <InputError message={errorMessage(errors.phone)} />
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2 sm:col-span-2">
-                            <Label htmlFor="quick_supplier_email">E-mail</Label>
+                        <FormField
+                            label="E-mail"
+                            className="sm:col-span-2"
+                            error={errorMessage(errors.email)}
+                        >
                             <Input
                                 id="quick_supplier_email"
                                 type="email"
@@ -279,15 +275,14 @@ export function SupplierQuickCreateDialog({
                                     updateField('email', event.target.value)
                                 }
                                 autoComplete="email"
-                                aria-invalid={Boolean(errors.email)}
                             />
-                            <InputError message={errorMessage(errors.email)} />
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2 sm:col-span-2">
-                            <Label htmlFor="quick_supplier_notes">
-                                Observações
-                            </Label>
+                        <FormField
+                            label="Observações"
+                            className="sm:col-span-2"
+                            error={errorMessage(errors.notes)}
+                        >
                             <Textarea
                                 id="quick_supplier_notes"
                                 value={data.notes ?? ''}
@@ -295,10 +290,8 @@ export function SupplierQuickCreateDialog({
                                 onChange={(event) =>
                                     updateField('notes', event.target.value)
                                 }
-                                aria-invalid={Boolean(errors.notes)}
                             />
-                            <InputError message={errorMessage(errors.notes)} />
-                        </div>
+                        </FormField>
                     </div>
 
                     <DialogFooter>
@@ -308,9 +301,13 @@ export function SupplierQuickCreateDialog({
                             onClick={close}
                             disabled={processing}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={processing || !companyId}>
+                        <Button
+                            type="submit"
+                            disabled={processing || !companyId}
+                        >
                             {processing ? (
                                 <Loader2 className="size-4 animate-spin" />
                             ) : (

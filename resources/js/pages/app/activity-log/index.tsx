@@ -23,6 +23,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { index } from '@/actions/App/Http/Controllers/ActivityLogController';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -30,7 +31,6 @@ import type {
     DataTableFilterConfig,
     DataTableQuickFilter,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -73,11 +73,11 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 const SEVERITY_CLASS: Record<string, string> = {
-    success: 'border-emerald-200 bg-emerald-100 text-emerald-700',
-    info: 'border-blue-200 bg-blue-100 text-blue-700',
-    warning: 'border-amber-200 bg-amber-100 text-amber-700',
-    danger: 'border-red-200 bg-red-100 text-red-700',
-    muted: 'border-slate-200 bg-slate-100 text-slate-600',
+    success: 'border-transparent bg-success-soft text-success-soft-foreground',
+    info: 'border-transparent bg-info-soft text-info-soft-foreground',
+    warning: 'border-transparent bg-warning-soft text-warning-soft-foreground',
+    danger: 'border-transparent bg-destructive-soft text-destructive-soft-foreground',
+    muted: 'border-transparent bg-secondary text-secondary-foreground',
 };
 
 const FALLBACK_ACTIONS: Record<string, ActivityActionDefinition> = {
@@ -191,7 +191,7 @@ function ActionBadge({
 
 function LogNameBadge({ logName }: { logName: string }) {
     return (
-        <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+        <span className="inline-flex items-center rounded border border-transparent bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
             {logName}
         </span>
     );
@@ -199,7 +199,11 @@ function LogNameBadge({ logName }: { logName: string }) {
 
 function CauserCell({ log }: { log: ActivityLog }) {
     if (!log.causer) {
-        return <span className="text-xs text-muted-foreground">Sistema</span>;
+        return (
+            <span className="text-xs text-muted-foreground">
+                Não disponível
+            </span>
+        );
     }
 
     const initials = log.causer.name
@@ -211,7 +215,7 @@ function CauserCell({ log }: { log: ActivityLog }) {
 
     return (
         <div className="flex items-center gap-2">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-2xs font-semibold text-primary-soft-foreground">
                 {initials}
             </div>
             <div className="flex min-w-0 flex-col">
@@ -249,7 +253,7 @@ function formatValue(value: unknown): string {
     }
 
     if (typeof value === 'boolean') {
-        return value ? 'Sim' : 'Nao';
+        return value ? 'Sim' : 'Não';
     }
 
     if (typeof value === 'object') {
@@ -278,13 +282,13 @@ function DiffTable({
                         <th className="w-1/4 px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                             Campo
                         </th>
-                        <th className="w-[37%] px-3 py-2 text-left text-xs font-medium text-red-600">
+                        <th className="w-[37%] px-3 py-2 text-left text-xs font-medium text-destructive-soft-foreground">
                             Antes
                         </th>
                         <th className="w-6 px-1 py-2 text-center text-xs text-muted-foreground">
                             -
                         </th>
-                        <th className="w-[37%] px-3 py-2 text-left text-xs font-medium text-emerald-600">
+                        <th className="w-[37%] px-3 py-2 text-left text-xs font-medium text-success-soft-foreground">
                             Depois
                         </th>
                     </tr>
@@ -301,7 +305,7 @@ function DiffTable({
                                 key={key}
                                 className={`border-b last:border-0 ${
                                     changed
-                                        ? 'bg-amber-50/60'
+                                        ? 'bg-warning-soft/60'
                                         : index % 2 === 0
                                           ? 'bg-muted/20'
                                           : ''
@@ -314,7 +318,7 @@ function DiffTable({
                                     <span
                                         className={`font-mono text-xs break-all ${
                                             changed
-                                                ? 'text-red-700'
+                                                ? 'text-destructive-soft-foreground'
                                                 : 'text-muted-foreground'
                                         }`}
                                     >
@@ -323,14 +327,14 @@ function DiffTable({
                                 </td>
                                 <td className="px-1 py-2 text-center align-middle">
                                     {changed && (
-                                        <ArrowRight className="mx-auto size-3 text-amber-500" />
+                                        <ArrowRight className="mx-auto size-3 text-warning-soft-foreground" />
                                     )}
                                 </td>
                                 <td className="px-3 py-2 align-top">
                                     <span
                                         className={`font-mono text-xs break-all ${
                                             changed
-                                                ? 'font-semibold text-emerald-700'
+                                                ? 'font-semibold text-success-soft-foreground'
                                                 : 'text-muted-foreground'
                                         }`}
                                     >
@@ -502,7 +506,7 @@ function buildColumns(
         {
             id: 'action_key',
             accessorKey: 'action_key',
-            header: 'Acao',
+            header: 'Ação',
             size: 180,
             cell: ({ row }) => {
                 const action = resolveAction(row.original, catalog);
@@ -511,7 +515,7 @@ function buildColumns(
                     <ActionBadge action={action} event={row.original.event} />
                 );
             },
-            meta: { label: 'Acao' },
+            meta: { label: 'Ação' },
         },
         {
             id: 'log_name',
@@ -567,12 +571,12 @@ const filters: DataTableFilterConfig[] = [
         label: 'Causador',
         type: 'text',
         operator: 'contains',
-        placeholder: 'Buscar por nome ou email',
+        placeholder: 'Buscar por nome ou e-mail',
     },
 ];
 
 const dateFilterColumns: DataTableDateColumn[] = [
-    { value: 'created_at', label: 'Data do Evento' },
+    { value: 'created_at', label: 'Data do evento' },
 ];
 
 function buildQuickFilters(
@@ -593,8 +597,8 @@ function buildQuickFilters(
     return [
         {
             id: 'action_key',
-            label: 'Acao',
-            placeholder: 'Acao',
+            label: 'Ação',
+            placeholder: 'Ação',
             icon: Activity,
             options: actions.map((action) => ({
                 label: action.label,
@@ -631,7 +635,7 @@ export default function ActivityLogIndex({
     activityActionCatalog,
 }: ActivityLogIndexProps) {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Activity Log', href: index.url() }],
+        breadcrumbs: [{ title: 'Registro de atividades', href: index.url() }],
     });
 
     const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
@@ -663,7 +667,7 @@ export default function ActivityLogIndex({
 
     return (
         <>
-            <Head title="Activity Log" />
+            <Head title="Registro de atividades" />
 
             <ActivityLogDetailSheet
                 log={selectedLog}
@@ -672,15 +676,16 @@ export default function ActivityLogIndex({
                 onClose={() => setSelectedLog(null)}
             />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <Heading
-                        title="Activity Log"
-                        description="Historico de todas as acoes realizadas no sistema"
-                    />
+            <Header
+                title="Registro de atividades"
+                subtitle="Histórico de todas as ações realizadas no sistema"
+            />
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <DataTable<ActivityLog>
                         queryKey="activity-log"
+                        tableId="activity-log"
                         endpoint={apiRoutes.activityLog.index}
                         mode="infinite-scroll"
                         columns={columns}
@@ -707,7 +712,7 @@ export default function ActivityLogIndex({
                             minHeight: 320,
                             loadMoreThreshold: '150px',
                         }}
-                        searchPlaceholder="Buscar por Descrição ou evento..."
+                        searchPlaceholder="Buscar por descricao ou evento..."
                         appearance={{
                             size: 'md',
                             gridLines: 'none',

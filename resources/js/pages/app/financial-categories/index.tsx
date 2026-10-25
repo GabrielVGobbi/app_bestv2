@@ -12,6 +12,8 @@ import {
     Plus,
     RefreshCw,
     Search,
+    Tag,
+    ToggleLeft,
     Trash2,
 } from 'lucide-react';
 import { useCallback, useDeferredValue, useMemo, useState } from 'react';
@@ -23,18 +25,19 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialCategoryController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { Input } from '@/components/ui/input';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { httpGet } from '@/lib/http';
 import { cn } from '@/lib/utils';
@@ -69,6 +72,12 @@ interface CategoryTreeNodeProps {
     onToggle: (categoryId: number) => void;
     onDelete: (category: FinancialCategory) => void;
 }
+
+const statusFilterOptions: Array<{ value: StatusFilter; label: string }> = [
+    { value: 'active', label: 'Ativas' },
+    { value: 'inactive', label: 'Inativas' },
+    { value: 'all', label: 'Todas' },
+];
 
 function flattenCategories(
     categories: FinancialCategory[],
@@ -223,8 +232,7 @@ function CategoryTreeNode({
         <div className="relative">
             <div
                 className={cn(
-                    'group rounded-md border bg-card p-3 shadow-xs transition-colors',
-                    'hover:border-primary/25 hover:bg-accent/20',
+                    'group rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/40',
                     depth > 0 && 'ml-4 border-l-4',
                 )}
                 style={{
@@ -246,10 +254,10 @@ function CategoryTreeNode({
                                     : 'Categoria folha'
                             }
                             className={cn(
-                                'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors',
+                                'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-border transition-colors',
                                 hasChildren
-                                    ? 'cursor-pointer hover:bg-background'
-                                    : 'cursor-default bg-muted/50 text-muted-foreground',
+                                    ? 'cursor-pointer hover:bg-accent'
+                                    : 'cursor-default bg-muted text-muted-foreground',
                             )}
                         >
                             {hasChildren ? (
@@ -276,7 +284,7 @@ function CategoryTreeNode({
                                     {category.name}
                                 </h3>
                                 <CategoryStatusBadge category={category} />
-                                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-2xs text-muted-foreground">
                                     Nível {category.depth}
                                 </span>
                             </div>
@@ -306,7 +314,7 @@ function CategoryTreeNode({
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 hover:bg-primary/10 hover:text-primary"
+                            className="size-8"
                             asChild
                         >
                             <Link
@@ -321,7 +329,7 @@ function CategoryTreeNode({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="size-8 hover:bg-blue-500/10 hover:text-blue-600"
+                                className="size-8"
                                 asChild
                             >
                                 <Link
@@ -338,7 +346,7 @@ function CategoryTreeNode({
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="size-8 hover:bg-destructive/10 hover:text-destructive"
+                                className="size-8 hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                                 onClick={() => onDelete(category)}
                                 aria-label="Excluir categoria"
                             >
@@ -414,6 +422,17 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
     const isRefreshing =
         categoriesQuery.isFetching && !categoriesQuery.isLoading;
 
+    const statCards = [
+        { label: 'Categorias', value: stats.total, icon: Layers3 },
+        { label: 'Raízes', value: stats.roots, icon: FolderTree },
+        { label: 'Categorias folha', value: stats.leaves, icon: Leaf },
+        {
+            label: 'Profundidade',
+            value: stats.total > 0 ? stats.maxDepth + 1 : 0,
+            icon: Filter,
+        },
+    ];
+
     const handleToggle = useCallback((categoryId: number) => {
         setExpandedIds((current) => {
             const next = new Set(current);
@@ -463,99 +482,54 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
         <>
             <Head title="Categorias financeiras" />
 
+            <Header
+                title="Categorias financeiras"
+                subtitle="Navegue pelo plano de receitas, despesas e transferências em árvore"
+            >
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing || categoriesQuery.isLoading}
+                >
+                    <RefreshCw
+                        className={cn('size-4', isRefreshing && 'animate-spin')}
+                        aria-hidden="true"
+                    />
+                    {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+                </Button>
+
+                <Button asChild>
+                    <Link href={create.url()}>
+                        <Plus className="size-4" aria-hidden="true" />
+                        Nova categoria
+                    </Link>
+                </Button>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <Heading
-                            title="Categorias financeiras"
-                            description="Navegue pelo plano de receitas, despesas e transferências em árvore"
-                        />
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleRefresh}
-                                disabled={
-                                    isRefreshing || categoriesQuery.isLoading
-                                }
-                            >
-                                <RefreshCw
-                                    className={cn(
-                                        'size-4',
-                                        isRefreshing && 'animate-spin',
-                                    )}
-                                />
-                                {isRefreshing ? 'Atualizando...' : 'Atualizar'}
-                            </Button>
-
-                            <Button asChild>
-                                <Link href={create.url()}>
-                                    <Plus className="size-4" />
-                                    Nova categoria
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <Card>
-                            <CardContent className="flex items-center justify-between p-4">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Categorias
-                                    </p>
-                                    <p className="text-2xl font-semibold">
-                                        {stats.total}
-                                    </p>
-                                </div>
-                                <Layers3 className="size-5 text-primary" />
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="flex items-center justify-between p-4">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Raízes
-                                    </p>
-                                    <p className="text-2xl font-semibold">
-                                        {stats.roots}
-                                    </p>
-                                </div>
-                                <FolderTree className="size-5 text-sky-600" />
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="flex items-center justify-between p-4">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Categorias folha
-                                    </p>
-                                    <p className="text-2xl font-semibold">
-                                        {stats.leaves}
-                                    </p>
-                                </div>
-                                <Leaf className="size-5 text-emerald-600" />
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="flex items-center justify-between p-4">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Profundidade
-                                    </p>
-                                    <p className="text-2xl font-semibold">
-                                        {stats.total > 0
-                                            ? stats.maxDepth + 1
-                                            : 0}
-                                    </p>
-                                </div>
-                                <Filter className="size-5 text-amber-600" />
-                            </CardContent>
-                        </Card>
+                        {statCards.map(({ label, value, icon: Icon }) => (
+                            <Card key={label} className="py-4">
+                                <CardContent className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                            {label}
+                                        </p>
+                                        <p className="text-2xl font-semibold tabular-nums">
+                                            {value}
+                                        </p>
+                                    </div>
+                                    <span className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                                        <Icon
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
 
                     <Card>
@@ -573,7 +547,8 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                     onChange={(event) =>
                                         setSearch(event.target.value)
                                     }
-                                    placeholder="Buscar por nome, código ou caminho..."
+                                    placeholder="Buscar por nome, código ou caminho"
+                                    aria-label="Buscar categoria"
                                     className="pl-9"
                                 />
                             </div>
@@ -584,16 +559,20 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                     setTypeFilter(value as TypeFilter)
                                 }
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Tipo" />
-                                </SelectTrigger>
+                                <SelectTrigger
+                                    className="w-full"
+                                    placeholder="Tipo"
+                                    icon={Tag}
+                                    aria-label="Filtrar por tipo"
+                                />
                                 <SelectContent>
-                                    <SelectItem value="all">
+                                    <SelectItem index={0} value="all">
                                         Todos os tipos
                                     </SelectItem>
-                                    {typeOptions.map((option) => (
+                                    {typeOptions.map((option, optionIndex) => (
                                         <SelectItem
                                             key={option.value}
+                                            index={optionIndex + 1}
                                             value={option.value}
                                         >
                                             {option.label}
@@ -608,17 +587,24 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                     setStatusFilter(value as StatusFilter)
                                 }
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
+                                <SelectTrigger
+                                    className="w-full"
+                                    placeholder="Status"
+                                    icon={ToggleLeft}
+                                    aria-label="Filtrar por status"
+                                />
                                 <SelectContent>
-                                    <SelectItem value="active">
-                                        Ativas
-                                    </SelectItem>
-                                    <SelectItem value="inactive">
-                                        Inativas
-                                    </SelectItem>
-                                    <SelectItem value="all">Todas</SelectItem>
+                                    {statusFilterOptions.map(
+                                        (option, optionIndex) => (
+                                            <SelectItem
+                                                key={option.value}
+                                                index={optionIndex}
+                                                value={option.value}
+                                            >
+                                                {option.label}
+                                            </SelectItem>
+                                        ),
+                                    )}
                                 </SelectContent>
                             </Select>
 
@@ -647,7 +633,7 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                 <CardTitle className="text-base">
                                     Estrutura hierárquica
                                 </CardTitle>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-muted-foreground tabular-nums">
                                     {filteredTree.length} raiz
                                     {filteredTree.length === 1 ? '' : 'es'}{' '}
                                     exibida
@@ -661,32 +647,40 @@ export default function FinancialCategoriesIndex({ typeOptions }: Props) {
                                     {[1, 2, 3].map((item) => (
                                         <div
                                             key={item}
-                                            className="h-20 animate-pulse rounded-md bg-muted"
+                                            className="h-20 animate-pulse rounded-lg bg-muted"
                                         />
                                     ))}
                                 </div>
                             ) : null}
 
                             {categoriesQuery.isError ? (
-                                <div className="rounded-md border border-destructive/20 bg-destructive/5 p-6 text-center text-sm text-destructive">
-                                    Não foi possível carregar a árvore de
-                                    categorias.
-                                </div>
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        Não foi possível carregar a árvore de
+                                        categorias.
+                                    </AlertDescription>
+                                </Alert>
                             ) : null}
 
                             {!categoriesQuery.isLoading &&
                             !categoriesQuery.isError &&
                             filteredTree.length === 0 ? (
-                                <div className="rounded-md border border-dashed p-10 text-center">
-                                    <FolderTree className="mx-auto mb-3 size-8 text-muted-foreground" />
-                                    <p className="font-medium">
-                                        Nenhuma categoria encontrada
-                                    </p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Ajuste os filtros ou cadastre uma nova
-                                        categoria.
-                                    </p>
-                                </div>
+                                <EmptyState
+                                    icon={FolderTree}
+                                    title="Nenhuma categoria encontrada"
+                                    description="Ajuste os filtros ou cadastre uma nova categoria."
+                                    action={
+                                        <Button variant="outline" asChild>
+                                            <Link href={create.url()}>
+                                                <Plus
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Nova categoria
+                                            </Link>
+                                        </Button>
+                                    }
+                                />
                             ) : null}
 
                             {!categoriesQuery.isLoading &&

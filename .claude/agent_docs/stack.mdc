@@ -1,3 +1,9 @@
-# BestPlay — project context
+---
+alwaysApply: true
+---
 
-Use [AGENTS.md](../../AGENTS.md) for the maintained stack, conventions, task boundaries, and verification guidance. Read only the skills relevant to the requested change.
+# Project stack
+
+Read and follow [AGENTS.md](../../AGENTS.md) first. It defines the supported stack and tools; confirm installed versions in the existing dependency manifests and lockfiles when needed.
+
+Consult the [documentation entry point](../../docs/.start_kit.obs/Bem-vindo.md) and the relevant domain documentation before modifying existing systems. Reuse the project's architecture and dependencies.

@@ -22,4 +22,20 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    server: {
+        watch: {
+            // storage/framework/testing acumula dezenas de milhares de pastas dos testes;
+            // vigiar isso no Windows abre um handle por pasta e leva o Vite a GBs de RAM.
+            ignored: [
+                '**/storage/**',
+                '**/vendor/**',
+                '**/bootstrap/cache/**',
+                '**/bootstrap/ssr/**',
+                '**/public/build/**',
+                '**/docs/**',
+                '**/.docs/**',
+                '**/tests/**',
+            ],
+        },
+    },
 });

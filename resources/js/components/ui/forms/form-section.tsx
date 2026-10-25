@@ -42,7 +42,7 @@ export default function FormSection({
     return (
         <section
             className={cn(
-                'grid grid-cols-1 gap-5 border-t py-7 first:border-t-0 first:pt-0 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8',
+                'space-y-4 border-t pt-6 first:border-t-0 first:pt-0',
                 className,
             )}
         >
@@ -53,13 +53,13 @@ export default function FormSection({
                 )}
             >
                 <div className="space-y-1">
-                    <Heading className={cn('text-[15px] font-semibold', titleClassName)}>
+                    <Heading className={cn('text-sm font-semibold', titleClassName)}>
                         {title}
                     </Heading>
                     {description ? (
                         <p
                             className={cn(
-                                'text-sm leading-6 text-muted-foreground',
+                                'text-xs text-muted-foreground',
                                 descriptionClassName,
                             )}
                         >
@@ -71,7 +71,7 @@ export default function FormSection({
                 {actions ? <div className="shrink-0">{actions}</div> : null}
             </div>
 
-            <div className={cn("min-w-0", contentClassName)}>{children}</div>
+            <div className={contentClassName}>{children}</div>
         </section>
     );
 }

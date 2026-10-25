@@ -2,7 +2,7 @@ import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import type { InfiniteData } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -14,7 +14,7 @@ import {
     restore,
     show,
 } from '@/actions/App/Modules/Services/Http/Controllers/ServiceController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable, InlineCellEditor } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -22,7 +22,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -86,7 +85,7 @@ function updateCachedService(
 }
 
 function errorMessage(errors: Record<string, string>): string {
-    return Object.values(errors)[0] ?? 'Nao foi possivel salvar o servico.';
+    return Object.values(errors)[0] ?? 'Não foi possível salvar o serviço.';
 }
 
 function persistServiceName(
@@ -177,10 +176,15 @@ export default function ServiceIndex({ permissions }: Props) {
             {
                 id: 'base_price',
                 accessorKey: 'base_price',
-                header: 'Preço Base',
-                cell: ({ row }) =>
-                    formatMoney(row.original.base_price, { fromCents: true }),
-                meta: { label: 'Preço Base' },
+                header: 'Preço base',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {formatMoney(row.original.base_price, {
+                            fromCents: true,
+                        })}
+                    </span>
+                ),
+                meta: { label: 'Preço base' },
             },
             {
                 id: 'is_active',
@@ -188,7 +192,9 @@ export default function ServiceIndex({ permissions }: Props) {
                 header: 'Status',
                 cell: ({ row }) => (
                     <Badge
-                        variant={row.original.is_active ? 'default' : 'outline'}
+                        variant={
+                            row.original.is_active ? 'success' : 'secondary'
+                        }
                     >
                         {row.original.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
@@ -296,22 +302,22 @@ export default function ServiceIndex({ permissions }: Props) {
         <>
             <Head title="Serviços" />
 
-            <ContentHeader>
-                <Heading
-                    title="Serviços"
-                    description="Catálogo comercial de Serviços vendaveis"
-                />
+            <Header
+                title="Serviços"
+                subtitle="Catálogo comercial de serviços vendáveis"
+            >
                 {permissions.can_create ? (
                     <Button asChild>
                         <Link prefetch href={create.url()}>
                             <Plus className="size-4" />
-                            Novo Serviço
+                            Novo serviço
                         </Link>
                     </Button>
                 ) : null}
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Dialog
                         open={serviceToDelete !== null}
                         onOpenChange={(open) =>
@@ -320,11 +326,11 @@ export default function ServiceIndex({ permissions }: Props) {
                     >
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Arquivar Serviço</DialogTitle>
+                                <DialogTitle>Arquivar serviço</DialogTitle>
                                 <DialogDescription>
-                                    Esta acao remove o Serviço de novas
+                                    Esta ação remove o serviço de novas
                                     consultas operacionais, preservando o
-                                    historico.
+                                    histórico.
                                 </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -332,12 +338,17 @@ export default function ServiceIndex({ permissions }: Props) {
                                     variant="outline"
                                     onClick={() => setServiceToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
                                     onClick={deleteService}
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Arquivar
                                 </Button>
                             </DialogFooter>
@@ -378,7 +389,8 @@ export default function ServiceIndex({ permissions }: Props) {
                             gridLines: 'horizontal',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar Serviços..."
+                        searchPlaceholder="Buscar serviços..."
+                        emptyMessage="Nenhum serviço encontrado."
                     />
                 </div>
             </div>

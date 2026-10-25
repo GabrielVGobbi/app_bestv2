@@ -4,7 +4,6 @@ import type {
     DataTableDateColumn,
     DataTableExportConfig,
     DataTableFilterConfig,
-    DataTableQuickFilter,
 } from '@/components/data-table';
 import { DirectionBadge } from '@/components/direction-badge';
 import { MoneyAmount } from '@/components/money-amount';
@@ -77,7 +76,7 @@ export const columns: ColumnDef<FinancialInstallment>[] = [
         cell: ({ row }) => (
             <span
                 className={cn(
-                    'font-tabular',
+                    'tabular-nums',
                     row.original.is_overdue && 'font-semibold text-destructive',
                 )}
             >
@@ -93,7 +92,7 @@ export const columns: ColumnDef<FinancialInstallment>[] = [
         minSize: 112,
         meta: { label: 'Competência', align: 'center' },
         cell: ({ row }) => (
-            <span className="font-tabular text-muted-foreground">
+            <span className="text-muted-foreground tabular-nums">
                 {formatDateOnly(row.original.competence_date)}
             </span>
         ),
@@ -149,55 +148,14 @@ export const columns: ColumnDef<FinancialInstallment>[] = [
     },
 ];
 
+// Categoria e contraparte eram quick filters assíncronos; a DataTable atual não
+// renderiza `async-select`, então ficam no painel de filtros como campo de id.
 export const filters: DataTableFilterConfig[] = [
     {
         id: 'description',
         label: 'Descrição',
         type: 'text',
         operator: 'contains',
-    },
-];
-
-export const quickFilters: DataTableQuickFilter[] = [
-    {
-        id: 'status',
-        label: 'Status',
-        type: 'select',
-        placeholder: 'Status',
-        clearable: true,
-        multiple: true,
-        operator: 'in',
-        options: [
-            { label: 'Em aberto', value: 'open' },
-            { label: 'Vencidas', value: 'overdue' },
-            { label: 'Parciais', value: 'partially_paid' },
-            { label: 'Pagas', value: 'paid' },
-            { label: 'Canceladas', value: 'canceled' },
-            { label: 'Estornadas', value: 'reversed' },
-            { label: 'Renegociadas', value: 'renegotiated' },
-        ],
-    },
-    {
-        id: 'category_id',
-        label: 'Categoria',
-        type: 'async-select',
-        placeholder: 'Categoria',
-        asyncSelect: {
-            endpoint: apiRoutes.financialCategories.index,
-            searchPlaceholder: 'Buscar categoria...',
-            emptyMessage: 'Nenhuma categoria encontrada.',
-        },
-    },
-    {
-        id: 'counterparty',
-        label: 'Contraparte',
-        type: 'async-select',
-        placeholder: 'Contraparte',
-        asyncSelect: {
-            endpoint: apiRoutes.financialCounterparties.options,
-            searchPlaceholder: 'Buscar contraparte...',
-            emptyMessage: 'Nenhuma contraparte encontrada.',
-        },
     },
 ];
 

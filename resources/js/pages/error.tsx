@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Home, RefreshCw } from 'lucide-react';
 
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppLogo from '@/components/app-logo';
 import { Button } from '@/components/ui/button';
 import { home } from '@/routes';
 
@@ -65,24 +65,32 @@ export default function Error({ status }: { status: number }) {
 
     return (
         <>
-            <Head title={`${status} — ${config.title}`} />
+            <Head title={`${status}: ${config.title}`} />
 
             <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6">
+                {/* Background decoration */}
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                >
+                    <div className="h-[600px] w-[600px] rounded-full bg-primary/5 blur-3xl" />
+                </div>
+
                 <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
                     {/* Logo */}
                     <Link
                         href={home.url()}
                         className="flex items-center gap-2 opacity-80 transition-opacity hover:opacity-100"
                     >
-                        <AppLogoIcon className="size-8 fill-current text-foreground" />
+                        <AppLogo showText={false} className="text-foreground" />
                     </Link>
 
                     {/* Error code */}
                     <div className="flex flex-col items-center gap-1">
-                        <span className="text-5xl leading-none font-medium tracking-tight text-muted-foreground select-none">
+                        <span className="text-[7rem] leading-none font-black tracking-tight text-foreground/10 select-none">
                             {status}
                         </span>
-                        <div className="mt-4 flex flex-col gap-2">
+                        <div className="-mt-4 flex flex-col gap-2">
                             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                                 {config.title}
                             </h1>

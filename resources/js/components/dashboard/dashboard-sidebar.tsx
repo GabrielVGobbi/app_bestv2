@@ -1,522 +1,681 @@
-import { Link, usePage } from '@inertiajs/react';
-import {
-    ArrowUpRight,
-    ChevronDown,
-    PanelLeftClose,
-    PanelLeftOpen,
-    Settings2,
-} from 'lucide-react';
-import { useId, useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, ChevronRight, ChevronsUpDown, Circle } from 'lucide-react';
+import { m } from 'motion/react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type {
+    ComponentProps,
+    CSSProperties,
+    MouseEvent,
+    ReactElement,
+    ReactNode,
+} from 'react';
 import AppLogo from '@/components/app-logo';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetTitle,
-} from '@/components/ui/sheet';
+    DropdownContent,
+    DropdownMenu,
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
+import { SIDEBAR_MENU_POPUP } from '@/components/ui/fluid/lib/sidebar-menu-grid';
+import { spring } from '@/components/ui/fluid/lib/springs';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    useSidebar,
+} from '@/components/ui/fluid/sidebar';
+import { Tooltip } from '@/components/ui/fluid/tooltip';
+import { UserMenuContent } from '@/components/user-menu-content';
 import { useNavModule } from '@/contexts/nav-module-context';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { resolveNavItems } from '@/lib/resolve-nav-items';
+import { useInitials } from '@/hooks/use-initials';
+import {
+    resetSidebarPreferences,
+    setSidebarGroupOpen,
+    useSidebarGroupOpen,
+} from '@/hooks/use-sidebar-preferences';
+import { resolveNavItems, resolveNavModules } from '@/lib/resolve-nav-items';
 import { cn, toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes/app';
-import { index as financialAgenda } from '@/routes/financial-entries';
-import { index as payableAgenda } from '@/routes/financial-installments/payable';
-import { index as receivableAgenda } from '@/routes/financial-installments/receivable';
-import { edit as profile } from '@/routes/profile';
-import type { NavItem, NavModule } from '@/types';
+import type { NavItem } from '@/types';
 
 type Props = {
-    isCollapsed: boolean;
-    onToggle: () => void;
-    mobileOpen?: boolean;
-    onMobileClose?: () => void;
+    /** Exibe a logo no topo do sidebar (variante sidebar-logo). */
+    showLogo?: boolean;
+    className?: string;
 };
 
-function firstDestination(items: NavItem[]): NavItem['href'] | undefined {
-    for (const item of items) {
-        if (item.href && item.href !== '#') {
-            return item.href;
-        }
-
-        const child = firstDestination(item.items ?? []);
-
-        if (child) {
-            return child;
-        }
-    }
+function isExternal(item: NavItem): boolean {
+    return toUrl(item.href).startsWith('http');
 }
 
-function moduleDestination(module: NavModule): NavItem['href'] | undefined {
-    return module.defaultHref ?? module.href ?? firstDestination(module.items);
-}
-
-function moduleNavigationItems(module: NavModule): NavItem[] {
-    if (module.items.length > 0) {
-        return module.items;
-    }
-
-    const href = moduleDestination(module);
-
-    return href ? [{ title: module.label, href, icon: module.icon }] : [];
-}
-
-function NavigationItem({
-    item,
-    activeHref,
-    nested = false,
-}: {
-    item: NavItem;
-    activeHref?: string;
-    nested?: boolean;
-}) {
-    const [expanded, setExpanded] = useState(true);
-    const Icon = item.icon;
-    const subtreeId = useId();
-    const label =
-        item.title === 'Lançamentos Financeiros' ? 'Lançamentos' : item.title;
-    const itemClassName = cn(
-        'workspace-nav-item',
-        nested && 'workspace-nav-subitem',
+function hasActiveDescendant(
+    items: NavItem[],
+    isActive: (href: NavItem['href']) => boolean,
+): boolean {
+    return items.some(
+        (child) =>
+            isActive(child.href) ||
+            hasActiveDescendant(child.items ?? [], isActive),
     );
+}
 
-    if (item.items?.length) {
-        const isSection = item.type === 'section';
+/** Links de um grupo, achatados: o Fluid tem um único nível de submenu. */
+function flattenLinks(items: NavItem[]): NavItem[] {
+    return items.flatMap((item) =>
+        item.items?.length ? flattenLinks(item.items) : [item],
+    );
+}
 
-        return (
-            <div
-                className={
-                    isSection ? 'workspace-nav-group' : 'workspace-nav-branch'
+/** Sidebar recolhida no desktop: faixa só de ícones (no drawer mobile, nunca). */
+const CompactContext = createContext(false);
+
+// Linha da faixa: ícone centralizado; o rótulo continua para leitores de tela.
+const RAIL_ROW = 'justify-center px-0 [&>span]:sr-only';
+const RAIL_GUTTER = {
+    '--row-gutter': '0px',
+    '--row-gutter-hover': '0px',
+} as CSSProperties;
+const RAIL_SEPARATOR = 'mx-auto my-2 h-px w-5 shrink-0 bg-sidebar-border';
+
+// Linha de 36px (8 + 20 + 8), recuo de 12px e 10px entre ícone e texto.
+const ROW = 'h-9 gap-2.5 pl-3';
+
+function useRowProps() {
+    return useContext(CompactContext)
+        ? { className: cn(ROW, RAIL_ROW), style: RAIL_GUTTER }
+        : { className: ROW };
+}
+
+/** Grupo no ritmo do shell: 12px nas laterais; o intervalo entre grupos vem do nav. */
+function NavGroup({
+    className,
+    ...props
+}: ComponentProps<typeof SidebarGroup>) {
+    return <SidebarGroup className={cn('px-3 py-0', className)} {...props} />;
+}
+
+/** Na faixa de ícones, o nome da linha aparece num tooltip à direita. */
+function RailTooltip({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactElement;
+}) {
+    return useContext(CompactContext) ? (
+        <Tooltip content={title} side="right" sideOffset={10}>
+            {children}
+        </Tooltip>
+    ) : (
+        children
+    );
+}
+
+function NavLinkButton({ item }: { item: NavItem }) {
+    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const compact = useContext(CompactContext);
+    const rowProps = useRowProps();
+    const external = isExternal(item);
+
+    return (
+        <RailTooltip title={item.title}>
+            <SidebarMenuButton
+                icon={item.icon ?? (compact ? Circle : undefined)}
+                isActive={!external && isCurrentOrParentUrl(item.href)}
+                {...rowProps}
+                render={
+                    external ? (
+                        <a
+                            href={toUrl(item.href)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        />
+                    ) : (
+                        <Link href={item.href} prefetch />
+                    )
                 }
             >
-                {isSection ? (
-                    <p className="workspace-nav-label">{label}</p>
-                ) : (
-                    <div className="relative">
-                        {item.href && item.href !== '#' ? (
-                            <Link
-                                href={item.href}
-                                prefetch
-                                className={cn(itemClassName, 'pr-8')}
-                                aria-current={
-                                    toUrl(item.href) === activeHref
-                                        ? 'page'
-                                        : undefined
-                                }
-                            >
-                                {Icon && !nested && (
-                                    <Icon className="size-4 shrink-0" />
-                                )}
-                                <span
-                                    className="min-w-0 flex-1 truncate"
-                                    title={item.title}
-                                >
-                                    {label}
-                                </span>
-                            </Link>
-                        ) : (
-                            <span className={cn(itemClassName, 'pr-8')}>
-                                {Icon && !nested && (
-                                    <Icon className="size-4 shrink-0" />
-                                )}
-                                <span>{label}</span>
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
-                            aria-label={
-                                (expanded ? 'Recolher ' : 'Expandir ') +
-                                item.title
-                            }
-                            aria-expanded={expanded}
-                            aria-controls={subtreeId}
-                            onClick={() => setExpanded(!expanded)}
-                        >
-                            <ChevronDown
-                                className={cn(
-                                    'size-3.5 transition-transform',
-                                    !expanded && '-rotate-90',
-                                )}
-                            />
-                        </button>
-                    </div>
-                )}
-                {(isSection || expanded) && (
-                    <ul
-                        id={subtreeId}
-                        className={
-                            isSection ? 'space-y-0.5' : 'workspace-nav-sublist'
-                        }
-                    >
-                        {item.items.map((child) => (
-                            <li key={child.title}>
-                                <NavigationItem
-                                    item={child}
-                                    activeHref={activeHref}
-                                    nested={!isSection || nested}
-                                />
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+                {item.title}
+            </SidebarMenuButton>
+        </RailTooltip>
+    );
+}
+
+/** Chevron do Fluid: gira 90° aberto e só aparece no hover da própria linha. */
+function RowChevron({ open }: { open: boolean }) {
+    return (
+        <span className="-mr-0.5 ml-auto flex size-6 shrink-0 items-center justify-center">
+            <m.span
+                className="inline-flex"
+                animate={{ rotate: open ? 90 : 0 }}
+                transition={spring.fast}
+            >
+                <ChevronRight
+                    size={16}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                    className={
+                        open
+                            ? 'text-muted-foreground opacity-0 transition-opacity duration-80 group-focus-within/parent-row:opacity-100 group-hover/parent-row:opacity-100'
+                            : 'text-muted-foreground'
+                    }
+                />
+            </m.span>
+        </span>
+    );
+}
+
+function NavParentRow({ item }: { item: NavItem }) {
+    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { url } = usePage();
+    const children = flattenLinks(item.items ?? []);
+    const childActive = hasActiveDescendant(children, isCurrentOrParentUrl);
+    // Só o link mais específico acende: o Índice é prefixo das páginas irmãs.
+    const activeChild = children
+        .filter(
+            (child) => !isExternal(child) && isCurrentOrParentUrl(child.href),
+        )
+        .sort((a, b) => toUrl(b.href).length - toUrl(a.href).length)[0];
+    const [expanded, setExpanded] = useState({ url, open: childActive });
+    // Uma navegação reabre o grupo que contém a rota ativa.
+    const open = expanded.url === url ? expanded.open : childActive;
+
+    // Na faixa, o grupo vira um separador seguido dos links (sem submenu).
+    if (useContext(CompactContext)) {
+        return (
+            <>
+                <li
+                    role="separator"
+                    aria-label={item.title}
+                    className={RAIL_SEPARATOR}
+                />
+                {children.map((child) => (
+                    <SidebarMenuItem key={child.title}>
+                        <NavLinkButton item={child} />
+                    </SidebarMenuItem>
+                ))}
+            </>
         );
     }
 
-    if (!item.href || item.href === '#') {
-        return null;
-    }
-
-    const href = toUrl(item.href);
-    const isExternal = /^https?:\/\//.test(href);
-    const active = !isExternal && href === activeHref;
-    const content = (
-        <>
-            {Icon && !nested && (
-                <Icon
-                    className={cn(
-                        'size-4 shrink-0',
-                        item.tone === 'inflow' && 'text-inflow',
-                        item.tone === 'outflow' && 'text-outflow',
-                    )}
-                />
-            )}
-            <span className="min-w-0 flex-1 truncate" title={item.title}>
-                {label}
-            </span>
-            {isExternal && (
-                <ArrowUpRight className="size-3.5 text-muted-foreground" />
-            )}
-        </>
-    );
-
-    return isExternal ? (
-        <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={itemClassName}
-        >
-            {content}
-        </a>
-    ) : (
-        <Link
-            href={item.href}
-            prefetch
-            className={itemClassName}
-            aria-current={active ? 'page' : undefined}
-        >
-            {content}
-        </Link>
+    return (
+        <SidebarMenuItem>
+            <SidebarMenuButton
+                className={cn(ROW, 'group/parent-row')}
+                icon={item.icon ?? undefined}
+                aria-expanded={open}
+                onClick={() => setExpanded({ url, open: !open })}
+                style={
+                    {
+                        '--row-gutter': 'var(--row-gutter-hover)',
+                    } as CSSProperties
+                }
+            >
+                {item.title}
+                <RowChevron open={open} />
+            </SidebarMenuButton>
+            <SidebarMenuSub open={open} className="gap-0.5 pt-0.5">
+                {children.map((child) => (
+                    <SidebarMenuSubItem key={child.title}>
+                        <SidebarMenuSubButton
+                            icon={child.icon ?? undefined}
+                            isActive={child === activeChild}
+                            render={
+                                isExternal(child) ? (
+                                    <a
+                                        href={toUrl(child.href)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    />
+                                ) : (
+                                    <Link href={child.href} prefetch />
+                                )
+                            }
+                        >
+                            {child.title}
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                ))}
+            </SidebarMenuSub>
+        </SidebarMenuItem>
     );
 }
 
-function ModuleRail({
-    isCollapsed,
-    onExpand,
+function NavRows({ items }: { items: NavItem[] }) {
+    return (
+        <SidebarMenu className="gap-0.5">
+            {items.map((item) =>
+                item.items?.length ? (
+                    <NavParentRow key={item.title} item={item} />
+                ) : (
+                    <SidebarMenuItem key={item.title}>
+                        <NavLinkButton item={item} />
+                    </SidebarMenuItem>
+                ),
+            )}
+        </SidebarMenu>
+    );
+}
+
+/** Sequências de links viram uma lista; seções, um grupo com rótulo. */
+function chunkBySection(items: NavItem[]): (NavItem | NavItem[])[] {
+    return items.reduce<(NavItem | NavItem[])[]>((chunks, item) => {
+        const last = chunks[chunks.length - 1];
+
+        if (item.type === 'section') {
+            chunks.push(item);
+        } else if (Array.isArray(last)) {
+            last.push(item);
+        } else {
+            chunks.push([item]);
+        }
+
+        return chunks;
+    }, []);
+}
+
+/**
+ * Itens de um módulo. No nível raiz cada seção é um grupo recolhível; dentro
+ * de um módulo (modo flat) as seções ficam como rótulos estáticos.
+ */
+function NavSections({
+    items,
+    nested = false,
 }: {
-    isCollapsed: boolean;
-    onExpand: () => void;
+    items: NavItem[];
+    nested?: boolean;
 }) {
-    const { modules, activeModule, selectModule } = useNavModule();
+    const compact = useContext(CompactContext);
+
+    return chunkBySection(items).map((chunk) => {
+        if (Array.isArray(chunk)) {
+            return nested ? (
+                <NavRows key={chunk[0].title} items={chunk} />
+            ) : (
+                <NavGroup key={chunk[0].title}>
+                    <NavRows items={chunk} />
+                </NavGroup>
+            );
+        }
+
+        // shortcut: seções aninhadas viram linhas da seção pai; o config atual não aninha.
+        const rows = (chunk.items ?? []).flatMap((child) =>
+            child.type === 'section' ? (child.items ?? []) : [child],
+        );
+
+        // Faixa de ícones: a seção vira separador (no flat, o separador já é do módulo).
+        if (compact) {
+            return nested ? (
+                <NavRows key={chunk.title} items={rows} />
+            ) : (
+                <NavGroup key={chunk.title}>
+                    <div
+                        role="separator"
+                        aria-label={chunk.title}
+                        className={RAIL_SEPARATOR}
+                    />
+                    <NavRows items={rows} />
+                </NavGroup>
+            );
+        }
+
+        return nested ? (
+            <NavGroup key={chunk.title} className="p-0">
+                <SidebarGroupLabel>{chunk.title}</SidebarGroupLabel>
+                <NavRows items={rows} />
+            </NavGroup>
+        ) : (
+            <CollapsibleSection key={chunk.title} title={chunk.title}>
+                <NavRows items={rows} />
+            </CollapsibleSection>
+        );
+    });
+}
+
+/** Seção recolhível pelo título; aberta ou fechada fica salva entre recarregamentos. */
+function CollapsibleSection({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactNode;
+}) {
+    const open = useSidebarGroupOpen(title);
 
     return (
-        <nav aria-label="Módulos" className="workspace-module-rail">
-            <Link
-                href={dashboard()}
-                prefetch
-                className="mb-3 flex size-10 items-center justify-center text-white"
-                aria-label="BestPlay — visão geral"
-            >
-                <AppLogo showText={false} />
-            </Link>
-            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-                {modules.map((module) => {
-                    const destination = moduleDestination(module);
-                    const Icon = module.icon;
-                    const active = activeModule?.slug === module.slug;
-                    const content = (
-                        <>
-                            {Icon && (
-                                <Icon className="size-5" strokeWidth={1.5} />
-                            )}
-                            <span className="sr-only">{module.label}</span>
-                        </>
-                    );
+        <NavGroup
+            collapsible
+            open={open}
+            onOpenChange={(next) => setSidebarGroupOpen(title, next)}
+        >
+            <SidebarGroupLabel>{title}</SidebarGroupLabel>
+            {children}
+        </NavGroup>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Modo módulos: requer NavModuleProvider na árvore
+// ---------------------------------------------------------------------------
+
+function ModuleSwitcher() {
+    const { modules, activeModule, sidebarView, selectModule } = useNavModule();
+    const { isCurrentUrl } = useCurrentUrl();
+    const compact = useContext(CompactContext);
+    const rowProps = useRowProps();
+
+    return (
+        <NavGroup>
+            {!compact && <SidebarGroupLabel>Módulos</SidebarGroupLabel>}
+            <SidebarMenu className="gap-0.5">
+                {modules.map((mod) => {
+                    // Módulo sem items + com href → link direto (não drill-down)
+                    const isLinkModule = mod.items.length === 0 && !!mod.href;
+                    const icon = mod.icon ?? (compact ? Circle : undefined);
 
                     return (
-                        <Tooltip key={module.slug}>
-                            <TooltipTrigger asChild>
-                                {destination ? (
-                                    <Link
-                                        href={destination}
-                                        prefetch
-                                        className="workspace-module-button"
-                                        data-active={active}
-                                        aria-label={module.label}
-                                        aria-current={
-                                            active ? 'true' : undefined
+                        <SidebarMenuItem key={mod.slug}>
+                            <RailTooltip title={mod.label}>
+                                {isLinkModule ? (
+                                    <SidebarMenuButton
+                                        icon={icon}
+                                        isActive={isCurrentUrl(
+                                            mod.href as string,
+                                        )}
+                                        {...rowProps}
+                                        render={
+                                            <Link
+                                                href={mod.href as string}
+                                                prefetch
+                                            />
                                         }
                                     >
-                                        {content}
-                                    </Link>
+                                        {mod.label}
+                                    </SidebarMenuButton>
                                 ) : (
-                                    <button
-                                        type="button"
-                                        className="workspace-module-button"
-                                        data-active={active}
-                                        aria-label={module.label}
-                                        onClick={() => {
-                                            selectModule(module.slug);
-
-                                            if (isCollapsed) {
-                                                onExpand();
-                                            }
-                                        }}
+                                    <SidebarMenuButton
+                                        icon={icon}
+                                        isActive={
+                                            sidebarView === 'items' &&
+                                            mod.slug === activeModule.slug
+                                        }
+                                        {...rowProps}
+                                        onClick={() => selectModule(mod.slug)}
                                     >
-                                        {content}
-                                    </button>
+                                        {mod.label}
+                                    </SidebarMenuButton>
                                 )}
-                            </TooltipTrigger>
-                            <TooltipContent side="right" sideOffset={14}>
-                                {module.label}
-                            </TooltipContent>
-                        </Tooltip>
+                            </RailTooltip>
+                        </SidebarMenuItem>
                     );
                 })}
-            </div>
-            <div className="mt-5 flex flex-col gap-3 border-t border-white/15 pt-4">
-                {isCollapsed && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <button
-                                type="button"
-                                className="workspace-module-button"
-                                onClick={onExpand}
-                                aria-label="Expandir menu"
-                            >
-                                <PanelLeftOpen className="size-5" />
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                            Expandir menu
-                        </TooltipContent>
-                    </Tooltip>
-                )}
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link
-                            href={profile()}
-                            className="workspace-module-button"
-                            aria-label="Configurações"
-                        >
-                            <Settings2 className="size-5" />
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Configurações</TooltipContent>
-                </Tooltip>
-            </div>
-        </nav>
+            </SidebarMenu>
+        </NavGroup>
     );
 }
 
-function findActiveHref(
-    items: NavItem[],
-    currentPath: string,
-): string | undefined {
-    const candidates: string[] = [];
+function ModulesSidebarContent() {
+    const { nav } = usePage().props;
+    const { activeModule, sidebarView, showModuleList } = useNavModule();
+    const rowProps = useRowProps();
+    const items = activeModule?.items ?? [];
 
-    for (const item of items) {
-        const href = toUrl(item.href);
-
-        if (href.startsWith('/')) {
-            const path = href.split('?')[0];
-
-            if (currentPath === path || currentPath.startsWith(path + '/')) {
-                candidates.push(href);
-            }
-        }
-
-        const child = findActiveHref(item.items ?? [], currentPath);
-
-        if (child) {
-            candidates.push(child);
-        }
+    // Com módulos no header, a sidebar mostra direto os itens do módulo ativo.
+    if (nav.modulesMenuPosition === 'header') {
+        return <NavSections items={items} />;
     }
 
-    return candidates.sort((a, b) => b.length - a.length)[0];
-}
+    if (sidebarView === 'modules') {
+        return <ModuleSwitcher />;
+    }
 
-function ContextNavigation({
-    onCollapse,
-    mobile = false,
-}: {
-    onCollapse: () => void;
-    mobile?: boolean;
-}) {
-    const page = usePage();
-    const { nav, auth } = page.props;
-    const { activeModule, modules } = useNavModule();
-    const globalItems = resolveNavItems(nav.global);
-    const { currentUrl } = useCurrentUrl();
-    const navigationItems =
-        nav.style === 'flat'
-            ? modules.flatMap(moduleNavigationItems)
-            : activeModule
-              ? moduleNavigationItems(activeModule)
-              : [];
-    const direction = new URLSearchParams(page.url.split('?')[1]).get(
-        'direction',
-    );
-    const activePath =
-        currentUrl === financialAgenda.url()
-            ? direction === 'receivable'
-                ? receivableAgenda.url()
-                : direction === 'payable'
-                  ? payableAgenda.url()
-                  : currentUrl
-            : currentUrl;
-    const activeHref = findActiveHref(
-        [...globalItems, ...navigationItems],
-        activePath,
-    );
-
-    return (
-        <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex h-16 shrink-0 items-center justify-between gap-2 px-4">
-                <Link
-                    href={dashboard()}
-                    className="flex items-center gap-2 font-sans text-lg font-semibold tracking-tight"
-                    aria-label="BestPlay"
-                >
-                    BestPlay
-                    <span className="size-1.5 rounded-full bg-brand-pink" />
-                </Link>
-                {!mobile && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={onCollapse}
-                        aria-label="Recolher menu"
-                    >
-                        <PanelLeftClose className="size-4" />
-                    </Button>
-                )}
-            </div>
-            <nav
-                aria-label={activeModule?.label ?? 'Navegação'}
-                className="min-h-0 flex-1 overflow-y-auto px-3 pb-4"
-            >
-                <p className="px-3 pt-1 pb-2 text-xs font-medium text-muted-foreground">
-                    {nav.style === 'flat'
-                        ? 'Navegação'
-                        : (activeModule?.label ?? 'Seu espaço')}
-                </p>
-                <div className="space-y-1">
-                    {globalItems.map((item) => (
-                        <NavigationItem
-                            key={item.title}
-                            item={item}
-                            activeHref={activeHref}
-                        />
-                    ))}
-                    {nav.style === 'flat'
-                        ? modules.map((module) => (
-                              <div
-                                  key={module.slug}
-                                  className="workspace-nav-group"
-                              >
-                                  <p className="workspace-nav-label">
-                                      {module.label}
-                                  </p>
-                                  {moduleNavigationItems(module).map((item) => (
-                                      <NavigationItem
-                                          key={item.title}
-                                          item={item}
-                                          activeHref={activeHref}
-                                      />
-                                  ))}
-                              </div>
-                          ))
-                        : navigationItems.map((item) => (
-                              <NavigationItem
-                                  key={item.title}
-                                  item={item}
-                                  activeHref={activeHref}
-                              />
-                          ))}
-                </div>
-            </nav>
-            <div className="mx-5 flex items-center gap-2 border-t py-4 text-xs text-muted-foreground">
-                <span className="size-1.5 shrink-0 rounded-full bg-brand-pink" />
-                <span className="truncate">{auth.user?.name}</span>
-                <span className="ml-auto shrink-0">BestPlay</span>
-            </div>
-        </div>
-    );
-}
-
-export function DashboardSidebar({
-    isCollapsed,
-    onToggle,
-    mobileOpen = false,
-    onMobileClose,
-}: Props) {
     return (
         <>
-            <aside className="hidden shrink-0 md:flex">
-                <ModuleRail isCollapsed={isCollapsed} onExpand={onToggle} />
-                {!isCollapsed && (
-                    <div className="flex w-[228px] flex-col">
-                        <ContextNavigation onCollapse={onToggle} />
-                    </div>
-                )}
-            </aside>
-            <Sheet
-                open={mobileOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        onMobileClose?.();
-                    }
-                }}
-            >
-                <SheetContent
-                    side="left"
-                    className="w-[min(360px,calc(100vw-24px))] flex-row gap-0 border-0 bg-sidebar p-0"
-                    onCloseAutoFocus={(event) => {
-                        event.preventDefault();
-                        document
-                            .getElementById('mobile-navigation-trigger')
-                            ?.focus();
-                    }}
-                >
-                    <SheetTitle className="sr-only">
-                        Navegação BestPlay
-                    </SheetTitle>
-                    <SheetDescription className="sr-only">
-                        Escolha um módulo e acesse suas páginas.
-                    </SheetDescription>
-                    <div
-                        className="flex min-h-0 w-full"
-                        onClickCapture={(event) => {
-                            if (
-                                (event.target as HTMLElement).closest('a[href]')
-                            ) {
-                                onMobileClose?.();
-                            }
-                        }}
-                    >
-                        <ModuleRail isCollapsed={false} onExpand={onToggle} />
-                        <ContextNavigation mobile onCollapse={onToggle} />
-                    </div>
-                </SheetContent>
-            </Sheet>
+            <NavGroup>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <RailTooltip title="Voltar aos módulos">
+                            <SidebarMenuButton
+                                icon={ArrowLeft}
+                                aria-label={`Voltar aos módulos (${activeModule.label})`}
+                                {...rowProps}
+                                onClick={showModuleList}
+                            >
+                                {activeModule.label}
+                            </SidebarMenuButton>
+                        </RailTooltip>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </NavGroup>
+            <NavSections key={activeModule.slug} items={items} />
         </>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Modo flat: todos os módulos como grupos recolhíveis
+// ---------------------------------------------------------------------------
+
+function FlatSidebarContent() {
+    const { nav } = usePage().props;
+    const compact = useContext(CompactContext);
+
+    return resolveNavModules(nav.modules).map((module) => {
+        // Módulo sem items + com href → link direto sem rótulo de grupo
+        if (module.items.length === 0 && module.href) {
+            return (
+                <NavGroup key={module.slug}>
+                    <NavRows
+                        items={[
+                            {
+                                title: module.label,
+                                href: module.href,
+                                icon: module.icon ?? undefined,
+                            },
+                        ]}
+                    />
+                </NavGroup>
+            );
+        }
+
+        if (module.items.length === 0) {
+            return null;
+        }
+
+        return compact ? (
+            <NavGroup key={module.slug}>
+                <div
+                    role="separator"
+                    aria-label={module.label}
+                    className={RAIL_SEPARATOR}
+                />
+                <NavSections items={module.items} nested />
+            </NavGroup>
+        ) : (
+            <NavGroup key={module.slug} collapsible>
+                <SidebarGroupLabel>{module.label}</SidebarGroupLabel>
+                <NavSections items={module.items} nested />
+            </NavGroup>
+        );
+    });
+}
+
+function UserFooter() {
+    const { auth } = usePage().props;
+    const getInitials = useInitials();
+    const compact = useContext(CompactContext);
+
+    return (
+        <SidebarMenu aria-label="Conta">
+            <SidebarMenuItem>
+                <DropdownMenu>
+                    <RailTooltip title={auth.user?.name ?? 'Conta'}>
+                        <DropdownTrigger
+                            render={
+                                <SidebarMenuButton
+                                    aria-label="Abrir menu do usuário"
+                                    // Faixa: só o avatar, centralizado.
+                                    className={cn(
+                                        ROW,
+                                        compact &&
+                                            'justify-center px-0 [&>span]:justify-center',
+                                    )}
+                                    style={compact ? RAIL_GUTTER : undefined}
+                                >
+                                    <Avatar className="-mr-0.5 -ml-0.5 size-5 shrink-0 overflow-hidden rounded-full">
+                                        <AvatarImage
+                                            src={auth.user?.avatar}
+                                            alt=""
+                                        />
+                                        <AvatarFallback className="rounded-full bg-primary-soft text-2xs leading-3 font-semibold text-primary-soft-foreground">
+                                            {getInitials(auth.user?.name ?? '')}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span
+                                        className={
+                                            compact
+                                                ? 'sr-only'
+                                                : 'min-w-0 truncate'
+                                        }
+                                    >
+                                        {auth.user?.name}
+                                    </span>
+                                    {!compact && (
+                                        <span className="-mr-0.5 ml-auto flex size-6 shrink-0 items-center justify-center">
+                                            <ChevronsUpDown
+                                                size={16}
+                                                strokeWidth={1.5}
+                                                aria-hidden="true"
+                                                className="text-muted-foreground"
+                                            />
+                                        </span>
+                                    )}
+                                </SidebarMenuButton>
+                            }
+                        />
+                    </RailTooltip>
+                    {/* Grade do Fluid: o menu alinha os ícones ao eixo da linha. */}
+                    <DropdownContent
+                        className={SIDEBAR_MENU_POPUP}
+                        side="top"
+                        align="start"
+                        sideOffset={6}
+                    >
+                        {auth.user && (
+                            <UserMenuContent
+                                user={auth.user}
+                                onResetSidebar={resetSidebarPreferences}
+                            />
+                        )}
+                    </DropdownContent>
+                </DropdownMenu>
+            </SidebarMenuItem>
+        </SidebarMenu>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// DashboardSidebar: Fluid Functionalism nas cores do shell (.app-sidebar);
+// recolhida, vira a faixa de ícones de 80px.
+// ---------------------------------------------------------------------------
+
+export function DashboardSidebar({ showLogo = false, className }: Props) {
+    const { nav } = usePage().props;
+    const { isMobile, setOpenMobile, open } = useSidebar();
+    const compact = !open && !isMobile;
+    const globalItems = resolveNavItems(nav.global);
+    const footerItems = resolveNavItems(nav.footer);
+
+    useEffect(
+        () => router.on('navigate', () => setOpenMobile(false)),
+        [setOpenMobile],
+    );
+
+    useEffect(() => {
+        const desktop = window.matchMedia('(min-width: 768px)');
+        const closeOnDesktop = () => {
+            if (desktop.matches) {
+                setOpenMobile(false);
+            }
+        };
+
+        desktop.addEventListener('change', closeOnDesktop);
+
+        return () => desktop.removeEventListener('change', closeOnDesktop);
+    }, [setOpenMobile]);
+
+    const closeDrawerOnLink = (event: MouseEvent<HTMLElement>) => {
+        if (isMobile && (event.target as HTMLElement).closest('a[href]')) {
+            setOpenMobile(false);
+        }
+    };
+
+    return (
+        <Sidebar
+            variant="sidebar"
+            className={cn('app-sidebar bg-sidebar', className)}
+        >
+            {/* display: contents leva os tokens também ao drawer mobile (portal). */}
+            <div className="app-sidebar contents">
+                <CompactContext.Provider value={compact}>
+                    {showLogo && (
+                        <SidebarHeader className="px-3 pt-5 pb-7">
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                                aria-label="Ir ao dashboard"
+                                className={cn(
+                                    'flex h-10 items-center rounded-[8px] text-sidebar-foreground outline-none focus-visible:ring-1 focus-visible:ring-(--focus-ring)',
+                                    compact ? 'justify-center' : 'px-1',
+                                )}
+                            >
+                                <AppLogo showText={!compact} />
+                            </Link>
+                        </SidebarHeader>
+                    )}
+
+                    <SidebarContent onClickCapture={closeDrawerOnLink}>
+                        <nav
+                            aria-label="Navegação principal"
+                            className={cn(
+                                'flex flex-col',
+                                compact ? 'gap-2' : 'gap-6',
+                            )}
+                        >
+                            {globalItems.length > 0 && (
+                                <NavGroup>
+                                    <NavRows items={globalItems} />
+                                </NavGroup>
+                            )}
+                            {nav.style === 'modules' ? (
+                                <ModulesSidebarContent />
+                            ) : (
+                                <FlatSidebarContent />
+                            )}
+                        </nav>
+                    </SidebarContent>
+
+                    <SidebarFooter
+                        className="gap-3 px-3 pt-4 pb-5"
+                        onClickCapture={closeDrawerOnLink}
+                    >
+                        {footerItems.length > 0 && (
+                            <NavRows items={footerItems} />
+                        )}
+                        <UserFooter />
+                    </SidebarFooter>
+                </CompactContext.Provider>
+            </div>
+        </Sidebar>
     );
 }

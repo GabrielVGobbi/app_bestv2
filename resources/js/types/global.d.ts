@@ -5,6 +5,16 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            branding: {
+                name: string;
+                shortName: string;
+                hue: number;
+                logo: {
+                    mark: string | null;
+                    light: string | null;
+                    dark: string | null;
+                };
+            };
             auth: Auth;
             sidebarOpen: boolean;
             layout: {

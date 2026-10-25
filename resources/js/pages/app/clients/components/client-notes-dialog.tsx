@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { quickUpdate } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,9 @@ interface ClientNotesDialogProps {
 }
 
 function errorMessage(errors: Record<string, string>): string {
-    return Object.values(errors)[0] ?? 'Não foi possível atualizar a observação.';
+    return (
+        Object.values(errors)[0] ?? 'Não foi possível atualizar a observação.'
+    );
 }
 
 export function ClientNotesDialog({
@@ -34,16 +36,6 @@ export function ClientNotesDialog({
     const [notes, setNotes] = useState(client.notes ?? '');
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        setNotes(client.notes ?? '');
-        setError(null);
-        setIsSaving(false);
-    }, [client.notes, open]);
 
     const handleSave = () => {
         setIsSaving(true);
@@ -84,8 +76,8 @@ export function ClientNotesDialog({
                             : 'Adicionar observação'}
                     </DialogTitle>
                     <DialogDescription>
-                        A observação fica visível na ficha do cliente e pode
-                        ser atualizada a qualquer momento.
+                        A observação fica visível na ficha do cliente e pode ser
+                        atualizada a qualquer momento.
                     </DialogDescription>
                 </DialogHeader>
 

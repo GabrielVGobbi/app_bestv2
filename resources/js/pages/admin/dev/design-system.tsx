@@ -5,12 +5,10 @@ import {
     Bell,
     Check,
     CheckCircle,
-    ChevronDown,
     Copy,
     Info,
     Loader2,
     Mail,
-    Moon,
     Plus,
     Search,
     Settings,
@@ -20,9 +18,13 @@ import {
     User,
     X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { components, designSystem } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
+import {
+    components,
+    designSystem,
+} from '@/actions/App/Http/Controllers/Admin/DevToolsController';
+import Header from '@/components/dashboard/header';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -37,36 +39,81 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip } from '@/components/ui/fluid/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { useClipboard } from '@/hooks/use-clipboard';
 import { cn } from '@/lib/utils';
 
 // ─── Code Block ──────────────────────────────────────────────────────────────
 
-function CodeBlock({ code, language = 'tsx' }: { code: string; language?: string }) {
+function CodeBlock({
+    code,
+    language = 'tsx',
+}: {
+    code: string;
+    language?: string;
+}) {
     const [copied, setCopied] = useState(false);
+    const [, copy] = useClipboard();
+    const feedback = useRef({
+        mounted: false,
+        attempt: 0,
+        timer: null as ReturnType<typeof setTimeout> | null,
+    });
 
-    function handleCopy() {
-        navigator.clipboard.writeText(code.trim());
+    useEffect(() => {
+        const active = feedback.current;
+        active.mounted = true;
+
+        return () => {
+            active.mounted = false;
+            ++active.attempt;
+
+            if (active.timer !== null) {
+                clearTimeout(active.timer);
+                active.timer = null;
+            }
+        };
+    }, []);
+
+    async function handleCopy(): Promise<void> {
+        const active = feedback.current;
+        const attempt = ++active.attempt;
+
+        if (active.timer !== null) {
+            clearTimeout(active.timer);
+            active.timer = null;
+        }
+
+        setCopied(false);
+        const success = await copy(code.trim());
+
+        if (!success || !active.mounted || active.attempt !== attempt) {
+            return;
+        }
+
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        active.timer = setTimeout(() => {
+            if (active.mounted && active.attempt === attempt) {
+                active.timer = null;
+                setCopied(false);
+            }
+        }, 2000);
     }
 
     return (
         <div className="group relative rounded-lg border bg-muted/40">
             <div className="flex items-center justify-between border-b px-4 py-2">
-                <span className="font-mono text-xs text-muted-foreground">{language}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                    {language}
+                </span>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 gap-1.5 px-2 text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                    className="h-7 gap-1.5 px-2 text-xs opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
                     onClick={handleCopy}
                 >
                     {copied ? (
@@ -105,9 +152,13 @@ function Section({
     return (
         <section id={id} className="scroll-mt-6 space-y-4">
             <div>
-                <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+                <h2 className="text-xl font-semibold tracking-tight">
+                    {title}
+                </h2>
                 {description && (
-                    <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        {description}
+                    </p>
                 )}
             </div>
             {children}
@@ -205,12 +256,17 @@ export default function DesignSystem() {
         <>
             <Head title="Design System" />
 
+            <Header
+                title="Design System"
+                subtitle="Referência visual de todos os componentes, estilos e padrões de interface usados nesta aplicação."
+            />
+
             <div className="page-wrapper-lg">
                 <div className="flex gap-8 p-4">
                     {/* ── Sticky side nav ── */}
                     <aside className="hidden w-44 shrink-0 xl:block">
                         <nav className="sticky top-4 space-y-1">
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="mb-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
                                 Seções
                             </p>
                             {navSections.map((s) => (
@@ -227,54 +283,96 @@ export default function DesignSystem() {
 
                     {/* ── Main content ── */}
                     <main className="min-w-0 flex-1 space-y-10">
-                        <Heading
-                            title="Design System"
-                            description="Referência visual de todos os componentes, estilos e padrões de interface usados nesta aplicação."
-                        />
-
                         {/* ─────────────── TIPOGRAFIA ─────────────── */}
                         <Section
                             id="typography"
                             title="Tipografia"
-                            description="Hierarquia de texto — headings, corpo, muted e variações."
+                            description="Geist em uma escala curta. Hierarquia por tamanho e peso; só dois níveis de cor de texto."
                         >
                             <PreviewBlock
                                 preview={
-                                    <div className="w-full space-y-3">
-                                        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-                                            Heading 1
-                                        </h1>
-                                        <h2 className="scroll-m-20 text-3xl font-semibold tracking-tight">
-                                            Heading 2
-                                        </h2>
-                                        <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-                                            Heading 3
-                                        </h3>
-                                        <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-                                            Heading 4
-                                        </h4>
-                                        <p className="leading-7">
-                                            Parágrafo padrão com <strong>negrito</strong> e{' '}
-                                            <em>itálico</em> para destaque inline.
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Texto muted — usado para descrições e informações secundárias.
-                                        </p>
-                                        <p className="font-mono text-sm">
-                                            Texto mono — para código, IDs e valores técnicos.
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Extra small — labels, timestamps, metadados.
-                                        </p>
+                                    <div className="w-full divide-y divide-separator">
+                                        {[
+                                            {
+                                                size: '11px',
+                                                role: 'Legenda de tabela densa e metadados',
+                                                className:
+                                                    'text-2xs text-muted-foreground',
+                                            },
+                                            {
+                                                size: '12px',
+                                                role: 'Descrições',
+                                                className:
+                                                    'text-xs text-muted-foreground',
+                                            },
+                                            {
+                                                size: '13px',
+                                                role: 'Sidebar, módulos e corpo de tabela',
+                                                className: 'text-[13px]',
+                                            },
+                                            {
+                                                size: '14px',
+                                                role: 'Corpo',
+                                                className: 'text-sm',
+                                            },
+                                            {
+                                                size: '16px',
+                                                role: 'Lead',
+                                                className: 'text-base',
+                                            },
+                                            {
+                                                size: '20px',
+                                                role: 'Seção (h2)',
+                                                className:
+                                                    'text-xl font-semibold tracking-tight',
+                                            },
+                                            {
+                                                size: '24px',
+                                                role: 'Título de página',
+                                                className:
+                                                    'text-2xl font-bold tracking-tight',
+                                            },
+                                            {
+                                                size: '30px',
+                                                role: 'KPI',
+                                                className:
+                                                    'text-3xl font-bold tracking-tight tabular-nums',
+                                            },
+                                        ].map((sample) => (
+                                            <div
+                                                key={sample.size}
+                                                className="flex items-baseline gap-4 py-2"
+                                            >
+                                                <span className="w-12 shrink-0 font-mono text-2xs text-muted-foreground">
+                                                    {sample.size}
+                                                </span>
+                                                <span
+                                                    className={cn(
+                                                        'min-w-0 flex-1 truncate',
+                                                        sample.className,
+                                                    )}
+                                                >
+                                                    {sample.role}
+                                                </span>
+                                            </div>
+                                        ))}
+                                        <div className="flex items-baseline gap-4 py-2">
+                                            <span className="w-12 shrink-0 font-mono text-2xs text-muted-foreground">
+                                                tabular
+                                            </span>
+                                            <span className="grid text-right text-sm tabular-nums">
+                                                <span>1.234,56</span>
+                                                <span>98.071,00</span>
+                                            </span>
+                                        </div>
                                     </div>
                                 }
-                                code={`<h1 className="text-4xl font-extrabold tracking-tight">Heading 1</h1>
-<h2 className="text-3xl font-semibold tracking-tight">Heading 2</h2>
-<h3 className="text-2xl font-semibold tracking-tight">Heading 3</h3>
-<h4 className="text-xl font-semibold tracking-tight">Heading 4</h4>
-<p className="leading-7">Parágrafo padrão</p>
-<p className="text-sm text-muted-foreground">Texto muted</p>
-<p className="font-mono text-sm">Texto mono</p>`}
+                                code={`<h1 className="text-2xl font-bold tracking-tight">Título de página</h1>
+<h2 className="text-xl font-semibold tracking-tight">Seção</h2>
+<p className="text-sm">Corpo</p>
+<p className="text-xs text-muted-foreground">Descrição</p>
+<span className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">Rótulo</span>
+<p className="text-3xl font-bold tabular-nums">1.234</p>`}
                                 className="items-start"
                             />
                         </Section>
@@ -283,37 +381,154 @@ export default function DesignSystem() {
                         <Section
                             id="colors"
                             title="Cores"
-                            description="Paleta semântica baseada em CSS variables — funciona automaticamente em dark/light mode."
+                            description="Tokens semânticos derivados de --brand-hue. Cada superfície tem o seu par de texto; status têm hue fixo."
                         >
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                                 {[
-                                    { name: 'Background', bg: 'bg-background', text: 'text-foreground', label: '--background' },
-                                    { name: 'Foreground', bg: 'bg-foreground', text: 'text-background', label: '--foreground' },
-                                    { name: 'Primary', bg: 'bg-primary', text: 'text-primary-foreground', label: '--primary' },
-                                    { name: 'Secondary', bg: 'bg-secondary', text: 'text-secondary-foreground', label: '--secondary' },
-                                    { name: 'Muted', bg: 'bg-muted', text: 'text-muted-foreground', label: '--muted' },
-                                    { name: 'Accent', bg: 'bg-accent', text: 'text-accent-foreground', label: '--accent' },
-                                    { name: 'Destructive', bg: 'bg-destructive', text: 'text-white', label: '--destructive' },
-                                    { name: 'Border', bg: 'bg-border', text: 'text-foreground', label: '--border' },
-                                ].map((c) => (
-                                    <div key={c.name} className="overflow-hidden rounded-lg border">
-                                        <div className={cn('flex h-16 items-center justify-center', c.bg, c.text)}>
-                                            <span className="text-sm font-medium">{c.name}</span>
-                                        </div>
-                                        <div className="bg-background px-3 py-2">
-                                            <p className="text-xs font-medium">{c.name}</p>
-                                            <p className="font-mono text-[10px] text-muted-foreground">{c.label}</p>
-                                        </div>
+                                    {
+                                        token: 'background',
+                                        text: 'foreground',
+                                        className:
+                                            'bg-background text-foreground',
+                                    },
+                                    {
+                                        token: 'card',
+                                        text: 'card-foreground',
+                                        className:
+                                            'bg-card text-card-foreground',
+                                    },
+                                    {
+                                        token: 'popover',
+                                        text: 'popover-foreground',
+                                        className:
+                                            'bg-popover text-popover-foreground',
+                                    },
+                                    {
+                                        token: 'muted',
+                                        text: 'muted-foreground',
+                                        className:
+                                            'bg-muted text-muted-foreground',
+                                    },
+                                    {
+                                        token: 'secondary',
+                                        text: 'secondary-foreground',
+                                        className:
+                                            'bg-secondary text-secondary-foreground',
+                                    },
+                                    {
+                                        token: 'accent',
+                                        text: 'accent-foreground',
+                                        className:
+                                            'bg-accent text-accent-foreground',
+                                    },
+                                    {
+                                        token: 'primary',
+                                        text: 'primary-foreground',
+                                        className:
+                                            'bg-primary text-primary-foreground',
+                                    },
+                                    {
+                                        token: 'primary-soft',
+                                        text: 'primary-soft-foreground',
+                                        className:
+                                            'bg-primary-soft text-primary-soft-foreground',
+                                    },
+                                    {
+                                        token: 'success',
+                                        text: 'success-foreground',
+                                        className:
+                                            'bg-success text-success-foreground',
+                                    },
+                                    {
+                                        token: 'success-soft',
+                                        text: 'success-soft-foreground',
+                                        className:
+                                            'bg-success-soft text-success-soft-foreground',
+                                    },
+                                    {
+                                        token: 'warning',
+                                        text: 'warning-foreground',
+                                        className:
+                                            'bg-warning text-warning-foreground',
+                                    },
+                                    {
+                                        token: 'warning-soft',
+                                        text: 'warning-soft-foreground',
+                                        className:
+                                            'bg-warning-soft text-warning-soft-foreground',
+                                    },
+                                    {
+                                        token: 'destructive',
+                                        text: 'destructive-foreground',
+                                        className:
+                                            'bg-destructive text-destructive-foreground',
+                                    },
+                                    {
+                                        token: 'destructive-soft',
+                                        text: 'destructive-soft-foreground',
+                                        className:
+                                            'bg-destructive-soft text-destructive-soft-foreground',
+                                    },
+                                    {
+                                        token: 'info',
+                                        text: 'info-foreground',
+                                        className:
+                                            'bg-info text-info-foreground',
+                                    },
+                                    {
+                                        token: 'info-soft',
+                                        text: 'info-soft-foreground',
+                                        className:
+                                            'bg-info-soft text-info-soft-foreground',
+                                    },
+                                    {
+                                        token: 'border',
+                                        text: 'foreground',
+                                        className:
+                                            'border-2 border-border bg-card text-foreground',
+                                    },
+                                    {
+                                        token: 'input',
+                                        text: 'foreground',
+                                        className:
+                                            'border-2 border-input bg-input-surface text-foreground',
+                                    },
+                                    {
+                                        token: 'sidebar',
+                                        text: 'sidebar-foreground',
+                                        className:
+                                            'bg-sidebar text-sidebar-foreground',
+                                    },
+                                ].map((swatch) => (
+                                    <div
+                                        key={swatch.token}
+                                        className={cn(
+                                            'rounded-lg border border-border p-3',
+                                            swatch.className,
+                                        )}
+                                    >
+                                        <p className="text-xs font-semibold">
+                                            --{swatch.token}
+                                        </p>
+                                        <p className="text-2xs">
+                                            texto: --{swatch.text}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
                             <CodeBlock
-                                code={`// Usando CSS variables via Tailwind
-<div className="bg-primary text-primary-foreground">Primary</div>
-<div className="bg-secondary text-secondary-foreground">Secondary</div>
-<div className="bg-destructive text-white">Destructive</div>
-<div className="bg-muted text-muted-foreground">Muted</div>
-<div className="text-foreground">Foreground</div>`}
+                                code={`// Superfície + par de texto
+<div className="bg-card text-card-foreground">Card</div>
+<div className="bg-primary text-primary-foreground">Ação principal</div>
+
+// Status e destaques usam tintas suaves
+<span className="bg-success-soft text-success-soft-foreground">Ativo</span>
+<span className="bg-primary-soft text-primary-soft-foreground">AB</span>
+
+// Bordas por papel
+<div className="border border-border" />    // decorativa
+<div className="border-b border-separator" /> // linha interna
+<input className="border border-input" />   // campo`}
                             />
                         </Section>
 
@@ -325,16 +540,30 @@ export default function DesignSystem() {
                         >
                             <div className="space-y-4">
                                 <div>
-                                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Variantes</p>
+                                    <p className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Variantes
+                                    </p>
                                     <PreviewBlock
                                         preview={
                                             <>
-                                                <Button variant="default">Default</Button>
-                                                <Button variant="secondary">Secondary</Button>
-                                                <Button variant="outline">Outline</Button>
-                                                <Button variant="ghost">Ghost</Button>
-                                                <Button variant="destructive">Destructive</Button>
-                                                <Button variant="link">Link</Button>
+                                                <Button variant="default">
+                                                    Default
+                                                </Button>
+                                                <Button variant="secondary">
+                                                    Secondary
+                                                </Button>
+                                                <Button variant="outline">
+                                                    Outline
+                                                </Button>
+                                                <Button variant="ghost">
+                                                    Ghost
+                                                </Button>
+                                                <Button variant="destructive">
+                                                    Destructive
+                                                </Button>
+                                                <Button variant="link">
+                                                    Link
+                                                </Button>
                                             </>
                                         }
                                         code={`<Button variant="default">Default</Button>
@@ -346,14 +575,21 @@ export default function DesignSystem() {
                                     />
                                 </div>
                                 <div>
-                                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Tamanhos</p>
+                                    <p className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Tamanhos
+                                    </p>
                                     <PreviewBlock
                                         preview={
                                             <>
                                                 <Button size="sm">Small</Button>
-                                                <Button size="default">Default</Button>
+                                                <Button size="default">
+                                                    Default
+                                                </Button>
                                                 <Button size="lg">Large</Button>
-                                                <Button size="icon" variant="outline">
+                                                <Button
+                                                    size="icon"
+                                                    variant="outline"
+                                                >
                                                     <Plus />
                                                 </Button>
                                             </>
@@ -365,7 +601,9 @@ export default function DesignSystem() {
                                     />
                                 </div>
                                 <div>
-                                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Com ícones & estados</p>
+                                    <p className="mb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                        Com ícones & estados
+                                    </p>
                                     <PreviewBlock
                                         preview={
                                             <>
@@ -408,31 +646,39 @@ export default function DesignSystem() {
                         <Section
                             id="badges"
                             title="Badges"
-                            description="Indicadores de status, categorias e contadores."
+                            description="Só tintas suaves: cada status usa o seu par soft e soft-foreground."
                         >
                             <PreviewBlock
                                 preview={
                                     <>
-                                        <Badge variant="default">Default</Badge>
-                                        <Badge variant="secondary">Secondary</Badge>
-                                        <Badge variant="outline">Outline</Badge>
-                                        <Badge variant="destructive">Destructive</Badge>
+                                        <Badge variant="default">Padrão</Badge>
                                         <Badge variant="secondary">
+                                            Secundário
+                                        </Badge>
+                                        <Badge variant="success">
                                             <CheckCircle />
                                             Ativo
                                         </Badge>
-                                        <Badge variant="outline">
+                                        <Badge variant="warning">
                                             <AlertCircle />
                                             Pendente
                                         </Badge>
+                                        <Badge variant="destructive">
+                                            Falhou
+                                        </Badge>
+                                        <Badge variant="info">Na fila</Badge>
+                                        <Badge variant="outline">
+                                            Contorno
+                                        </Badge>
                                     </>
                                 }
-                                code={`<Badge variant="default">Default</Badge>
-<Badge variant="secondary">Secondary</Badge>
-<Badge variant="outline">Outline</Badge>
-<Badge variant="destructive">Destructive</Badge>
-<Badge variant="secondary"><CheckCircle /> Ativo</Badge>
-<Badge variant="outline"><AlertCircle /> Pendente</Badge>`}
+                                code={`<Badge variant="default">Padrão</Badge>
+<Badge variant="secondary">Secundário</Badge>
+<Badge variant="success"><CheckCircle /> Ativo</Badge>
+<Badge variant="warning"><AlertCircle /> Pendente</Badge>
+<Badge variant="destructive">Falhou</Badge>
+<Badge variant="info">Na fila</Badge>
+<Badge variant="outline">Contorno</Badge>`}
                             />
                         </Section>
 
@@ -447,14 +693,18 @@ export default function DesignSystem() {
                                     preview={
                                         <Card className="w-full">
                                             <CardHeader>
-                                                <CardTitle>Card Simples</CardTitle>
+                                                <CardTitle>
+                                                    Card Simples
+                                                </CardTitle>
                                                 <CardDescription>
-                                                    Descrição complementar do card.
+                                                    Descrição complementar do
+                                                    card.
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Conteúdo principal do card com informações relevantes.
+                                                    Conteúdo principal do card
+                                                    com informações relevantes.
                                                 </p>
                                             </CardContent>
                                         </Card>
@@ -479,22 +729,31 @@ export default function DesignSystem() {
                                                         <Settings className="size-4 text-primary" />
                                                     </div>
                                                     <div>
-                                                        <CardTitle className="text-base">Card com Ícone</CardTitle>
+                                                        <CardTitle className="text-base">
+                                                            Card com Ícone
+                                                        </CardTitle>
                                                         <CardDescription className="text-xs">
                                                             Com badge de status
                                                         </CardDescription>
                                                     </div>
-                                                    <Badge variant="secondary" className="ml-auto">
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="ml-auto"
+                                                    >
                                                         Pronto
                                                     </Badge>
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="text-sm text-muted-foreground">
-                                                Ideal para catálogos de funcionalidades.
+                                                Ideal para catálogos de
+                                                funcionalidades.
                                             </CardContent>
                                             <CardFooter className="flex gap-2">
                                                 <Button size="sm">Abrir</Button>
-                                                <Button size="sm" variant="outline">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                >
                                                     Detalhes
                                                 </Button>
                                             </CardFooter>
@@ -528,61 +787,60 @@ export default function DesignSystem() {
                         <Section
                             id="alerts"
                             title="Alerts"
-                            description="Mensagens de feedback — informação, sucesso, aviso e erro."
+                            description="Mensagens de feedback: neutra, informação, sucesso, aviso e erro."
                         >
                             <PreviewBlock
                                 preview={
                                     <div className="w-full space-y-3">
                                         <Alert>
                                             <Info className="size-4" />
-                                            <AlertTitle>Informação</AlertTitle>
+                                            <AlertTitle>Neutro</AlertTitle>
                                             <AlertDescription>
-                                                Mensagem informativa para o usuário.
+                                                Contexto sem urgência.
                                             </AlertDescription>
                                         </Alert>
-                                        <Alert className="border-green-500/50 text-green-700 dark:text-green-400 [&>svg]:text-green-600">
+                                        <Alert variant="info">
+                                            <Info className="size-4" />
+                                            <AlertTitle>Informação</AlertTitle>
+                                            <AlertDescription>
+                                                Mensagem informativa para o
+                                                usuário.
+                                            </AlertDescription>
+                                        </Alert>
+                                        <Alert variant="success">
                                             <CheckCircle className="size-4" />
                                             <AlertTitle>Sucesso</AlertTitle>
                                             <AlertDescription>
                                                 Operação concluída com êxito.
                                             </AlertDescription>
                                         </Alert>
-                                        <Alert className="border-yellow-500/50 text-yellow-700 dark:text-yellow-400 [&>svg]:text-yellow-600">
+                                        <Alert variant="warning">
                                             <AlertTriangle className="size-4" />
                                             <AlertTitle>Aviso</AlertTitle>
                                             <AlertDescription>
-                                                Atenção — esta ação pode ter consequências.
+                                                Atenção: esta ação pode ter
+                                                consequências.
                                             </AlertDescription>
                                         </Alert>
                                         <Alert variant="destructive">
                                             <AlertCircle className="size-4" />
                                             <AlertTitle>Erro</AlertTitle>
                                             <AlertDescription>
-                                                Algo deu errado. Por favor, tente novamente.
+                                                Algo deu errado. Tente
+                                                novamente.
                                             </AlertDescription>
                                         </Alert>
                                     </div>
                                 }
-                                code={`// Informação (padrão)
-<Alert>
+                                code={`<Alert variant="info">
     <Info className="size-4" />
     <AlertTitle>Informação</AlertTitle>
     <AlertDescription>Mensagem informativa.</AlertDescription>
 </Alert>
 
-// Sucesso (com classes customizadas)
-<Alert className="border-green-500/50 text-green-700 [&>svg]:text-green-600">
-    <CheckCircle className="size-4" />
-    <AlertTitle>Sucesso</AlertTitle>
-    <AlertDescription>Operação concluída.</AlertDescription>
-</Alert>
-
-// Erro (variante destructive)
-<Alert variant="destructive">
-    <AlertCircle className="size-4" />
-    <AlertTitle>Erro</AlertTitle>
-    <AlertDescription>Algo deu errado.</AlertDescription>
-</Alert>`}
+<Alert variant="success">...</Alert>
+<Alert variant="warning">...</Alert>
+<Alert variant="destructive">...</Alert>`}
                                 className="items-start"
                             />
                         </Section>
@@ -597,14 +855,21 @@ export default function DesignSystem() {
                                 <PreviewBlock
                                     preview={
                                         <div className="w-full space-y-4">
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="demo-name">Nome</Label>
-                                                <Input id="demo-name" placeholder="Digite seu nome" />
+                                            <div className="space-y-2">
+                                                <Label htmlFor="demo-name">
+                                                    Nome
+                                                </Label>
+                                                <Input
+                                                    id="demo-name"
+                                                    placeholder="Digite seu nome"
+                                                />
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="demo-email">Email</Label>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="demo-email">
+                                                    Email
+                                                </Label>
                                                 <div className="relative">
-                                                    <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                                    <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                                     <Input
                                                         id="demo-email"
                                                         type="email"
@@ -613,26 +878,31 @@ export default function DesignSystem() {
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="demo-search">Busca</Label>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="demo-search">
+                                                    Busca
+                                                </Label>
                                                 <div className="relative">
-                                                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                                     <Input
                                                         id="demo-search"
                                                         placeholder="Buscar..."
-                                                        className="pl-9 pr-9"
+                                                        className="pr-9 pl-9"
                                                     />
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="absolute right-1 top-1/2 size-7 -translate-y-1/2"
+                                                        className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
                                                     >
                                                         <X className="size-3" />
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="demo-invalid" className="text-destructive">
+                                            <div className="space-y-2">
+                                                <Label
+                                                    htmlFor="demo-invalid"
+                                                    className="text-destructive"
+                                                >
                                                     Campo com erro
                                                 </Label>
                                                 <Input
@@ -644,14 +914,17 @@ export default function DesignSystem() {
                                                     Este campo é obrigatório.
                                                 </p>
                                             </div>
-                                            <div className="space-y-1.5">
+                                            <div className="space-y-2">
                                                 <Label>Desabilitado</Label>
-                                                <Input disabled placeholder="Campo desabilitado" />
+                                                <Input
+                                                    disabled
+                                                    placeholder="Campo desabilitado"
+                                                />
                                             </div>
                                         </div>
                                     }
                                     code={`// Input simples
-<div className="space-y-1.5">
+<div className="space-y-2">
     <Label htmlFor="name">Nome</Label>
     <Input id="name" placeholder="Digite seu nome" />
 </div>
@@ -675,26 +948,43 @@ export default function DesignSystem() {
                                         <div className="w-full space-y-4">
                                             <div className="flex items-center gap-2">
                                                 <Checkbox id="chk1" />
-                                                <Label htmlFor="chk1">Checkbox padrão</Label>
+                                                <Label htmlFor="chk1">
+                                                    Checkbox padrão
+                                                </Label>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Checkbox id="chk2" defaultChecked />
-                                                <Label htmlFor="chk2">Checkbox marcado</Label>
+                                                <Checkbox
+                                                    id="chk2"
+                                                    defaultChecked
+                                                />
+                                                <Label htmlFor="chk2">
+                                                    Checkbox marcado
+                                                </Label>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Checkbox id="chk3" disabled />
-                                                <Label htmlFor="chk3" className="text-muted-foreground">
+                                                <Label
+                                                    htmlFor="chk3"
+                                                    className="text-muted-foreground"
+                                                >
                                                     Desabilitado
                                                 </Label>
                                             </div>
                                             <div className="flex items-start gap-2 rounded-md border p-3">
-                                                <Checkbox id="chk4" className="mt-0.5" />
+                                                <Checkbox
+                                                    id="chk4"
+                                                    className="mt-0.5"
+                                                />
                                                 <div>
-                                                    <Label htmlFor="chk4" className="font-medium">
+                                                    <Label
+                                                        htmlFor="chk4"
+                                                        className="font-medium"
+                                                    >
                                                         Aceitar termos de uso
                                                     </Label>
                                                     <p className="text-xs text-muted-foreground">
-                                                        Li e concordo com os termos e condições.
+                                                        Li e concordo com os
+                                                        termos e condições.
                                                     </p>
                                                 </div>
                                             </div>
@@ -735,20 +1025,31 @@ export default function DesignSystem() {
                                             <AvatarFallback>GG</AvatarFallback>
                                         </Avatar>
                                         <Avatar className="size-8">
-                                            <AvatarFallback className="text-xs">AB</AvatarFallback>
+                                            <AvatarFallback className="text-xs">
+                                                AB
+                                            </AvatarFallback>
                                         </Avatar>
                                         <Avatar className="size-12">
                                             <AvatarFallback>CD</AvatarFallback>
                                         </Avatar>
                                         <Avatar className="size-16">
-                                            <AvatarFallback className="text-xl">EF</AvatarFallback>
+                                            <AvatarFallback className="text-xl">
+                                                EF
+                                            </AvatarFallback>
                                         </Avatar>
                                         <div className="flex -space-x-2">
-                                            {['GH', 'IJ', 'KL', 'ML'].map((i) => (
-                                                <Avatar key={i} className="ring-2 ring-background">
-                                                    <AvatarFallback className="text-xs">{i}</AvatarFallback>
-                                                </Avatar>
-                                            ))}
+                                            {['GH', 'IJ', 'KL', 'ML'].map(
+                                                (i) => (
+                                                    <Avatar
+                                                        key={i}
+                                                        className="ring-2 ring-background"
+                                                    >
+                                                        <AvatarFallback className="text-xs">
+                                                            {i}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                ),
+                                            )}
                                         </div>
                                     </>
                                 }
@@ -823,43 +1124,51 @@ export default function DesignSystem() {
                             <PreviewBlock
                                 preview={
                                     <>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon">
-                                                    <Bell />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>Notificações</TooltipContent>
+                                        <Tooltip content="Notificações">
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Notificações"
+                                            >
+                                                <Bell />
+                                            </Button>
                                         </Tooltip>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon">
-                                                    <User />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="right">Perfil do usuário</TooltipContent>
+                                        <Tooltip
+                                            content="Perfil do usuário"
+                                            side="right"
+                                        >
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Perfil do usuário"
+                                            >
+                                                <User />
+                                            </Button>
                                         </Tooltip>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button variant="outline" size="icon">
-                                                    <Settings />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="bottom">Configurações</TooltipContent>
+                                        <Tooltip
+                                            content="Configurações"
+                                            side="bottom"
+                                        >
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Configurações"
+                                            >
+                                                <Settings />
+                                            </Button>
                                         </Tooltip>
                                     </>
                                 }
-                                code={`<Tooltip>
-    <TooltipTrigger asChild>
-        <Button variant="outline" size="icon">
-            <Bell />
-        </Button>
-    </TooltipTrigger>
-    <TooltipContent>Notificações</TooltipContent>
+                                code={`import { Tooltip } from '@/components/ui/fluid/tooltip';
+
+<Tooltip content="Notificações">
+    <Button variant="outline" size="icon" aria-label="Notificações">
+        <Bell />
+    </Button>
 </Tooltip>
 
 // Posições: top (padrão), right, bottom, left
-<TooltipContent side="right">Perfil do usuário</TooltipContent>`}
+<Tooltip content="Perfil do usuário" side="right">…</Tooltip>`}
                             />
                         </Section>
 
@@ -892,9 +1201,12 @@ export default function DesignSystem() {
                                         <div className="w-full space-y-4">
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold">Seção com Ação</h3>
+                                                    <h3 className="text-lg font-semibold">
+                                                        Seção com Ação
+                                                    </h3>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Padrão de header interno com botão.
+                                                        Padrão de header interno
+                                                        com botão.
                                                     </p>
                                                 </div>
                                                 <Button size="sm">
@@ -935,18 +1247,31 @@ export default function DesignSystem() {
                                 {/* Controls */}
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-base">Configurações</CardTitle>
+                                        <CardTitle className="text-base">
+                                            Configurações
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                            <Label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                                                 Variante
                                             </Label>
                                             <div className="flex flex-wrap gap-2">
-                                                {(['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const).map((v) => (
+                                                {(
+                                                    [
+                                                        'default',
+                                                        'secondary',
+                                                        'outline',
+                                                        'ghost',
+                                                        'destructive',
+                                                        'link',
+                                                    ] as const
+                                                ).map((v) => (
                                                     <button
                                                         key={v}
-                                                        onClick={() => setBtnVariant(v)}
+                                                        onClick={() =>
+                                                            setBtnVariant(v)
+                                                        }
                                                         className={cn(
                                                             'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
                                                             btnVariant === v
@@ -961,14 +1286,22 @@ export default function DesignSystem() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                            <Label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                                                 Tamanho
                                             </Label>
                                             <div className="flex gap-2">
-                                                {(['sm', 'default', 'lg'] as const).map((s) => (
+                                                {(
+                                                    [
+                                                        'sm',
+                                                        'default',
+                                                        'lg',
+                                                    ] as const
+                                                ).map((s) => (
                                                     <button
                                                         key={s}
-                                                        onClick={() => setBtnSize(s)}
+                                                        onClick={() =>
+                                                            setBtnSize(s)
+                                                        }
                                                         className={cn(
                                                             'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
                                                             btnSize === s
@@ -983,7 +1316,7 @@ export default function DesignSystem() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                            <Label className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                                                 Opções
                                             </Label>
                                             <div className="space-y-2">
@@ -991,9 +1324,14 @@ export default function DesignSystem() {
                                                     <Checkbox
                                                         id="pg-loading"
                                                         checked={btnLoading}
-                                                        onCheckedChange={(v) => setBtnLoading(!!v)}
+                                                        onCheckedChange={(v) =>
+                                                            setBtnLoading(!!v)
+                                                        }
                                                     />
-                                                    <Label htmlFor="pg-loading" className="text-sm font-normal">
+                                                    <Label
+                                                        htmlFor="pg-loading"
+                                                        className="text-sm font-normal"
+                                                    >
                                                         Loading
                                                     </Label>
                                                 </div>
@@ -1001,9 +1339,14 @@ export default function DesignSystem() {
                                                     <Checkbox
                                                         id="pg-disabled"
                                                         checked={btnDisabled}
-                                                        onCheckedChange={(v) => setBtnDisabled(!!v)}
+                                                        onCheckedChange={(v) =>
+                                                            setBtnDisabled(!!v)
+                                                        }
                                                     />
-                                                    <Label htmlFor="pg-disabled" className="text-sm font-normal">
+                                                    <Label
+                                                        htmlFor="pg-disabled"
+                                                        className="text-sm font-normal"
+                                                    >
                                                         Disabled
                                                     </Label>
                                                 </div>
@@ -1011,9 +1354,14 @@ export default function DesignSystem() {
                                                     <Checkbox
                                                         id="pg-icon"
                                                         checked={btnIcon}
-                                                        onCheckedChange={(v) => setBtnIcon(!!v)}
+                                                        onCheckedChange={(v) =>
+                                                            setBtnIcon(!!v)
+                                                        }
                                                     />
-                                                    <Label htmlFor="pg-icon" className="text-sm font-normal">
+                                                    <Label
+                                                        htmlFor="pg-icon"
+                                                        className="text-sm font-normal"
+                                                    >
                                                         Com ícone
                                                     </Label>
                                                 </div>
@@ -1026,13 +1374,17 @@ export default function DesignSystem() {
                                 <div className="space-y-4">
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle className="text-base">Preview</CardTitle>
+                                            <CardTitle className="text-base">
+                                                Preview
+                                            </CardTitle>
                                         </CardHeader>
                                         <CardContent className="flex min-h-24 items-center justify-center">
                                             <Button
                                                 variant={btnVariant}
                                                 size={btnSize}
-                                                disabled={btnDisabled || btnLoading}
+                                                disabled={
+                                                    btnDisabled || btnLoading
+                                                }
                                             >
                                                 {btnLoading && (
                                                     <Loader2 className="animate-spin" />
@@ -1040,7 +1392,9 @@ export default function DesignSystem() {
                                                 {btnIcon && !btnLoading && (
                                                     <Sun />
                                                 )}
-                                                {btnLoading ? 'Carregando...' : 'Botão exemplo'}
+                                                {btnLoading
+                                                    ? 'Carregando...'
+                                                    : 'Botão exemplo'}
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -1084,8 +1438,8 @@ import { Sun, Moon } from 'lucide-react'
     <Moon className="size-4" />
 )}
 
-// Classes condicionais para dark
-<div className="bg-white dark:bg-zinc-900">
+// Não use variantes dark: para cor; o token já cobre os dois temas
+<div className="bg-card text-card-foreground">
     Conteúdo
 </div>`}
                                 />
@@ -1095,8 +1449,11 @@ import { Sun, Moon } from 'lucide-react'
                         <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                             <Info className="size-4 shrink-0" />
                             <span>
-                                Componentes adicionais como <strong>DataTable</strong>, <strong>AsyncSelect</strong> e{' '}
-                                <strong>InlineCellEdit</strong> possuem páginas dedicadas na seção de Components.
+                                Componentes adicionais como{' '}
+                                <strong>DataTable</strong>,{' '}
+                                <strong>AsyncSelect</strong> e{' '}
+                                <strong>InlineCellEdit</strong> possuem páginas
+                                dedicadas na seção de Components.
                             </span>
                         </div>
                     </main>

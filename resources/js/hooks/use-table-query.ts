@@ -19,8 +19,9 @@ export function useTableQuery<T>(
 
     return useQuery<Paginated<T>>({
         queryKey: [queryKey, { page, perPage, search, sort, direction }],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             return httpGet<Paginated<T>>(endpoint, {
+                signal,
                 params: {
                     page,
                     per_page: perPage,

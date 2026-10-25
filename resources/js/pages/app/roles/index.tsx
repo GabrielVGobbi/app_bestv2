@@ -1,7 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Edit, Eye, Plus, Shield, Trash2, Users } from 'lucide-react';
+import { Edit, Eye, Plus, Shield, Trash2, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { toast } from 'sonner';
@@ -10,9 +10,9 @@ import {
     index,
     show,
 } from '@/actions/App/Http/Controllers/RoleController';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -22,10 +22,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { usePrivateState } from '@/contexts/private-state-context';
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpDelete, httpPost } from '@/lib/http';
+import { httpDelete, httpPost, toApiError } from '@/lib/http';
 import { formatDate } from '@/lib/utils';
 import type { Role } from '@/types/app/role';
 
@@ -37,8 +38,8 @@ const columns: ColumnDef<Role>[] = [
         size: 120,
         cell: ({ row }) => (
             <div className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
-                    <Shield className="size-4 text-primary" />
+                <div className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-primary-soft-foreground">
+                    <Shield className="size-4" />
                 </div>
                 <div className="flex flex-col">
                     <span className="font-medium">{row.original.name}</span>
@@ -56,7 +57,7 @@ const columns: ColumnDef<Role>[] = [
         header: 'Descrição',
         cell: ({ row }) => (
             <span className="text-sm text-muted-foreground">
-                {row.original.description || '—'}
+                {row.original.description || '-'}
             </span>
         ),
         meta: { label: 'Descrição', truncate: true },
@@ -66,7 +67,7 @@ const columns: ColumnDef<Role>[] = [
         header: 'Permissões',
         size: 110,
         cell: ({ row }) => (
-            <span className="inline-flex items-center gap-1.5 text-sm">
+            <span className="inline-flex items-center gap-1.5 text-sm tabular-nums">
                 <Shield className="size-3.5 text-muted-foreground" />
                 {row.original.permissions_count ?? 0}
             </span>
@@ -78,7 +79,7 @@ const columns: ColumnDef<Role>[] = [
         header: 'Usuários',
         size: 100,
         cell: ({ row }) => (
-            <span className="inline-flex items-center gap-1.5 text-sm">
+            <span className="inline-flex items-center gap-1.5 text-sm tabular-nums">
                 <Users className="size-3.5 text-muted-foreground" />
                 {row.original.users_count ?? 0}
             </span>
@@ -96,6 +97,7 @@ const columns: ColumnDef<Role>[] = [
 ];
 
 export default function RolesIndex() {
+    const { scope } = usePrivateState();
     setLayoutProps({
         breadcrumbs: [{ title: 'Papéis', href: index.url() }],
     });
@@ -110,12 +112,25 @@ export default function RolesIndex() {
         setSubmitting(true);
 
         try {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpPost(apiRoutes.roles.store, form);
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Papel criado com sucesso!');
             setCreateOpen(false);
             setForm({ name: '', slug: '', description: '' });
             void queryClient.invalidateQueries({ queryKey: ['roles'] });
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao criar papel.');
         } finally {
             setSubmitting(false);
@@ -124,11 +139,24 @@ export default function RolesIndex() {
 
     const handleDelete = async (role: Role) => {
         try {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpDelete(apiRoutes.roles.destroy(role.id));
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Papel removido com sucesso!');
             setRoleToDelete(null);
             void queryClient.invalidateQueries({ queryKey: ['roles'] });
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao remover papel.');
         }
     };
@@ -167,35 +195,31 @@ export default function RolesIndex() {
         <>
             <Head title="Papéis" />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex items-center justify-between gap-4">
-                        <Heading
-                            title="Papéis"
-                            description="Gerencie os papéis de acesso do sistema"
-                        />
-                        <Button
-                            type="button"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            <Plus className="size-4" />
-                            Novo Papel
-                        </Button>
-                    </div>
+            <Header
+                title="Papéis"
+                subtitle="Gerencie os papéis de acesso do sistema"
+            >
+                <Button type="button" onClick={() => setCreateOpen(true)}>
+                    <Plus className="size-4" />
+                    Novo papel
+                </Button>
+            </Header>
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     {/* Create dialog */}
                     <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Novo Papel</DialogTitle>
+                                <DialogTitle>Novo papel</DialogTitle>
                                 <DialogDescription>
                                     Crie um novo papel de acesso.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
-                                <div className="space-y-1">
-                                    <Label>Nome *</Label>
+                                <FormField label="Nome" required>
                                     <Input
+                                        id="role-name"
                                         value={form.name}
                                         onChange={(e) =>
                                             setForm((f) => ({
@@ -206,11 +230,11 @@ export default function RolesIndex() {
                                         placeholder="Ex: Administrador"
                                         disabled={submitting}
                                     />
-                                </div>
+                                </FormField>
 
-                                <div className="space-y-1">
-                                    <Label>Descrição</Label>
+                                <FormField label="Descrição">
                                     <Input
+                                        id="role-description"
                                         value={form.description}
                                         onChange={(e) =>
                                             setForm((f) => ({
@@ -221,7 +245,7 @@ export default function RolesIndex() {
                                         placeholder="Descrição do papel"
                                         disabled={submitting}
                                     />
-                                </div>
+                                </FormField>
                             </div>
                             <DialogFooter>
                                 <Button
@@ -229,12 +253,17 @@ export default function RolesIndex() {
                                     disabled={submitting}
                                     onClick={() => setCreateOpen(false)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     onClick={handleCreate}
                                     disabled={submitting || !form.name}
                                 >
+                                    <Plus
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     {submitting ? 'Criando...' : 'Criar'}
                                 </Button>
                             </DialogFooter>
@@ -248,7 +277,7 @@ export default function RolesIndex() {
                     >
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Excluir Papel</DialogTitle>
+                                <DialogTitle>Excluir papel</DialogTitle>
                                 <DialogDescription>
                                     {roleToDelete &&
                                     (roleToDelete.users_count ?? 0) > 0 ? (
@@ -278,6 +307,7 @@ export default function RolesIndex() {
                                     variant="outline"
                                     onClick={() => setRoleToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
@@ -290,6 +320,10 @@ export default function RolesIndex() {
                                         handleDelete(roleToDelete)
                                     }
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Excluir
                                 </Button>
                             </DialogFooter>
@@ -298,6 +332,7 @@ export default function RolesIndex() {
 
                     <DataTable<Role>
                         queryKey="roles"
+                        tableId="roles"
                         endpoint={apiRoutes.roles.index}
                         mode="infinite-scroll"
                         columns={columns}

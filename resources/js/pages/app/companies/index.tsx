@@ -1,7 +1,7 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -11,7 +11,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Companies/Http/Controllers/CompanyController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -19,7 +19,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -50,7 +49,9 @@ const columns: ColumnDef<Company>[] = [
         id: 'cnpj',
         accessorKey: 'cnpj',
         header: 'CNPJ',
-        cell: ({ row }) => maskCnpj(row.original.cnpj),
+        cell: ({ row }) => (
+            <span className="tabular-nums">{maskCnpj(row.original.cnpj)}</span>
+        ),
         meta: { label: 'CNPJ' },
     },
 ];
@@ -157,22 +158,22 @@ export default function CompanyIndex({ permissions }: Props) {
         <>
             <Head title="Empresas" />
 
-            <ContentHeader>
-                <Heading
-                    title="Empresas"
-                    description="Gerencie as empresas internas prestadoras do grupo BestPlay"
-                />
+            <Header
+                title="Empresas"
+                subtitle="Gerencie as empresas internas prestadoras do grupo"
+            >
                 {permissions.can_manage ? (
                     <Button asChild>
                         <Link href={create.url()}>
                             <Plus className="size-4" />
-                            Nova Empresa
+                            Nova empresa
                         </Link>
                     </Button>
                 ) : null}
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Dialog
                         open={companyToDelete !== null}
                         onOpenChange={(open) =>
@@ -183,7 +184,7 @@ export default function CompanyIndex({ permissions }: Props) {
                             <DialogHeader>
                                 <DialogTitle>Excluir empresa</DialogTitle>
                                 <DialogDescription>
-                                    Esta acao arquiva a empresa e remove ela das
+                                    Esta ação arquiva a empresa e a remove das
                                     consultas operacionais.
                                 </DialogDescription>
                             </DialogHeader>
@@ -192,12 +193,17 @@ export default function CompanyIndex({ permissions }: Props) {
                                     variant="outline"
                                     onClick={() => setCompanyToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
                                     onClick={deleteCompany}
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Excluir
                                 </Button>
                             </DialogFooter>
@@ -239,6 +245,7 @@ export default function CompanyIndex({ permissions }: Props) {
                             rowStyle: 'soft-striped',
                         }}
                         searchPlaceholder="Buscar empresas..."
+                        emptyMessage="Nenhuma empresa encontrada."
                     />
                 </div>
             </div>

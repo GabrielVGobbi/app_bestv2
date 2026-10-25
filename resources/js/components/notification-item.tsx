@@ -10,19 +10,25 @@ import {
     User,
     UserPlus,
     Zap,
+    Check,
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Notification, NotificationAction } from '@/types/notification';
 import { cn } from '@/lib/utils';
+import type { Notification, NotificationAction } from '@/types/notification';
 
 interface NotificationItemProps {
     notification: Notification;
     onMarkAsRead?: (uuid: string) => void;
     onDelete?: (uuid: string) => void;
-    onExecuteAction?: (uuid: string, actionType: string, payload?: Record<string, unknown>) => Promise<unknown>;
+    onExecuteAction?: (
+        uuid: string,
+        actionType: string,
+        payload?: Record<string, unknown>,
+    ) => Promise<unknown>;
     compact?: boolean;
 }
 
@@ -47,17 +53,20 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 
 const TYPE_COLORS: Record<string, string> = {
     system: 'text-muted-foreground',
-    user: 'text-blue-500',
-    mention: 'text-purple-500',
-    social: 'text-pink-500',
-    action: 'text-orange-500',
-    warning: 'text-yellow-500',
+    user: 'text-muted-foreground',
+    mention: 'text-muted-foreground',
+    social: 'text-muted-foreground',
+    action: 'text-muted-foreground',
+    warning: 'text-warning-soft-foreground',
     error: 'text-destructive',
-    success: 'text-green-500',
-    info: 'text-sky-500',
+    success: 'text-success',
+    info: 'text-info',
 };
 
-const VARIANT_MAP: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
+const VARIANT_MAP: Record<
+    string,
+    'default' | 'destructive' | 'outline' | 'secondary'
+> = {
     primary: 'default',
     destructive: 'destructive',
     secondary: 'secondary',
@@ -70,11 +79,23 @@ const VARIANT_MAP: Record<string, 'default' | 'destructive' | 'outline' | 'secon
 function formatRelativeTime(dateString: string): string {
     const diff = Date.now() - new Date(dateString).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'agora';
-    if (minutes < 60) return `${minutes}m`;
+
+    if (minutes < 1) {
+        return 'agora';
+    }
+
+    if (minutes < 60) {
+        return `${minutes}m`;
+    }
+
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h`;
+
+    if (hours < 24) {
+        return `${hours}h`;
+    }
+
     const days = Math.floor(hours / 24);
+
     return `${days}d`;
 }
 
@@ -90,8 +111,10 @@ function ActionButton({ action, disabled, onConfirm }: ActionButtonProps) {
     const handleClick = () => {
         if (action.requires_confirmation && !confirming) {
             setConfirming(true);
+
             return;
         }
+
         setConfirming(false);
         onConfirm();
     };
@@ -99,7 +122,9 @@ function ActionButton({ action, disabled, onConfirm }: ActionButtonProps) {
     return (
         <div className="flex flex-col gap-1">
             {confirming && (
-                <p className="text-xs text-muted-foreground">{action.confirmation_message ?? 'Confirmar ação?'}</p>
+                <p className="text-xs text-muted-foreground">
+                    {action.confirmation_message ?? 'Confirmar ação?'}
+                </p>
             )}
             <div className="flex gap-1.5">
                 <Button
@@ -109,6 +134,7 @@ function ActionButton({ action, disabled, onConfirm }: ActionButtonProps) {
                     onClick={handleClick}
                     className="h-7 text-xs"
                 >
+                    <Check className="size-4" aria-hidden="true" />
                     {confirming ? 'Confirmar' : action.label}
                 </Button>
                 {confirming && (
@@ -118,6 +144,7 @@ function ActionButton({ action, disabled, onConfirm }: ActionButtonProps) {
                         className="h-7 text-xs"
                         onClick={() => setConfirming(false)}
                     >
+                        <X className="size-4" aria-hidden="true" />
                         Cancelar
                     </Button>
                 )}
@@ -135,15 +162,26 @@ export function NotificationItem({
 }: NotificationItemProps) {
     const [executingAction, setExecutingAction] = useState<string | null>(null);
 
-    const Icon = CATEGORY_ICONS[notification.category] ?? TYPE_ICONS[notification.type] ?? Bell;
+    const Icon =
+        CATEGORY_ICONS[notification.category] ??
+        TYPE_ICONS[notification.type] ??
+        Bell;
     const iconColor = TYPE_COLORS[notification.type] ?? 'text-muted-foreground';
-    const isDone = notification.action_status === 'executed' || notification.action_status === 'rejected';
+    const isDone =
+        notification.action_status === 'executed' ||
+        notification.action_status === 'rejected';
 
     const handleExecute = async (actionType: string) => {
-        if (!onExecuteAction) return;
+        if (!onExecuteAction) {
+            return;
+        }
+
         setExecutingAction(actionType);
+
         try {
             await onExecuteAction(notification.uuid, actionType);
+        } catch {
+            return;
         } finally {
             setExecutingAction(null);
         }
@@ -153,6 +191,7 @@ export function NotificationItem({
         if (!notification.is_read) {
             onMarkAsRead?.(notification.uuid);
         }
+
         if (notification.link) {
             window.location.href = notification.link;
         }
@@ -164,19 +203,19 @@ export function NotificationItem({
                 'group relative flex gap-3 rounded-lg border p-3 transition-colors',
                 notification.is_read
                     ? 'border-transparent bg-transparent'
-                    : 'border-primary/10 bg-primary/5',
+                    : 'border-transparent bg-primary-soft/40',
                 compact && 'p-2.5',
             )}
         >
             {/* Unread indicator */}
             {!notification.is_read && (
-                <span className="absolute right-3 top-3 size-1.5 rounded-full bg-primary" />
+                <span className="absolute top-3 right-3 size-1.5 rounded-full bg-primary" />
             )}
 
             {/* Icon */}
             <div
                 className={cn(
-                    'flex shrink-0 items-center justify-center rounded-full border bg-background',
+                    'flex shrink-0 items-center justify-center rounded-full border border-border bg-card',
                     compact ? 'size-7' : 'size-8',
                 )}
             >
@@ -190,51 +229,68 @@ export function NotificationItem({
                         type="button"
                         className={cn(
                             'text-left',
-                            notification.link && 'cursor-pointer hover:underline',
+                            notification.link &&
+                                'cursor-pointer hover:underline',
                         )}
                         onClick={handleClick}
                     >
-                        <p className={cn('text-sm font-medium leading-tight', !notification.is_read && 'text-foreground')}>
+                        <p
+                            className={cn(
+                                'text-sm leading-tight font-medium',
+                                !notification.is_read && 'text-foreground',
+                            )}
+                        >
                             {notification.title}
                         </p>
                     </button>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                    <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
                         {formatRelativeTime(notification.created_at)}
                     </span>
                 </div>
 
-                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{notification.body}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                    {notification.body}
+                </p>
 
                 {/* Actions */}
-                {!compact && notification.actions && notification.actions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        {isDone ? (
-                            <Badge variant="secondary" className="text-xs">
-                                {notification.action_status === 'executed' ? 'Executado' : 'Recusado'}
-                            </Badge>
-                        ) : (
-                            notification.actions.map((action) => (
-                                <ActionButton
-                                    key={action.type}
-                                    action={action}
-                                    disabled={executingAction !== null}
-                                    onConfirm={() => void handleExecute(action.type)}
-                                />
-                            ))
-                        )}
-                    </div>
-                )}
+                {!compact &&
+                    notification.actions &&
+                    notification.actions.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {isDone ? (
+                                <Badge variant="secondary" className="text-xs">
+                                    {notification.action_status === 'executed'
+                                        ? 'Executado'
+                                        : 'Recusado'}
+                                </Badge>
+                            ) : (
+                                notification.actions.map((action) => (
+                                    <ActionButton
+                                        key={action.type}
+                                        action={action}
+                                        disabled={executingAction !== null}
+                                        onConfirm={() =>
+                                            void handleExecute(action.type)
+                                        }
+                                    />
+                                ))
+                            )}
+                        </div>
+                    )}
 
                 {/* Footer row */}
                 {!compact && (
                     <div className="mt-1.5 flex items-center gap-2">
-                        <Badge variant="outline" className="h-4 px-1 text-[10px] font-normal">
+                        <Badge
+                            variant="outline"
+                            className="h-4 px-1 text-2xs font-normal"
+                        >
                             {notification.category_label}
                         </Badge>
                         {!notification.is_read && onMarkAsRead && (
                             <button
                                 type="button"
-                                className="text-[11px] text-muted-foreground hover:text-foreground"
+                                className="text-2xs text-muted-foreground hover:text-foreground"
                                 onClick={() => onMarkAsRead(notification.uuid)}
                             >
                                 Marcar como lida
@@ -243,7 +299,7 @@ export function NotificationItem({
                         {onDelete && (
                             <button
                                 type="button"
-                                className="ml-auto text-[11px] text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                                className="ml-auto text-2xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
                                 onClick={() => onDelete(notification.uuid)}
                             >
                                 Excluir

@@ -1,6 +1,6 @@
 import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Columns2, Eye, Plus, Table2, Trash2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Eye, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -10,15 +10,25 @@ import {
     show,
     split as splitView,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
-import type { DataTableAction } from '@/components/data-table';
-import Heading from '@/components/heading';
+import type {
+    DataTableAction,
+    DataTableFilterOption,
+} from '@/components/data-table';
 import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { apiRoutes } from '@/lib/api/api-routes';
+import { httpGet } from '@/lib/http';
 import type { Client } from '@/types/app/client';
+import type { Paginated } from '@/types/pagination';
+import type { User } from '@/types/user';
 
+import {
+    ClientViewSwitch,
+    clientViewStorageKey,
+    readStoredViewMode,
+    writeStoredViewMode,
+} from './components/client-view-switch';
 import {
     buildQuickFilters,
     columns,
@@ -29,45 +39,8 @@ import {
 import type { ClientQuickFilterOptions } from './config';
 import { ClientDeleteDialog } from './partials/client-delete-dialog';
 
-type ClientIndexViewMode = 'table' | 'split';
-
 interface ClientIndexProps {
     quickFilterOptions: ClientQuickFilterOptions;
-}
-
-const CLIENT_VIEW_STORAGE_PREFIX = 'bestplay:clients:view-mode';
-
-function clientViewStorageKey(userId: number): string {
-    return `${CLIENT_VIEW_STORAGE_PREFIX}:${userId}`;
-}
-
-function readStoredViewMode(storageKey: string): ClientIndexViewMode {
-    if (typeof window === 'undefined') {
-        return 'table';
-    }
-
-    try {
-        return window.localStorage.getItem(storageKey) === 'split'
-            ? 'split'
-            : 'table';
-    } catch {
-        return 'table';
-    }
-}
-
-function writeStoredViewMode(
-    storageKey: string,
-    viewMode: ClientIndexViewMode,
-): void {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    try {
-        window.localStorage.setItem(storageKey, viewMode);
-    } catch {
-        // localStorage is only a preference cache; ignore privacy/quota failures.
-    }
 }
 
 export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
@@ -79,9 +52,29 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
     const viewStorageKey = clientViewStorageKey(auth.user.id);
     const queryClient = useQueryClient();
     const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+
+    // shortcut: a DataTable não tem mais filtro rápido assíncrono, então os
+    // atendentes (até 100) viram opções prontas; mover para o backend se a lista crescer.
+    const commercialUsersQuery = useQuery({
+        queryKey: ['users', 'commercial', 'quick-filter-options'],
+        queryFn: ({ signal }) =>
+            httpGet<Paginated<User>>(apiRoutes.users.index, {
+                params: { role: 'commercial', per_page: 100 },
+                signal,
+            }),
+        staleTime: 5 * 60_000,
+    });
+    const responsibleUsers = useMemo<DataTableFilterOption[]>(
+        () =>
+            (commercialUsersQuery.data?.data ?? []).map((user) => ({
+                value: user.id,
+                label: user.name,
+            })),
+        [commercialUsersQuery.data],
+    );
     const quickFilters = useMemo(
-        () => buildQuickFilters(quickFilterOptions),
-        [quickFilterOptions],
+        () => buildQuickFilters(quickFilterOptions, responsibleUsers),
+        [quickFilterOptions, responsibleUsers],
     );
 
     useEffect(() => {
@@ -141,55 +134,21 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
         <>
             <Head title="Clientes" />
 
-            <ContentHeader>
-                <Heading
-                    title="Clientes"
-                    description="Gerencie contatos comerciais e contratantes"
-                />
-                <div className="flex flex-wrap items-center gap-2">
-                    <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        size="sm"
-                        value="table"
-                        onValueChange={(value) => {
-                            if (value === 'split') {
-                                selectSplitView();
-                            }
-                        }}
-                        aria-label="Visualização de clientes"
-                        className="rounded-lg"
-                    >
-                        <ToggleGroupItem
-                            value="table"
-                            aria-label="Visualização em tabela"
-                            className="gap-2 px-3"
-                        >
-                            <Table2 className="size-4" />
-                            <span>Tabela</span>
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                            value="split"
-                            aria-label="Visualização em duas colunas"
-                            className="gap-2 px-3"
-                        >
-                            <Columns2 className="size-4" />
-                            <span className="text-muted-foreground">
-                                Duas colunas
-                            </span>
-                        </ToggleGroupItem>
-                    </ToggleGroup>
+            <Header
+                title="Clientes"
+                subtitle="Gerencie contatos comerciais e contratantes"
+            >
+                <ClientViewSwitch value="table" onChange={selectSplitView} />
+                <Button asChild>
+                    <Link href={create.url()}>
+                        <Plus className="size-4" aria-hidden="true" />
+                        Novo cliente
+                    </Link>
+                </Button>
+            </Header>
 
-                    <Button asChild>
-                        <Link href={create.url()}>
-                            <Plus className="size-4" />
-                            Novo cliente
-                        </Link>
-                    </Button>
-                </div>
-            </ContentHeader>
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <ClientDeleteDialog
                         client={clientToDelete}
                         onCancel={() => setClientToDelete(null)}
@@ -231,7 +190,7 @@ export default function ClientIndex({ quickFilterOptions }: ClientIndexProps) {
                             gridLines: 'horizontal',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar clientes..."
+                        searchPlaceholder="Buscar clientes"
                     />
                 </div>
             </div>

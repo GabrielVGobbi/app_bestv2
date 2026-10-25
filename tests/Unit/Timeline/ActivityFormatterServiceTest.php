@@ -23,7 +23,7 @@ class ActivityFormatterServiceTest extends TestCase
 
         $activity = Activity::query()->create([
             'log_name' => 'clients',
-            'description' => 'Descrição original.',
+            'description' => 'Descricao original.',
             'subject_type' => Client::class,
             'subject_id' => $client->id,
             'causer_type' => User::class,

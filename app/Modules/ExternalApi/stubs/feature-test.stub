@@ -1,0 +1,26 @@
+<?php
+
+namespace {{ test_namespace }};
+
+use {{ namespace }}\DTOs\SampleResource;
+use {{ namespace }}\Services\{{ class }}Manager;
+use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
+
+class {{ class }}Test extends TestCase
+{
+    public function test_{{ test_method }}_mock_service_does_not_call_real_http(): void
+    {
+        Http::preventStrayRequests();
+
+        config([
+            'external-apis.fake.enabled' => true,
+            'external-apis.modules.{{ key }}.fake' => true,
+        ]);
+
+        $resource = app({{ class }}Manager::class)->sample()->find('mock-resource');
+
+        $this->assertInstanceOf(SampleResource::class, $resource);
+        $this->assertSame('mock-resource', $resource->id);
+    }
+}

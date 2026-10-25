@@ -73,7 +73,7 @@ class DatabaseExportApiTest extends TestCase
         Queue::assertPushed(ProcessDatabaseExport::class);
     }
 
-    public function test_admin_can_create_schema_only_export(): void
+    public function test_sqlite_schema_only_export_is_rejected_without_creating_or_dispatching_a_dump(): void
     {
         Queue::fake();
 
@@ -81,8 +81,11 @@ class DatabaseExportApiTest extends TestCase
             ->postJson('/api/v1/database-exports', [
                 'export_type' => 'schema',
             ])
-            ->assertCreated()
-            ->assertJsonPath('data.export_type', 'schema');
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('export_type');
+
+        $this->assertDatabaseCount('database_exports', 0);
+        Queue::assertNothingPushed();
     }
 
     public function test_admin_can_scope_export_to_specific_tables(): void

@@ -33,6 +33,10 @@ return [
      */
     'expires_after_hours' => 1,
 
+    'failed_retention_days' => 7,
+
+    'orphan_retention_hours' => 24,
+
     /*
      * Chunk size for processing records in the job.
      */

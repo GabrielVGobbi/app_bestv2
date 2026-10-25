@@ -1,10 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import {
-    ReceiptText,
-    RotateCcw,
-    WalletCards,
-    X,
-} from 'lucide-react';
+import { ReceiptText, RotateCcw, WalletCards, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -12,7 +7,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
-import { ContentHeader } from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DirectionBadge } from '@/components/direction-badge';
 import { MoneyAmount } from '@/components/money-amount';
 import { StatusBadge } from '@/components/status-badge';
@@ -22,8 +17,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
 import { cn, formatDate, formatDateOnly } from '@/lib/utils';
 import { ActivityTimeline } from '@/modules/timeline';
 import { FileAttachments } from '@/modules/uploads';
@@ -236,7 +230,7 @@ function AmountRow({
         <div
             className={cn(
                 'flex items-baseline justify-between gap-8',
-                emphasis && 'border-t border-border/70 pt-2',
+                emphasis && 'border-t border-border pt-2',
             )}
         >
             <span
@@ -349,7 +343,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Lançamentos Financeiros', href: index.url() },
+            { title: 'Lançamentos financeiros', href: index.url() },
             { title: entry.description, href: show.url(entry.uuid) },
         ],
     });
@@ -358,52 +352,39 @@ export default function ShowFinancialEntry({ entryData }: Props) {
         <>
             <Head title={entry.description} />
 
-            <ContentHeader
-                title={entry.description}
-                backHref={index.url()}
-                className="border-border/60 bg-canvas/90"
-                actions={
-                    <>
-                        {entry.permissions.can_cancel ? (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => setCancelDialogOpen(true)}
-                            >
-                                <X className="size-4" />
-                                Cancelar
-                            </Button>
-                        ) : null}
-                        {entry.permissions.can_settle &&
-                        firstOpenInstallment ? (
-                            <Button
-                                type="button"
-                                onClick={() =>
-                                    setSettlementInstallment(
-                                        firstOpenInstallment,
-                                    )
-                                }
-                            >
-                                <ReceiptText className="size-4" />
-                                Registrar baixa
-                            </Button>
-                        ) : null}
-                    </>
-                }
-            />
+            <Header title={entry.description} backHref={index.url()}>
+                {entry.permissions.can_cancel ? (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setCancelDialogOpen(true)}
+                    >
+                        <X className="size-4" aria-hidden="true" />
+                        Cancelar
+                    </Button>
+                ) : null}
+                {entry.permissions.can_settle && firstOpenInstallment ? (
+                    <Button
+                        type="button"
+                        onClick={() =>
+                            setSettlementInstallment(firstOpenInstallment)
+                        }
+                    >
+                        <ReceiptText className="size-4" aria-hidden="true" />
+                        Registrar baixa
+                    </Button>
+                ) : null}
+            </Header>
 
             <div className="page-wrapper-lg space-y-8">
-                <section className="flex flex-col gap-6 border-b border-border/70 pb-6 lg:flex-row lg:items-end lg:justify-between">
+                <section className="flex flex-col gap-6 border-b border-separator pb-6 lg:flex-row lg:items-end lg:justify-between">
                     <div className="min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-2">
                             <DirectionBadge
                                 direction={entry.direction}
                                 label={entry.direction_label}
                             />
-                            <StatusBadge
-                                presenter={entry.status_presenter}
-                            />
+                            <StatusBadge presenter={entry.status_presenter} />
                         </div>
 
                         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
@@ -547,24 +528,22 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                             <div className="flex items-center gap-2">
                                 <Select
                                     value={installmentDateFilter}
-                                    onValueChange={(value) =>
+                                    onValueChange={(value: string) =>
                                         setInstallmentDateFilter(
                                             value as InstallmentDateFilter,
                                         )
                                     }
                                 >
                                     <SelectTrigger
-                                        size="sm"
                                         aria-label="Filtrar parcelas por data"
                                         className="min-w-40"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent align="end">
+                                    />
+                                    <SelectContent>
                                         {installmentDateFilters.map(
-                                            (filter) => (
+                                            (filter, filterIndex) => (
                                                 <SelectItem
                                                     key={filter.value}
+                                                    index={filterIndex}
                                                     value={filter.value}
                                                 >
                                                     {filter.label}
@@ -633,114 +612,105 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">
-                                    {filteredInstallments.map(
-                                        (installment) => (
-                                            <tr
-                                                key={installment.uuid}
-                                                className={
-                                                    installment.is_overdue
-                                                        ? 'bg-destructive-soft/35'
-                                                        : undefined
-                                                }
-                                            >
-                                                <td className="py-2.5 pr-3 font-medium">
-                                                    #
-                                                    {
-                                                        installment.installment_number
+                                    {filteredInstallments.map((installment) => (
+                                        <tr
+                                            key={installment.uuid}
+                                            className={
+                                                installment.is_overdue
+                                                    ? 'bg-destructive-soft/35'
+                                                    : undefined
+                                            }
+                                        >
+                                            <td className="py-2.5 pr-3 font-medium">
+                                                #
+                                                {installment.installment_number}
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <StatusBadge
+                                                    presenter={
+                                                        installment.status_presenter
                                                     }
-                                                </td>
-                                                <td className="px-3 py-2.5">
-                                                    <StatusBadge
-                                                        presenter={
-                                                            installment.status_presenter
-                                                        }
-                                                    />
-                                                </td>
-                                                <td
-                                                    className={cn(
-                                                        'px-3 py-2.5',
-                                                        installment.is_overdue &&
-                                                            'font-medium text-destructive',
+                                                />
+                                            </td>
+                                            <td
+                                                className={cn(
+                                                    'px-3 py-2.5',
+                                                    installment.is_overdue &&
+                                                        'font-medium text-destructive',
+                                                )}
+                                            >
+                                                {formatDateOnly(
+                                                    installment.due_date,
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-muted-foreground">
+                                                {formatDateOnly(
+                                                    installment.competence_date,
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right font-medium">
+                                                <MoneyAmount
+                                                    value={
+                                                        installment.original_amount
+                                                    }
+                                                    currency={
+                                                        installment.currency
+                                                    }
+                                                    direction={entry.direction}
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right">
+                                                <MoneyAmount
+                                                    value={
+                                                        installment.settled_amount
+                                                    }
+                                                    currency={
+                                                        installment.currency
+                                                    }
+                                                    className="text-muted-foreground"
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2.5 text-right font-semibold">
+                                                <MoneyAmount
+                                                    value={
+                                                        installment.balance_amount
+                                                    }
+                                                    currency={
+                                                        installment.currency
+                                                    }
+                                                    direction={entry.direction}
+                                                    overdue={
+                                                        installment.is_overdue
+                                                    }
+                                                    signed
+                                                />
+                                            </td>
+                                            <td className="py-2.5 pl-3">
+                                                <div className="flex justify-end">
+                                                    {installment.permissions
+                                                        .can_settle ? (
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                setSettlementInstallment(
+                                                                    installment,
+                                                                )
+                                                            }
+                                                        >
+                                                            <ReceiptText className="size-4" />
+                                                            Baixar
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            -
+                                                        </span>
                                                     )}
-                                                >
-                                                    {formatDateOnly(
-                                                        installment.due_date,
-                                                    )}
-                                                </td>
-                                                <td className="px-3 py-2.5 text-muted-foreground">
-                                                    {formatDateOnly(
-                                                        installment.competence_date,
-                                                    )}
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right font-medium">
-                                                    <MoneyAmount
-                                                        value={
-                                                            installment.original_amount
-                                                        }
-                                                        currency={
-                                                            installment.currency
-                                                        }
-                                                        direction={
-                                                            entry.direction
-                                                        }
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right">
-                                                    <MoneyAmount
-                                                        value={
-                                                            installment.settled_amount
-                                                        }
-                                                        currency={
-                                                            installment.currency
-                                                        }
-                                                        className="text-muted-foreground"
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right font-semibold">
-                                                    <MoneyAmount
-                                                        value={
-                                                            installment.balance_amount
-                                                        }
-                                                        currency={
-                                                            installment.currency
-                                                        }
-                                                        direction={
-                                                            entry.direction
-                                                        }
-                                                        overdue={
-                                                            installment.is_overdue
-                                                        }
-                                                        signed
-                                                    />
-                                                </td>
-                                                <td className="py-2.5 pl-3">
-                                                    <div className="flex justify-end">
-                                                        {installment
-                                                            .permissions
-                                                            .can_settle ? (
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() =>
-                                                                    setSettlementInstallment(
-                                                                        installment,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <ReceiptText className="size-4" />
-                                                                Baixar
-                                                            </Button>
-                                                        ) : (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                -
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ),
-                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -843,9 +813,7 @@ export default function ShowFinancialEntry({ entryData }: Props) {
                                                 {settlementComponents.map(
                                                     (component) => (
                                                         <div
-                                                            key={
-                                                                component.uuid
-                                                            }
+                                                            key={component.uuid}
                                                             className="flex items-center justify-between gap-3 text-sm"
                                                         >
                                                             <span className="text-muted-foreground">

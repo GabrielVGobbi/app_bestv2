@@ -230,3 +230,7 @@ Esses arquivos sao integracoes de dominio do Bionexis, nao o nucleo do component
 7. Adicionar pagina dev e navegacao, se quiser playground.
 8. Escrever teste local com model do `start_kit`.
 9. Rodar teste focado, Pint e TypeScript.
+
+## Contrato de preview do starter estabilizado
+
+Ao portar o modulo atualizado, preserve a classificacao de bytes e headers implementados em UploadController, inclusive para uploads antigos. As rotas reais de arquivo sao `/uploads/{id}/preview` e `/uploads/{id}/download`. [Contrato e limites atuais](file-attachments.md#preview-e-download): inline somente tipos seguros/coerentes, fallback attachment/octet-stream, nosniff e CSP; download continua autorizado. URLs diretas de storage publico/S3 exigem verificacao propria. Este roteiro registra a importacao historica; conferir dependencies/config atuais antes de executar os comandos antigos.

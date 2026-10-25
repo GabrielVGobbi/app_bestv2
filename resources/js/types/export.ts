@@ -42,6 +42,6 @@ export interface StoredExport {
     expires_at: string | null;
     /** Unix timestamp in ms */
     createdAt: number;
-    /** Set when user clicks download — hides from "recentes" indicator */
+    /** Set when user clicks download: hides from "recentes" indicator */
     downloadedAt?: number;
 }

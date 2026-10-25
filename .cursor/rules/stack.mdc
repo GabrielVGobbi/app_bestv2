@@ -1,6 +1,9 @@
 ---
-description: Shared BestPlay project instructions.
 alwaysApply: true
 ---
 
-Follow [AGENTS.md](../../AGENTS.md) if it is not already in context. It defines the stack, scope, completion criteria, and verification boundaries. Load only task-relevant skills.
+# Project stack
+
+Read and follow [AGENTS.md](../../AGENTS.md) first. It defines the supported stack and tools; confirm installed versions in the existing dependency manifests and lockfiles when needed.
+
+Consult the [documentation entry point](../../docs/.start_kit.obs/Bem-vindo.md) and the relevant domain documentation before modifying existing systems. Reuse the project's architecture and dependencies.

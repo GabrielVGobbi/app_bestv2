@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Email\Webhooks;
 
 use App\Modules\Email\Contracts\WebhookHandlerInterface;
-use App\Modules\Email\Enums\EmailStatus;
 use App\Modules\Email\Services\EmailWebhookEventRecorder;
 use Illuminate\Http\Request;
+use JsonException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Handles Resend delivery webhooks.
@@ -25,7 +26,12 @@ class ResendWebhookHandler implements WebhookHandlerInterface
     {
         $secret = config('services.resend.webhook_secret');
 
-        if (! is_string($secret) || ! str_starts_with($secret, 'whsec_')) {
+        if (! is_string($secret) || $secret === '') {
+            return false;
+        }
+        $encodedSecret = str_starts_with($secret, 'whsec_') ? substr($secret, 6) : $secret;
+        $secretBytes = base64_decode($encodedSecret, true);
+        if ($secretBytes === false || $secretBytes === '' || base64_encode($secretBytes) !== $encodedSecret) {
             return false;
         }
 
@@ -33,17 +39,13 @@ class ResendWebhookHandler implements WebhookHandlerInterface
         $svixTimestamp = $request->header('svix-timestamp');
         $svixSignature = $request->header('svix-signature');
 
-        if (! $svixId || ! $svixTimestamp || ! $svixSignature) {
+        if (! is_string($svixId) || $svixId === '' || ! is_string($svixTimestamp) || ! is_string($svixSignature) || $svixSignature === ''
+            || preg_match('/\A[1-9][0-9]*\z/', $svixTimestamp) !== 1) {
             return false;
         }
-
-        if (! ctype_digit($svixTimestamp) || abs(now()->timestamp - (int) $svixTimestamp) > 300) {
-            return false;
-        }
-
-        $secretBytes = base64_decode(substr($secret, 6), true);
-
-        if ($secretBytes === false || $secretBytes === '') {
+        $timestamp = filter_var($svixTimestamp, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $now = now()->timestamp;
+        if ($timestamp === false || $timestamp < $now - 300 || $timestamp > $now + 300) {
             return false;
         }
 
@@ -61,63 +63,17 @@ class ResendWebhookHandler implements WebhookHandlerInterface
 
     public function handle(Request $request): void
     {
-        $payload = $request->json()->all();
-
-        [$event, $created] = $this->eventRecorder->record('resend', $request, $payload);
-
-        if (! $created) {
-            return;
+        $raw = $request->getContent();
+        try {
+            $payload = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new HttpException(401, 'Invalid webhook payload.');
+        }
+        if (! is_array($payload) || ! str_starts_with(ltrim($raw), '{')) {
+            throw new HttpException(401, 'Invalid webhook payload.');
         }
 
-        $status = $this->statusForEvent($event->event_type);
-
-        if ($status && $event->emailLog) {
-            $event->emailLog->markFromWebhook(
-                status: $status,
-                metadata: $payload['data'] ?? $payload,
-                errorMessage: $this->errorMessage($payload),
-            );
-        }
-
-        $event->markAsProcessed();
-    }
-
-    private function statusForEvent(?string $eventType): ?EmailStatus
-    {
-        return match ($eventType) {
-            'email.sent' => EmailStatus::Sent,
-            'email.delivered' => EmailStatus::Delivered,
-            'email.delivery_delayed' => EmailStatus::DeliveryDelayed,
-            'email.failed' => EmailStatus::Failed,
-            'email.bounced' => EmailStatus::Bounced,
-            'email.complained' => EmailStatus::Complained,
-            'email.opened' => EmailStatus::Opened,
-            'email.clicked' => EmailStatus::Clicked,
-            'email.received' => EmailStatus::Received,
-            'email.scheduled' => EmailStatus::Scheduled,
-            'email.suppressed' => EmailStatus::Suppressed,
-            default => null,
-        };
-    }
-
-    /** @param array<string, mixed> $payload */
-    private function errorMessage(array $payload): ?string
-    {
-        foreach ([
-            'data.error.message',
-            'data.error',
-            'data.bounce.message',
-            'data.reason',
-            'data.message',
-            'data.suppressed.reason',
-        ] as $key) {
-            $value = data_get($payload, $key);
-
-            if (is_string($value) && $value !== '') {
-                return $value;
-            }
-        }
-
-        return null;
+        [$event] = $this->eventRecorder->record('resend', $request, $payload);
+        $this->eventRecorder->process($event);
     }
 }

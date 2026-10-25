@@ -2,15 +2,14 @@ import { Deferred, Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     Check,
-    CircleAlert,
     ListMusic,
     RefreshCw,
     ShoppingBag,
-    Wallet,
+    WalletCards,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { dashboard } from '@/actions/App/Http/Controllers/AppController';
-import ContentHeader from '@/components/content-header';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -21,13 +20,33 @@ import { index as deliveryTasksIndex } from '@/routes/playlists/delivery-tasks';
 import { index as salesIndex } from '@/routes/sales';
 import type { OperationalDashboard } from '@/types';
 
-type DashboardProps = { operationalDashboard?: OperationalDashboard | null };
-type SummaryItem = { label: string; value: string; attention?: boolean };
+type DashboardProps = {
+    operationalDashboard?: OperationalDashboard | null;
+};
+
+type Tone = 'success' | 'warning' | 'destructive' | 'muted';
+
+type SummaryItem = {
+    label: string;
+    value: string;
+    tone?: Tone;
+};
+
 type Priority = {
     label: string;
     value: string;
     href: string;
-    overdue?: boolean;
+};
+
+const panel =
+    'rounded-lg border border-border bg-card shadow-xs dark:shadow-none';
+const focus =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const toneText: Record<Tone, string> = {
+    success: 'text-success',
+    warning: 'text-warning-soft-foreground',
+    destructive: 'text-destructive',
+    muted: 'text-muted-foreground',
 };
 
 function currency(value: number): string {
@@ -37,49 +56,56 @@ function currency(value: number): string {
     }).format(value / 100);
 }
 
-function OverviewSection({
+function alertTone(count: number, tone: Tone = 'warning'): Tone {
+    return count > 0 ? tone : 'muted';
+}
+
+function SummaryPanel({
     title,
-    description,
     href,
     icon: Icon,
     items,
 }: {
     title: string;
-    description: string;
     href: string;
     icon: LucideIcon;
     items: SummaryItem[];
 }) {
     return (
-        <section className="overview-section">
-            <div className="mb-5 flex items-center gap-3">
-                <Icon
-                    className="size-5 text-muted-foreground"
-                    strokeWidth={1.6}
-                />
-                <div className="min-w-0 flex-1">
-                    <h2 className="text-lg font-semibold">{title}</h2>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        {description}
-                    </p>
+        <section className={cn(panel, 'p-3 xl:col-span-4')}>
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                        <Icon className="size-3.5" aria-hidden="true" />
+                    </span>
+                    <h2 className="truncate text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        {title}
+                    </h2>
                 </div>
-                <Button variant="ghost" size="sm" asChild>
-                    <Link href={href} aria-label={'Abrir ' + title}>
-                        Abrir
-                        <ArrowRight className="size-3.5" />
-                    </Link>
-                </Button>
+                <Link
+                    href={href}
+                    className={cn(
+                        'inline-flex h-7 items-center gap-1 rounded-sm px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                        focus,
+                    )}
+                >
+                    Abrir
+                    <ArrowRight className="size-3.5" aria-hidden="true" />
+                </Link>
             </div>
-            <dl className="overview-metrics">
+
+            <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3">
                 {items.map((item) => (
                     <div key={item.label} className="min-w-0">
-                        <dt className="text-sm leading-6 text-muted-foreground">
+                        <dt className="text-2xs text-muted-foreground">
                             {item.label}
                         </dt>
                         <dd
                             className={cn(
-                                'mt-2 text-[30px] leading-tight font-medium tracking-tight tabular-nums',
-                                item.attention && 'text-destructive',
+                                'mt-1 truncate text-xl font-bold tracking-tight tabular-nums',
+                                item.tone
+                                    ? toneText[item.tone]
+                                    : 'text-foreground',
                             )}
                         >
                             {item.value}
@@ -94,267 +120,234 @@ function OverviewSection({
 function DashboardSkeleton() {
     return (
         <div
-            className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px]"
+            className="grid gap-3 xl:grid-cols-12"
             aria-label="Carregando resumo"
-            role="status"
         >
-            <div className="space-y-8">
-                {Array.from({ length: 3 }, (_, i) => (
-                    <div key={i} className="space-y-4">
-                        <Skeleton className="h-6 w-36" />
-                        <Skeleton className="h-4 w-64" />
-                        <Skeleton className="h-24 w-full rounded-xl" />
+            {['Vendas', 'Playlists', 'Financeiro'].map((group) => (
+                <div key={group} className={cn(panel, 'p-3 xl:col-span-4')}>
+                    <Skeleton className="h-7 w-28" />
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="space-y-2">
+                                <Skeleton className="h-3 w-20" />
+                                <Skeleton className="h-6 w-14" />
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-            <Skeleton className="h-80 rounded-xl" />
+                </div>
+            ))}
+            <Skeleton className="h-28 rounded-lg xl:col-span-12" />
         </div>
     );
 }
 
 function OperationalSummary() {
-    const { operationalDashboard: data } = usePage<DashboardProps>().props;
+    const { operationalDashboard } = usePage<DashboardProps>().props;
 
-    if (!data) {
+    if (!operationalDashboard) {
         return (
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border p-6">
+            <div
+                className={cn(
+                    panel,
+                    'flex items-center justify-between gap-4 p-3',
+                )}
+            >
                 <p className="text-sm text-muted-foreground">
                     Não foi possível carregar o resumo.
                 </p>
                 <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
                     onClick={() =>
                         router.reload({ only: ['operationalDashboard'] })
                     }
                 >
-                    <RefreshCw className="size-4" />
+                    <RefreshCw className="size-4" aria-hidden="true" />
                     Recarregar
                 </Button>
             </div>
         );
     }
 
+    const { sales, playlists, finance } = operationalDashboard;
     const priorities: Priority[] = [];
 
-    if (data.sales?.awaiting_quotes) {
+    if (sales?.awaiting_quotes) {
         priorities.push({
             label: 'Orçamentos aguardando avanço',
-            value: String(data.sales.awaiting_quotes),
+            value: String(sales.awaiting_quotes),
             href: salesIndex().url,
         });
     }
 
-    if (data.playlists?.pending_deliveries) {
+    if (playlists?.pending_deliveries) {
         priorities.push({
             label: 'Entregas de playlist pendentes',
-            value: String(data.playlists.pending_deliveries),
+            value: String(playlists.pending_deliveries),
             href: deliveryTasksIndex().url,
         });
     }
 
-    if (data.finance?.pending_reconciliations) {
+    if (finance?.pending_reconciliations) {
         priorities.push({
             label: 'Conciliações para revisar',
-            value: String(data.finance.pending_reconciliations),
+            value: String(finance.pending_reconciliations),
             href: reconciliationIndex().url,
         });
     }
 
-    if (data.finance?.overdue_receivables) {
-        priorities.push({
-            label: 'Recebimentos em atraso',
-            value: currency(data.finance.overdue_receivables),
-            href: financialReportsIndex().url,
-            overdue: true,
-        });
-    }
-
-    if (data.finance?.overdue_payables) {
-        priorities.push({
-            label: 'Pagamentos em atraso',
-            value: currency(data.finance.overdue_payables),
-            href: financialReportsIndex().url,
-            overdue: true,
-        });
-    }
-
     return (
-        <div className="overview-layout">
-            <aside
-                className="overview-priorities xl:col-start-2 xl:row-start-1"
+        <div className="grid gap-3 xl:grid-cols-12">
+            {sales && (
+                <SummaryPanel
+                    title="Vendas"
+                    href={salesIndex().url}
+                    icon={ShoppingBag}
+                    items={[
+                        {
+                            label: 'Campanhas ativas',
+                            value: String(sales.active_campaigns),
+                        },
+                        {
+                            label: 'Orçamentos em espera',
+                            value: String(sales.awaiting_quotes),
+                            tone: alertTone(sales.awaiting_quotes),
+                        },
+                        ...(sales.month_amount !== undefined
+                            ? [
+                                  {
+                                      label: 'Confirmado no mês',
+                                      value: currency(sales.month_amount),
+                                  },
+                              ]
+                            : []),
+                    ]}
+                />
+            )}
+
+            {playlists && (
+                <SummaryPanel
+                    title="Playlists"
+                    href={playlistsIndex().url}
+                    icon={ListMusic}
+                    items={[
+                        {
+                            label: 'Entregas pendentes',
+                            value: String(playlists.pending_deliveries),
+                            tone: alertTone(playlists.pending_deliveries),
+                        },
+                        {
+                            label: 'Slots ativos',
+                            value: String(playlists.active_slots),
+                        },
+                    ]}
+                />
+            )}
+
+            {finance && (
+                <SummaryPanel
+                    title="Financeiro"
+                    href={financialReportsIndex().url}
+                    icon={WalletCards}
+                    items={[
+                        {
+                            label: 'A receber em atraso',
+                            value: currency(finance.overdue_receivables),
+                            tone: alertTone(
+                                finance.overdue_receivables,
+                                'destructive',
+                            ),
+                        },
+                        {
+                            label: 'A pagar em atraso',
+                            value: currency(finance.overdue_payables),
+                            tone: alertTone(
+                                finance.overdue_payables,
+                                'destructive',
+                            ),
+                        },
+                        {
+                            label: 'Conciliações pendentes',
+                            value: String(finance.pending_reconciliations),
+                            tone: alertTone(finance.pending_reconciliations),
+                        },
+                    ]}
+                />
+            )}
+
+            <section
+                className={cn(panel, 'p-3 xl:col-span-12')}
                 aria-labelledby="priorities-title"
             >
-                <div className="overview-priorities-header">
-                    <CircleAlert className="size-5 opacity-70" />
-                    <h2
-                        id="priorities-title"
-                        className="overview-priorities-title"
-                    >
-                        Precisa de atenção
-                    </h2>
-                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-sm font-medium tabular-nums">
-                        {priorities.length}
-                    </span>
-                </div>
-                {priorities.length ? (
-                    <ul className="overview-priorities-list">
-                        {priorities.map((item) => (
-                            <li key={item.label}>
+                <h2
+                    id="priorities-title"
+                    className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase"
+                >
+                    Pendências
+                </h2>
+
+                {priorities.length > 0 ? (
+                    <ul className="mt-2 divide-y divide-separator">
+                        {priorities.map((priority) => (
+                            <li key={priority.label}>
                                 <Link
-                                    href={item.href}
-                                    className="group flex items-start gap-3 rounded-md py-7 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    href={priority.href}
+                                    className={cn(
+                                        'group -mx-1.5 flex min-h-11 items-center gap-3 rounded-sm px-1.5 text-xs transition-colors hover:bg-accent',
+                                        focus,
+                                    )}
                                 >
-                                    <span
-                                        className={cn(
-                                            'mt-1.5 size-1.5 shrink-0 rounded-full',
-                                            item.overdue
-                                                ? 'bg-destructive'
-                                                : 'bg-warning',
-                                        )}
-                                    />
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block text-base leading-6">
-                                            {item.label}
-                                        </span>
-                                        <span className="mt-3 block text-xl font-medium tabular-nums">
-                                            {item.value}
-                                        </span>
+                                    <span className="size-1.5 shrink-0 rounded-full bg-warning" />
+                                    <span className="min-w-0 flex-1 truncate text-foreground">
+                                        {priority.label}
                                     </span>
-                                    <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                                    <span className="font-semibold text-warning-soft-foreground tabular-nums">
+                                        {priority.value}
+                                    </span>
+                                    <ArrowRight
+                                        className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                                        aria-hidden="true"
+                                    />
                                 </Link>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <div className="px-5 py-8">
-                        <Check className="mb-4 size-6 text-success" />
-                        <p className="text-sm font-medium">
-                            Tudo em dia por aqui
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                            As pendências da operação aparecem neste espaço.
-                        </p>
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="flex size-6 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground">
+                            <Check className="size-3.5" aria-hidden="true" />
+                        </span>
+                        Nenhuma pendência agora.
                     </div>
                 )}
-                <div className="border-t px-7 py-5">
-                    <p className="text-xs leading-5 text-muted-foreground">
-                        Acesse um item para conferir os detalhes e continuar de
-                        onde parou.
-                    </p>
-                </div>
-            </aside>
-            <div className="min-w-0 xl:col-start-1 xl:row-start-1">
-                {data.sales && (
-                    <OverviewSection
-                        title="Comercial"
-                        description="Campanhas, orçamentos e vendas do mês."
-                        href={salesIndex().url}
-                        icon={ShoppingBag}
-                        items={[
-                            {
-                                label: 'Campanhas ativas',
-                                value: String(data.sales.active_campaigns),
-                            },
-                            {
-                                label: 'Orçamentos em espera',
-                                value: String(data.sales.awaiting_quotes),
-                            },
-                            ...(data.sales.month_amount !== undefined
-                                ? [
-                                      {
-                                          label: 'Confirmado no mês',
-                                          value: currency(
-                                              data.sales.month_amount,
-                                          ),
-                                      },
-                                  ]
-                                : []),
-                        ]}
-                    />
-                )}
-                {data.playlists && (
-                    <OverviewSection
-                        title="Playlists"
-                        description="Acompanhe as entregas e os espaços ativos."
-                        href={playlistsIndex().url}
-                        icon={ListMusic}
-                        items={[
-                            {
-                                label: 'Entregas pendentes',
-                                value: String(
-                                    data.playlists.pending_deliveries,
-                                ),
-                            },
-                            {
-                                label: 'Slots ativos',
-                                value: String(data.playlists.active_slots),
-                            },
-                        ]}
-                    />
-                )}
-                {data.finance && (
-                    <OverviewSection
-                        title="Financeiro"
-                        description="Valores em atraso e conciliação."
-                        href={financialReportsIndex().url}
-                        icon={Wallet}
-                        items={[
-                            {
-                                label: 'A receber em atraso',
-                                value: currency(
-                                    data.finance.overdue_receivables,
-                                ),
-                                attention: data.finance.overdue_receivables > 0,
-                            },
-                            {
-                                label: 'A pagar em atraso',
-                                value: currency(data.finance.overdue_payables),
-                                attention: data.finance.overdue_payables > 0,
-                            },
-                            {
-                                label: 'Conciliações pendentes',
-                                value: String(
-                                    data.finance.pending_reconciliations,
-                                ),
-                            },
-                        ]}
-                    />
-                )}
-                {!data.sales && !data.playlists && !data.finance && (
-                    <p className="py-8 text-sm text-muted-foreground">
-                        Os resumos aparecem aqui conforme os módulos disponíveis
-                        para sua conta.
-                    </p>
-                )}
-            </div>
+            </section>
         </div>
     );
 }
 
 export default function Dashboard() {
+    const { auth } = usePage().props;
+    const firstName = auth.user?.name?.split(' ')[0] ?? '';
+
     return (
         <>
-            <Head title="Visão geral" />
-            <ContentHeader>
-                <div className="page-heading">
-                    <h1 className="overview-title">Visão geral</h1>
-                    <p className="page-heading-description">
-                        Um olhar sobre o que acontece na sua operação.
-                    </p>
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                        router.reload({ only: ['operationalDashboard'] })
+            <Head title="Dashboard" />
+
+            <div className="page-wrapper space-y-5">
+                <PageHeader
+                    eyebrow={
+                        firstName ? (
+                            <>
+                                Olá,{' '}
+                                <span className="font-semibold text-foreground">
+                                    {firstName}
+                                </span>
+                            </>
+                        ) : undefined
                     }
-                >
-                    <RefreshCw className="size-3.5" />
-                    Atualizar resumo
-                </Button>
-            </ContentHeader>
-            <div className="page-wrapper-lg">
+                    title="Visão geral"
+                    description="Dados atualizados da operação."
+                />
+
                 <Deferred
                     data="operationalDashboard"
                     fallback={<DashboardSkeleton />}
@@ -365,6 +358,7 @@ export default function Dashboard() {
         </>
     );
 }
+
 Dashboard.layout = {
-    breadcrumbs: [{ title: 'Visão geral', href: dashboard() }],
+    breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
 };

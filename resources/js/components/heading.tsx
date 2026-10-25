@@ -7,22 +7,22 @@ export default function Heading({
     description?: string;
     variant?: 'default' | 'small';
 }) {
-    const Title = variant === 'small' ? 'h2' : 'h1';
-
     return (
-        <div className="page-heading">
-            <Title
+        <header className={variant === 'small' ? '' : 'space-y-0.5'}>
+            <h2
                 className={
                     variant === 'small'
-                        ? 'text-base font-semibold tracking-tight'
-                        : 'page-heading-title'
+                        ? 'mb-0.5 text-base font-semibold'
+                        : 'text-xl font-semibold tracking-tight'
                 }
             >
                 {title}
-            </Title>
+            </h2>
             {description && (
-                <p className="page-heading-description">{description}</p>
+                <p className="text-[13px] text-muted-foreground">
+                    {description}
+                </p>
             )}
-        </div>
+        </header>
     );
 }

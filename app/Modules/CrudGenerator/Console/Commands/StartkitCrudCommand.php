@@ -12,7 +12,7 @@ use Throwable;
 class StartkitCrudCommand extends Command
 {
     protected $signature = 'startkit:crud
-        {model : Model name, for example Client}
+        {model : Model name, for example Contact}
         {--target=module : Generation target: module or app}
         {--module= : Module name, defaults to plural model name}
         {--field=* : Field definition, for example name:string:required:searchable}

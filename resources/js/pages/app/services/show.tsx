@@ -1,10 +1,13 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
+    Braces,
     CalendarDays,
     CircleDollarSign,
+    Info,
     PackageCheck,
+    Settings2,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import {
     destroy,
@@ -13,10 +16,10 @@ import {
 } from '@/actions/App/Modules/Services/Http/Controllers/ServiceController';
 import Header from '@/components/dashboard/header';
 import DeleteButton from '@/components/delete-button';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate, formatMoney } from '@/lib/utils';
 import type { ServiceResource } from '@/types/app/service';
 
@@ -63,10 +66,11 @@ function metadataSummary(
 
 export default function ShowService({ serviceData, permissions }: Props) {
     const service = serviceData.data;
+    const [tab, setTab] = useState('summary');
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Servicos', href: index.url() },
+            { title: 'Serviços', href: index.url() },
             { title: service.name, href: show.url(service.uuid) },
         ],
     });
@@ -75,26 +79,8 @@ export default function ShowService({ serviceData, permissions }: Props) {
         <>
             <Head title={service.name} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{service.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {service.slug}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
+            <Header title={service.name} backHref={index.url()}>
+                <div className="flex flex-wrap items-center gap-2">
                     <ServiceSubNav
                         serviceUuid={service.uuid}
                         currentPage="show"
@@ -109,7 +95,7 @@ export default function ShowService({ serviceData, permissions }: Props) {
                             <DeleteButton
                                 url={destroy.url(service.uuid)}
                                 resourceName={service.name}
-                                resourceType="Servico"
+                                resourceType="serviço"
                                 redirectTo={index.url()}
                             />
                         </>
@@ -118,65 +104,93 @@ export default function ShowService({ serviceData, permissions }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
-                        <div className="rounded-lg border bg-card">
-                            <div className="p-5">
-                                <div className="flex h-28 items-center justify-center rounded-lg bg-secondary text-primary">
-                                    <PackageCheck className="size-12" />
+                        <Card className="gap-0 py-0">
+                            <CardContent className="p-5">
+                                <div className="flex h-28 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+                                    <PackageCheck
+                                        className="size-12"
+                                        aria-hidden="true"
+                                    />
                                 </div>
 
-                                <div className="mt-4 space-y-2">
-                                    <h2 className="truncate text-base font-semibold">
+                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                    <h2 className="min-w-0 truncate text-base font-semibold">
                                         {service.name}
                                     </h2>
-                                    <p className="truncate text-sm text-muted-foreground">
-                                        {service.slug}
-                                    </p>
+                                    <Badge
+                                        variant={
+                                            service.is_active
+                                                ? 'success'
+                                                : 'secondary'
+                                        }
+                                    >
+                                        {service.is_active
+                                            ? 'Ativo'
+                                            : 'Inativo'}
+                                    </Badge>
                                 </div>
 
-                                <div className="mt-5 space-y-2 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        <CircleDollarSign className="size-4 shrink-0" />
-                                        <span>
-                                            {formatMoney(service.base_price, {
-                                                fromCents: true,
-                                            })}
-                                        </span>
-                                    </div>
+                                <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+                                    <CircleDollarSign
+                                        className="size-4 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="tabular-nums">
+                                        {formatMoney(service.base_price, {
+                                            fromCents: true,
+                                        })}
+                                    </span>
                                 </div>
-                            </div>
+                            </CardContent>
 
-                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
+                            <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground tabular-nums">
                                 <div className="flex items-center gap-2">
-                                    <CalendarDays className="size-3.5" />
+                                    <CalendarDays
+                                        className="size-3.5"
+                                        aria-hidden="true"
+                                    />
                                     <span>
                                         Criado {formatDate(service.created_at)}
                                     </span>
                                 </div>
                                 <p className="mt-1">
-                                    Ultima edicao{' '}
+                                    Última edição{' '}
                                     {formatDate(service.updated_at)}
                                 </p>
                             </div>
-                        </div>
+                        </Card>
                     </aside>
 
                     <main className="min-w-0">
-                        <Tabs defaultValue="summary" className="gap-4">
-                            <TabsList variant="line">
-                                <TabsTrigger value="summary">
-                                    Resumo
-                                </TabsTrigger>
-                                <TabsTrigger value="config">
-                                    Configurações
-                                </TabsTrigger>
-                                <TabsTrigger value="metadata">
-                                    Metadata
-                                </TabsTrigger>
+                        <Tabs
+                            value={tab}
+                            onValueChange={setTab}
+                            className="space-y-4"
+                        >
+                            <TabsList
+                                aria-label="Seções do serviço"
+                                className="max-w-full overflow-x-auto"
+                            >
+                                <TabItem
+                                    value="summary"
+                                    label="Resumo"
+                                    icon={Info}
+                                />
+                                <TabItem
+                                    value="config"
+                                    label="Configurações"
+                                    icon={Settings2}
+                                />
+                                <TabItem
+                                    value="metadata"
+                                    label="Metadata"
+                                    icon={Braces}
+                                />
                             </TabsList>
 
-                            <TabsContent value="summary" className="space-y-4">
+                            <TabPanel value="summary" className="space-y-4">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Dados comerciais</CardTitle>
@@ -191,12 +205,10 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                             value={service.slug}
                                         />
                                         <InfoField
-                                            label="Preço Base"
+                                            label="Preço base"
                                             value={formatMoney(
                                                 service.base_price,
-                                                {
-                                                    fromCents: true,
-                                                },
+                                                { fromCents: true },
                                             )}
                                         />
                                         <InfoField
@@ -213,15 +225,14 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                                                {service.description ||
-                                                    'Sem descrição.'}
+                                                {service.description}
                                             </p>
                                         </CardContent>
                                     </Card>
                                 )}
-                            </TabsContent>
+                            </TabPanel>
 
-                            <TabsContent value="config">
+                            <TabPanel value="config">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>
@@ -230,21 +241,21 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                     </CardHeader>
                                     <CardContent className="grid gap-4 sm:grid-cols-2">
                                         <InfoField
-                                            label="Exige periodo"
+                                            label="Exige período"
                                             value={
                                                 service.metadata
                                                     ?.requires_period
                                                     ? 'Sim'
-                                                    : 'Nao'
+                                                    : 'Não'
                                             }
                                         />
                                         <InfoField
-                                            label="Exige referencia de ativo"
+                                            label="Exige referência de ativo"
                                             value={
                                                 service.metadata
                                                     ?.requires_asset_reference
                                                     ? 'Sim'
-                                                    : 'Nao'
+                                                    : 'Não'
                                             }
                                         />
                                         <InfoField
@@ -254,22 +265,22 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                             )}
                                         />
                                         <InfoField
-                                            label="Observação padrao"
+                                            label="Observação padrão"
                                             value={cleanValue(
                                                 service.metadata?.default_notes,
                                             )}
                                         />
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
+                            </TabPanel>
 
-                            <TabsContent value="metadata">
+                            <TabPanel value="metadata">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Metadata</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <pre className="max-h-[360px] overflow-auto rounded-md border bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground">
+                                        <pre className="max-h-[360px] overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-relaxed text-muted-foreground">
                                             <code>
                                                 {metadataSummary(
                                                     service.metadata,
@@ -278,7 +289,7 @@ export default function ShowService({ serviceData, permissions }: Props) {
                                         </pre>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
+                            </TabPanel>
                         </Tabs>
                     </main>
                 </div>

@@ -1,5 +1,11 @@
 import axios from 'axios';
-import type { AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+
+export type {
+    Paginated as PaginatedResponse,
+    PaginationLinks,
+    PaginationMeta,
+} from '@/types/pagination';
 
 export type ValidationErrors<TFields extends string = string> = Partial<
     Record<TFields, string>
@@ -25,28 +31,6 @@ export interface ApiResponse<T> {
 }
 
 export type HttpConfig = Omit<AxiosRequestConfig, 'url' | 'method' | 'data'>;
-
-export interface PaginationMeta {
-    current_page: number;
-    from: number | null;
-    last_page: number;
-    per_page: number;
-    to: number | null;
-    total: number;
-}
-
-export interface PaginationLinks {
-    first: string | null;
-    last: string | null;
-    prev: string | null;
-    next: string | null;
-}
-
-export interface PaginatedResponse<T> {
-    data: T[];
-    meta: PaginationMeta;
-    links: PaginationLinks;
-}
 
 export interface ListParams {
     page?: number;
@@ -203,9 +187,104 @@ export const http = axios.create({
     withCredentials: true,
 });
 
+interface PrivateHttpScope {
+    signal: AbortSignal;
+    isCurrent: () => boolean;
+}
+
+let privateScope: PrivateHttpScope | null = null;
+const scopedRequests = new WeakMap<
+    InternalAxiosRequestConfig,
+    { scope: PrivateHttpScope; cleanup: () => void }
+>();
+
+export function bindPrivateHttpScope(scope: PrivateHttpScope): () => void {
+    if (typeof window === 'undefined') {
+        return () => {};
+    }
+
+    privateScope = scope;
+
+    return () => {
+        if (privateScope === scope) {
+            privateScope = null;
+        }
+    };
+}
+
+export function canceledPrivateRequest(): ApiError {
+    return { type: 'canceled', status: 0, message: 'Requisicao cancelada.' };
+}
+
+http.interceptors.request.use(
+    (config) => {
+        const scope = privateScope;
+
+        if (!scope) {
+            return config;
+        }
+
+        if (!scope.isCurrent()) {
+            throw canceledPrivateRequest();
+        }
+
+        const controller = new AbortController();
+        const caller = config.signal;
+        const abort = () => controller.abort();
+        scope.signal.addEventListener('abort', abort, { once: true });
+        caller?.addEventListener?.('abort', abort, { once: true });
+
+        if (scope.signal.aborted || caller?.aborted) {
+            abort();
+        }
+
+        config.signal = controller.signal;
+        scopedRequests.set(config, {
+            scope,
+            cleanup: () => {
+                scope.signal.removeEventListener('abort', abort);
+                caller?.removeEventListener?.('abort', abort);
+            },
+        });
+
+        return config;
+    },
+    (error: unknown) => {
+        throw error;
+    },
+    { synchronous: true },
+);
+
+function finishPrivateRequest(config?: InternalAxiosRequestConfig): boolean {
+    const captured = config && scopedRequests.get(config);
+
+    if (!captured) {
+        return true;
+    }
+
+    captured.cleanup();
+    scopedRequests.delete(config!);
+
+    return captured.scope.isCurrent() && !config?.signal?.aborted;
+}
+
 http.interceptors.response.use(
-    (response) => response,
-    (error: unknown) => Promise.reject(toApiError(error)),
+    (response) => {
+        if (!finishPrivateRequest(response.config)) {
+            return Promise.reject(canceledPrivateRequest());
+        }
+
+        return response;
+    },
+    (error: unknown) => {
+        const config = axios.isAxiosError(error) ? error.config : undefined;
+
+        return Promise.reject(
+            config && !finishPrivateRequest(config)
+                ? canceledPrivateRequest()
+                : toApiError(error),
+        );
+    },
 );
 
 export function createAbortController(): AbortController {

@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialCategoryController';
 import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import type { FinancialCategoryTypeOption } from '@/types/app/financial-category';
 
 import FinancialCategoryFormFields from './partials/financial-category-form-fields';
@@ -27,48 +27,26 @@ export default function CreateFinancialCategory({ typeOptions }: Props) {
     });
 
     return (
-        <>
+        <div className="flex min-h-full flex-col">
             <Head title="Nova categoria financeira" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">
-                            Nova categoria financeira
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Crie uma classificação gerencial para o financeiro
-                        </p>
-                    </div>
-                </div>
-            </Header>
+            <Header
+                title="Nova categoria financeira"
+                subtitle="Crie uma classificação gerencial para o financeiro"
+                backHref={index.url()}
+            />
 
-            <div className="page-wrapper-sm">
-                <Form
-                    action={store.url()}
-                    method="post"
-                    options={{ preserveScroll: true }}
-                    onError={() =>
-                        toast.error('Verifique os campos obrigatórios.')
-                    }
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <div className="space-y-4">
-                            <Card variant="form">
-                                <CardHeader>
-                                    <CardTitle>Dados da categoria</CardTitle>
-                                </CardHeader>
+            <Form
+                action={store.url()}
+                method="post"
+                options={{ preserveScroll: true }}
+                onError={() => toast.error('Verifique os campos obrigatórios.')}
+                className="flex flex-1 flex-col"
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="page-wrapper-md flex-1 pb-8">
+                            <Card>
                                 <CardContent>
                                     <FinancialCategoryFormFields
                                         typeOptions={typeOptions}
@@ -76,45 +54,40 @@ export default function CreateFinancialCategory({ typeOptions }: Props) {
                                     />
                                 </CardContent>
                             </Card>
+                        </div>
 
-                            <div className="sticky bottom-0 border-t bg-background">
-                                <div className="flex items-center justify-between gap-3 py-3">
-                                    <p className="text-xs text-muted-foreground">
-                                        Campos marcados com{' '}
-                                        <span className="text-destructive">
-                                            *
-                                        </span>{' '}
-                                        são obrigatórios.
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                            disabled={processing}
-                                        >
-                                            <Link href={index.url()}>
-                                                Cancelar
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            size="sm"
-                                            disabled={processing}
-                                        >
-                                            <Save />
-                                            {processing
-                                                ? 'Salvando...'
-                                                : 'Salvar'}
-                                        </Button>
-                                    </div>
+                        <div className="sticky bottom-0 z-10 border-t bg-card/95">
+                            <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                                <p className="hidden text-xs text-muted-foreground sm:block">
+                                    Campos marcados com{' '}
+                                    <span className="text-destructive">*</span>{' '}
+                                    são obrigatórios
+                                </p>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        asChild
+                                        disabled={processing}
+                                    >
+                                        <Link href={index.url()}>
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Cancelar
+                                        </Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        <Save />
+                                        {processing ? 'Salvando...' : 'Salvar'}
+                                    </Button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </Form>
-            </div>
-        </>
+                    </>
+                )}
+            </Form>
+        </div>
     );
 }

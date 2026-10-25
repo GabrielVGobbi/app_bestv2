@@ -1,4 +1,4 @@
-import { Head, setLayoutProps } from '@inertiajs/react'
+import { Head, setLayoutProps } from '@inertiajs/react';
 import {
     Archive,
     BookOpen,
@@ -9,40 +9,40 @@ import {
     Eye,
     Layers,
     LockKeyhole,
-    Paperclip,
     Settings,
     Shield,
     Star,
     Workflow,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+    components,
+    fileAttachments,
+} from '@/actions/App/Http/Controllers/Admin/DevToolsController';
+import Header from '@/components/dashboard/header';
 
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge';
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/card';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-    components,
-    fileAttachments,
-} from '@/actions/App/Http/Controllers/Admin/DevToolsController'
-import { FileAttachments, type FileAttachmentsVariant } from '@/modules/uploads'
+} from '@/components/ui/fluid/select';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { FileAttachments } from '@/modules/uploads';
+import type { FileAttachmentsVariant } from '@/modules/uploads';
 
 const CODE_BASIC = `import { FileAttachments } from '@/modules/uploads'
 
@@ -50,7 +50,7 @@ const CODE_BASIC = `import { FileAttachments } from '@/modules/uploads'
   modelType="client"
   modelId={client.uuid}
   title="Documentos do cliente"
-/>`
+/>`;
 
 const CODE_COLLECTION = `<FileAttachments
   modelType="client"
@@ -67,12 +67,12 @@ const CODE_COLLECTION = `<FileAttachments
   accept="image/*"
   showCoverOption
   title="Imagens"
-/>`
+/>`;
 
 const CODE_VARIANTS = `<FileAttachments variant="inline" />
 <FileAttachments variant="modal" attachLabel="Anexar" />
 <FileAttachments variant="drop-overlay" />
-<FileAttachments variant="toggle" attachLabel="Anexar comprovante" />`
+<FileAttachments variant="toggle" attachLabel="Anexar comprovante" />`;
 
 const CODE_ENDPOINTS = `GET    /api/v1/uploads
 POST   /api/v1/uploads
@@ -86,7 +86,7 @@ POST   /api/v1/uploads/{upload}/toggle-favorite
 DELETE /api/v1/uploads/bulk
 POST   /api/v1/uploads/zip-requests
 GET    /api/v1/uploads/zip-requests/{uuid}
-GET    /api/v1/uploads/zip-requests/{uuid}/download`
+GET    /api/v1/uploads/zip-requests/{uuid}/download`;
 
 const CODE_MODEL = `use App\\Modules\\Uploads\\Contracts\\HasUploadTags;
 use App\\Modules\\Uploads\\Traits\\HasUploads;
@@ -110,18 +110,16 @@ class Client extends Model implements HasUploadTags
 // config/uploads.php
 'aliases' => [
     'client' => \\App\\Modules\\Clients\\Models\\Client::class,
-],`
+],`;
 
-const MODEL_ALIASES = [
-    { value: 'client', label: 'client' },
-] as const
+const MODEL_ALIASES = [{ value: 'client', label: 'client' }] as const;
 
 function CodeBlock({ code }: { code: string }) {
     return (
         <pre className="max-h-[min(28rem,50vh)] overflow-auto rounded-lg bg-muted p-4 text-xs leading-relaxed">
             <code>{code}</code>
         </pre>
-    )
+    );
 }
 
 function PropRow({
@@ -131,18 +129,20 @@ function PropRow({
     defaultValue,
     description,
 }: {
-    name: string
-    type: string
-    required?: boolean
-    defaultValue?: string
-    description: string
+    name: string;
+    type: string;
+    required?: boolean;
+    defaultValue?: string;
+    description: string;
 }) {
     return (
         <div className="flex flex-col gap-1 border-b py-3 last:border-b-0">
             <div className="flex flex-wrap items-center gap-2">
-                <code className="text-sm font-semibold text-primary">{name}</code>
+                <code className="text-sm font-semibold text-primary">
+                    {name}
+                </code>
                 {required && (
-                    <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                    <Badge variant="outline" className="px-1.5 py-0 text-2xs">
                         obrigatório
                     </Badge>
                 )}
@@ -157,7 +157,7 @@ function PropRow({
             </div>
             <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-    )
+    );
 }
 
 function FeatureCard({
@@ -165,9 +165,9 @@ function FeatureCard({
     title,
     description,
 }: {
-    icon: LucideIcon
-    title: string
-    description: string
+    icon: LucideIcon;
+    title: string;
+    description: string;
 }) {
     return (
         <div className="flex gap-3 rounded-lg border p-4">
@@ -179,53 +179,43 @@ function FeatureCard({
                 <p className="text-sm text-muted-foreground">{description}</p>
             </div>
         </div>
-    )
+    );
 }
 
 export default function FileAttachmentsDevReference() {
-    const [modelType, setModelType] = useState<string>('client')
-    const [modelId, setModelId] = useState<string>('1')
-    const [variant, setVariant] = useState<FileAttachmentsVariant>('inline')
-    const [readOnly, setReadOnly] = useState(false)
-    const [hideTitle, setHideTitle] = useState(false)
+    const [modelType, setModelType] = useState<string>('client');
+    const [modelId, setModelId] = useState<string>('1');
+    const [variant, setVariant] = useState<FileAttachmentsVariant>('inline');
+    const [readOnly, setReadOnly] = useState(false);
+    const [hideTitle, setHideTitle] = useState(false);
 
     setLayoutProps({
         breadcrumbs: [
             { title: 'Components', href: components.url() },
             { title: 'File Attachments', href: fileAttachments.url() },
         ],
-    })
+    });
 
     const modelIdValue = useMemo(() => {
-        const trimmed = modelId.trim()
-        if (!trimmed) return 1
-        return /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed
-    }, [modelId])
+        const trimmed = modelId.trim();
+
+        if (!trimmed) {
+            return 1;
+        }
+
+        return /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed;
+    }, [modelId]);
 
     return (
         <>
             <Head title="FileAttachments - Referência" />
 
-            <div className="mx-auto w-full max-w-7xl space-y-8 px-4 pb-12 lg:px-6">
-                <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-                        <Paperclip className="size-5 text-primary" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            FileAttachments
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Módulo{' '}
-                            <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                                @/modules/uploads
-                            </code>{' '}
-                            com fila por arquivo, rotas protegidas, preview, favoritos,
-                            seleção múltipla e ZIP em background.
-                        </p>
-                    </div>
-                </div>
+            <Header
+                title="FileAttachments"
+                subtitle="Módulo de uploads com fila por arquivo, rotas protegidas, preview, favoritos, seleção múltipla e ZIP em background."
+            />
 
+            <div className="mx-auto w-full max-w-7xl space-y-8 px-4 pb-12 lg:px-6">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <FeatureCard
                         icon={CloudUpload}
@@ -250,18 +240,21 @@ export default function FileAttachmentsDevReference() {
                 </div>
 
                 <Tabs defaultValue="playground" className="space-y-6">
-                    <TabsList className="flex h-auto w-full flex-wrap gap-1">
-                        <TabsTrigger value="playground">Playground</TabsTrigger>
-                        <TabsTrigger value="variants">Variantes</TabsTrigger>
-                        <TabsTrigger value="queue">Fila e estados</TabsTrigger>
-                        <TabsTrigger value="bulk-zip">Seleção e ZIP</TabsTrigger>
-                        <TabsTrigger value="security">Segurança</TabsTrigger>
-                        <TabsTrigger value="props">Props</TabsTrigger>
-                        <TabsTrigger value="backend">Backend</TabsTrigger>
-                        <TabsTrigger value="recipes">Receitas</TabsTrigger>
+                    <TabsList
+                        aria-label="Seções da página"
+                        className="max-w-full overflow-x-auto"
+                    >
+                        <TabItem value="playground" label="Playground" />
+                        <TabItem value="variants" label="Variantes" />
+                        <TabItem value="queue" label="Fila e estados" />
+                        <TabItem value="bulk-zip" label="Seleção e ZIP" />
+                        <TabItem value="security" label="Segurança" />
+                        <TabItem value="props" label="Props" />
+                        <TabItem value="backend" label="Backend" />
+                        <TabItem value="recipes" label="Receitas" />
                     </TabsList>
 
-                    <TabsContent value="playground" className="space-y-6">
+                    <TabPanel value="playground" className="space-y-6">
                         <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
                             <Card className="xl:sticky xl:top-4 xl:self-start">
                                 <CardHeader>
@@ -270,33 +263,46 @@ export default function FileAttachmentsDevReference() {
                                         Controles
                                     </CardTitle>
                                     <CardDescription>
-                                        Use um registro existente na base. O campo aceita ID
-                                        numérico ou UUID.
+                                        Use um registro existente na base. O
+                                        campo aceita ID numérico ou UUID.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label>modelType</Label>
-                                            <Select value={modelType} onValueChange={setModelType}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
+                                            <Select
+                                                value={modelType}
+                                                onValueChange={setModelType}
+                                            >
+                                                <SelectTrigger />
                                                 <SelectContent>
-                                                    {MODEL_ALIASES.map((m) => (
-                                                        <SelectItem key={m.value} value={m.value}>
-                                                            {m.label}
-                                                        </SelectItem>
-                                                    ))}
+                                                    {MODEL_ALIASES.map(
+                                                        (m, aliasIndex) => (
+                                                            <SelectItem
+                                                                key={m.value}
+                                                                index={
+                                                                    aliasIndex
+                                                                }
+                                                                value={m.value}
+                                                            >
+                                                                {m.label}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="model-id">modelId</Label>
+                                            <Label htmlFor="model-id">
+                                                modelId
+                                            </Label>
                                             <Input
                                                 id="model-id"
                                                 value={modelId}
-                                                onChange={(e) => setModelId(e.target.value)}
+                                                onChange={(e) =>
+                                                    setModelId(e.target.value)
+                                                }
                                             />
                                         </div>
                                     </div>
@@ -306,17 +312,37 @@ export default function FileAttachmentsDevReference() {
                                         <Select
                                             value={variant}
                                             onValueChange={(v) =>
-                                                setVariant(v as FileAttachmentsVariant)
+                                                setVariant(
+                                                    v as FileAttachmentsVariant,
+                                                )
                                             }
                                         >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
+                                            <SelectTrigger />
                                             <SelectContent>
-                                                <SelectItem value="inline">inline</SelectItem>
-                                                <SelectItem value="modal">modal</SelectItem>
-                                                <SelectItem value="drop-overlay">drop-overlay</SelectItem>
-                                                <SelectItem value="toggle">toggle</SelectItem>
+                                                <SelectItem
+                                                    index={0}
+                                                    value="inline"
+                                                >
+                                                    inline
+                                                </SelectItem>
+                                                <SelectItem
+                                                    index={1}
+                                                    value="modal"
+                                                >
+                                                    modal
+                                                </SelectItem>
+                                                <SelectItem
+                                                    index={2}
+                                                    value="drop-overlay"
+                                                >
+                                                    drop-overlay
+                                                </SelectItem>
+                                                <SelectItem
+                                                    index={3}
+                                                    value="toggle"
+                                                >
+                                                    toggle
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -325,20 +351,28 @@ export default function FileAttachmentsDevReference() {
                                         <div>
                                             <Label>readOnly</Label>
                                             <p className="text-xs text-muted-foreground">
-                                                Oculta upload, edição, favoritos e exclusão.
+                                                Oculta upload, edição, favoritos
+                                                e exclusão.
                                             </p>
                                         </div>
-                                        <Switch checked={readOnly} onCheckedChange={setReadOnly} />
+                                        <Switch
+                                            checked={readOnly}
+                                            onCheckedChange={setReadOnly}
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
                                         <div>
                                             <Label>title = null</Label>
                                             <p className="text-xs text-muted-foreground">
-                                                Remove cabeçalho e deixa o bloco mais compacto.
+                                                Remove cabeçalho e deixa o bloco
+                                                mais compacto.
                                             </p>
                                         </div>
-                                        <Switch checked={hideTitle} onCheckedChange={setHideTitle} />
+                                        <Switch
+                                            checked={hideTitle}
+                                            onCheckedChange={setHideTitle}
+                                        />
                                     </div>
                                 </CardContent>
                             </Card>
@@ -350,7 +384,9 @@ export default function FileAttachmentsDevReference() {
                                     modelId={modelIdValue}
                                     variant={variant}
                                     readOnly={readOnly}
-                                    title={hideTitle ? null : 'Anexos (playground)'}
+                                    title={
+                                        hideTitle ? null : 'Anexos (playground)'
+                                    }
                                     description="Dados reais conforme modelId na API."
                                     concurrency={3}
                                     maxSize={25}
@@ -359,9 +395,9 @@ export default function FileAttachmentsDevReference() {
                                 />
                             </div>
                         </div>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="variants" className="space-y-4">
+                    <TabPanel value="variants" className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -369,16 +405,17 @@ export default function FileAttachmentsDevReference() {
                                     Variantes de apresentação
                                 </CardTitle>
                                 <CardDescription>
-                                    A API de dados é a mesma; só muda como o dropzone aparece.
+                                    A API de dados é a mesma; só muda como o
+                                    dropzone aparece.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <CodeBlock code={CODE_VARIANTS} />
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="queue" className="space-y-4">
+                    <TabPanel value="queue" className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -386,26 +423,27 @@ export default function FileAttachmentsDevReference() {
                                     Fila e estados
                                 </CardTitle>
                                 <CardDescription>
-                                    Cada arquivo vira uma request isolada. Uma falha não derruba
-                                    o lote.
+                                    Cada arquivo vira uma request isolada. Uma
+                                    falha não derruba o lote.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3 text-sm text-muted-foreground">
                                 <p>
-                                    Estados: <code>pending</code>, <code>uploading</code>,{' '}
-                                    <code>success</code> e <code>error</code>.
+                                    Estados: <code>pending</code>,{' '}
+                                    <code>uploading</code>, <code>success</code>{' '}
+                                    e <code>error</code>.
                                 </p>
                                 <p>
-                                    <code>concurrency</code> controla quantos arquivos sobem ao
-                                    mesmo tempo. O padrão é 3.
+                                    <code>concurrency</code> controla quantos
+                                    arquivos sobem ao mesmo tempo. O padrão é 3.
                                 </p>
                                 <Separator />
                                 <CodeBlock code={CODE_COLLECTION} />
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="bulk-zip" className="space-y-4">
+                    <TabPanel value="bulk-zip" className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-2">
                             <FeatureCard
                                 icon={CheckSquare}
@@ -426,15 +464,27 @@ export default function FileAttachmentsDevReference() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm text-muted-foreground">
-                                <p>1. UI envia IDs para <code>/zip-requests</code>.</p>
-                                <p>2. Backend autoriza cada upload com <code>UploadedPolicy::view</code>.</p>
-                                <p>3. Worker gera ZIP sem carregar todos os arquivos em memória.</p>
-                                <p>4. <code>ZipDownloadPanel</code> faz polling e libera o botão de download.</p>
+                                <p>
+                                    1. UI envia IDs para{' '}
+                                    <code>/zip-requests</code>.
+                                </p>
+                                <p>
+                                    2. Backend autoriza cada upload com{' '}
+                                    <code>UploadedPolicy::view</code>.
+                                </p>
+                                <p>
+                                    3. Worker gera ZIP sem carregar todos os
+                                    arquivos em memória.
+                                </p>
+                                <p>
+                                    4. <code>ZipDownloadPanel</code> faz polling
+                                    e libera o botão de download.
+                                </p>
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="security" className="space-y-4">
+                    <TabPanel value="security" className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -442,35 +492,40 @@ export default function FileAttachmentsDevReference() {
                                     Política de acesso
                                 </CardTitle>
                                 <CardDescription>
-                                    Preview, download, ZIP, exclusão e favorito passam por
-                                    autorização.
+                                    Preview, download, ZIP, exclusão e favorito
+                                    passam por autorização.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3 text-sm text-muted-foreground">
                                 <p>
-                                    Para v1, <code>view</code>, <code>update</code> e{' '}
-                                    <code>delete</code> usam dono/uploader do arquivo.
+                                    Para v1, <code>view</code>,{' '}
+                                    <code>update</code> e <code>delete</code>{' '}
+                                    usam dono/uploader do arquivo.
                                 </p>
                                 <p>
                                     O frontend recebe <code>preview_url</code> e{' '}
-                                    <code>download_url</code>. A URL pública original permanece
-                                    por compatibilidade, mas o componente usa as rotas protegidas.
+                                    <code>download_url</code>. A URL pública
+                                    original permanece por compatibilidade, mas
+                                    o componente usa as rotas protegidas.
                                 </p>
                                 <p>
-                                    Favorito é independente de capa: vários anexos podem estar
-                                    marcados como favoritos ao mesmo tempo.
+                                    Favorito é independente de capa: vários
+                                    anexos podem estar marcados como favoritos
+                                    ao mesmo tempo.
                                 </p>
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="props" className="space-y-4">
+                    <TabPanel value="props" className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Props principais</CardTitle>
                                 <CardDescription>
                                     Implementação em{' '}
-                                    <code>resources/js/modules/uploads/components/file-attachments.tsx</code>
+                                    <code>
+                                        resources/js/modules/uploads/components/file-attachments.tsx
+                                    </code>
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="divide-y">
@@ -522,9 +577,9 @@ export default function FileAttachmentsDevReference() {
                                 />
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="backend" className="space-y-4">
+                    <TabPanel value="backend" className="space-y-4">
                         <div className="grid gap-4 xl:grid-cols-2">
                             <Card>
                                 <CardHeader>
@@ -549,9 +604,9 @@ export default function FileAttachmentsDevReference() {
                                 </CardContent>
                             </Card>
                         </div>
-                    </TabsContent>
+                    </TabPanel>
 
-                    <TabsContent value="recipes" className="space-y-4">
+                    <TabPanel value="recipes" className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -572,18 +627,18 @@ export default function FileAttachmentsDevReference() {
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm text-muted-foreground">
                                 <p>
-                                    <code>←</code> e <code>→</code> navegam entre arquivos.{' '}
-                                    <code>Esc</code> fecha.
+                                    <code>←</code> e <code>→</code> navegam
+                                    entre arquivos. <code>Esc</code> fecha.
                                 </p>
                                 <p>
-                                    O botão de estrela alterna favorito; o botão de download usa a
-                                    rota protegida.
+                                    O botão de estrela alterna favorito; o botão
+                                    de download usa a rota protegida.
                                 </p>
                             </CardContent>
                         </Card>
-                    </TabsContent>
+                    </TabPanel>
                 </Tabs>
             </div>
         </>
-    )
+    );
 }

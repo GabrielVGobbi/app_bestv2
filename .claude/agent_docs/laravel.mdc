@@ -1,3 +1,9 @@
-# BestPlay — laravel
+---
+alwaysApply: true
+---
 
-Use the [Laravel skill](../../.agents/skills/laravel-best-practices/SKILL.md) for backend behavior. Follow the affected module and read only relevant references.
+# Laravel development
+
+Read and follow [AGENTS.md](../../AGENTS.md) first, then the [Laravel skill](../../.agents/skills/laravel-best-practices/SKILL.md) and relevant domain documentation.
+
+Reuse existing requests, policies, services, resources, jobs, and named routes. Preserve authorization, ownership, private storage, and transaction boundaries. Follow the project's formatter and proportional verification workflow rather than introducing a separate architecture or toolchain.

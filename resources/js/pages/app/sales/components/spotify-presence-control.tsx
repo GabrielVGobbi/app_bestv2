@@ -75,9 +75,9 @@ export function SpotifyPresenceControl({
     const presence = item.spotify_playlist_presence;
     const hasDetails = Boolean(
         presence.checked_at ||
-            presence.track_position ||
-            presence.match_type ||
-            presence.error,
+        presence.track_position ||
+        presence.match_type ||
+        presence.error,
     );
 
     return (
@@ -87,7 +87,7 @@ export function SpotifyPresenceControl({
                 <div
                     className={cn(
                         'flex items-center overflow-hidden opacity-0 transition-opacity',
-                        'w-0 group-hover:w-auto group-hover:opacity-100 group-focus-within:w-auto group-focus-within:opacity-100',
+                        'w-0 group-focus-within:w-auto group-focus-within:opacity-100 group-hover:w-auto group-hover:opacity-100',
                         'max-md:w-auto max-md:opacity-100',
                         '[@media(hover:none)]:w-auto [@media(hover:none)]:opacity-100',
                     )}
@@ -149,10 +149,10 @@ export function SpotifyPresenceControl({
                     </DialogHeader>
 
                     {hasDetails ? (
-                        <dl className="divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70">
+                        <dl className="divide-y divide-separator overflow-hidden rounded-lg border border-border">
                             {presence.checked_at ? (
                                 <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 px-3 py-2">
-                                    <dt className="text-[11px] text-muted-foreground">
+                                    <dt className="text-2xs text-muted-foreground">
                                         Verificado em
                                     </dt>
                                     <dd className="text-xs font-medium">
@@ -162,7 +162,7 @@ export function SpotifyPresenceControl({
                             ) : null}
                             {presence.track_position ? (
                                 <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 px-3 py-2">
-                                    <dt className="text-[11px] text-muted-foreground">
+                                    <dt className="text-2xs text-muted-foreground">
                                         Posição
                                     </dt>
                                     <dd className="text-xs font-medium">
@@ -172,7 +172,7 @@ export function SpotifyPresenceControl({
                             ) : null}
                             {matchTypeLabel(presence.match_type) ? (
                                 <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 px-3 py-2">
-                                    <dt className="text-[11px] text-muted-foreground">
+                                    <dt className="text-2xs text-muted-foreground">
                                         Match
                                     </dt>
                                     <dd className="text-xs font-medium">
@@ -182,7 +182,7 @@ export function SpotifyPresenceControl({
                             ) : null}
                             {presence.error ? (
                                 <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 px-3 py-2">
-                                    <dt className="text-[11px] text-muted-foreground">
+                                    <dt className="text-2xs text-muted-foreground">
                                         Detalhe
                                     </dt>
                                     <dd className="text-xs leading-5 text-muted-foreground">

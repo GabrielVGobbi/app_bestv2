@@ -8,9 +8,14 @@ use App\Modules\CrudGenerator\DTOs\CrudBlueprint;
 use App\Modules\CrudGenerator\DTOs\CrudField;
 use App\Modules\CrudGenerator\DTOs\CrudGeneratedFile;
 use App\Modules\CrudGenerator\DTOs\CrudGenerationResult;
+use Closure;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use ParseError;
 use RuntimeException;
+use Throwable;
 
 class CrudGeneratorService
 {
@@ -18,6 +23,8 @@ class CrudGeneratorService
 
     public function preview(CrudBlueprint $blueprint): CrudGenerationResult
     {
+        $this->assertBlueprint($blueprint);
+
         return new CrudGenerationResult(
             blueprint: $blueprint,
             files: $this->plannedFiles($blueprint),
@@ -27,35 +34,551 @@ class CrudGeneratorService
 
     public function apply(CrudBlueprint $blueprint, bool $force = false): CrudGenerationResult
     {
-        $result = $this->preview($blueprint);
+        $environment = app()->environment();
 
-        if ($result->hasConflicts() && ! $force) {
-            throw new RuntimeException('Generation has file conflicts. Use force to overwrite.');
+        if (! in_array($environment, ['local', 'testing'], true) || config('app.env') !== $environment) {
+            throw new AuthorizationException('CRUD generation is unavailable in this environment.');
         }
 
-        foreach ($result->files as $file) {
-            $this->files->ensureDirectoryExists(dirname($file->path));
-            $this->files->put($file->path, $file->content);
+        $this->assertBlueprint($blueprint);
+        $lockPath = base_path('.start-kit-generator.lock');
+        $this->assertDestination($lockPath);
+        $lock = fopen($lockPath, 'c+b');
+
+        if ($lock === false) {
+            throw ValidationException::withMessages(['generation' => 'Unable to open the generation lock.']);
         }
 
-        if ($blueprint->isModuleTarget() && $blueprint->registerProvider) {
-            $this->registerProvider($blueprint);
+        try {
+            if (! flock($lock, LOCK_EX | LOCK_NB)) {
+                throw ValidationException::withMessages(['generation' => 'Another generation is in progress. Retry after it finishes.']);
+            }
+
+            $this->assertDestination($lockPath);
+            $result = $this->preview($blueprint);
+            $writes = [];
+
+            foreach ($result->files as $file) {
+                $this->assertDestination($file->path);
+
+                if ($file->exists && $force && ! $this->ownsFile($blueprint, $file->path)) {
+                    throw ValidationException::withMessages(['generation' => 'Force may only overwrite files owned by the same CRUD generation.']);
+                }
+
+                $writes[$file->path] = $file->content;
+            }
+
+            if ($result->hasConflicts() && ! $force) {
+                throw new RuntimeException('Generation has file conflicts. Use force to overwrite.');
+            }
+
+            foreach ($this->centralPaths($blueprint) as $path) {
+                $this->assertDestination($path);
+            }
+
+            if ($blueprint->isModuleTarget() && $blueprint->registerProvider) {
+                $writes += $this->registerProvider($blueprint);
+            }
+
+            if ($blueprint->isAppTarget()) {
+                $writes += $this->registerWebRoute($blueprint);
+                $writes += $this->registerApiRouteFile($blueprint);
+
+                if ($blueprint->withObserver) {
+                    $writes += $this->registerAppObserver($blueprint);
+                }
+            }
+
+            $writes += $this->registerExportModel($blueprint);
+            $writes += $this->registerNavigation($blueprint);
+            $writes += $this->registerApiRoute($blueprint);
+            $this->persistGeneration($writes);
+
+            return new CrudGenerationResult(
+                $blueprint,
+                array_map(fn (CrudGeneratedFile $file): CrudGeneratedFile => new CrudGeneratedFile($file->path, $file->content, true), $result->files),
+                $result->changes,
+            );
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
         }
+    }
 
-        if ($blueprint->isAppTarget()) {
-            $this->registerWebRoute($blueprint);
-            $this->registerApiRouteFile($blueprint);
-
-            if ($blueprint->withObserver) {
-                $this->registerAppObserver($blueprint);
+    private function assertBlueprint(CrudBlueprint $blueprint): void
+    {
+        foreach (['model' => $blueprint->model, 'module' => $blueprint->module] as $name => $value) {
+            if (strlen($value) > 80 || ! preg_match('/\A[A-Za-z][A-Za-z0-9_]*\z/', $value)) {
+                throw ValidationException::withMessages([$name => 'Use a simple PHP identifier without path separators.']);
             }
         }
 
-        $this->registerExportModel($blueprint);
-        $this->registerNavigation($blueprint);
-        $this->registerApiRoute($blueprint);
+        if (in_array(strtolower($blueprint->model), ['parent', 'self', 'int', 'float', 'bool', 'string', 'true', 'false', 'null', 'void', 'iterable', 'object', 'mixed', 'never', 'static'], true)) {
+            throw ValidationException::withMessages(['model' => 'Choose a model name that is not reserved by PHP.']);
+        }
 
-        return $this->preview($blueprint);
+        try {
+            $tokens = token_get_all('<?php class '.$blueprint->model.' {}', TOKEN_PARSE);
+
+            if ($tokens === []) {
+                throw ValidationException::withMessages(['model' => 'The model must be a valid PHP class name.']);
+            }
+        } catch (ParseError) {
+            throw ValidationException::withMessages(['model' => 'The model must be a valid PHP class name.']);
+        }
+
+        if (! in_array($blueprint->target, ['app', 'module'], true) || $blueprint->fields === []) {
+            throw ValidationException::withMessages(['generation' => 'Choose a supported target and at least one field.']);
+        }
+
+        $this->assertProtectedIdentifiers($blueprint);
+
+        foreach ($blueprint->fields as $field) {
+            $this->assertField($field);
+        }
+    }
+
+    private function assertProtectedIdentifiers(CrudBlueprint $blueprint): void
+    {
+        $models = ['user', 'role', 'permission', 'client', 'activity', 'activitylog', 'personalaccesstoken'];
+        $routes = ['users', 'roles', 'permissions', 'clients', 'activity-log', 'activity-logs', 'activities'];
+        $tables = ['users', 'roles', 'permissions', 'clients', 'activity_log', 'activities', 'personal_access_tokens', 'users_roles', 'users_permissions', 'roles_permissions'];
+
+        foreach (['roles', 'permissions', 'users_roles', 'users_permissions', 'roles_permissions'] as $key) {
+            $table = config('permissions.tables.'.$key);
+            if (is_string($table) && $table !== '') {
+                $tables[] = strtolower($table);
+            }
+        }
+        $activityTable = config('activitylog.table_name', 'activity_log');
+        if (is_string($activityTable) && $activityTable !== '') {
+            $tables[] = strtolower($activityTable);
+        }
+
+        if (in_array(strtolower($blueprint->model), $models, true)
+            || in_array(strtolower($blueprint->routeName()), $routes, true)
+            || in_array(strtolower($blueprint->tableName()), $tables, true)) {
+            throw ValidationException::withMessages(['model' => 'Choose identifiers outside the protected application domains.']);
+        }
+    }
+
+    private function assertField(mixed $field): void
+    {
+        if (! $field instanceof CrudField
+            || ! preg_match('/\A[a-z][a-z0-9_]*\z/', $field->name)
+            || ! in_array($field->type, ['string', 'text', 'integer', 'bigInteger', 'decimal', 'float', 'double', 'boolean', 'date', 'dateTime', 'timestamp', 'json'], true)) {
+            throw ValidationException::withMessages(['fields' => 'Use supported field types and snake_case identifiers.']);
+        }
+
+        foreach ($field->validation as $rule) {
+            $this->assertValidationRule($rule);
+        }
+    }
+
+    private function assertValidationRule(mixed $rule): void
+    {
+        if (! is_string($rule)) {
+            throw ValidationException::withMessages(['fields' => 'Validation rules must be strings.']);
+        }
+    }
+
+    /** @return list<string> */
+    private function centralPaths(CrudBlueprint $blueprint): array
+    {
+        $paths = [config_path('navigation.php'), resource_path('js/lib/api/api-routes.ts')];
+
+        if ($blueprint->isModuleTarget() && $blueprint->registerProvider) {
+            $paths[] = base_path('bootstrap/providers.php');
+        }
+
+        if ($blueprint->isAppTarget()) {
+            $paths[] = base_path('routes/web.php');
+            $paths[] = base_path('routes/api/api.php');
+
+            if ($blueprint->withObserver) {
+                $paths[] = app_path('Providers/AppServiceProvider.php');
+            }
+        }
+
+        if ($blueprint->withExport) {
+            $paths[] = config_path('exports.php');
+        }
+
+        return $paths;
+    }
+
+    private function assertDestination(string $path): void
+    {
+        $normalize = fn (string $value): string => PHP_OS_FAMILY === 'Windows' ? strtolower(str_replace('\\', '/', $value)) : str_replace('\\', '/', $value);
+        $base = rtrim($normalize(base_path()), '/');
+        $normalized = $normalize($path);
+        $root = realpath(base_path());
+
+        if ($root === false || is_link(base_path()) || ! str_starts_with($normalized, $base.'/')) {
+            throw ValidationException::withMessages(['generation' => 'Generation destinations must remain inside the project.']);
+        }
+
+        $relative = substr(str_replace('\\', '/', $path), strlen($base) + 1);
+        $parts = explode('/', $relative);
+        $current = base_path();
+
+        foreach ($parts as $index => $part) {
+            if ($part === '' || $part === '.' || $part === '..' || str_contains($part, ':') || str_contains($part, "\0")) {
+                throw ValidationException::withMessages(['generation' => 'Invalid generation destination.']);
+            }
+
+            if (is_dir($current)) {
+                $siblings = scandir($current);
+
+                if ($siblings === false) {
+                    throw ValidationException::withMessages(['generation' => 'Unable to inspect generation source identities.']);
+                }
+
+                foreach ($siblings as $sibling) {
+                    if ($sibling !== $part && strcasecmp($sibling, $part) === 0) {
+                        throw ValidationException::withMessages(['generation' => 'A source identity already exists with different letter casing.']);
+                    }
+                }
+            }
+
+            $current .= DIRECTORY_SEPARATOR.$part;
+            clearstatcache(true, $current);
+
+            if (! file_exists($current) && ! is_link($current)) {
+                continue;
+            }
+
+            $stat = lstat($current);
+
+            if ($stat === false) {
+                throw ValidationException::withMessages(['generation' => 'Unable to inspect a generation destination.']);
+            }
+
+            $resolved = realpath($current);
+            $isFile = $index === count($parts) - 1;
+
+            if (is_link($current) || $resolved === false
+                || ! str_starts_with($normalize($resolved), rtrim($normalize($root), '/').'/')
+                || ($stat['mode'] & 0170000) !== ($isFile ? 0100000 : 0040000)
+                || ($isFile && $stat['nlink'] > 1)) {
+                throw ValidationException::withMessages(['generation' => 'Generation refuses linked, special or redirected destinations.']);
+            }
+        }
+    }
+
+    private function ownershipMarker(CrudBlueprint $blueprint, string $path): string
+    {
+        $relative = substr(str_replace('\\', '/', $path), strlen(rtrim(str_replace('\\', '/', base_path()), '/')) + 1);
+
+        return '// @start-kit-crud:'.hash('sha256', implode('|', ['v1', $blueprint->target, $blueprint->model, $blueprint->module, $relative]));
+    }
+
+    private function ownedContent(CrudBlueprint $blueprint, string $path, string $content): string
+    {
+        $marker = $this->ownershipMarker($blueprint, $path)."\n";
+
+        return str_ends_with($path, '.php') ? "<?php\n".$marker.substr($content, strlen("<?php\n")) : $marker.$content;
+    }
+
+    private function ownsFile(CrudBlueprint $blueprint, string $path): bool
+    {
+        $prefix = str_ends_with($path, '.php') ? "<?php\n" : '';
+
+        return str_starts_with($this->files->get($path), $prefix.$this->ownershipMarker($blueprint, $path)."\n");
+    }
+
+    /** @param array<string, string> $writes */
+    private function persistGeneration(array $writes): void
+    {
+        $originals = [];
+
+        foreach ($writes as $path => $content) {
+            $this->assertDestination($path);
+
+            if (str_ends_with($path, '.php')) {
+                try {
+                    $this->assertPhpSymbols(token_get_all($content, TOKEN_PARSE));
+                } catch (ParseError $error) {
+                    throw ValidationException::withMessages(['generation' => 'Generated PHP or its central registration is invalid: '.$error->getMessage()]);
+                }
+            }
+
+            $exists = is_file($path);
+            $originals[$path] = ['content' => $exists ? $this->files->get($path) : null, 'mode' => $exists ? fileperms($path) & 0777 : null];
+        }
+
+        $attempted = [];
+        $directories = [];
+
+        try {
+            foreach ($writes as $path => $content) {
+                if ($originals[$path]['content'] === $content) {
+                    continue;
+                }
+
+                $this->assertDestination($path);
+
+                for ($directory = dirname($path); ! is_dir($directory); $directory = dirname($directory)) {
+                    $directories[$directory] = $directory;
+                }
+
+                $this->files->ensureDirectoryExists(dirname($path));
+                $attempted[] = $path;
+                $this->replaceFile($path, $content, $originals[$path]['mode']);
+            }
+        } catch (Throwable $failure) {
+            $rollbackErrors = [];
+
+            foreach (array_reverse($attempted) as $path) {
+                try {
+                    $this->assertDestination($path);
+                    $original = $originals[$path];
+
+                    if ($original['content'] !== null) {
+                        if (! is_file($path) || $this->files->get($path) !== $original['content'] || (fileperms($path) & 0777) !== $original['mode']) {
+                            $this->replaceFile($path, $original['content'], $original['mode']);
+                        }
+                    } elseif (is_file($path) && ! $this->files->delete($path)) {
+                        throw new RuntimeException('Unable to remove a new generation file.');
+                    }
+                } catch (Throwable $rollbackFailure) {
+                    $rollbackErrors[] = $rollbackFailure->getMessage();
+                }
+            }
+
+            uksort($directories, fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+            foreach ($directories as $directory) {
+                if (is_dir($directory) && ! is_link($directory) && scandir($directory) === ['.', '..']) {
+                    rmdir($directory);
+                }
+            }
+
+            if ($rollbackErrors !== []) {
+                throw new RuntimeException('Generation failed and rollback was incomplete: '.implode('; ', $rollbackErrors), 0, $failure);
+            }
+
+            throw $failure;
+        }
+    }
+
+    private function replaceFile(string $path, string $content, ?int $mode): void
+    {
+        $this->assertDestination($path);
+        $mode ??= 0666 & ~umask();
+        $staging = dirname($path).'/.start-kit-crud-'.bin2hex(random_bytes(16));
+        $temporary = $staging.'/content';
+        $this->assertDestination($temporary);
+
+        if (! $this->files->makeDirectory($staging, 0700)) {
+            throw new RuntimeException('Unable to create private generation staging.');
+        }
+
+        $failure = null;
+
+        try {
+            $this->assertDestination($temporary);
+            $this->files->replace($temporary, $content, $mode);
+            $this->assertDestination($temporary);
+
+            if (! is_file($temporary) || $this->files->get($temporary) !== $content || (fileperms($temporary) & 0777) !== $mode) {
+                throw new RuntimeException('A generation file was not written completely with its original permissions.');
+            }
+
+            $this->assertDestination($path);
+
+            if (! $this->files->move($temporary, $path)) {
+                throw new RuntimeException('Unable to replace a generation file atomically.');
+            }
+
+            $this->assertDestination($path);
+
+            if ($this->files->get($path) !== $content || (fileperms($path) & 0777) !== $mode) {
+                throw new RuntimeException('A generation file was not written completely with its original permissions.');
+            }
+        } catch (Throwable $error) {
+            $failure = $error;
+
+            throw $error;
+        } finally {
+            try {
+                foreach (scandir($staging) as $entry) {
+                    if ($entry === '.' || $entry === '..') {
+                        continue;
+                    }
+
+                    $this->assertDestination($staging.'/'.$entry);
+
+                    if (! $this->files->delete($staging.'/'.$entry)) {
+                        throw new RuntimeException('Unable to remove an owned generation temporary file.');
+                    }
+                }
+
+                if (! rmdir($staging)) {
+                    throw new RuntimeException('Unable to remove private generation staging.');
+                }
+            } catch (Throwable $cleanupFailure) {
+                throw new RuntimeException('Generation staging cleanup failed: '.$cleanupFailure->getMessage(), 0, $failure ?? $cleanupFailure);
+            }
+        }
+    }
+
+    /**
+     * @param  list<array{int, string, int}|string>  $tokens
+     * @return list<array{class: string, alias: string}>
+     */
+    private function assertPhpSymbols(array $tokens): array
+    {
+        $depth = 0;
+        $namespaceDepth = 0;
+        $namespaceCount = 0;
+        $symbols = [];
+        $imports = [];
+
+        for ($index = 0; $index < count($tokens); $index++) {
+            $token = $tokens[$index];
+
+            if ($token === '{' || (is_array($token) && in_array($token[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true))) {
+                $depth++;
+            } elseif ($token === '}') {
+                if ($depth === $namespaceDepth) {
+                    $symbols = [];
+                    $namespaceDepth = 0;
+                }
+
+                $depth--;
+            }
+
+            if (! is_array($token)) {
+                continue;
+            }
+
+            if ($token[0] === T_NAMESPACE) {
+                if (++$namespaceCount > 1) {
+                    throw ValidationException::withMessages(['generation' => 'Multiple PHP namespaces require manual registration review.']);
+                }
+
+                $symbols = [];
+
+                while (isset($tokens[++$index]) && $tokens[$index] !== ';' && $tokens[$index] !== '{') {
+                    continue;
+                }
+
+                if (($tokens[$index] ?? null) === '{') {
+                    $depth++;
+                }
+
+                $namespaceDepth = $depth;
+            } elseif ($token[0] === T_USE && $depth === $namespaceDepth) {
+                $next = $index + 1;
+
+                while (isset($tokens[$next]) && is_array($tokens[$next]) && in_array($tokens[$next][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    $next++;
+                }
+
+                if (($tokens[$next] ?? null) === '(') {
+                    continue;
+                }
+
+                $statement = '';
+
+                while (isset($tokens[++$index]) && $tokens[$index] !== ';') {
+                    $part = $tokens[$index];
+
+                    if (is_array($part)) {
+                        $statement .= in_array($part[0], [T_COMMENT, T_DOC_COMMENT], true) ? ' ' : $part[1];
+                    } else {
+                        $statement .= $part;
+                    }
+                }
+
+                foreach ($this->importDeclarations($statement) as $import) {
+                    if (isset($symbols[$import['alias']])) {
+                        throw ValidationException::withMessages(['generation' => 'Conflicting PHP imports or declarations require a different generation name.']);
+                    }
+
+                    $symbols[$import['alias']] = true;
+                    $imports[] = $import;
+                }
+            } elseif (in_array($token[0], [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true)) {
+                $next = $index + 1;
+
+                while (isset($tokens[$next]) && is_array($tokens[$next]) && in_array($tokens[$next][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    $next++;
+                }
+
+                if (isset($tokens[$next]) && is_array($tokens[$next]) && $tokens[$next][0] === T_STRING) {
+                    $alias = strtolower($tokens[$next][1]);
+
+                    if (isset($symbols[$alias])) {
+                        throw ValidationException::withMessages(['generation' => 'Conflicting PHP imports or declarations require a different generation name.']);
+                    }
+
+                    $symbols[$alias] = true;
+                }
+            }
+        }
+
+        return $imports;
+    }
+
+    /** @return list<array{class: string, alias: string}> */
+    private function importDeclarations(string $statement): array
+    {
+        $statement = trim($statement);
+
+        if (str_starts_with($statement, '(') || preg_match('/\A(?:function|const)\s+/i', $statement)) {
+            return [];
+        }
+
+        $group = strpos($statement, '{');
+        $prefix = '';
+
+        if ($group !== false) {
+            $end = strrpos($statement, '}');
+
+            if ($end === false) {
+                throw ValidationException::withMessages(['generation' => 'Unable to inspect a grouped PHP import.']);
+            }
+
+            $prefix = rtrim(trim(substr($statement, 0, $group)), '\\').'\\';
+            $statement = substr($statement, $group + 1, $end - $group - 1);
+        }
+
+        $imports = [];
+
+        foreach (explode(',', $statement) as $entry) {
+            $entry = trim($entry);
+
+            if ($entry === '' || preg_match('/\A(?:function|const)\s+/i', $entry)) {
+                continue;
+            }
+
+            $parts = preg_split('/\s+as\s+/i', $entry);
+
+            if ($parts === false) {
+                throw ValidationException::withMessages(['generation' => 'Unable to inspect a PHP import.']);
+            }
+
+            $class = ltrim($prefix.trim($parts[0]), '\\');
+            $alias = count($parts) === 2 ? trim($parts[1]) : Str::afterLast($class, '\\');
+            $imports[] = ['class' => $class, 'alias' => strtolower($alias)];
+        }
+
+        return $imports;
+    }
+
+    private function hasPhpImport(string $contents, string $class): bool
+    {
+        $alias = strtolower(Str::afterLast($class, '\\'));
+
+        foreach ($this->assertPhpSymbols(token_get_all($contents, TOKEN_PARSE)) as $import) {
+            if ($import['class'] === $class && $import['alias'] === $alias) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -113,7 +636,7 @@ class CrudGeneratorService
         }
 
         return array_map(
-            fn (string $path, string $content): CrudGeneratedFile => new CrudGeneratedFile($path, $content, $this->files->exists($path)),
+            fn (string $path, string $content): CrudGeneratedFile => new CrudGeneratedFile($path, $this->ownedContent($blueprint, $path, $content), $this->files->exists($path)),
             array_keys($files),
             array_values($files),
         );
@@ -133,7 +656,7 @@ class CrudGeneratorService
             array_unshift(
                 $changes,
                 "Register {$blueprint->controllerClass()} in routes/web.php",
-                "Register {$blueprint->apiControllerClass()} in routes/api.php",
+                "Register {$blueprint->apiControllerClass()} in routes/api/api.php",
             );
 
             if ($blueprint->withObserver) {
@@ -190,11 +713,25 @@ class CrudGeneratorService
 
     private function migrationPath(CrudBlueprint $blueprint): string
     {
-        if ($blueprint->isAppTarget()) {
-            return database_path('migrations/'.$this->migrationName($blueprint));
+        $directory = $blueprint->isAppTarget() ? database_path('migrations') : app_path("Modules/{$blueprint->module}/Database/Migrations");
+        $path = $directory.'/'.$this->migrationName($blueprint);
+        $this->assertDestination($path);
+        $candidates = $this->files->glob($directory.'/*_create_'.$blueprint->tableName().'_table.php');
+
+        if (count($candidates) > 1) {
+            throw ValidationException::withMessages(['generation' => 'Multiple create-table migrations require manual review.']);
         }
 
-        return app_path("Modules/{$blueprint->module}/Database/Migrations/".$this->migrationName($blueprint));
+        if ($candidates !== []) {
+            $path = $candidates[0];
+            $this->assertDestination($path);
+
+            if (! $this->ownsFile($blueprint, $path)) {
+                throw ValidationException::withMessages(['generation' => 'An existing create-table migration is not owned by this generation.']);
+            }
+        }
+
+        return $path;
     }
 
     private function factoryPath(CrudBlueprint $blueprint): string
@@ -233,153 +770,157 @@ class CrudGeneratorService
         return app_path("Modules/{$blueprint->module}/Observers/{$blueprint->model}Observer.php");
     }
 
-    private function registerProvider(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerProvider(CrudBlueprint $blueprint): array
     {
         $path = base_path('bootstrap/providers.php');
         $contents = $this->files->get($path);
         $use = "use {$blueprint->providerClass()};";
-        $entry = "    {$blueprint->module}ServiceProvider::class,";
+        $entry = "{$blueprint->module}ServiceProvider::class,";
+        $newline = $this->lineEnding($contents);
 
-        if (! str_contains($contents, $use)) {
-            $contents = preg_replace('/(use App\\\\Providers\\\\TelescopeServiceProvider;\R)/', "$1{$use}\n", $contents) ?? $contents;
+        if (! $this->hasPhpImport($contents, $blueprint->providerClass())) {
+            $contents = $this->patchUnique($contents, '/^use App\\\\Providers\\\\TelescopeServiceProvider;\R/m', fn (array $match): string => $match[0].$use.$newline);
         }
 
-        if (! str_contains($contents, $entry)) {
-            $contents = str_replace("    NotificationsServiceProvider::class,\n", "    NotificationsServiceProvider::class,\n{$entry}\n", $contents);
+        if (! $this->hasExactClassEntry($contents, $entry)) {
+            $contents = $this->patchUnique($contents, '/^([ \t]*)NotificationsServiceProvider::class,[ \t]*\R/m', fn (array $match): string => $match[0].$match[1].$entry.$newline);
         }
 
-        $this->files->put($path, $contents);
+        return [$path => $contents];
     }
 
-    private function registerWebRoute(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerWebRoute(CrudBlueprint $blueprint): array
     {
         $path = base_path('routes/web.php');
         $contents = $this->files->get($path);
         $use = "use {$blueprint->controllerClass()};";
-        $route = "    Route::resource('{$blueprint->routeName()}', {$blueprint->model}Controller::class)\n        ->parameters(['{$blueprint->routeName()}' => '{$blueprint->modelVariable()}']);\n\n";
+        $newline = $this->lineEnding($contents);
 
-        if (! str_contains($contents, $use)) {
-            $contents = preg_replace('/(use App\\\\Http\\\\Controllers\\\\UserController;\R)/', "$1{$use}\n", $contents, 1) ?? $contents;
+        if (! $this->hasPhpImport($contents, $blueprint->controllerClass())) {
+            $contents = $this->patchUnique($contents, '/^use App\\\\Http\\\\Controllers\\\\AppController;\R/m', fn (array $match): string => $match[0].$use.$newline);
         }
 
         if (! str_contains($contents, "Route::resource('{$blueprint->routeName()}', {$blueprint->model}Controller::class)")) {
-            $contents = str_replace("    Route::resource('users', UserController::class);\n", "    Route::resource('users', UserController::class);\n\n{$route}", $contents);
+            // Best Play keeps ACL resources in routes/admin.php and module routes inside each module; generated CRUDs follow the dashboard route of routes/web.php.
+            $contents = $this->patchUnique($contents, "/^([ \t]*)Route::get\('dashboard', \[AppController::class, 'dashboard'\]\)->name\('app\.dashboard'\);[ \t]*\R/m", fn (array $match): string => $match[0].$newline.$match[1]."Route::resource('{$blueprint->routeName()}', {$blueprint->model}Controller::class)".$newline.$match[1]."    ->parameters(['{$blueprint->routeName()}' => '{$blueprint->modelVariable()}']);".$newline);
         }
 
-        $this->files->put($path, $contents);
+        return [$path => $contents];
     }
 
-    private function registerApiRouteFile(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerApiRouteFile(CrudBlueprint $blueprint): array
     {
-        $path = base_path('routes/api.php');
+        $path = base_path('routes/api/api.php');
         $contents = $this->files->get($path);
         $use = "use {$blueprint->apiControllerClass()};";
-        $route = "        Route::apiResource('{$blueprint->routeName()}', {$blueprint->model}ApiController::class)\n            ->parameters(['{$blueprint->routeName()}' => '{$blueprint->modelVariable()}']);\n\n";
+        $newline = $this->lineEnding($contents);
 
-        if (! str_contains($contents, $use)) {
-            $contents = preg_replace('/(use App\\\\Http\\\\Controllers\\\\Api\\\\UserApiController;\R)/', "$1{$use}\n", $contents, 1) ?? $contents;
+        if (! $this->hasPhpImport($contents, $blueprint->apiControllerClass())) {
+            $contents = $this->patchUnique($contents, '/^use App\\\\Http\\\\Controllers\\\\Api\\\\UserApiController;\R/m', fn (array $match): string => $match[0].$use.$newline);
         }
 
         if (! str_contains($contents, "Route::apiResource('{$blueprint->routeName()}', {$blueprint->model}ApiController::class)")) {
-            $contents = str_replace("        Route::apiResource('users', UserApiController::class)->only('index');\n", "        Route::apiResource('users', UserApiController::class)->only('index');\n\n{$route}", $contents);
+            $contents = $this->patchUnique($contents, "/^([ \t]*)Route::apiResource\('users', UserApiController::class\)->only\('index'\);[ \t]*\R/m", fn (array $match): string => $match[0].$newline.$match[1]."Route::apiResource('{$blueprint->routeName()}', {$blueprint->model}ApiController::class)".$newline.$match[1]."    ->parameters(['{$blueprint->routeName()}' => '{$blueprint->modelVariable()}']);".$newline);
         }
 
-        $this->files->put($path, $contents);
+        return [$path => $contents];
     }
 
-    private function registerAppObserver(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerAppObserver(CrudBlueprint $blueprint): array
     {
         $path = app_path('Providers/AppServiceProvider.php');
         $contents = $this->files->get($path);
         $modelUse = "use {$blueprint->modelClass()};";
         $observerUse = "use {$blueprint->observerClass()};";
-        $registration = "        {$blueprint->model}::observe({$blueprint->model}Observer::class);";
+        $registration = "{$blueprint->model}::observe({$blueprint->model}Observer::class);";
+        $newline = $this->lineEnding($contents);
 
-        if (! str_contains($contents, $modelUse)) {
-            $contents = preg_replace('/(use App\\\\Listeners\\\\LogUserLogin;\R)/', "$1{$modelUse}\n", $contents, 1) ?? $contents;
+        if (! $this->hasPhpImport($contents, $blueprint->modelClass())) {
+            $contents = $this->patchUnique($contents, '/^use App\\\\Listeners\\\\LogUserLogin;\R/m', fn (array $match): string => $match[0].$modelUse.$newline);
         }
 
-        if (! str_contains($contents, $observerUse)) {
-            $contents = preg_replace('/(use App\\\\Listeners\\\\LogUserLogin;\R)/', "$1{$observerUse}\n", $contents, 1) ?? $contents;
+        if (! $this->hasPhpImport($contents, $blueprint->observerClass())) {
+            $contents = $this->patchUnique($contents, '/^use App\\\\Listeners\\\\LogUserLogin;\R/m', fn (array $match): string => $match[0].$observerUse.$newline);
         }
 
         if (! str_contains($contents, $registration)) {
-            if (str_contains($contents, '    private function registerObservers(): void {}')) {
-                $contents = str_replace(
-                    '    private function registerObservers(): void {}',
-                    "    private function registerObservers(): void\n    {\n{$registration}\n    }",
-                    $contents,
-                );
+            if (preg_match('/private function registerObservers\(\): void[ \t]*\{\}/', $contents)) {
+                $contents = $this->patchUnique($contents, '/^([ \t]*)private function registerObservers\(\): void[ \t]*\{\}[ \t]*\R/m', fn (array $match): string => $match[1].'private function registerObservers(): void'.$newline.$match[1].'{'.$newline.$match[1].'    '.$registration.$newline.$match[1].'}'.$newline);
             } else {
-                $contents = preg_replace('/(private function registerObservers\(\): void\R    \{\R)/', "$1{$registration}\n", $contents, 1) ?? $contents;
+                $contents = $this->patchUnique($contents, '/^([ \t]*)private function registerObservers\(\): void\R[ \t]*\{\R/m', fn (array $match): string => $match[0].$match[1].'    '.$registration.$newline);
             }
         }
 
-        $this->files->put($path, $contents);
+        return [$path => $contents];
     }
 
-    private function registerExportModel(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerExportModel(CrudBlueprint $blueprint): array
     {
         if (! $blueprint->withExport) {
-            return;
+            return [];
         }
 
         $path = config_path('exports.php');
         $contents = $this->files->get($path);
         $use = "use {$blueprint->modelClass()};";
-        $entry = "        {$blueprint->model}::class,";
+        $entry = "{$blueprint->model}::class,";
+        $newline = $this->lineEnding($contents);
 
-        if (! str_contains($contents, $use)) {
-            $contents = preg_replace('/(<\?php\R\R)/', "$1{$use}\n", $contents, 1) ?? $contents;
+        if (! $this->hasPhpImport($contents, $blueprint->modelClass())) {
+            $contents = $this->patchUnique($contents, '/\A<\?php\R/', fn (array $match): string => $match[0].$newline.$use.$newline);
         }
 
-        if (! str_contains($contents, $entry)) {
-            $contents = str_replace("        User::class,\n", "        User::class,\n{$entry}\n", $contents);
+        if (! $this->hasExactClassEntry($contents, $entry)) {
+            $contents = $this->patchUnique($contents, '/^([ \t]*)User::class,[ \t]*\R/m', fn (array $match): string => $match[0].$match[1].$entry.$newline);
         }
 
-        $this->files->put($path, $contents);
+        return [$path => $contents];
     }
 
-    private function registerNavigation(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerNavigation(CrudBlueprint $blueprint): array
     {
         $path = config_path('navigation.php');
         $contents = $this->files->get($path);
-        $prefix = "                '/{$blueprint->routeName()}',";
-        $slug = Str::snake($blueprint->routeName());
+        $prefix = "'/{$blueprint->routeName()}',";
+        $slug = Str::snake(Str::pluralStudly($blueprint->model));
+        $newline = $this->lineEnding($contents);
 
         if (! str_contains($contents, $prefix)) {
-            $contents = str_replace("                '/exportacoes',\n", "{$prefix}\n                '/exportacoes',\n", $contents);
+            $contents = $this->patchUnique($contents, "/^([ \t]*)'\/exportacoes',[ \t]*\R/m", fn (array $match): string => $match[1].$prefix.$newline.$match[0]);
         }
 
         if (! str_contains($contents, "'slug' => '{$slug}'")) {
-            $item = <<<PHP
-                [
-                    'slug' => '{$slug}',
-                    'label' => '{$this->humanPlural($blueprint)}',
-                    'icon' => '{$blueprint->icon}',
-                    'type' => 'link',
-                    'href' => ['route' => '{$blueprint->routeName()}.index'],
-                    'order' => 6,
-                    'enabled' => true,
-                    'visible' => true,
-                ],
-
-PHP;
-
-            $contents = str_replace("                [\n                    'slug' => 'exportacoes',", $item."                [\n                    'slug' => 'exportacoes',", $contents);
+            $rows = [
+                "'slug' => ".var_export($slug, true).',',
+                "'label' => ".var_export($this->humanPlural($blueprint), true).',',
+                "'icon' => ".var_export($blueprint->icon, true).',',
+                "'type' => 'link',",
+                "'href' => ['route' => ".var_export($blueprint->routeName().'.index', true).'],',
+                "'order' => 6,", "'enabled' => true,", "'visible' => true,",
+            ];
+            $contents = $this->patchUnique($contents, "/^([ \t]*)\[\R([ \t]*)'slug' => 'exportacoes',/m", function (array $match) use ($rows, $newline): string {
+                return $match[1].'['.$newline.implode($newline, array_map(fn (string $row): string => $match[2].$row, $rows)).$newline.$match[1].'],'.$newline.$match[0];
+            });
         }
 
-        $this->files->put($path, $contents);
+        return [$path => $contents];
     }
 
-    private function registerApiRoute(CrudBlueprint $blueprint): void
+    /** @return array<string, string> */
+    private function registerApiRoute(CrudBlueprint $blueprint): array
     {
         $path = resource_path('js/lib/api/api-routes.ts');
         $contents = $this->files->get($path);
         $key = Str::camel($blueprint->modelPluralVariable());
 
         if (str_contains($contents, "    {$key}: {")) {
-            return;
+            return [];
         }
 
         $block = <<<TS
@@ -393,8 +934,52 @@ PHP;
 
 TS;
 
-        $contents = str_replace("    exports: {\n", $block."    exports: {\n", $contents);
-        $this->files->put($path, $contents);
+        $contents = $this->patchUnique($contents, '/^([ \t]*)exports:[ \t]*\{\R/m', fn (array $match): string => str_replace("\n", $this->lineEnding($contents), $block).$match[0]);
+
+        return [$path => $contents];
+    }
+
+    /** @param Closure(array<int, string>): string $replace */
+    private function patchUnique(string $contents, string $pattern, Closure $replace): string
+    {
+        $updated = preg_replace_callback($pattern, $replace, $contents, -1, $count);
+
+        if ($updated === null || $count !== 1) {
+            throw ValidationException::withMessages(['generation' => 'A central registration anchor is missing or ambiguous. Review the project before generation.']);
+        }
+
+        return $updated;
+    }
+
+    private function lineEnding(string $contents): string
+    {
+        return str_contains($contents, "\r\n") ? "\r\n" : "\n";
+    }
+
+    private function hasExactClassEntry(string $contents, string $entry): bool
+    {
+        $class = Str::before($entry, '::class,');
+        $tokens = array_values(array_filter(token_get_all($contents, TOKEN_PARSE), fn (array|string $token): bool => ! is_array($token) || ! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)));
+        $count = 0;
+
+        for ($index = 0; $index + 3 < count($tokens); $index++) {
+            $name = $tokens[$index];
+            $separator = $tokens[$index + 1];
+            $keyword = $tokens[$index + 2];
+
+            if (is_array($name) && $name[0] === T_STRING && $name[1] === $class
+                && is_array($separator) && $separator[0] === T_DOUBLE_COLON
+                && is_array($keyword) && $keyword[0] === T_STRING && strcasecmp($keyword[1], 'class') === 0
+                && $tokens[$index + 3] === ',') {
+                $count++;
+            }
+        }
+
+        if ($count > 1) {
+            throw ValidationException::withMessages(['generation' => 'A central class registration is ambiguous.']);
+        }
+
+        return $count === 1;
     }
 
     private function provider(CrudBlueprint $blueprint): string
@@ -449,7 +1034,7 @@ Route::middleware(['web', 'auth', 'verified'])->group(function (): void {
 
 Route::prefix('api/v1')
     ->as('api.')
-    ->middleware('auth:sanctum')
+    ->middleware(['api', 'auth:sanctum'])
     ->group(function (): void {
         Route::apiResource('{$blueprint->routeName()}', {$blueprint->model}ApiController::class)
             ->parameters(['{$blueprint->routeName()}' => '{$blueprint->modelVariable()}']);
@@ -551,6 +1136,7 @@ use {$requestNamespace}\\Update{$blueprint->model}Request;
 use {$resourceClass};
 use {$modelClass};
 use Illuminate\\Http\\RedirectResponse;
+use Illuminate\\Support\\Facades\\Gate;
 use Inertia\\Inertia;
 use Inertia\\Response;
 
@@ -558,25 +1144,35 @@ class {$blueprint->model}Controller extends Controller
 {
     public function index(): Response
     {
+        Gate::authorize('viewAny', {$blueprint->model}::class);
+
         return Inertia::render('app/{$blueprint->pageDirectory()}/index');
     }
 
     public function create(): Response
     {
+        Gate::authorize('create', {$blueprint->model}::class);
+
         return Inertia::render('app/{$blueprint->pageDirectory()}/create');
     }
 
     public function store(Store{$blueprint->model}Request \$request): RedirectResponse
     {
+        Gate::authorize('create', {$blueprint->model}::class);
+
         \${$var} = {$blueprint->model}::create(\$request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('{$blueprint->model} created.')]);
 
-        return to_route('{$blueprint->routeName()}.show', \${$var});
+        return Gate::allows('view', \${$var})
+            ? to_route('{$blueprint->routeName()}.show', \${$var})
+            : to_route('{$blueprint->routeName()}.create');
     }
 
     public function show({$blueprint->model} \${$var}): Response
     {
+        Gate::authorize('view', \${$var});
+
         return Inertia::render('app/{$blueprint->pageDirectory()}/show', [
             '{$var}Data' => new {$blueprint->model}Resource(\${$var}),
         ]);
@@ -584,6 +1180,8 @@ class {$blueprint->model}Controller extends Controller
 
     public function edit({$blueprint->model} \${$var}): Response
     {
+        Gate::authorize('update', \${$var});
+
         return Inertia::render('app/{$blueprint->pageDirectory()}/edit', [
             '{$var}Data' => new {$blueprint->model}Resource(\${$var}),
         ]);
@@ -591,20 +1189,30 @@ class {$blueprint->model}Controller extends Controller
 
     public function update(Update{$blueprint->model}Request \$request, {$blueprint->model} \${$var}): RedirectResponse
     {
+        Gate::authorize('update', \${$var});
+
         \${$var}->update(\$request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('{$blueprint->model} updated.')]);
 
-        return to_route('{$blueprint->routeName()}.show', \${$var});
+        return Gate::allows('view', \${$var})
+            ? to_route('{$blueprint->routeName()}.show', \${$var})
+            : to_route('{$blueprint->routeName()}.edit', \${$var});
     }
 
     public function destroy({$blueprint->model} \${$var}): RedirectResponse
     {
+        Gate::authorize('delete', \${$var});
+
         \${$var}->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('{$blueprint->model} deleted.')]);
 
-        return to_route('{$blueprint->routeName()}.index', [], 303);
+        if (Gate::allows('viewAny', {$blueprint->model}::class)) {
+            return to_route('{$blueprint->routeName()}.index', [], 303);
+        }
+
+        return to_route('app.dashboard', [], 303);
     }
 }
 
@@ -635,16 +1243,21 @@ use {$modelClass};
 use App\\Supports\\Api\\ApiDisplay;
 use Illuminate\\Http\\JsonResponse;
 use Illuminate\\Http\\Resources\\Json\\AnonymousResourceCollection;
+use Illuminate\\Support\\Facades\\Gate;
 
 class {$blueprint->model}ApiController extends Controller
 {
     public function index(PaginationRequest \$request): AnonymousResourceCollection
     {
+        Gate::authorize('viewAny', {$blueprint->model}::class);
+
         return ApiDisplay::for({$blueprint->model}::class, {$blueprint->model}Resource::class)->paginate(\$request);
     }
 
     public function store(Store{$blueprint->model}Request \$request): {$blueprint->model}Resource
     {
+        Gate::authorize('create', {$blueprint->model}::class);
+
         \${$var} = {$blueprint->model}::create(\$request->validated());
 
         return new {$blueprint->model}Resource(\${$var});
@@ -652,11 +1265,15 @@ class {$blueprint->model}ApiController extends Controller
 
     public function show({$blueprint->model} \${$var}): {$blueprint->model}Resource
     {
+        Gate::authorize('view', \${$var});
+
         return new {$blueprint->model}Resource(\${$var});
     }
 
     public function update(Update{$blueprint->model}Request \$request, {$blueprint->model} \${$var}): {$blueprint->model}Resource
     {
+        Gate::authorize('update', \${$var});
+
         \${$var}->update(\$request->validated());
 
         return new {$blueprint->model}Resource(\${$var});
@@ -664,6 +1281,8 @@ class {$blueprint->model}ApiController extends Controller
 
     public function destroy({$blueprint->model} \${$var}): JsonResponse
     {
+        Gate::authorize('delete', \${$var});
+
         \${$var}->delete();
 
         return response()->json(null, 204);
@@ -688,6 +1307,10 @@ PHP;
         $class = ($update ? 'Update' : 'Store').$blueprint->model.'Request';
         $rules = $this->rules($blueprint, $update);
         $namespace = $blueprint->requestNamespace();
+        $modelClass = $blueprint->modelClass();
+        $authorization = $update
+            ? "\$model = \$this->route('{$blueprint->modelVariable()}');\n\n        return \$model instanceof {$blueprint->model} && (\$this->user()?->can('update', \$model) ?? false);"
+            : "return \$this->user()?->can('create', {$blueprint->model}::class) ?? false;";
 
         return <<<PHP
 <?php
@@ -696,6 +1319,7 @@ declare(strict_types=1);
 
 namespace {$namespace};
 
+use {$modelClass};
 use Illuminate\\Foundation\\Http\\FormRequest;
 use Illuminate\\Validation\\Rule;
 
@@ -703,7 +1327,7 @@ class {$class} extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        {$authorization}
     }
 
     /**
@@ -862,6 +1486,7 @@ PHP;
     {
         $namespace = Str::beforeLast($blueprint->policyClass(), '\\');
         $modelClass = $blueprint->modelClass();
+        $resource = $blueprint->routeName();
 
         return <<<PHP
 <?php
@@ -872,32 +1497,48 @@ namespace {$namespace};
 
 use App\\Models\\User;
 use {$modelClass};
+use Illuminate\\Support\\Facades\\Gate;
+use Laravel\\Sanctum\\PersonalAccessToken;
+use Laravel\\Sanctum\\TransientToken;
 
 class {$blueprint->model}Policy
 {
     public function viewAny(User \$user): bool
     {
-        return true;
+        return \$this->hasCapability(\$user, 'view-{$resource}');
     }
 
     public function view(User \$user, {$blueprint->model} \${$blueprint->modelVariable()}): bool
     {
-        return true;
+        return \$this->hasCapability(\$user, 'view-{$resource}');
     }
 
     public function create(User \$user): bool
     {
-        return true;
+        return \$this->hasCapability(\$user, 'create-{$resource}');
     }
 
     public function update(User \$user, {$blueprint->model} \${$blueprint->modelVariable()}): bool
     {
-        return true;
+        return \$this->hasCapability(\$user, 'update-{$resource}');
     }
 
     public function delete(User \$user, {$blueprint->model} \${$blueprint->modelVariable()}): bool
     {
-        return true;
+        return \$this->hasCapability(\$user, 'delete-{$resource}');
+    }
+
+    private function hasCapability(User \$user, string \$capability): bool
+    {
+        return Gate::forUser(\$user)->allows(\$capability)
+            && \$this->tokenAllows(\$user->currentAccessToken(), \$capability);
+    }
+
+    private function tokenAllows(mixed \$token, string \$capability): bool
+    {
+        return \$token === null || \$token instanceof TransientToken
+            || (\$token instanceof PersonalAccessToken && is_array(\$token->abilities)
+                && in_array(\$capability, \$token->abilities, true));
     }
 }
 
@@ -991,7 +1632,7 @@ TS;
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { create, destroy, edit, index, show } from '{$actionImport}';
@@ -1001,7 +1642,7 @@ import type {
     DataTableDateColumn,
 {$exportImports}    DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -1072,18 +1713,17 @@ export default function {$model}Index() {
         <>
             <Head title="{$humanPlural}" />
 
-            <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                        <Heading title="{$humanPlural}" description="Gerencie os registros de {$route}" />
-                        <Button asChild>
-                            <Link href={create.url()}>
-                                <Plus className="size-4" />
-                                Novo {$humanSingular}
-                            </Link>
-                        </Button>
-                    </div>
+            <Header title="{$humanPlural}" subtitle="Gerencie os registros de {$route}">
+                <Button asChild>
+                    <Link href={create.url()}>
+                        <Plus className="size-4" />
+                        Novo {$humanSingular}
+                    </Link>
+                </Button>
+            </Header>
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Dialog open={{$var}ToDelete !== null} onOpenChange={(open) => !open && set{$model}ToDelete(null)}>
                         <DialogContent>
                             <DialogHeader>
@@ -1094,9 +1734,11 @@ export default function {$model}Index() {
                             </DialogHeader>
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => set{$model}ToDelete(null)}>
+                                    <X className="size-4" />
                                     Cancelar
                                 </Button>
                                 <Button variant="destructive" onClick={delete{$model}}>
+                                    <Trash2 className="size-4" />
                                     Excluir
                                 </Button>
                             </DialogFooter>
@@ -1105,6 +1747,7 @@ export default function {$model}Index() {
 
                     <DataTable<{$model}>
                         queryKey="{$route}"
+                        tableId="{$route}"
                         endpoint={apiRoutes.{$apiKey}.index}
                         mode="infinite-scroll"
                         columns={columns}
@@ -1121,7 +1764,7 @@ export default function {$model}Index() {
                         actionsConfig={{ display: 'inline', label: 'Ações', buttonSize: 'icon', showTooltips: true, sticky: true }}
                         infiniteScrollConfig={{ fitViewport: true, viewportBottomOffset: 96, minHeight: 320 }}
                         appearance={{ size: 'md', gridLines: 'none', rowStyle: 'soft-striped' }}
-                        searchPlaceholder="Buscar {$route}..."
+                        searchPlaceholder="Buscar {$route}"
                     />
                 </div>
             </div>
@@ -1150,22 +1793,22 @@ TSX;
         $pageDir = $blueprint->pageDirectory();
         $actionImport = $blueprint->controllerActionImport();
         $humanSingular = $this->humanSingular($blueprint);
-        $humanPlural = $this->humanPlural($blueprint);
         $humanSingularLower = Str::lower($humanSingular);
+        $humanPlural = $this->humanPlural($blueprint);
         $displayField = $this->displayField($blueprint);
         $resourceType = Str::lower($humanSingular);
 
         if ($isEdit) {
             return <<<TSX
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { destroy, index, show, update } from '{$actionImport}';
 import DeleteButton from '@/components/delete-button';
 import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {$model}FormFields from '@/pages/app/{$pageDir}/partials/{$typePath}-form-fields';
 import type { {$model}Resource } from '@/types/app/{$typePath}';
@@ -1188,21 +1831,10 @@ export default function Edit{$model}({ {$var}Data }: Props) {
     });
 
     return (
-        <>
+        <div className="flex min-h-full flex-col">
             <Head title="Editar {$humanSingular}" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">{String({$var}.{$displayField} ?? {$var}.uuid)}</h1>
-                        <p className="text-sm text-muted-foreground">{$var}.uuid</p>
-                    </div>
-                </div>
+            <Header title={String({$var}.{$displayField} ?? {$var}.uuid)} backHref={index.url()}>
                 <div className="flex items-center gap-2">
                     <{$model}SubNav {$var}Uuid={{$var}.uuid} currentPage="edit" />
                     <Separator orientation="vertical" className="mx-1 h-6" />
@@ -1215,50 +1847,50 @@ export default function Edit{$model}({ {$var}Data }: Props) {
                 </div>
             </Header>
 
-            <div className="page-wrapper-sm">
-                <Form
-                    action={update.url({$var}.uuid)}
-                    method="put"
-                    options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatórios.')}
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <div className="space-y-4">
-                                <div className="flex flex-1 flex-col gap-6 ">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Informações de {$humanSingular}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <{$model}FormFields {$var}={{$var}} errors={errors} />
-                                        </CardContent>
-                                    </Card>
+            <Form
+                action={update.url({$var}.uuid)}
+                method="put"
+                options={{ preserveScroll: true }}
+                onError={() => toast.error('Verifique os campos obrigatórios.')}
+                className="flex flex-1 flex-col"
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="page-wrapper-md flex-1 pb-8">
+                            <section className="grid gap-x-10 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                                <div className="md:pt-6">
+                                    <h2 className="text-sm font-semibold">Informações do registro</h2>
+                                    <p className="mt-1 text-xs text-muted-foreground">Campos principais do cadastro.</p>
                                 </div>
+                                <Card>
+                                    <CardContent>
+                                        <{$model}FormFields {$var}={{$var}} errors={errors} />
+                                    </CardContent>
+                                </Card>
+                            </section>
+                        </div>
 
-                                <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
-                                    <div className="flex items-center justify-between gap-3 py-3">
-                                        <p className="text-xs text-muted-foreground">
-                                            Campos marcados com <span className="text-destructive">*</span> são obrigatórios
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <Button type="button" variant="ghost" size="sm" asChild disabled={processing}>
-                                                <Link href={show.url({$var}.uuid)}>Cancelar</Link>
-                                            </Button>
-                                            <Button type="submit" size="sm" disabled={processing}>
-                                                <Save />
-                                                {processing ? 'Salvando...' : 'Salvar'}
-                                            </Button>
-                                        </div>
-                                    </div>
+                        {/* Encaixado na base da área de conteúdo: visível mesmo com formulário curto ou longo. */}
+                        <div className="sticky bottom-0 z-10 border-t bg-card/95">
+                            <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                                <p className="hidden text-xs text-muted-foreground sm:block">
+                                    Campos marcados com <span className="text-destructive">*</span> são obrigatórios
+                                </p>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <Button type="button" variant="ghost" asChild disabled={processing}>
+                                        <Link href={show.url({$var}.uuid)}><X className="size-4" aria-hidden="true" />Cancelar</Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        <Save />
+                                        {processing ? 'Salvando...' : 'Salvar'}
+                                    </Button>
                                 </div>
                             </div>
-                        </>
-                    )}
-                </Form>
-            </div>
-        </>
+                        </div>
+                    </>
+                )}
+            </Form>
+        </div>
     );
 }
 
@@ -1267,13 +1899,13 @@ TSX;
 
         return <<<TSX
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { create, index, store } from '{$actionImport}';
 import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {$model}FormFields from '@/pages/app/{$pageDir}/partials/{$typePath}-form-fields';
 
 export default function Create{$model}() {
@@ -1285,67 +1917,55 @@ export default function Create{$model}() {
     });
 
     return (
-        <>
+        <div className="flex min-h-full flex-col">
             <Head title="Novo {$humanSingular}" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">Novo {$humanSingular}</h1>
-                        <p className="text-sm text-muted-foreground">Cadastrar novo {$humanSingularLower}</p>
-                    </div>
-                </div>
-            </Header>
+            <Header title="Novo {$humanSingular}" subtitle="Cadastrar novo {$humanSingularLower}" backHref={index.url()} />
 
-            <div className="page-wrapper-sm">
-                <Form
-                    action={store.url()}
-                    method="post"
-                    options={{ preserveScroll: true }}
-                    onError={() => toast.error('Verifique os campos obrigatórios.')}
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <div className="space-y-4">
-                                <div className="flex flex-1 flex-col gap-6 ">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Informações de {$humanSingular}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <{$model}FormFields errors={errors} />
-                                        </CardContent>
-                                    </Card>
+            <Form
+                action={store.url()}
+                method="post"
+                options={{ preserveScroll: true }}
+                onError={() => toast.error('Verifique os campos obrigatórios.')}
+                className="flex flex-1 flex-col"
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="page-wrapper-md flex-1 pb-8">
+                            <section className="grid gap-x-10 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                                <div className="md:pt-6">
+                                    <h2 className="text-sm font-semibold">Informações do registro</h2>
+                                    <p className="mt-1 text-xs text-muted-foreground">Campos principais do cadastro.</p>
                                 </div>
+                                <Card>
+                                    <CardContent>
+                                        <{$model}FormFields errors={errors} />
+                                    </CardContent>
+                                </Card>
+                            </section>
+                        </div>
 
-                                <div className="sticky bottom-0 border-t bg-canvas/95 backdrop-blur supports-backdrop-filter:bg-canvas/80">
-                                    <div className="flex items-center justify-between gap-3 py-3">
-                                        <p className="text-xs text-muted-foreground">
-                                            Campos marcados com <span className="text-destructive">*</span> são obrigatórios
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <Button type="button" variant="ghost" size="sm" asChild disabled={processing}>
-                                                <Link href={index.url()}>Cancelar</Link>
-                                            </Button>
-                                            <Button type="submit" size="sm" disabled={processing}>
-                                                <Save />
-                                                {processing ? 'Salvando...' : 'Salvar'}
-                                            </Button>
-                                        </div>
-                                    </div>
+                        {/* Encaixado na base da área de conteúdo: visível mesmo com formulário curto ou longo. */}
+                        <div className="sticky bottom-0 z-10 border-t bg-card/95">
+                            <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                                <p className="hidden text-xs text-muted-foreground sm:block">
+                                    Campos marcados com <span className="text-destructive">*</span> são obrigatórios
+                                </p>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <Button type="button" variant="ghost" asChild disabled={processing}>
+                                        <Link href={index.url()}><X className="size-4" aria-hidden="true" />Cancelar</Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        <Save />
+                                        {processing ? 'Salvando...' : 'Salvar'}
+                                    </Button>
                                 </div>
                             </div>
-                        </>
-                    )}
-                </Form>
-            </div>
-        </>
+                        </div>
+                    </>
+                )}
+            </Form>
+        </div>
     );
 }
 
@@ -1367,13 +1987,12 @@ TSX;
             ->implode("\n");
 
         return <<<TSX
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, CalendarDays } from 'lucide-react';
+import { Head, setLayoutProps } from '@inertiajs/react';
+import { CalendarDays } from 'lucide-react';
 
 import { destroy, index, show } from '{$actionImport}';
 import DeleteButton from '@/components/delete-button';
 import Header from '@/components/dashboard/header';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatDate } from '@/lib/utils';
@@ -1415,18 +2034,7 @@ export default function Show{$model}({ {$var}Data }: Props) {
         <>
             <Head title={String({$var}.{$displayField} ?? {$var}.uuid)} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="size-8" asChild>
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-semibold">{String({$var}.{$displayField} ?? {$var}.uuid)}</h1>
-                        <p className="text-sm text-muted-foreground">{$var}.uuid</p>
-                    </div>
-                </div>
+            <Header title={String({$var}.{$displayField} ?? {$var}.uuid)} backHref={index.url()}>
                 <div className="flex items-center gap-2">
                     <{$model}SubNav {$var}Uuid={{$var}.uuid} currentPage="show" />
                     <Separator orientation="vertical" className="mx-1 h-6" />
@@ -1440,17 +2048,16 @@ export default function Show{$model}({ {$var}Data }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="flex h-full flex-1 flex-col gap-6 p-4">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="grid gap-6 md:grid-cols-3">
                         <aside className="space-y-4 md:col-span-1">
                             <Card>
                                 <CardContent className="flex flex-col items-center gap-4 p-6">
-                                    <div className="flex size-20 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-bold text-primary">
+                                    <div className="flex size-20 items-center justify-center rounded-2xl bg-primary-soft text-2xl font-bold text-primary-soft-foreground">
                                         {initials}
                                     </div>
                                     <div className="text-center">
                                         <h2 className="text-lg font-semibold">{String({$var}.{$displayField} ?? {$var}.uuid)}</h2>
-                                        <p className="text-sm text-muted-foreground">{$var}.uuid</p>
                                     </div>
 
                                     <Separator className="w-full" />
@@ -1468,7 +2075,7 @@ export default function Show{$model}({ {$var}Data }: Props) {
                         <main className="space-y-6 md:col-span-2">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Informações de {$humanSingular}</CardTitle>
+                                    <CardTitle>Informações do registro</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-4 sm:grid-cols-2">
 {$fields}
@@ -1516,7 +2123,7 @@ const navItems: {
 }[] = [
     {
         key: 'show',
-        label: 'Visão Geral',
+        label: 'Detalhes',
         icon: Eye,
         getHref: (uuid) => show.url(uuid),
     },
@@ -1530,7 +2137,7 @@ const navItems: {
 
 export function {$model}SubNav({ {$var}Uuid, currentPage }: {$model}SubNavProps) {
     return (
-        <nav className="flex gap-1 rounded-lg border bg-muted/30 p-1">
+        <nav className="flex gap-1 rounded-lg border border-border bg-muted p-1">
             {navItems.map(({ key, label, icon: Icon, getHref }) => {
                 const isActive = key === currentPage;
 
@@ -1541,8 +2148,8 @@ export function {$model}SubNav({ {$var}Uuid, currentPage }: {$model}SubNavProps)
                         className={cn(
                             'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                             isActive
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
+                                ? 'bg-card text-foreground shadow-xs'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                         )}
                     >
                         <Icon className="size-3.5" />
@@ -1565,47 +2172,47 @@ TSX;
         $fields = collect($blueprint->fields)
             ->map(function (CrudField $field): string {
                 $fieldId = "field-{$field->name}";
-                $required = $field->nullable ? '' : "\n                    required";
+                $required = $field->nullable ? '' : "\n                required";
 
                 if ($field->type === 'boolean') {
                     return <<<TSX
-                <FormField
-                    id="{$fieldId}"
-                    label="{$field->label()}"
-                    variant="stacked"{$required}
-                    error={errors.{$field->name}}
-                >
-                    <div className="flex items-center gap-2">
-                        <input type="hidden" name="{$field->name}" value="0" />
-                        <input
-                            id="{$fieldId}"
-                            name="{$field->name}"
-                            type="checkbox"
-                            defaultChecked={Boolean(record?.{$field->name} ?? false)}
-                            value="1"
-                            aria-invalid={!!errors.{$field->name}}
-                            className="size-4 rounded-[4px] border border-input shadow-xs"
-                        />
-                    </div>
-                </FormField>
+            <FormField
+                id="{$fieldId}"
+                label="{$field->label()}"
+                variant="stacked"{$required}
+                error={errors.{$field->name}}
+            >
+                <div className="flex items-center gap-2">
+                    <input type="hidden" name="{$field->name}" value="0" />
+                    <input
+                        id="{$fieldId}"
+                        name="{$field->name}"
+                        type="checkbox"
+                        defaultChecked={Boolean(record?.{$field->name} ?? false)}
+                        value="1"
+                        aria-invalid={!!errors.{$field->name}}
+                        className="size-4 rounded-[4px] border border-input shadow-xs"
+                    />
+                </div>
+            </FormField>
 TSX;
                 }
 
                 return <<<TSX
-                <FormField
+            <FormField
+                id="{$fieldId}"
+                label="{$field->label()}"
+                variant="stacked"{$required}
+                error={errors.{$field->name}}
+            >
+                <Input
                     id="{$fieldId}"
-                    label="{$field->label()}"
-                    variant="stacked"{$required}
-                    error={errors.{$field->name}}
-                >
-                    <Input
-                        id="{$fieldId}"
-                        name="{$field->name}"
-                        type="{$field->inputType()}"
-                        defaultValue={record?.{$field->name} ?? ''}{$required}
-                        aria-invalid={!!errors.{$field->name}}
-                    />
-                </FormField>
+                    name="{$field->name}"
+                    type="{$field->inputType()}"
+                    defaultValue={record?.{$field->name} ?? ''}{$required}
+                    aria-invalid={!!errors.{$field->name}}
+                />
+            </FormField>
 TSX;
             })
             ->implode("\n\n");
@@ -1624,10 +2231,8 @@ export default function {$model}FormFields({ {$var}, errors }: Props) {
     const record = {$var};
 
     return (
-        <div className="grid gap-4">
-            <div className="grid gap-2 space-y-1">
+        <div className="grid gap-4 sm:grid-cols-2">
 {$fields}
-            </div>
         </div>
     );
 }
@@ -1637,8 +2242,6 @@ TSX;
 
     private function featureTest(CrudBlueprint $blueprint): string
     {
-        $modelClass = $blueprint->modelClass();
-
         return <<<PHP
 <?php
 
@@ -1647,32 +2250,33 @@ declare(strict_types=1);
 namespace Tests\\Feature\\Crud;
 
 use App\\Models\\User;
-use {$modelClass};
 use Illuminate\\Foundation\\Testing\\RefreshDatabase;
 use Tests\\TestCase;
 
+/**
+ * Add permitted-flow cases after explicitly integrating this domain's policy,
+ * functional capability catalog, and grants. Generation assigns no authority.
+ */
 class {$blueprint->model}CrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_authenticated_user_can_view_{$blueprint->modelVariable()}_index(): void
+    public function test_unconfigured_user_cannot_view_{$blueprint->modelVariable()}_index(): void
     {
         \$user = User::factory()->create();
 
         \$this->actingAs(\$user)
             ->get(route('{$blueprint->routeName()}.index'))
-            ->assertOk();
+            ->assertForbidden();
     }
 
-    public function test_api_returns_{$blueprint->modelVariable()}_records(): void
+    public function test_api_denies_{$blueprint->modelVariable()}_records_without_domain_authority(): void
     {
         \$user = User::factory()->create();
-        {$blueprint->model}::factory()->count(2)->create();
 
         \$this->actingAs(\$user)
             ->getJson('/api/v1/{$blueprint->routeName()}')
-            ->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertForbidden();
     }
 }
 
@@ -1731,7 +2335,7 @@ PHP;
                 }
 
                 foreach ($field->validation as $rule) {
-                    $rules[] = "'{$rule}'";
+                    $rules[] = var_export($rule, true);
                 }
 
                 if ($field->unique) {
@@ -1846,7 +2450,7 @@ TSX;
      */
     private function phpArray(array $items): string
     {
-        return '['.implode(', ', array_map(fn (string $item): string => "'{$item}'", $items)).']';
+        return '['.implode(', ', array_map(fn (string $item): string => var_export($item, true), $items)).']';
     }
 
     /**
@@ -1859,7 +2463,7 @@ TSX;
         }
 
         $lines = collect($fields)
-            ->map(fn (CrudField $field): string => "        '{$field->name}' => '{$field->label()}',")
+            ->map(fn (CrudField $field): string => '        '.var_export($field->name, true).' => '.var_export($field->label(), true).',')
             ->implode("\n");
 
         return "[\n{$lines}\n    ]";
@@ -1887,7 +2491,7 @@ TSX;
     {
         return collect($blueprint->fields)
             ->first(fn (CrudField $field): bool => $field->name === 'name')
-            ?->name ?? 'uuid';
+            ->name ?? 'uuid';
     }
 
     private function hasDateColumns(CrudBlueprint $blueprint): bool

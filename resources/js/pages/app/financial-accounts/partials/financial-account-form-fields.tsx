@@ -1,20 +1,21 @@
+import { Landmark } from 'lucide-react';
 import { useState } from 'react';
 
-import FormField from '@/components/ui/forms/form-field';
-import FormSection from '@/components/ui/forms/form-section';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import FormSection from '@/components/ui/forms/form-section';
+import { Input } from '@/components/ui/input';
+import { InputMoney } from '@/components/ui/input-money';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type {
     FinancialAccount,
-    FinancialAccountType,
     FinancialAccountTypeOption,
 } from '@/types/app/financial-account';
 
@@ -24,18 +25,30 @@ interface Props {
     errors: Record<string, string>;
 }
 
+/** InputMoney devolve reais em decimal; o backend recebe centavos inteiros. */
+function toCents(value: string): number {
+    return Math.round(Number(value) * 100);
+}
+
+function fromCents(cents: number): string {
+    return (cents / 100).toFixed(2);
+}
+
 export default function FinancialAccountFormFields({
     financialAccount,
     typeOptions,
     errors,
 }: Props) {
     const record = financialAccount;
-    const [type, setType] = useState<FinancialAccountType>(
-        record?.type ?? 'bank_account',
-    );
     const [active, setActive] = useState(record?.active ?? true);
     const [allowsNegativeBalance, setAllowsNegativeBalance] = useState(
         record?.allows_negative_balance ?? false,
+    );
+    const [openingBalance, setOpeningBalance] = useState(
+        record?.opening_balance_amount ?? 0,
+    );
+    const [currentBalance, setCurrentBalance] = useState(
+        record?.current_balance_amount ?? 0,
     );
 
     return (
@@ -87,24 +100,22 @@ export default function FinancialAccountFormFields({
                         required
                         error={errors.type}
                     >
-                        <input name="type" type="hidden" value={type} />
                         <Select
-                            value={type}
-                            onValueChange={(value) =>
-                                setType(value as FinancialAccountType)
-                            }
+                            name="type"
+                            defaultValue={record?.type ?? 'bank_account'}
                         >
                             <SelectTrigger
                                 id="field-type"
                                 className="w-full"
-                                aria-invalid={!!errors.type}
-                            >
-                                <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
+                                placeholder="Selecione o tipo"
+                                icon={Landmark}
+                                error={errors.type}
+                            />
                             <SelectContent>
-                                {typeOptions.map((option) => (
+                                {typeOptions.map((option, optionIndex) => (
                                     <SelectItem
                                         key={option.value}
+                                        index={optionIndex}
                                         value={option.value}
                                     >
                                         {option.label}
@@ -221,11 +232,25 @@ export default function FinancialAccountFormFields({
                 description="O saldo atual é atualizado automaticamente por baixas e estornos."
             >
                 <div className="space-y-4">
-                    <input name="active" type="hidden" value={active ? '1' : '0'} />
+                    <input
+                        name="active"
+                        type="hidden"
+                        value={active ? '1' : '0'}
+                    />
                     <input
                         name="allows_negative_balance"
                         type="hidden"
                         value={allowsNegativeBalance ? '1' : '0'}
+                    />
+                    <input
+                        name="opening_balance_amount"
+                        type="hidden"
+                        value={openingBalance}
+                    />
+                    <input
+                        name="current_balance_amount"
+                        type="hidden"
+                        value={currentBalance}
                     />
 
                     <div className="grid gap-4 sm:grid-cols-3">
@@ -235,13 +260,13 @@ export default function FinancialAccountFormFields({
                             variant="stacked"
                             error={errors.opening_balance_amount}
                         >
-                            <Input
+                            <InputMoney
                                 id="field-opening-balance"
-                                name="opening_balance_amount"
-                                type="number"
-                                step={1}
-                                defaultValue={record?.opening_balance_amount ?? 0}
-                                aria-invalid={!!errors.opening_balance_amount}
+                                value={fromCents(openingBalance)}
+                                onChange={(value) =>
+                                    setOpeningBalance(toCents(value))
+                                }
+                                allowNegative
                             />
                         </FormField>
 
@@ -251,13 +276,13 @@ export default function FinancialAccountFormFields({
                             variant="stacked"
                             error={errors.current_balance_amount}
                         >
-                            <Input
+                            <InputMoney
                                 id="field-current-balance"
-                                name="current_balance_amount"
-                                type="number"
-                                step={1}
-                                defaultValue={record?.current_balance_amount ?? 0}
-                                aria-invalid={!!errors.current_balance_amount}
+                                value={fromCents(currentBalance)}
+                                onChange={(value) =>
+                                    setCurrentBalance(toCents(value))
+                                }
+                                allowNegative
                             />
                         </FormField>
 
@@ -267,18 +292,17 @@ export default function FinancialAccountFormFields({
                             variant="stacked"
                             error={errors.balance_date}
                         >
-                            <Input
+                            <DatePicker
                                 id="field-balance-date"
                                 name="balance_date"
-                                type="date"
-                                defaultValue={record?.balance_date ?? ''}
-                                aria-invalid={!!errors.balance_date}
+                                defaultValue={record?.balance_date ?? undefined}
+                                placeholder="Selecione a data"
                             />
                         </FormField>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-md border p-4">
+                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-lg border border-border p-4">
                             <span>
                                 <span className="block text-sm font-medium">
                                     Conta ativa
@@ -287,10 +311,13 @@ export default function FinancialAccountFormFields({
                                     Permite uso em novas baixas e importações.
                                 </span>
                             </span>
-                            <Switch checked={active} onCheckedChange={setActive} />
+                            <Switch
+                                checked={active}
+                                onCheckedChange={setActive}
+                            />
                         </label>
 
-                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-md border p-4">
+                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-lg border border-border p-4">
                             <span>
                                 <span className="block text-sm font-medium">
                                     Permite saldo negativo

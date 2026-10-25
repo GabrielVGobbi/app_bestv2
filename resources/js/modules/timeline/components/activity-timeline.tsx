@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { toApiError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 
 import type { ModelId } from '../api/types';
@@ -25,7 +26,16 @@ export interface ActivityTimelineProps {
     pageSize?: number;
 }
 
-export function ActivityTimeline({
+export function ActivityTimeline(props: ActivityTimelineProps) {
+    return (
+        <ActivityTimelineBody
+            key={JSON.stringify([props.modelType, String(props.modelId)])}
+            {...props}
+        />
+    );
+}
+
+function ActivityTimelineBody({
     modelType,
     modelId,
     title = 'Timeline',
@@ -39,8 +49,8 @@ export function ActivityTimeline({
     const mutations = useCommentMutations(modelType, modelId);
 
     const groups = useMemo(
-        () => groupTimelineItems(timeline.data?.data ?? []),
-        [timeline.data?.data],
+        () => groupTimelineItems(timeline.items),
+        [timeline.items],
     );
 
     const shouldShowHeader = showHeader && title !== null;
@@ -50,7 +60,11 @@ export function ActivityTimeline({
             return <TimelineSkeleton />;
         }
 
-        if (timeline.isError) {
+        if (
+            timeline.isError &&
+            (!timeline.isFetchNextPageError ||
+                toApiError(timeline.error).type === 'forbidden')
+        ) {
             return (
                 <Alert variant="destructive">
                     <AlertCircle className="size-4" />
@@ -100,6 +114,46 @@ export function ActivityTimeline({
                         }}
                     />
                 ))}
+                {timeline.isFetchNextPageError && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="size-4" />
+                        <AlertTitle>Erro ao carregar mais</AlertTitle>
+                        <AlertDescription>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="mt-2"
+                                disabled={timeline.isFetching}
+                                onClick={() =>
+                                    void timeline.fetchNextPage({
+                                        cancelRefetch: false,
+                                    })
+                                }
+                            >
+                                <RefreshCw className="size-3.5" />
+                                Tentar novamente
+                            </Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
+                {timeline.hasNextPage && !timeline.isFetchNextPageError && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={timeline.isFetching}
+                        onClick={() =>
+                            void timeline.fetchNextPage({
+                                cancelRefetch: false,
+                            })
+                        }
+                    >
+                        {timeline.isFetchingNextPage
+                            ? 'Carregando...'
+                            : 'Carregar mais'}
+                    </Button>
+                )}
             </div>
         );
     })();
@@ -116,17 +170,17 @@ export function ActivityTimeline({
                     <h2 className="text-sm font-semibold tracking-normal text-foreground">
                         {title}
                     </h2>
-                    {timeline.data?.subject && (
+                    {timeline.subject && (
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                            {timeline.data.subject.label}
+                            {timeline.subject.label}
                         </p>
                     )}
                 </div>
             )}
-            <div className="space-y-6">
+            <div className="space-y-6 p-4">
                 {!readOnly && (
                     <CommentComposer
-                        label="Novo comentario"
+                        label="Novo comentário"
                         onSubmit={async (payload) => {
                             await mutations.create.mutateAsync(payload);
                         }}

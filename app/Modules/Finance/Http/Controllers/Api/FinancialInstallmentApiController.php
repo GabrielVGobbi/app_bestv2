@@ -43,13 +43,13 @@ class FinancialInstallmentApiController extends Controller
                     )
                     ->when(
                         $monthStart !== null,
-                        fn ($query) => $query->whereBetween('due_date', [
-                            $monthStart->toDateString(),
-                            $monthStart->endOfMonth()->toDateString(),
-                        ]),
+                        // Half-open range: SQLite stores date casts with a time part.
+                        fn ($query) => $query
+                            ->where('due_date', '>=', $monthStart->toDateString())
+                            ->where('due_date', '<', $monthStart->addMonthNoOverflow()->toDateString()),
                     )
                     ->with([
-                        'financialEntry' => fn (BelongsTo $relation) => $relation->withCount('installments'),
+                        'financialEntry' => fn (BelongsTo $relation) => $relation->withCount('installments')->with('originable'),
                         'counterparty',
                         'category' => fn (BelongsTo $relation) => $relation->with('parent'),
                     ])

@@ -1,4 +1,4 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import {
     CalendarDays,
     ChevronLeft,
@@ -19,14 +19,13 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { MoneyAmount } from '@/components/money-amount';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabItem, Tabs, TabsList } from '@/components/ui/fluid/tabs';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { cn } from '@/lib/utils';
 import type {
@@ -36,13 +35,7 @@ import type {
 } from '@/types/app/financial-entry';
 
 import { SettlementDialog } from './components/settlement-dialog';
-import {
-    columns,
-    dateFilterColumns,
-    exportConfig,
-    filters,
-    quickFilters,
-} from './config';
+import { columns, dateFilterColumns, exportConfig, filters } from './config';
 
 interface AgendaPeriod {
     month: string;
@@ -116,13 +109,13 @@ function SummaryCard({
     children: ReactNode;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-none border-0 py-0">
-            <CardContent className="flex items-start justify-between gap-3 px-4 py-0 sm:px-5">
+        <Card className="overflow-hidden">
+            <CardContent className="flex items-start justify-between gap-4 p-4">
                 <div className="min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground">
+                    <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                         {label}
                     </p>
-                    <div className="mt-2 text-lg font-medium tracking-tight sm:text-xl">
+                    <div className="mt-2 text-xl font-semibold tracking-tight">
                         {children}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -131,7 +124,7 @@ function SummaryCard({
                 </div>
                 <span
                     className={cn(
-                        'hidden size-8 shrink-0 items-center justify-center text-muted-foreground sm:flex',
+                        'flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground',
                         iconClassName,
                     )}
                 >
@@ -190,44 +183,43 @@ export default function FinancialEntriesIndex({
         <>
             <Head title="Agenda financeira" />
 
-            <ContentHeader>
-                <Heading
-                    title="Agenda financeira"
-                    description="Parcelas organizadas por vencimento para acompanhar o caixa do mês."
-                />
-
+            <Header
+                title="Agenda financeira"
+                subtitle="Parcelas organizadas por vencimento para acompanhar o caixa do mês"
+            >
                 <Button asChild>
                     <Link href={create.url()}>
-                        <Plus className="size-4" />
+                        <Plus className="size-4" aria-hidden="true" />
                         Novo lançamento
                     </Link>
                 </Button>
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-xl">
-                <div className="page-section">
-                    <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-center sm:justify-between">
-                        <Tabs value={direction}>
-                            <TabsList
-                                variant="line"
-                                aria-label="Direção das parcelas"
-                            >
+                <div className="flex h-full flex-1 flex-col gap-5">
+                    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <Tabs
+                            value={direction}
+                            onValueChange={(value) =>
+                                router.visit(
+                                    agendaUrl(
+                                        value as FinancialAgendaDirection,
+                                        period.month,
+                                    ),
+                                    {
+                                        preserveScroll: true,
+                                        preserveState: true,
+                                    },
+                                )
+                            }
+                        >
+                            <TabsList aria-label="Direção das parcelas">
                                 {directionTabs.map((tab) => (
-                                    <TabsTrigger
+                                    <TabItem
                                         key={tab.value}
                                         value={tab.value}
-                                        asChild
-                                    >
-                                        <Link
-                                            href={agendaUrl(
-                                                tab.value,
-                                                period.month,
-                                            )}
-                                            preserveScroll
-                                            preserveState
-                                        >
-                                            {tab.label}
-                                        </Link>
-                                    </TabsTrigger>
+                                        label={tab.label}
+                                    />
                                 ))}
                             </TabsList>
                         </Tabs>
@@ -285,12 +277,12 @@ export default function FinancialEntriesIndex({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-y-6 border-b pb-7 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <SummaryCard
                             label="A receber"
                             helper={`${summary.receivable.count} ${summary.receivable.count === 1 ? 'parcela pendente' : 'parcelas pendentes'}`}
                             icon={TrendingUp}
-                            iconClassName="bg-inflow-soft text-inflow-soft-foreground"
+                            iconClassName="bg-success-soft text-success-soft-foreground"
                         >
                             <MoneyAmount
                                 value={summary.receivable.amount}
@@ -302,7 +294,7 @@ export default function FinancialEntriesIndex({
                             label="A pagar"
                             helper={`${summary.payable.count} ${summary.payable.count === 1 ? 'parcela pendente' : 'parcelas pendentes'}`}
                             icon={TrendingDown}
-                            iconClassName="bg-outflow-soft text-outflow-soft-foreground"
+                            iconClassName="bg-destructive-soft text-destructive-soft-foreground"
                         >
                             <MoneyAmount
                                 value={summary.payable.amount}
@@ -334,7 +326,7 @@ export default function FinancialEntriesIndex({
                         >
                             <span
                                 className={cn(
-                                    'font-tabular',
+                                    'tabular-nums',
                                     summary.overdue_count > 0 &&
                                         'text-destructive',
                                 )}
@@ -385,7 +377,6 @@ export default function FinancialEntriesIndex({
                             },
                         }}
                         filters={filters}
-                        quickFilters={quickFilters}
                         dateFilterColumns={dateFilterColumns}
                         actions={actions}
                         actionsConfig={{
@@ -402,8 +393,8 @@ export default function FinancialEntriesIndex({
                         }}
                         appearance={{
                             size: 'md',
-                            gridLines: 'horizontal',
-                            rowStyle: 'plain',
+                            gridLines: 'none',
+                            rowStyle: 'soft-striped',
                         }}
                         searchPlaceholder="Buscar parcelas..."
                         emptyMessage="Nenhuma parcela encontrada neste mês."

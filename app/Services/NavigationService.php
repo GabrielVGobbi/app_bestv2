@@ -51,7 +51,7 @@ class NavigationService
     }
 
     /** @return array{global: array<int, mixed>, modules: array<int, mixed>, footer: array<int, mixed>} */
-    private function resolved(): array
+    public function resolved(): array
     {
         return $this->resolvedNavigation ??= $this->build();
     }

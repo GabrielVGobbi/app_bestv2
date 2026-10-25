@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateSlackSettingsRequest;
 use App\Modules\Slack\Contracts\SlackServiceInterface;
 use App\Modules\Slack\Enums\SlackAlertLevel;
 use App\Supports\AppSettings;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,35 +20,34 @@ class SlackSettingsController extends Controller
 
     public function show(): Response
     {
-        // Merge config defaults (from .env) with DB overrides (AppSettings).
-        // Same priority as SlackService: DB first, then .env fallback.
-        // Null DB values are skipped so the .env fallback is preserved.
-        $dbSettings = array_filter(AppSettings::all('slack'), fn ($v) => $v !== null);
-
-        $settings = array_merge([
-            'webhook_url' => config('slack.webhook_url'),
-            'enabled' => config('slack.enabled', true),
-            'log_level' => config('slack.log_level', 'warning'),
-        ], $dbSettings);
+        $enabled = AppSettings::get('slack', 'enabled') ?? config('slack.enabled', true);
+        $level = AppSettings::get('slack', 'log_level') ?? config('slack.log_level', 'warning');
+        $webhook = AppSettings::get('slack', 'webhook_url') ?: config('slack.webhook_url');
+        $alertLevel = is_string($level) ? SlackAlertLevel::tryFrom($level) : null;
 
         return Inertia::render('admin/slack/index', [
-            'settings' => $settings,
+            'settings' => [
+                'enabled' => (bool) $enabled,
+                'log_level' => $alertLevel === null ? SlackAlertLevel::Warning->value : $alertLevel->value,
+            ],
+            'webhook_configured' => is_string($webhook) && trim($webhook) !== '',
             'isEnabled' => $this->slack->isEnabled(),
             'levelOptions' => SlackAlertLevel::options(),
         ]);
     }
 
-    public function update(Request $request): JsonResponse
+    public function update(UpdateSlackSettingsRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'webhook_url' => ['nullable', 'url', 'max:512'],
-            'enabled' => ['required', 'boolean'],
-            'log_level' => ['required', 'string', 'in:info,warning,error,critical'],
-        ]);
-
-        foreach ($validated as $key => $value) {
-            AppSettings::set('slack', $key, $value);
-        }
+        $validated = $request->validated();
+        DB::transaction(function () use ($validated, $request): void {
+            AppSettings::set('slack', 'enabled', (bool) $validated['enabled']);
+            AppSettings::set('slack', 'log_level', $validated['log_level']);
+            if ($request->boolean('reset_webhook')) {
+                AppSettings::forget('slack', 'webhook_url');
+            } elseif (isset($validated['webhook_url']) && is_string($validated['webhook_url']) && trim($validated['webhook_url']) !== '') {
+                AppSettings::set('slack', 'webhook_url', $validated['webhook_url']);
+            }
+        });
 
         return response()->json(['message' => 'Configurações salvas com sucesso.']);
     }

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:"
+        />
+        <title>UI-003 — cursor da timeline</title>
+    </head>
+    <body>
+        <button id="run-contracts" type="button">
+            Executar regressões UI-003
+        </button>
+        <p>
+            ActivityTimeline, hooks, PrivateStateLayout, QueryClient e
+            interceptors reais; adaptador Axios controlado e sem saída de rede.
+        </p>
+        <pre id="fixture-result">Pronto.</pre>
+        <div id="app"></div>
+        <script type="module" src="./ui-timeline-cursor-probe.tsx"></script>
+    </body>
+</html>

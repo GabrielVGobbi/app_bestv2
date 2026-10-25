@@ -1,6 +1,7 @@
-import { RefreshCw, Search, Trash2 } from 'lucide-react';
+import { RefreshCw, Search, Trash2, Users } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/empty-state';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +10,7 @@ import { cn, formatCpfCnpj, formatPhone } from '@/lib/utils';
 import type { Client } from '@/types/app/client';
 
 import { useClientCardList } from '../hooks/use-client-master-detail';
+import { ClientStatusBadge } from './client-status-menu';
 
 interface ClientCardListProps {
     selectedUuid: string | null;
@@ -17,12 +19,6 @@ interface ClientCardListProps {
     onSelect: (client: Client) => void;
     onDelete: (client: Client) => void;
 }
-
-const statusLabels: Record<Client['status'], string> = {
-    active: 'Ativo',
-    inactive: 'Inativo',
-    archived: 'Arquivado',
-};
 
 function cleanValue(value: string | null | undefined): string {
     return value && value.trim() !== '' ? value : '-';
@@ -40,7 +36,7 @@ function errorMessage(error: Error | unknown): string {
 
 function ClientCardSkeleton() {
     return (
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
                 <div className="grid flex-1 gap-2">
                     <Skeleton className="h-4 w-36" />
@@ -71,20 +67,21 @@ function ClientCard({
     return (
         <article
             className={cn(
-                'rounded-lg transition-colors hover:bg-secondary/60',
-                selected && 'bg-secondary',
+                'rounded-lg border border-border bg-card transition-colors hover:bg-accent',
+                selected &&
+                    'border-primary bg-primary-soft hover:bg-primary-soft',
             )}
         >
-            <div className="flex items-start gap-2 px-3 py-4">
+            <div className="flex items-start gap-2 p-4">
                 <button
                     type="button"
                     onClick={() => onSelect(client)}
-                    className="min-w-0 flex-1 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     aria-pressed={selected}
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold">
+                            <p className="truncate text-sm font-semibold text-foreground">
                                 {client.name}
                             </p>
                             <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -93,16 +90,10 @@ function ClientCard({
                                 )}
                             </p>
                         </div>
-                        <Badge
-                            variant={
-                                client.status === 'active'
-                                    ? 'success'
-                                    : 'secondary'
-                            }
-                            className="shrink-0 rounded-full"
-                        >
-                            {statusLabels[client.status]}
-                        </Badge>
+                        <ClientStatusBadge
+                            status={client.status}
+                            className="shrink-0"
+                        />
                     </div>
 
                     <div className="mt-4 grid gap-2 text-xs">
@@ -110,7 +101,7 @@ function ClientCard({
                             <span className="text-muted-foreground">
                                 Telefone
                             </span>
-                            <span className="truncate font-medium">
+                            <span className="truncate font-medium text-foreground tabular-nums">
                                 {cleanValue(formatPhone(client.phone))}
                             </span>
                         </div>
@@ -118,7 +109,7 @@ function ClientCard({
                             <span className="text-muted-foreground">
                                 Documento
                             </span>
-                            <span className="truncate font-medium">
+                            <span className="truncate font-medium text-foreground tabular-nums">
                                 {cleanValue(formatCpfCnpj(client.document))}
                             </span>
                         </div>
@@ -126,7 +117,7 @@ function ClientCard({
                             <span className="text-muted-foreground">
                                 Classificação
                             </span>
-                            <span className="truncate font-medium">
+                            <span className="truncate font-medium text-foreground">
                                 {cleanValue(client.classification)}
                             </span>
                         </div>
@@ -137,11 +128,11 @@ function ClientCard({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="shrink-0 hover:bg-destructive-soft hover:text-destructive-soft-foreground"
                     aria-label="Excluir cliente"
                     onClick={() => onDelete(client)}
                 >
-                    <Trash2 className="size-4" />
+                    <Trash2 className="size-4" aria-hidden="true" />
                 </Button>
             </div>
         </article>
@@ -168,48 +159,59 @@ export function ClientCardList({
     } = useClientCardList(search);
 
     return (
-        <aside className="flex h-full min-h-0 flex-col gap-4 overflow-hidden rounded-xl border bg-card p-4">
+        <aside className="flex h-full min-h-0 flex-col gap-3 overflow-hidden rounded-lg border border-border bg-card p-3">
             <div className="space-y-1">
-                <h2 className="text-sm font-semibold">Clientes</h2>
-                <p className="text-xs text-muted-foreground">
+                <h2 className="text-sm font-semibold text-foreground">
+                    Clientes
+                </h2>
+                <p className="text-xs text-muted-foreground tabular-nums">
                     {meta?.total ?? clients.length} registros encontrados
                 </p>
             </div>
 
             <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                />
                 <Input
                     value={search}
                     onChange={(event) => onSearchChange(event.target.value)}
-                    placeholder="Buscar clientes..."
+                    placeholder="Buscar clientes"
                     aria-label="Buscar clientes"
                     className="pl-9"
                 />
             </div>
 
             {error ? (
-                <div className="grid gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-                    <p className="text-destructive">{errorMessage(error)}</p>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void refetch()}
-                    >
-                        <RefreshCw className="size-4" />
-                        Tentar novamente
-                    </Button>
-                </div>
+                <Alert variant="destructive">
+                    <AlertDescription className="flex flex-col items-start gap-3">
+                        {errorMessage(error)}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void refetch()}
+                        >
+                            <RefreshCw className="size-4" aria-hidden="true" />
+                            Tentar novamente
+                        </Button>
+                    </AlertDescription>
+                </Alert>
             ) : null}
 
-            <div className="min-h-0 flex-1 divide-y overflow-y-auto">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
                 {isLoading ? (
                     Array.from({ length: 6 }).map((_, index) => (
                         <ClientCardSkeleton key={index} />
                     ))
                 ) : clients.length === 0 ? (
-                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                        Nenhum cliente encontrado.
+                    <div className="rounded-lg border border-dashed border-border">
+                        <EmptyState
+                            icon={Users}
+                            title="Nenhum cliente encontrado"
+                            description="Ajuste a busca ou cadastre um novo cliente."
+                        />
                     </div>
                 ) : (
                     clients.map((client) => (

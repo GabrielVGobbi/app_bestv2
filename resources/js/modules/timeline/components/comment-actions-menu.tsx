@@ -2,11 +2,11 @@ import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
+    DropdownContent,
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
+import { MenuItem } from '@/components/ui/fluid/menu-item';
 
 interface CommentActionsMenuProps {
     canUpdate: boolean;
@@ -29,32 +29,39 @@ export function CommentActionsMenu({
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    disabled={disabled}
-                    aria-label="Açõesdo comentario"
-                >
-                    <MoreHorizontal className="size-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownTrigger
+                render={
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        disabled={disabled}
+                        aria-label="Ações do comentário"
+                    >
+                        <MoreHorizontal className="size-4" />
+                    </Button>
+                }
+            />
+            <DropdownContent align="end" className="w-44">
                 {canUpdate && (
-                    <DropdownMenuItem onSelect={onEdit}>
-                        <Pencil className="size-4" />
-                        Editar
-                    </DropdownMenuItem>
+                    <MenuItem
+                        index={0}
+                        icon={Pencil}
+                        label="Editar"
+                        onSelect={onEdit}
+                    />
                 )}
                 {canDelete && (
-                    <DropdownMenuItem variant="destructive" onSelect={onDelete}>
-                        <Trash2 className="size-4" />
-                        Excluir
-                    </DropdownMenuItem>
+                    <MenuItem
+                        index={canUpdate ? 1 : 0}
+                        icon={Trash2}
+                        label="Excluir"
+                        destructive
+                        onSelect={onDelete}
+                    />
                 )}
-            </DropdownMenuContent>
+            </DropdownContent>
         </DropdownMenu>
     );
 }

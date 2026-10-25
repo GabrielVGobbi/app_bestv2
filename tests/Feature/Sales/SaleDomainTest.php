@@ -463,15 +463,19 @@ class SaleDomainTest extends TestCase
             ->getJson("/api/v1/timeline/sale/{$sale->uuid}?types[]=activity&limit=10")
             ->assertOk();
 
+        // Cada item gera a sua atividade; a ordem entre elas no mesmo segundo nao faz parte do contrato.
         $changes = collect($response->json('data'))
             ->where('event', 'item_updated')
             ->flatMap(fn (array $activity): array => $activity['changes'] ?? [])
-            ->keyBy('field');
+            ->groupBy('field');
 
-        $this->assertSame('Ads antigo', $changes->get('item_service')['old'] ?? null);
-        $this->assertSame('Consultoria nova', $changes->get('item_service')['new'] ?? null);
-        $this->assertSame('Pop Hits - TOP 10', $changes->get('item_playlist_top')['old'] ?? null);
-        $this->assertSame('Corrida - TOP 20', $changes->get('item_playlist_top')['new'] ?? null);
+        $serviceChange = $changes->get('item_service', collect())->firstWhere('new', 'Consultoria nova');
+        $topChange = $changes->get('item_playlist_top', collect())->firstWhere('new', 'Corrida - TOP 20');
+
+        $this->assertSame('Ads antigo', $serviceChange['old'] ?? null);
+        $this->assertSame('Consultoria nova', $serviceChange['new'] ?? null);
+        $this->assertSame('Pop Hits - TOP 10', $topChange['old'] ?? null);
+        $this->assertSame('Corrida - TOP 20', $topChange['new'] ?? null);
     }
 
     public function test_update_is_blocked_after_sale_leaves_editable_statuses(): void

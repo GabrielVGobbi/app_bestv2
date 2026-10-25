@@ -1,19 +1,25 @@
 import { useHttp } from '@inertiajs/react';
+import { format, isValid, parseISO } from 'date-fns';
 import {
     AlertTriangle,
     CheckCircle2,
+    ListMusic,
     Loader2,
     Music2,
     Plus,
     Save,
     Search,
+    Trophy,
+    X,
 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 import SpotifyTrackLookupController from '@/actions/App/Modules/Sales/Http/Controllers/SpotifyTrackLookupController';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     Dialog,
     DialogContent,
@@ -22,19 +28,33 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { InputMoney } from '@/components/ui/input-money';
-import { Label } from '@/components/ui/label';
+import { SurfaceProvider } from '@/components/ui/fluid/lib/surface-context';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import { Input } from '@/components/ui/input';
+import { InputMoney } from '@/components/ui/input-money';
+import { Label } from '@/components/ui/label';
 import { formatMoney } from '@/lib/utils';
 import type { SaleFormOption, SaleFormOptions } from '@/types/app/sale';
+
+function dateFromInput(value: string): Date | undefined {
+    if (value === '') {
+        return undefined;
+    }
+
+    const date = parseISO(value);
+
+    return isValid(date) ? date : undefined;
+}
+
+function dateToInput(date: Date | undefined): string {
+    return date ? format(date, 'yyyy-MM-dd') : '';
+}
 
 export interface PlaylistLineForm {
     id: string;
@@ -224,8 +244,9 @@ export function PlaylistItemDialog({
         useState<SpotifyTrackPreview | null>(null);
     const [spotifyLookupIssue, setSpotifyLookupIssue] =
         useState<SpotifyLookupIssue | null>(null);
-    const [manualTrackNameVisible, setManualTrackNameVisible] =
-        useState(Boolean(initialLine?.track_name));
+    const [manualTrackNameVisible, setManualTrackNameVisible] = useState(
+        Boolean(initialLine?.track_name),
+    );
     const {
         post: lookupSpotifyTrack,
         setData: setSpotifyLookupData,
@@ -245,8 +266,11 @@ export function PlaylistItemDialog({
     const hasDraftTrack =
         draft.track_name.trim() !== '' && draft.track_spotify_url.trim() !== '';
     const previewTitle =
-        spotifyPreview?.display_name ?? spotifyPreview?.name ?? draft.track_name;
-    const previewImageUrl = spotifyPreview?.image_url ?? lineArtworkUrl(draft, optionsById);
+        spotifyPreview?.display_name ??
+        spotifyPreview?.name ??
+        draft.track_name;
+    const previewImageUrl =
+        spotifyPreview?.image_url ?? lineArtworkUrl(draft, optionsById);
     const previewSubtitle =
         spotifyPreview !== null
             ? [
@@ -353,17 +377,19 @@ export function PlaylistItemDialog({
                 setDraft((current) => ({
                     ...current,
                     track_name: trackName ?? current.track_name,
-                    track_spotify_url: body.data?.spotify_url ?? current.track_spotify_url,
-                    track_artists: body.data?.artist_names ?? current.track_artists,
-                    track_album_name: body.data?.album_name ?? current.track_album_name,
-                    track_duration_ms: body.data?.duration_ms ?? current.track_duration_ms,
+                    track_spotify_url:
+                        body.data?.spotify_url ?? current.track_spotify_url,
+                    track_artists:
+                        body.data?.artist_names ?? current.track_artists,
+                    track_album_name:
+                        body.data?.album_name ?? current.track_album_name,
+                    track_duration_ms:
+                        body.data?.duration_ms ?? current.track_duration_ms,
                     track_isrc: body.data?.isrc ?? current.track_isrc,
-                    track_image_url: body.data?.image_url ?? current.track_image_url,
+                    track_image_url:
+                        body.data?.image_url ?? current.track_image_url,
                 }));
-                setSpotifyLookupData(
-                    'spotify_input',
-                    body.data.spotify_url,
-                );
+                setSpotifyLookupData('spotify_input', body.data.spotify_url);
                 toast.success('Música preenchida pelo Spotify.');
             },
             onError: (errors) => {
@@ -454,6 +480,34 @@ export function PlaylistItemDialog({
         close();
     }
 
+    const previewCard = (title: string, subtitle: string) => (
+        <div className="flex gap-3 rounded-lg border border-border bg-card p-3">
+            <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted text-muted-foreground">
+                {previewImageUrl ? (
+                    <img
+                        src={previewImageUrl}
+                        alt=""
+                        className="absolute inset-0 size-full object-cover"
+                    />
+                ) : (
+                    <Music2 className="size-5" />
+                )}
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <CheckCircle2
+                        className="size-4 text-success"
+                        aria-hidden="true"
+                    />
+                    <p className="truncate text-sm font-medium">{title}</p>
+                </div>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {subtitle}
+                </p>
+            </div>
+        </div>
+    );
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
@@ -467,365 +521,333 @@ export function PlaylistItemDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={savePlaylistItem} className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="grid gap-2">
-                            <Label htmlFor="playlist_item_playlist_id">
-                                Playlist
-                            </Label>
-                            <Select
-                                value={draft.playlist_id}
-                                onValueChange={(value) =>
-                                    updateDraft('playlist_id', value)
-                                }
-                            >
-                                <SelectTrigger
-                                    id="playlist_item_playlist_id"
-                                    className="w-full"
+                {/* Diálogo bg-popover (surface-3): os selects abrem um nível acima. */}
+                <SurfaceProvider value={3}>
+                    <form onSubmit={savePlaylistItem} className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <FormField label="Playlist" required>
+                                <Select
+                                    value={draft.playlist_id}
+                                    onValueChange={(value) =>
+                                        updateDraft('playlist_id', value)
+                                    }
                                 >
-                                    <SelectValue placeholder="Selecione a playlist" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {formOptions.playlists.map((playlist) => (
-                                        <SelectItem
-                                            key={playlist.id}
-                                            value={String(playlist.id)}
-                                        >
-                                            {playlist.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                    <SelectTrigger
+                                        id="playlist_item_playlist_id"
+                                        className="w-full"
+                                        icon={ListMusic}
+                                        placeholder="Selecione a playlist"
+                                    />
+                                    <SelectContent>
+                                        {formOptions.playlists.map(
+                                            (playlist, index) => (
+                                                <SelectItem
+                                                    key={playlist.id}
+                                                    index={index}
+                                                    value={String(playlist.id)}
+                                                >
+                                                    {playlist.name}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="playlist_item_top_id">TOP</Label>
-                            <Select
-                                value={draft.playlist_top_id}
-                                onValueChange={(value) =>
-                                    updateDraft('playlist_top_id', value)
-                                }
-                                disabled={draft.playlist_id === ''}
-                            >
-                                <SelectTrigger
-                                    id="playlist_item_top_id"
-                                    className="w-full"
+                            <FormField label="TOP" required>
+                                <Select
+                                    value={draft.playlist_top_id}
+                                    onValueChange={(value) =>
+                                        updateDraft('playlist_top_id', value)
+                                    }
+                                    disabled={draft.playlist_id === ''}
                                 >
-                                    <SelectValue
+                                    <SelectTrigger
+                                        id="playlist_item_top_id"
+                                        className="w-full"
+                                        icon={Trophy}
                                         placeholder={
                                             draft.playlist_id === ''
                                                 ? 'Escolha a playlist'
                                                 : 'Selecione o TOP'
                                         }
                                     />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {filteredPlaylistTops.map((playlistTop) => (
-                                        <SelectItem
-                                            key={playlistTop.id}
-                                            value={String(playlistTop.id)}
-                                        >
-                                            {playlistTopLabel(playlistTop)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-[120px_minmax(0,1fr)]">
-                        <div className="grid gap-2">
-                            <Label htmlFor="playlist_item_quantity">Qtd.</Label>
-                            <Input
-                                id="playlist_item_quantity"
-                                type="number"
-                                min="1"
-                                value={draft.quantity}
-                                onChange={(event) =>
-                                    updateDraft('quantity', event.target.value)
-                                }
-                            />
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="playlist_item_unit_amount">
-                                Valor unitário
-                            </Label>
-                            <InputMoney
-                                id="playlist_item_unit_amount"
-                                value={draft.unit_amount}
-                                onChange={(value) =>
-                                    updateDraft('unit_amount', value)
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                        <p className="text-sm font-medium">
-                            Período da vaga{' '}
-                            <span className="font-normal text-muted-foreground">
-                                (opcional)
-                            </span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                            Com período definido, a disponibilidade do TOP é
-                            validada e a vaga entra ativa na confirmação da
-                            venda. Sem período, a vaga fica pendente de agenda.
-                        </p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <Label htmlFor="playlist_item_starts_on">
-                                    Início
-                                </Label>
-                                <Input
-                                    id="playlist_item_starts_on"
-                                    type="date"
-                                    value={draft.starts_on}
-                                    onChange={(event) =>
-                                        updateDraft(
-                                            'starts_on',
-                                            event.target.value,
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="playlist_item_ends_on">
-                                    Fim
-                                </Label>
-                                <Input
-                                    id="playlist_item_ends_on"
-                                    type="date"
-                                    min={draft.starts_on || undefined}
-                                    value={draft.ends_on}
-                                    onChange={(event) =>
-                                        updateDraft(
-                                            'ends_on',
-                                            event.target.value,
-                                        )
-                                    }
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-                        <div className="hidden">
-                            <Label htmlFor="playlist_item_track_name_hidden">
-                                Música
-                            </Label>
-                            <Input
-                                id="playlist_item_track_name_hidden"
-                                value={draft.track_name}
-                                onChange={(event) =>
-                                    updateDraft(
-                                        'track_name',
-                                        event.target.value,
-                                    )
-                                }
-                                autoComplete="off"
-                            />
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="playlist_item_track_spotify_url">
-                                Link da música no Spotify
-                            </Label>
-                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                                <Input
-                                    id="playlist_item_track_spotify_url"
-                                    value={draft.track_spotify_url}
-                                    onChange={(event) =>
-                                        updateDraft(
-                                            'track_spotify_url',
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="https://open.spotify.com/intl-pt/track/4kwbbhuemSkRWvtN5dkWmb"
-                                    autoComplete="off"
-                                    aria-describedby="playlist_item_track_lookup_feedback"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="h-10 px-3 sm:w-auto"
-                                    onClick={lookupTrack}
-                                    disabled={lookupProcessing}
-                                    title="Buscar no Spotify"
-                                >
-                                    {lookupProcessing ? (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    ) : (
-                                        <Search className="size-4" />
-                                    )}
-                                    Buscar
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        id="playlist_item_track_lookup_feedback"
-                        className="space-y-2"
-                        aria-live="polite"
-                    >
-                        {spotifyPreview === null && hasDraftTrack ? (
-                            <div className="flex gap-3 rounded-md border bg-background p-3">
-                                <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
-                                    {previewImageUrl ? (
-                                        <img
-                                            src={previewImageUrl}
-                                            alt=""
-                                            className="absolute inset-0 size-full object-cover"
-                                        />
-                                    ) : (
-                                        <Music2 className="size-5" />
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <CheckCircle2 className="size-4 text-emerald-600" />
-                                        <p className="truncate text-sm font-medium">
-                                            {previewTitle}
-                                        </p>
-                                    </div>
-                                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                                        {previewSubtitle ??
-                                            'Dados manuais da música'}
-                                    </p>
-                                </div>
-                            </div>
-                        ) : null}
-
-                        {spotifyPreview ? (
-                            <div className="flex gap-3 rounded-md border bg-background p-3">
-                                <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
-                                    {previewImageUrl ? (
-                                        <img
-                                            src={previewImageUrl}
-                                            alt=""
-                                            className="absolute inset-0 size-full object-cover"
-                                        />
-                                    ) : (
-                                        <Music2 className="size-5" />
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <CheckCircle2 className="size-4 text-emerald-600" />
-                                        <p className="truncate text-sm font-medium">
-                                            {spotifyPreview.display_name ??
-                                                spotifyPreview.name ??
-                                                'MÃºsica encontrada'}
-                                        </p>
-                                    </div>
-                                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                                        {[
-                                            spotifyPreview.album_name,
-                                            durationLabel(
-                                                spotifyPreview.duration_ms,
+                                    <SelectContent>
+                                        {filteredPlaylistTops.map(
+                                            (playlistTop, index) => (
+                                                <SelectItem
+                                                    key={playlistTop.id}
+                                                    index={index}
+                                                    value={String(
+                                                        playlistTop.id,
+                                                    )}
+                                                >
+                                                    {playlistTopLabel(
+                                                        playlistTop,
+                                                    )}
+                                                </SelectItem>
                                             ),
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' Â· ') ||
-                                            'Dados bÃ¡sicos do Spotify'}
-                                    </p>
-                                </div>
-                            </div>
-                        ) : null}
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </FormField>
+                        </div>
 
-                        {spotifyLookupIssue ? (
-                            <div
-                                className={cn(
-                                    'flex gap-3 rounded-md border p-3 text-sm',
-                                    spotifyLookupIssue.tone === 'danger'
-                                        ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/20 dark:text-red-200'
-                                        : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200',
-                                )}
+                        <div className="grid gap-4 md:grid-cols-[120px_minmax(0,1fr)]">
+                            <FormField label="Qtd.">
+                                <Input
+                                    id="playlist_item_quantity"
+                                    type="number"
+                                    min="1"
+                                    value={draft.quantity}
+                                    onChange={(event) =>
+                                        updateDraft(
+                                            'quantity',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </FormField>
+
+                            <FormField label="Valor unitário">
+                                <InputMoney
+                                    id="playlist_item_unit_amount"
+                                    value={draft.unit_amount}
+                                    onChange={(value) =>
+                                        updateDraft('unit_amount', value)
+                                    }
+                                />
+                            </FormField>
+                        </div>
+
+                        <div className="space-y-3 rounded-lg border border-border bg-muted p-3">
+                            <div>
+                                <p className="text-sm font-medium">
+                                    Período da vaga{' '}
+                                    <span className="font-normal text-muted-foreground">
+                                        (opcional)
+                                    </span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Com período definido, a disponibilidade do
+                                    TOP é validada e a vaga entra ativa na
+                                    confirmação da venda. Sem período, a vaga
+                                    fica pendente de agenda.
+                                </p>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <FormField
+                                    id="playlist_item_starts_on"
+                                    label="Início"
+                                >
+                                    <DatePicker
+                                        id="playlist_item_starts_on"
+                                        value={dateFromInput(draft.starts_on)}
+                                        onChange={(date) =>
+                                            updateDraft(
+                                                'starts_on',
+                                                dateToInput(date),
+                                            )
+                                        }
+                                    />
+                                </FormField>
+                                <FormField
+                                    id="playlist_item_ends_on"
+                                    label="Fim"
+                                >
+                                    <DatePicker
+                                        id="playlist_item_ends_on"
+                                        value={dateFromInput(draft.ends_on)}
+                                        minDate={dateFromInput(draft.starts_on)}
+                                        onChange={(date) =>
+                                            updateDraft(
+                                                'ends_on',
+                                                dateToInput(date),
+                                            )
+                                        }
+                                    />
+                                </FormField>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 rounded-lg border border-border bg-muted p-3">
+                            <div className="hidden">
+                                <Label htmlFor="playlist_item_track_name_hidden">
+                                    Música
+                                </Label>
+                                <Input
+                                    id="playlist_item_track_name_hidden"
+                                    value={draft.track_name}
+                                    onChange={(event) =>
+                                        updateDraft(
+                                            'track_name',
+                                            event.target.value,
+                                        )
+                                    }
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            <FormField
+                                id="playlist_item_track_spotify_url"
+                                label="Link da música no Spotify"
+                                required
                             >
-                                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="font-medium">
-                                        {spotifyLookupIssue.title}
-                                    </p>
-                                    <p className="mt-1 text-xs leading-relaxed">
-                                        {spotifyLookupIssue.message}
-                                    </p>
+                                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                    <Input
+                                        id="playlist_item_track_spotify_url"
+                                        value={draft.track_spotify_url}
+                                        onChange={(event) =>
+                                            updateDraft(
+                                                'track_spotify_url',
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="https://open.spotify.com/intl-pt/track/4kwbbhuemSkRWvtN5dkWmb"
+                                        autoComplete="off"
+                                        aria-describedby="playlist_item_track_lookup_feedback"
+                                    />
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        size="sm"
-                                        className="mt-3 h-8 bg-background/70"
-                                        onClick={() =>
-                                            setManualTrackNameVisible(true)
-                                        }
+                                        className="h-10"
+                                        onClick={lookupTrack}
+                                        disabled={lookupProcessing}
                                     >
-                                        Digitar manualmente
+                                        {lookupProcessing ? (
+                                            <Loader2 className="size-4 animate-spin" />
+                                        ) : (
+                                            <Search className="size-4" />
+                                        )}
+                                        Buscar no Spotify
                                     </Button>
                                 </div>
+                            </FormField>
+                        </div>
+
+                        <div
+                            id="playlist_item_track_lookup_feedback"
+                            className="space-y-2"
+                            aria-live="polite"
+                        >
+                            {spotifyPreview === null && hasDraftTrack
+                                ? previewCard(
+                                      previewTitle,
+                                      previewSubtitle ??
+                                          'Dados manuais da música',
+                                  )
+                                : null}
+
+                            {spotifyPreview
+                                ? previewCard(
+                                      spotifyPreview.display_name ??
+                                          spotifyPreview.name ??
+                                          'Música encontrada',
+                                      [
+                                          spotifyPreview.album_name,
+                                          durationLabel(
+                                              spotifyPreview.duration_ms,
+                                          ),
+                                      ]
+                                          .filter(Boolean)
+                                          .join(' · ') ||
+                                          'Dados básicos do Spotify',
+                                  )
+                                : null}
+
+                            {spotifyLookupIssue ? (
+                                <Alert
+                                    variant={
+                                        spotifyLookupIssue.tone === 'danger'
+                                            ? 'destructive'
+                                            : 'warning'
+                                    }
+                                >
+                                    <AlertTriangle aria-hidden="true" />
+                                    <AlertTitle>
+                                        {spotifyLookupIssue.title}
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        <p>{spotifyLookupIssue.message}</p>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="mt-2"
+                                            onClick={() =>
+                                                setManualTrackNameVisible(true)
+                                            }
+                                        >
+                                            Digitar manualmente
+                                        </Button>
+                                    </AlertDescription>
+                                </Alert>
+                            ) : null}
+                        </div>
+
+                        {manualTrackNameVisible ? (
+                            <div className="rounded-lg border border-border bg-muted p-3">
+                                <FormField label="Música" required>
+                                    <Input
+                                        id="playlist_item_track_name"
+                                        value={draft.track_name}
+                                        onChange={(event) =>
+                                            updateDraft(
+                                                'track_name',
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="Nome da música"
+                                        autoComplete="off"
+                                    />
+                                </FormField>
                             </div>
                         ) : null}
-                    </div>
 
-                    {manualTrackNameVisible ? (
-                        <div className="grid gap-2 rounded-md border bg-muted/20 p-3">
-                            <Label htmlFor="playlist_item_track_name">
-                                Música
-                            </Label>
-                            <Input
-                                id="playlist_item_track_name"
-                                value={draft.track_name}
-                                onChange={(event) =>
-                                    updateDraft(
-                                        'track_name',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Nome da música"
-                                autoComplete="off"
-                            />
-                        </div>
-                    ) : null}
-
-                    <div className="rounded-md border bg-muted/30 p-3">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="min-w-0">
-                                <p className="truncate text-sm font-medium">
-                                    {selectedPlaylistTop?.name ??
-                                        'TOP ainda não selecionado'}
-                                </p>
-                                <p className="truncate text-xs text-muted-foreground">
-                                    {draft.track_name || 'Música'} ·{' '}
-                                    {draft.track_spotify_url ||
-                                        'referência Spotify'}
-                                </p>
+                        <div className="rounded-lg border border-border bg-muted p-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium">
+                                        {selectedPlaylistTop?.name ??
+                                            'TOP ainda não selecionado'}
+                                    </p>
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {draft.track_name || 'Música'} ·{' '}
+                                        {draft.track_spotify_url ||
+                                            'referência Spotify'}
+                                    </p>
+                                </div>
+                                <span className="text-lg font-semibold tabular-nums">
+                                    {formatMoney(lineTotal(draft), {
+                                        fromCents: true,
+                                        fallback: 'R$ 0,00',
+                                    })}
+                                </span>
                             </div>
-                            <span className="text-lg font-semibold tabular-nums">
-                                {formatMoney(lineTotal(draft), {
-                                    fromCents: true,
-                                    fallback: 'R$ 0,00',
-                                })}
-                            </span>
                         </div>
-                    </div>
 
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={close}>
-                            Cancelar
-                        </Button>
-                        <Button type="submit">
-                            {isEditing ? (
-                                <Save className="size-4" />
-                            ) : (
-                                <Plus className="size-4" />
-                            )}
-                            {isEditing
-                                ? 'Salvar alterações'
-                                : 'Adicionar na venda'}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={close}
+                            >
+                                <X className="size-4" aria-hidden="true" />
+                                Cancelar
+                            </Button>
+                            <Button type="submit">
+                                {isEditing ? (
+                                    <Save className="size-4" />
+                                ) : (
+                                    <Plus className="size-4" />
+                                )}
+                                {isEditing
+                                    ? 'Salvar alterações'
+                                    : 'Adicionar na venda'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </SurfaceProvider>
             </DialogContent>
         </Dialog>
     );

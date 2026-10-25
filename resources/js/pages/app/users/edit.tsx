@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 
 import {
     destroy,
@@ -13,21 +13,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import UserFormFields from '@/pages/app/users/partials/user-form-fields';
+import { dashboard } from '@/routes/app';
 import type { UserResource } from '@/types/user';
 
 import { UserSubNav } from './components/user-sub-nav';
 
 interface Props {
     userData: UserResource;
+    can: { view: boolean; delete: boolean; authority: boolean };
 }
 
-export default function Edit({ userData }: Props) {
+export default function Edit({ userData, can }: Props) {
     const user = userData.data;
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Usuários', href: index.url() },
-            { title: user.name, href: show.url(user.uuid) },
+            ...(can.view
+                ? [
+                      { title: 'Usuários', href: index.url() },
+                      { title: user.name, href: show.url(user.uuid) },
+                  ]
+                : []),
             { title: 'Editar' },
         ],
     });
@@ -36,42 +42,45 @@ export default function Edit({ userData }: Props) {
         <>
             <Head title={`Editar ${user.name}`} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{user.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {user.email}
-                        </p>
-                    </div>
-                </div>
+            <Header
+                title={user.name}
+                subtitle={user.email}
+                backHref={can.view ? index.url() : dashboard.url()}
+            >
                 <div className="flex items-center gap-2">
-                    <UserSubNav userUuid={user.uuid} currentPage="edit" />
-                    <Separator orientation="vertical" className="mx-1 h-6" />
-                    <DeleteButton
-                        url={destroy.url(user.uuid)}
-                        resourceName={user.name}
-                        resourceType="usuário"
-                        redirectTo={index.url()}
+                    <UserSubNav
+                        userUuid={user.uuid}
+                        currentPage="edit"
+                        can={{
+                            view: can.view,
+                            update: true,
+                            authority: can.authority,
+                        }}
                     />
+                    {can.delete && (
+                        <>
+                            <Separator
+                                orientation="vertical"
+                                className="mx-1 h-6"
+                            />
+                            <DeleteButton
+                                url={destroy.url(user.uuid)}
+                                resourceName={user.name}
+                                resourceType="usuário"
+                                redirectTo={
+                                    can.view ? index.url() : dashboard.url()
+                                }
+                            />
+                        </>
+                    )}
                 </div>
             </Header>
 
             <div className="page-wrapper-sm">
-                <div className="page-section">
-                    <Card variant="form">
+                <div className="flex h-full flex-1 flex-col gap-6">
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Informações do Usuário</CardTitle>
+                            <CardTitle>Informações do usuário</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <Form
@@ -89,14 +98,28 @@ export default function Edit({ userData }: Props) {
 
                                         <div className="flex gap-3">
                                             <Button disabled={processing}>
+                                                <Save
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
                                                 {processing
                                                     ? 'Salvando...'
                                                     : 'Salvar alterações'}
                                             </Button>
                                             <Button variant="outline" asChild>
                                                 <Link
-                                                    href={show.url(user.uuid)}
+                                                    href={
+                                                        can.view
+                                                            ? show.url(
+                                                                  user.uuid,
+                                                              )
+                                                            : dashboard.url()
+                                                    }
                                                 >
+                                                    <X
+                                                        className="size-4"
+                                                        aria-hidden="true"
+                                                    />
                                                     Cancelar
                                                 </Link>
                                             </Button>

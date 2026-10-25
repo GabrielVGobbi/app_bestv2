@@ -30,7 +30,9 @@ function errorMessage(errors: Record<string, string>): string {
 
 function fieldValue(client: Client, field: ClientQuickUpdateField): string {
     if (field === 'responsible_user_id') {
-        return client.responsible_user_id ? String(client.responsible_user_id) : '';
+        return client.responsible_user_id
+            ? String(client.responsible_user_id)
+            : '';
     }
 
     return client.name ?? '';
@@ -142,7 +144,6 @@ export function ClientQuickUpdatePanel({
                         value={value}
                         disabled={isLoading}
                         autoFocus
-                        className="h-8"
                         onChange={(event) => onChange(event.target.value)}
                         onKeyDown={(event) => {
                             if (event.key === 'Enter') {

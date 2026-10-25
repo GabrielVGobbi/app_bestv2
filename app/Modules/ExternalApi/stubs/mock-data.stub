@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }}\Mocks;
+
+class {{ class }}MockData
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public static function sample(): array
+    {
+        return [
+            'id' => 'mock-resource',
+            'name' => 'Mock Resource',
+        ];
+    }
+}
+

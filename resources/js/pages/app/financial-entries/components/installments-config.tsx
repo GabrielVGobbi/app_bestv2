@@ -5,6 +5,7 @@ import {
     Plus,
     RefreshCw,
     Trash2,
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -268,7 +269,7 @@ export function InstallmentsConfig({
                                     {index + 1}/{confirmedInstallments.length} -{' '}
                                     {formatDateOnly(installment.due_date)}
                                 </span>
-                                <span className="ml-4 shrink-0 font-medium">
+                                <span className="ml-4 shrink-0 font-medium tabular-nums">
                                     {moneyFormatter.format(
                                         parseAmount(installment.amount),
                                     )}
@@ -290,7 +291,7 @@ export function InstallmentsConfig({
                     </DialogHeader>
 
                     <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-                        <Card className="bg-muted/30">
+                        <Card className="bg-muted">
                             <CardContent className="px-4 py-3">
                                 <div className="flex items-end gap-3">
                                     <div className="flex-1">
@@ -318,7 +319,8 @@ export function InstallmentsConfig({
                                                     Number(event.target.value),
                                                 )
                                             }
-                                            className="h-8 text-center text-sm selection:bg-primary/20 selection:text-foreground dark:selection:bg-primary/30"
+                                            aria-label="Número de parcelas"
+                                            className="text-center"
                                         />
                                     </div>
                                 </div>
@@ -332,8 +334,6 @@ export function InstallmentsConfig({
                                     variant="outline"
                                     size="sm"
                                     onClick={handleDistribute}
-                                    className="h-8 shrink-0 px-3"
-                                    title="Distribuir igualmente"
                                 >
                                     <RefreshCw className="mr-1.5 size-3.5" />
                                     Distribuir igualmente
@@ -344,7 +344,7 @@ export function InstallmentsConfig({
                                     variant="ghost"
                                     size="sm"
                                     onClick={handleAddRow}
-                                    className="h-8 w-full border border-dashed"
+                                    className="w-full border border-dashed"
                                 >
                                     <Plus className="mr-1.5 size-3.5" />
                                     Adicionar parcela
@@ -377,7 +377,7 @@ export function InstallmentsConfig({
                                         onChange={(value) =>
                                             updateRow(index, 'amount', value)
                                         }
-                                        className="h-8 text-sm selection:bg-primary/20 selection:text-foreground dark:selection:bg-primary/30"
+                                        aria-label={`Valor da parcela ${index + 1}`}
                                     />
                                     <DatePicker
                                         value={dateStringToDate(row.due_date)}
@@ -391,13 +391,13 @@ export function InstallmentsConfig({
                                             )
                                         }
                                         placeholder="Vencimento"
-                                        className="h-8 text-sm"
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        className="size-8 text-muted-foreground hover:text-destructive"
+                                        className="size-8 text-muted-foreground hover:bg-destructive-soft hover:text-destructive-soft-foreground"
+                                        aria-label="Remover parcela"
                                         onClick={() => handleRemoveRow(index)}
                                         disabled={rows.length <= 1}
                                     >
@@ -411,8 +411,8 @@ export function InstallmentsConfig({
                             className={cn(
                                 'flex items-center gap-2 rounded-lg p-3 text-sm',
                                 isValid
-                                    ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+                                    ? 'bg-success-soft text-success-soft-foreground'
+                                    : 'bg-warning-soft text-warning-soft-foreground',
                             )}
                         >
                             {isValid ? (
@@ -447,6 +447,7 @@ export function InstallmentsConfig({
                             size="sm"
                             onClick={() => setIsOpen(false)}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button

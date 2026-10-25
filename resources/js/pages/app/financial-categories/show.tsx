@@ -1,6 +1,5 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     CircleDollarSign,
     FolderTree,
     Pencil,
@@ -18,6 +17,7 @@ import {
     updateStatus,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialCategoryController';
 import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,29 +65,37 @@ export default function ShowFinancialCategory({ categoryData }: Props) {
         <>
             <Head title={category.name} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{category.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {category.full_path}
-                        </p>
-                    </div>
-                </div>
+            <Header
+                title={category.name}
+                subtitle={category.full_path}
+                backHref={index.url()}
+            >
+                <Button asChild>
+                    <Link href={edit.url(category.uuid)}>
+                        <Pencil className="size-4" aria-hidden="true" />
+                        Editar
+                    </Link>
+                </Button>
+                <Button type="button" variant="outline" onClick={toggleStatus}>
+                    {category.is_active ? (
+                        <PowerOff className="size-4" aria-hidden="true" />
+                    ) : (
+                        <Power className="size-4" aria-hidden="true" />
+                    )}
+                    {category.is_active ? 'Inativar' : 'Ativar'}
+                </Button>
+                <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setDeleteOpen(true)}
+                >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                    Excluir
+                </Button>
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
+                <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
                     <div className="space-y-4">
                         <Card>
                             <CardHeader className="flex-row items-center justify-between gap-3">
@@ -144,7 +152,7 @@ export default function ShowFinancialCategory({ categoryData }: Props) {
                                             <Link
                                                 key={child.uuid}
                                                 href={show.url(child.uuid)}
-                                                className="flex items-center gap-3 rounded-md border p-3 transition-colors hover:bg-accent"
+                                                className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent"
                                             >
                                                 <span
                                                     className="size-2.5 rounded-full"
@@ -166,54 +174,16 @@ export default function ShowFinancialCategory({ categoryData }: Props) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                        Nenhuma subcategoria cadastrada.
-                                    </div>
+                                    <EmptyState
+                                        icon={FolderTree}
+                                        title="Nenhuma subcategoria cadastrada"
+                                    />
                                 )}
                             </CardContent>
                         </Card>
                     </div>
 
                     <aside className="space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Ações</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                <Button
-                                    className="w-full justify-start"
-                                    asChild
-                                >
-                                    <Link href={edit.url(category.uuid)}>
-                                        <Pencil className="size-4" />
-                                        Editar
-                                    </Link>
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                    onClick={toggleStatus}
-                                >
-                                    {category.is_active ? (
-                                        <PowerOff className="size-4" />
-                                    ) : (
-                                        <Power className="size-4" />
-                                    )}
-                                    {category.is_active ? 'Inativar' : 'Ativar'}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    className="w-full justify-start"
-                                    onClick={() => setDeleteOpen(true)}
-                                >
-                                    <Trash2 className="size-4" />
-                                    Excluir
-                                </Button>
-                            </CardContent>
-                        </Card>
-
                         <Card>
                             <CardHeader>
                                 <CardTitle>Estrutura</CardTitle>
@@ -249,10 +219,10 @@ export default function ShowFinancialCategory({ categoryData }: Props) {
 function Info({ label, value }: { label: string; value: string }) {
     return (
         <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {label}
             </p>
-            <p className="text-sm">{value}</p>
+            <p className="text-sm text-foreground">{value}</p>
         </div>
     );
 }

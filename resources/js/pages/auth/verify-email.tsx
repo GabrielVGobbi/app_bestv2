@@ -1,5 +1,6 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
+import { Mail } from 'lucide-react';
+// Components
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -9,28 +10,32 @@ import { send } from '@/routes/verification';
 export default function VerifyEmail({ status }: { status?: string }) {
     return (
         <>
-            <Head title="Email verification" />
+            <Head title="Verificar e-mail" />
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                <div className="mb-4 text-center text-sm font-medium text-success-soft-foreground">
+                    Um novo link de verificação foi enviado para o e-mail
+                    cadastrado.
                 </div>
             )}
 
-            <Form {...send()} className="space-y-6 text-center">
+            <Form {...send.form()} className="space-y-6 text-center">
                 {({ processing }) => (
                     <>
                         <Button disabled={processing} variant="secondary">
-                            {processing && <Spinner />}
-                            Resend verification email
+                            {processing ? (
+                                <Spinner />
+                            ) : (
+                                <Mail className="size-4" aria-hidden="true" />
+                            )}
+                            Reenviar e-mail de verificação
                         </Button>
 
                         <TextLink
                             href={logout()}
                             className="mx-auto block text-sm"
                         >
-                            Log out
+                            Sair
                         </TextLink>
                     </>
                 )}
@@ -40,7 +45,6 @@ export default function VerifyEmail({ status }: { status?: string }) {
 }
 
 VerifyEmail.layout = {
-    title: 'Verify email',
-    description:
-        'Please verify your email address by clicking on the link we just emailed to you.',
+    title: 'Verificar e-mail',
+    description: 'Confirme seu e-mail pelo link que acabamos de enviar.',
 };

@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
+import { KeyRound } from 'lucide-react';
+import InputError, { errorProps } from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,22 +10,26 @@ import { store } from '@/routes/password/confirm';
 export default function ConfirmPassword() {
     return (
         <>
-            <Head title="Confirm password" />
+            <Head title="Confirmar senha" />
 
             <Form {...store()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">Senha</Label>
                             <PasswordInput
                                 id="password"
+                                {...errorProps('password', errors.password)}
                                 name="password"
-                                placeholder="Password"
+                                placeholder="Senha"
                                 autoComplete="current-password"
                                 autoFocus
                             />
 
-                            <InputError message={errors.password} />
+                            <InputError
+                                field="password"
+                                message={errors.password}
+                            />
                         </div>
 
                         <div className="flex items-center">
@@ -33,8 +38,15 @@ export default function ConfirmPassword() {
                                 disabled={processing}
                                 data-test="confirm-password-button"
                             >
-                                {processing && <Spinner />}
-                                Confirm password
+                                {processing ? (
+                                    <Spinner />
+                                ) : (
+                                    <KeyRound
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                )}
+                                Confirmar senha
                             </Button>
                         </div>
                     </div>
@@ -45,7 +57,7 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: 'Confirm your password',
+    title: 'Confirme sua senha',
     description:
-        'This is a secure area of the application. Please confirm your password before continuing.',
+        'Esta é uma área protegida. Confirme sua senha para continuar.',
 };

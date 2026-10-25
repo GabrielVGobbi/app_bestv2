@@ -1,11 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    CalendarDays,
-    Hash,
-    ListOrdered,
-    Pencil,
-} from 'lucide-react';
+import { CalendarDays, Hash, ListOrdered, Pencil } from 'lucide-react';
 
 import {
     edit,
@@ -61,29 +55,11 @@ export default function ShowTop({ topData, permissions }: Props) {
         <>
             <Head title={top.name} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{top.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {top.slug}
-                        </p>
-                    </div>
-                </div>
+            <Header title={top.name} backHref={index.url()}>
                 {permissions.can_update ? (
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" asChild>
                         <Link href={edit.url(top.uuid)}>
-                            <Pencil className="size-4" />
+                            <Pencil className="size-4" aria-hidden="true" />
                             Editar
                         </Link>
                     </Button>
@@ -91,12 +67,15 @@ export default function ShowTop({ topData, permissions }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
-                        <div className="rounded-lg border bg-card">
+                        <Card className="gap-0 py-0">
                             <div className="p-5">
-                                <div className="flex h-28 items-center justify-center rounded-lg bg-secondary text-primary">
-                                    <ListOrdered className="size-12" />
+                                <div className="flex h-28 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+                                    <ListOrdered
+                                        className="size-12"
+                                        aria-hidden="true"
+                                    />
                                 </div>
 
                                 <div className="mt-4 space-y-2">
@@ -107,8 +86,8 @@ export default function ShowTop({ topData, permissions }: Props) {
                                         <Badge
                                             variant={
                                                 top.is_active
-                                                    ? 'default'
-                                                    : 'outline'
+                                                    ? 'success'
+                                                    : 'secondary'
                                             }
                                         >
                                             {top.is_active
@@ -121,29 +100,33 @@ export default function ShowTop({ topData, permissions }: Props) {
                                     </p>
                                 </div>
 
-                                <div className="mt-5 space-y-2 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        <Hash className="size-4 shrink-0" />
-                                        <span>
-                                            {top.default_slots_quantity} vagas
-                                            padrão
-                                        </span>
-                                    </div>
+                                <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Hash
+                                        className="size-4 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="tabular-nums">
+                                        {top.default_slots_quantity} vagas
+                                        padrão
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
+                            <div className="border-t border-separator px-5 py-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
-                                    <CalendarDays className="size-3.5" />
-                                    <span>
+                                    <CalendarDays
+                                        className="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="tabular-nums">
                                         Criado {formatDate(top.created_at)}
                                     </span>
                                 </div>
-                                <p className="mt-1">
+                                <p className="mt-1 tabular-nums">
                                     Última edição {formatDate(top.updated_at)}
                                 </p>
                             </div>
-                        </div>
+                        </Card>
                     </aside>
 
                     <main className="min-w-0 space-y-4">

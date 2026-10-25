@@ -1,50 +1,54 @@
-import AppLogoIcon, { DEFAULT_LOGO_ALT } from '@/components/app-logo-icon';
+import { usePage } from '@inertiajs/react';
+import { BrandMark } from '@/components/brand/brand-mark';
+import { BrandWordmark } from '@/components/brand/brand-wordmark';
 import { cn } from '@/lib/utils';
 
 type Props = {
+    /** Mostra o nome ao lado do símbolo. */
     showText?: boolean;
-    useImage?: boolean;
-    text?: string;
-    alt?: string;
-    iconClassName?: string;
+    className?: string;
 };
 
-export default function AppLogo({
-    showText = true,
-    useImage = false,
-    text,
-    alt = DEFAULT_LOGO_ALT,
-    iconClassName,
-}: Props) {
-    const logoText = text ?? 'BestPlay';
+export default function AppLogo({ showText = true, className }: Props) {
+    const { branding } = usePage().props;
+    const fullLogo = branding.logo.light || branding.logo.dark;
+
+    if (showText && fullLogo) {
+        return (
+            <span className={cn('flex h-8 min-w-0 items-center', className)}>
+                <img
+                    src={branding.logo.light ?? branding.logo.dark ?? ''}
+                    alt={branding.name}
+                    className={cn(
+                        'h-8 w-auto max-w-full object-contain object-left',
+                        branding.logo.dark && 'dark:hidden',
+                    )}
+                />
+                {branding.logo.dark && (
+                    <img
+                        src={branding.logo.dark}
+                        alt={branding.name}
+                        className="hidden h-8 w-auto max-w-full object-contain object-left dark:block"
+                    />
+                )}
+            </span>
+        );
+    }
 
     return (
-        <>
-            <div
-                className={cn(
-                    'flex size-7 shrink-0 items-center justify-center text-primary',
-                    iconClassName,
-                )}
-            >
-                {useImage ? (
-                    <AppLogoIcon
-                        useImage
-                        alt={alt}
-                        className="size-6"
-                        lightSrc="/src/imagens/logo-icon-white.svg"
-                        darkSrc="/src/imagens/logo-icon-dark.svg"
-                    />
-                ) : (
-                    <AppLogoIcon className="size-6" />
-                )}
-            </div>
-            {showText && (
-                <div className="ml-1.5 min-w-0 text-left text-sm">
-                    <span className="truncate leading-none font-semibold">
-                        {logoText}
-                    </span>
-                </div>
+        <span className={cn('flex items-center gap-2.5', className)}>
+            {branding.logo.mark ? (
+                <img
+                    src={branding.logo.mark}
+                    alt=""
+                    className="size-7 shrink-0"
+                />
+            ) : (
+                <BrandMark className="size-7" />
             )}
-        </>
+            {showText && <BrandWordmark />}
+            {/* The mark is decorative; keep the logo link named when the wordmark is hidden. */}
+            {!showText && <span className="sr-only">{branding.name}</span>}
+        </span>
     );
 }

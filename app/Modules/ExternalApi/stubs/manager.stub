@@ -1,0 +1,24 @@
+<?php
+
+namespace {{ namespace }}\Services;
+
+use App\Modules\ExternalApi\Core\Abstracts\AbstractApiService;
+
+class {{ class }}Manager extends AbstractApiService
+{
+    public function getName(): string
+    {
+        return '{{ class }}';
+    }
+
+    public function getVersion(): string
+    {
+        return 'v1';
+    }
+
+    public function sample(): SampleService
+    {
+        return new SampleService($this->httpClient);
+    }{{ oauth_marker }}
+}
+

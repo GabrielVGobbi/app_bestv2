@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -31,36 +31,18 @@ export default function EditService({ serviceData, permissions }: Props) {
 
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Serviço', href: index.url() },
+            { title: 'Serviços', href: index.url() },
             { title: service.name, href: show.url(service.uuid) },
             { title: 'Editar' },
         ],
     });
 
     return (
-        <>
+        <div className="flex min-h-full flex-col">
             <Head title={`Editar ${service.name}`} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={show.url(service.uuid)}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{service.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {service.slug}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
+            <Header title={service.name} backHref={show.url(service.uuid)}>
+                <div className="flex flex-wrap items-center gap-2">
                     <ServiceSubNav
                         serviceUuid={service.uuid}
                         currentPage="edit"
@@ -75,7 +57,7 @@ export default function EditService({ serviceData, permissions }: Props) {
                             <DeleteButton
                                 url={destroy.url(service.uuid)}
                                 resourceName={service.name}
-                                resourceType="Serviço"
+                                resourceType="serviço"
                                 redirectTo={index.url()}
                             />
                         </>
@@ -83,67 +65,59 @@ export default function EditService({ serviceData, permissions }: Props) {
                 </div>
             </Header>
 
-            <div className="page-wrapper-sm">
-                <Form
-                    action={update.url(service.uuid)}
-                    method="put"
-                    options={{ preserveScroll: true }}
-                    onError={() =>
-                        toast.error('Verifique os campos obrigatorios.')
-                    }
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <div className="space-y-4">
-                            <div className="flex flex-1 flex-col gap-6">
-                                <Card variant="form">
-                                    <CardContent>
-                                        <ServiceFormFields
-                                            service={service}
-                                            errors={errors}
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </div>
+            <Form
+                action={update.url(service.uuid)}
+                method="put"
+                options={{ preserveScroll: true }}
+                onError={() => toast.error('Verifique os campos obrigatórios.')}
+                className="flex flex-1 flex-col"
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="page-wrapper-md flex-1 pb-8">
+                            <Card>
+                                <CardContent>
+                                    <ServiceFormFields
+                                        service={service}
+                                        errors={errors}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                            <div className="sticky bottom-0 border-t bg-background">
-                                <div className="flex items-center justify-between gap-3 py-3">
-                                    <p className="text-xs text-muted-foreground">
-                                        Campos marcados com{' '}
-                                        <span className="text-destructive">
-                                            *
-                                        </span>{' '}
-                                        sao obrigatorios.
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                            disabled={processing}
-                                        >
-                                            <Link href={show.url(service.uuid)}>
-                                                Cancelar
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            size="sm"
-                                            disabled={processing}
-                                        >
-                                            <Save />
-                                            {processing
-                                                ? 'Salvando...'
-                                                : 'Salvar'}
-                                        </Button>
-                                    </div>
+                        {/* Encaixado na base da área de conteúdo: visível com formulário curto ou longo. */}
+                        <div className="sticky bottom-0 z-10 border-t border-border bg-card/95">
+                            <div className="page-wrapper-md mb-0 flex items-center justify-between gap-3 py-3">
+                                <p className="hidden text-xs text-muted-foreground sm:block">
+                                    Campos marcados com{' '}
+                                    <span className="text-destructive">*</span>{' '}
+                                    são obrigatórios
+                                </p>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        asChild
+                                        disabled={processing}
+                                    >
+                                        <Link href={show.url(service.uuid)}>
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Cancelar
+                                        </Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        <Save />
+                                        {processing ? 'Salvando...' : 'Salvar'}
+                                    </Button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </Form>
-            </div>
-        </>
+                    </>
+                )}
+            </Form>
+        </div>
     );
 }

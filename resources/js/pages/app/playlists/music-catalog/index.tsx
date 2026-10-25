@@ -1,6 +1,5 @@
-import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
+import { Head, setLayoutProps, usePage } from '@inertiajs/react';
 import {
-    ArrowLeft,
     Check,
     Link2,
     Loader2,
@@ -8,10 +7,11 @@ import {
     Pencil,
     Plus,
     Search,
+    SearchX,
     Tags,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import MusicCatalogController from '@/actions/App/Modules/Playlists/Http/Controllers/MusicCatalogController';
@@ -24,6 +24,7 @@ import {
 import { update as updateSubgenre } from '@/actions/App/Modules/Playlists/Http/Controllers/MusicSubgenreController';
 import { index as playlistsIndex } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
 import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +34,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     getErrorMessage,
@@ -102,34 +111,11 @@ function CreateGenreControl({
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [busy, setBusy] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
 
     function close(): void {
         setOpen(false);
         setName('');
     }
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        const frame = window.requestAnimationFrame(() => {
-            inputRef.current?.focus({ preventScroll: true });
-        });
-        const handleKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'Escape') {
-                close();
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-
-        return () => {
-            window.cancelAnimationFrame(frame);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [open]);
 
     async function createGenre(): Promise<void> {
         const nextName = name.trim();
@@ -169,86 +155,53 @@ function CreateGenreControl({
                 <Plus className="size-4" />
             </Button>
 
-            {open ? (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <button
-                        type="button"
-                        className="absolute inset-0 bg-black/55"
-                        aria-label="Fechar modal de novo gênero"
-                        onClick={close}
+            <Dialog
+                open={open}
+                onOpenChange={(next) => (next ? setOpen(true) : close())}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Novo gênero</DialogTitle>
+                        <DialogDescription>
+                            Crie um gênero principal para vincular subgêneros do
+                            catálogo global.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Input
+                        value={name}
+                        placeholder="Nome do gênero"
+                        aria-label="Nome do gênero"
+                        disabled={busy}
+                        onChange={(event) => setName(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                void createGenre();
+                            }
+                        }}
                     />
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="new-genre-title"
-                        aria-describedby="new-genre-description"
-                        className="relative z-10 grid w-full max-w-md gap-4 rounded-lg border bg-background p-6 shadow-lg"
-                    >
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={close}>
+                            <X className="size-4" aria-hidden="true" />
+                            Cancelar
+                        </Button>
                         <Button
                             type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-3 right-3 size-8 text-muted-foreground"
-                            aria-label="Fechar"
-                            onClick={close}
+                            onClick={() => void createGenre()}
+                            disabled={busy || !name.trim()}
                         >
-                            <X className="size-4" />
+                            {busy ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <Plus />
+                            )}
+                            Criar gênero
                         </Button>
-
-                        <div className="space-y-2 pr-8">
-                            <h2
-                                id="new-genre-title"
-                                className="text-lg leading-none font-semibold"
-                            >
-                                Novo gênero
-                            </h2>
-                            <p
-                                id="new-genre-description"
-                                className="text-sm text-muted-foreground"
-                            >
-                                Crie um gênero principal para vincular
-                                subgêneros do catálogo global.
-                            </p>
-                        </div>
-
-                        <Input
-                            ref={inputRef}
-                            value={name}
-                            placeholder="Nome do gênero"
-                            disabled={busy}
-                            onChange={(event) => setName(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                    event.preventDefault();
-                                    void createGenre();
-                                }
-                            }}
-                        />
-
-                        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={close}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => void createGenre()}
-                                disabled={busy || !name.trim()}
-                            >
-                                {busy ? (
-                                    <Loader2 className="animate-spin" />
-                                ) : (
-                                    <Plus />
-                                )}
-                                Criar gênero
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
@@ -261,7 +214,7 @@ export default function MusicCatalogIndex({
     setLayoutProps({
         breadcrumbs: [
             { title: 'Playlists', href: playlistsIndex.url() },
-            { title: 'Catálogo Musical', href: MusicCatalogController.url() },
+            { title: 'Catálogo musical', href: MusicCatalogController.url() },
         ],
     });
 
@@ -557,33 +510,18 @@ export default function MusicCatalogIndex({
 
     return (
         <>
-            <Head title="Catálogo Musical" />
+            <Head title="Catálogo musical" />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={playlistsIndex.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">Catálogo Musical</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Gêneros selecionam subgêneros do catálogo global.
-                        </p>
-                    </div>
-                </div>
-            </Header>
+            <Header
+                title="Catálogo musical"
+                subtitle="Gêneros selecionam subgêneros do catálogo global"
+                backHref={playlistsIndex.url()}
+            />
 
             <div className="page-wrapper-lg">
                 <div className="grid gap-4 xl:h-[calc(100dvh-12.5rem)] xl:grid-cols-[21rem_minmax(0,1fr)_22rem]">
                     <Card className="overflow-hidden xl:flex xl:flex-col">
-                        <CardHeader className="shrink-0 gap-3 border-b bg-card/95 pb-4">
+                        <CardHeader className="shrink-0 gap-3 border-b border-separator pb-4">
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <Music2 className="size-4" />
@@ -596,10 +534,14 @@ export default function MusicCatalogIndex({
                             </div>
                             <div className="flex gap-2">
                                 <div className="relative min-w-0 flex-1">
-                                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Search
+                                        aria-hidden="true"
+                                        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                    />
                                     <Input
                                         value={genreSearch}
-                                        placeholder="Buscar gênero..."
+                                        placeholder="Buscar gênero"
+                                        aria-label="Buscar gênero"
                                         className="pl-9"
                                         onChange={(event) =>
                                             setGenreSearch(event.target.value)
@@ -627,11 +569,12 @@ export default function MusicCatalogIndex({
                                     <button
                                         key={genre.uuid}
                                         type="button"
+                                        aria-pressed={selected}
                                         className={cn(
-                                            'flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors',
+                                            'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                             selected
-                                                ? 'border-primary/40 bg-primary/5'
-                                                : 'border-transparent hover:bg-muted/60',
+                                                ? 'bg-secondary text-foreground'
+                                                : 'hover:bg-accent',
                                         )}
                                         onClick={() =>
                                             setSelectedGenreUuid(genre.uuid)
@@ -647,20 +590,26 @@ export default function MusicCatalogIndex({
                                             </span>
                                         </span>
                                         {!genre.is_active ? (
-                                            <Badge variant="outline">
+                                            <Badge variant="secondary">
                                                 Pausado
                                             </Badge>
                                         ) : null}
                                     </button>
                                 );
                             })}
+                            {filteredGenres.length === 0 ? (
+                                <EmptyState
+                                    icon={SearchX}
+                                    title="Nenhum gênero encontrado"
+                                />
+                            ) : null}
                         </CardContent>
                     </Card>
 
                     <Card className="min-h-128 overflow-hidden xl:flex xl:flex-col">
                         {selectedGenre ? (
                             <>
-                                <CardHeader className="shrink-0 gap-4 border-b bg-card/95 pb-4">
+                                <CardHeader className="shrink-0 gap-4 border-b border-separator pb-4">
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div>
                                             <CardTitle className="flex items-center gap-2">
@@ -676,24 +625,22 @@ export default function MusicCatalogIndex({
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             {permissions.can_update ? (
-                                                <>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setEditingGenreUuid(
-                                                                selectedGenre.uuid,
-                                                            );
-                                                            setGenreDraft(
-                                                                selectedGenre.name,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Pencil />
-                                                        Editar
-                                                    </Button>
-                                                </>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setEditingGenreUuid(
+                                                            selectedGenre.uuid,
+                                                        );
+                                                        setGenreDraft(
+                                                            selectedGenre.name,
+                                                        );
+                                                    }}
+                                                >
+                                                    <Pencil />
+                                                    Editar
+                                                </Button>
                                             ) : null}
                                         </div>
                                     </div>
@@ -702,6 +649,7 @@ export default function MusicCatalogIndex({
                                         <div className="flex gap-2">
                                             <Input
                                                 value={genreDraft}
+                                                aria-label="Nome do gênero"
                                                 autoFocus
                                                 onChange={(event) =>
                                                     setGenreDraft(
@@ -711,6 +659,8 @@ export default function MusicCatalogIndex({
                                             />
                                             <Button
                                                 type="button"
+                                                size="lg"
+                                                aria-label="Salvar nome"
                                                 onClick={() =>
                                                     void renameGenre(
                                                         selectedGenre,
@@ -726,6 +676,8 @@ export default function MusicCatalogIndex({
                                             <Button
                                                 type="button"
                                                 variant="ghost"
+                                                size="lg"
+                                                aria-label="Cancelar edição"
                                                 onClick={() =>
                                                     setEditingGenreUuid(null)
                                                 }
@@ -742,9 +694,9 @@ export default function MusicCatalogIndex({
                                             <div
                                                 key={subgenre.uuid}
                                                 className={cn(
-                                                    'rounded-md border p-3',
+                                                    'rounded-lg border border-border p-3',
                                                     !subgenre.is_active &&
-                                                        'bg-muted/40',
+                                                        'bg-muted',
                                                 )}
                                             >
                                                 <div className="flex items-start justify-between gap-3">
@@ -755,7 +707,7 @@ export default function MusicCatalogIndex({
                                                     </div>
                                                     <div className="flex shrink-0 items-center gap-2">
                                                         {!subgenre.is_active ? (
-                                                            <Badge variant="outline">
+                                                            <Badge variant="secondary">
                                                                 Pausado
                                                             </Badge>
                                                         ) : null}
@@ -764,7 +716,8 @@ export default function MusicCatalogIndex({
                                                                 type="button"
                                                                 size="icon"
                                                                 variant="ghost"
-                                                                className="size-5 text-muted-foreground hover:text-destructive"
+                                                                className="size-7 text-muted-foreground hover:bg-destructive-soft hover:text-destructive-soft-foreground focus-visible:bg-destructive-soft focus-visible:text-destructive-soft-foreground"
+                                                                aria-label={`Desvincular ${subgenre.name}`}
                                                                 disabled={
                                                                     busyKey ===
                                                                     `subgenre:unlink:${subgenre.uuid}`
@@ -789,24 +742,30 @@ export default function MusicCatalogIndex({
                                         ))}
 
                                         {linkedSubgenres.length === 0 ? (
-                                            <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground md:col-span-2">
-                                                Este gênero ainda não tem
-                                                subgêneros vinculados.
-                                            </p>
+                                            <div className="md:col-span-2">
+                                                <EmptyState
+                                                    icon={Tags}
+                                                    title="Nenhum subgênero vinculado"
+                                                    description="Use o catálogo global ao lado para vincular ou criar subgêneros."
+                                                />
+                                            </div>
                                         ) : null}
                                     </div>
                                 </CardContent>
                             </>
                         ) : (
-                            <CardContent className="p-8 text-center text-sm text-muted-foreground">
-                                Crie ou selecione um gênero para administrar os
-                                vínculos.
+                            <CardContent className="flex flex-1 items-center justify-center">
+                                <EmptyState
+                                    icon={Music2}
+                                    title="Nenhum gênero selecionado"
+                                    description="Crie ou selecione um gênero para administrar os vínculos."
+                                />
                             </CardContent>
                         )}
                     </Card>
 
                     <Card className="min-h-112 overflow-hidden xl:flex xl:flex-col">
-                        <CardHeader className="shrink-0 gap-3 border-b bg-card/95 pb-4">
+                        <CardHeader className="shrink-0 gap-3 border-b border-separator pb-4">
                             <div>
                                 <CardTitle className="text-base">
                                     Catálogo global
@@ -820,10 +779,14 @@ export default function MusicCatalogIndex({
                             {selectedGenre ? (
                                 <>
                                     <div className="relative">
-                                        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Search
+                                            aria-hidden="true"
+                                            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                        />
                                         <Input
                                             value={subgenreSearch}
                                             placeholder="Buscar ou criar subgênero"
+                                            aria-label="Buscar ou criar subgênero"
                                             className="pl-9"
                                             disabled={
                                                 busyKey === 'subgenre:create'
@@ -843,7 +806,7 @@ export default function MusicCatalogIndex({
                                     </div>
 
                                     {subgenreSearch.trim() !== '' ? (
-                                        <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+                                        <div className="space-y-2 rounded-lg border border-border bg-muted p-3">
                                             {canCreateSubgenre ? (
                                                 <Button
                                                     type="button"
@@ -920,19 +883,20 @@ export default function MusicCatalogIndex({
                                         <div
                                             key={subgenre.uuid}
                                             className={cn(
-                                                'rounded-md border px-3 py-2 text-sm transition-colors',
+                                                'rounded-lg border border-border px-3 py-2 text-sm transition-colors',
                                                 linked
-                                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-100'
-                                                    : 'hover:bg-muted/60',
+                                                    ? 'bg-muted'
+                                                    : 'hover:bg-accent',
                                                 !linked &&
                                                     !subgenre.is_active &&
-                                                    'bg-muted/40',
+                                                    'bg-muted',
                                             )}
                                         >
                                             {editing ? (
                                                 <div className="flex gap-2">
                                                     <Input
                                                         value={subgenreDraft}
+                                                        aria-label="Nome do subgênero"
                                                         autoFocus
                                                         onChange={(event) =>
                                                             setSubgenreDraft(
@@ -954,6 +918,8 @@ export default function MusicCatalogIndex({
                                                     />
                                                     <Button
                                                         type="button"
+                                                        size="lg"
+                                                        aria-label="Salvar nome"
                                                         onClick={() =>
                                                             void renameSubgenre(
                                                                 subgenre,
@@ -969,6 +935,8 @@ export default function MusicCatalogIndex({
                                                     <Button
                                                         type="button"
                                                         variant="ghost"
+                                                        size="lg"
+                                                        aria-label="Cancelar edição"
                                                         onClick={() =>
                                                             setEditingSubgenreUuid(
                                                                 null,
@@ -1002,12 +970,12 @@ export default function MusicCatalogIndex({
 
                                                     <div className="flex shrink-0 items-center gap-1">
                                                         {linked ? (
-                                                            <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                                                            <Badge variant="success">
                                                                 Vinculado
                                                             </Badge>
                                                         ) : null}
                                                         {!subgenre.is_active ? (
-                                                            <Badge variant="outline">
+                                                            <Badge variant="secondary">
                                                                 Pausado
                                                             </Badge>
                                                         ) : null}
@@ -1018,6 +986,7 @@ export default function MusicCatalogIndex({
                                                                 size="icon"
                                                                 variant="ghost"
                                                                 className="size-8"
+                                                                aria-label={`Vincular ${subgenre.name}`}
                                                                 disabled={
                                                                     busyKey ===
                                                                     `subgenre:link:${subgenre.uuid}`
@@ -1037,46 +1006,23 @@ export default function MusicCatalogIndex({
                                                             </Button>
                                                         ) : null}
                                                         {permissions.can_update ? (
-                                                            <>
-                                                                <Button
-                                                                    type="button"
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    className="size-8"
-                                                                    onClick={() => {
-                                                                        setEditingSubgenreUuid(
-                                                                            subgenre.uuid,
-                                                                        );
-                                                                        setSubgenreDraft(
-                                                                            subgenre.name,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Pencil className="size-4" />
-                                                                </Button>
-                                                                {/*
-
-                                                                <Button
-                                                                    type="button"
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    className="h-8 px-2 text-xs"
-                                                                    disabled={
-                                                                        busyKey ===
-                                                                        `subgenre:status:${subgenre.uuid}`
-                                                                    }
-                                                                    onClick={() =>
-                                                                        void toggleSubgenre(
-                                                                            subgenre,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {subgenre.is_active
-                                                                        ? 'Pausar'
-                                                                        : 'Ativar'}
-                                                                </Button>
-                                                                        */}
-                                                            </>
+                                                            <Button
+                                                                type="button"
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                className="size-8"
+                                                                aria-label={`Renomear ${subgenre.name}`}
+                                                                onClick={() => {
+                                                                    setEditingSubgenreUuid(
+                                                                        subgenre.uuid,
+                                                                    );
+                                                                    setSubgenreDraft(
+                                                                        subgenre.name,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </Button>
                                                         ) : null}
                                                     </div>
                                                 </div>
@@ -1086,16 +1032,20 @@ export default function MusicCatalogIndex({
                                 })}
 
                                 {globalCatalogSubgenres.length === 0 ? (
-                                    <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                                        Nenhum subgênero encontrado no catálogo
-                                        global.
-                                    </p>
+                                    <EmptyState
+                                        icon={SearchX}
+                                        title="Nenhum subgênero encontrado"
+                                        description="Nenhum subgênero do catálogo global corresponde à busca."
+                                    />
                                 ) : null}
                             </CardContent>
                         ) : (
-                            <CardContent className="p-8 text-center text-sm text-muted-foreground">
-                                Selecione um gênero para buscar, criar e
-                                vincular subgêneros globais.
+                            <CardContent className="flex flex-1 items-center justify-center">
+                                <EmptyState
+                                    icon={Tags}
+                                    title="Nenhum gênero selecionado"
+                                    description="Selecione um gênero para buscar, criar e vincular subgêneros globais."
+                                />
                             </CardContent>
                         )}
                     </Card>

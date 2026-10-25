@@ -9,7 +9,7 @@ interface PanelTableProps {
 
 function PanelTable({ className, children }: PanelTableProps) {
     return (
-        <div className={cn('overflow-hidden', className)}>
+        <div className={cn('overflow-hidden rounded-sm border border-border bg-card', className)}>
             {children}
         </div>
     );
@@ -31,7 +31,7 @@ function PanelTableHead({ columns, className }: PanelTableHeadProps) {
     return (
         <div
             className={cn(
-                'hidden gap-3 border-b border-border bg-data-table-head px-4 py-4 text-sm font-medium text-muted-foreground lg:grid',
+                'hidden gap-3 border-b border-sidebar-border bg-sidebar px-4 py-2.5 text-xs font-semibold text-sidebar-foreground lg:grid',
                 className,
             )}
         >
@@ -62,7 +62,7 @@ function PanelTableBody({
     className,
     children,
 }: PanelTableBodyProps) {
-    return <Comp className={cn('divide-y', className)}>{children}</Comp>;
+    return <Comp className={cn('divide-y divide-separator', className)}>{children}</Comp>;
 }
 
 interface PanelTableRowProps {
@@ -79,7 +79,7 @@ function PanelTableRow({
     return (
         <Comp
             className={cn(
-                'grid gap-3 px-4 py-5 lg:items-center',
+                'grid gap-3 px-4 py-3 lg:items-center',
                 className,
             )}
         >

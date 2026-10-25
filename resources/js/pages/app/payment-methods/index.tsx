@@ -9,10 +9,9 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/PaymentMethodController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { PaymentMethod } from '@/types/app/payment-method';
@@ -22,7 +21,7 @@ import { PaymentMethodDeleteDialog } from './partials/payment-method-delete-dial
 
 export default function PaymentMethodsIndex() {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Metodos de pagamento', href: index.url() }],
+        breadcrumbs: [{ title: 'Métodos de pagamento', href: index.url() }],
     });
 
     const queryClient = useQueryClient();
@@ -70,23 +69,22 @@ export default function PaymentMethodsIndex() {
 
     return (
         <>
-            <Head title="Metodos de pagamento" />
+            <Head title="Métodos de pagamento" />
 
-            <ContentHeader>
-                <Heading
-                    title="Metodos de pagamento"
-                    description="Configure os meios aceitos em baixas futuras"
-                />
-
+            <Header
+                title="Métodos de pagamento"
+                subtitle="Configure os meios aceitos em baixas futuras"
+            >
                 <Button asChild>
                     <Link href={create.url()}>
-                        <Plus className="size-4" />
-                        Novo metodo
+                        <Plus className="size-4" aria-hidden="true" />
+                        Novo método
                     </Link>
                 </Button>
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <PaymentMethodDeleteDialog
                         paymentMethod={paymentMethodToDelete}
                         onCancel={() => setPaymentMethodToDelete(null)}
@@ -127,7 +125,7 @@ export default function PaymentMethodsIndex() {
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar metodos..."
+                        searchPlaceholder="Buscar métodos"
                     />
                 </div>
             </div>

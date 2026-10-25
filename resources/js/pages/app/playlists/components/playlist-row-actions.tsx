@@ -20,12 +20,13 @@ import {
 import syncSpotifyPlaylist from '@/actions/App/Modules/Playlists/Http/Controllers/SpotifyPlaylistSyncController';
 import { Button } from '@/components/ui/button';
 import {
+    DropdownContent,
     DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    DropdownSeparator,
+    DropdownTrigger,
+} from '@/components/ui/fluid/dropdown';
+import type { IconComponent } from '@/components/ui/fluid/lib/icon-context';
+import { MenuItem } from '@/components/ui/fluid/menu-item';
 import {
     Tooltip,
     TooltipContent,
@@ -43,11 +44,30 @@ interface PlaylistRowActionsProps {
     onSynced: () => void;
 }
 
-function SpotifyIcon({ className }: { className?: string }) {
+interface OverflowItem {
+    key: string;
+    separator?: boolean;
+    icon?: IconComponent;
+    label?: string;
+    disabled?: boolean;
+    destructive?: boolean;
+    closeOnClick?: boolean;
+    onSelect?: () => void;
+}
+
+function SpotifyIcon({
+    className,
+    size,
+}: {
+    className?: string;
+    size?: number;
+}) {
     return (
         <svg
             viewBox="0 0 24 24"
             aria-hidden="true"
+            width={size}
+            height={size}
             className={className}
             fill="currentColor"
         >
@@ -145,6 +165,68 @@ export function PlaylistRowActions({
     const hasOverflowActions =
         hasSpotifyGroup || canRestoreArchived || canArchive;
 
+    const overflowItems: OverflowItem[] = [
+        ...(hasSpotifyGroup
+            ? [
+                  {
+                      key: 'open-spotify',
+                      icon: SpotifyIcon,
+                      label: 'Abrir Spotify',
+                      disabled: !url,
+                      onSelect: () => {
+                          if (url) {
+                              window.open(url, '_blank', 'noopener,noreferrer');
+                          }
+                      },
+                  },
+                  {
+                      key: 'copy-spotify',
+                      icon: Copy,
+                      label: 'Copiar link',
+                      disabled: !url,
+                      closeOnClick: false,
+                      onSelect: () => void copySpotifyLink(),
+                  },
+                  {
+                      key: 'sync-spotify',
+                      icon: syncing ? Loader2 : RefreshCw,
+                      label: 'Sincronizar',
+                      disabled: !canRunSync || syncing,
+                      closeOnClick: false,
+                      onSelect: () => void syncSpotify(),
+                  },
+              ]
+            : []),
+        ...(canRestoreArchived
+            ? [
+                  ...(hasSpotifyGroup
+                      ? [{ key: 'restore-separator', separator: true }]
+                      : []),
+                  {
+                      key: 'restore',
+                      icon: RotateCcw,
+                      label: 'Restaurar',
+                      onSelect: () => restorePlaylist(),
+                  },
+              ]
+            : []),
+        ...(canArchive
+            ? [
+                  ...(hasSpotifyGroup || canRestoreArchived
+                      ? [{ key: 'archive-separator', separator: true }]
+                      : []),
+                  {
+                      key: 'archive',
+                      icon: Trash2,
+                      label: 'Arquivar',
+                      destructive: true,
+                      onSelect: () => onArchive(playlist),
+                  },
+              ]
+            : []),
+    ];
+    const menuItems = overflowItems.filter((item) => !item.separator);
+
     return (
         <div className="flex items-center justify-end gap-0.5">
             <Tooltip>
@@ -191,97 +273,41 @@ export function PlaylistRowActions({
 
             {hasOverflowActions ? (
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-8"
-                            aria-label={`Mais ações de ${playlist.name}`}
-                        >
-                            {syncing ? (
-                                <Loader2 className="size-4 animate-spin" />
+                    <DropdownTrigger
+                        render={
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                aria-label={`Mais ações de ${playlist.name}`}
+                            >
+                                {syncing ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <MoreHorizontal className="size-4" />
+                                )}
+                            </Button>
+                        }
+                    />
+                    <DropdownContent align="end" className="w-52">
+                        {overflowItems.map((item) =>
+                            item.separator ? (
+                                <DropdownSeparator key={item.key} />
                             ) : (
-                                <MoreHorizontal className="size-4" />
-                            )}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52">
-                        {hasSpotifyGroup ? (
-                            <>
-                                <DropdownMenuItem
-                                    disabled={!url}
-                                    onSelect={() => {
-                                        if (!url) {
-                                            return;
-                                        }
-
-                                        window.open(
-                                            url,
-                                            '_blank',
-                                            'noopener,noreferrer',
-                                        );
-                                    }}
-                                >
-                                    <SpotifyIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
-                                    Abrir Spotify
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!url}
-                                    onSelect={(event) => {
-                                        event.preventDefault();
-                                        void copySpotifyLink();
-                                    }}
-                                >
-                                    <Copy className="size-4" />
-                                    Copiar link
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    disabled={!canRunSync || syncing}
-                                    onSelect={(event) => {
-                                        event.preventDefault();
-                                        void syncSpotify();
-                                    }}
-                                >
-                                    {syncing ? (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    ) : (
-                                        <RefreshCw className="size-4" />
-                                    )}
-                                    Sincronizar
-                                </DropdownMenuItem>
-                            </>
-                        ) : null}
-
-                        {canRestoreArchived ? (
-                            <>
-                                {hasSpotifyGroup ? (
-                                    <DropdownMenuSeparator />
-                                ) : null}
-                                <DropdownMenuItem
-                                    onSelect={() => restorePlaylist()}
-                                >
-                                    <RotateCcw className="size-4" />
-                                    Restaurar
-                                </DropdownMenuItem>
-                            </>
-                        ) : null}
-
-                        {canArchive ? (
-                            <>
-                                {hasSpotifyGroup || canRestoreArchived ? (
-                                    <DropdownMenuSeparator />
-                                ) : null}
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() => onArchive(playlist)}
-                                >
-                                    <Trash2 className="size-4" />
-                                    Arquivar
-                                </DropdownMenuItem>
-                            </>
-                        ) : null}
-                    </DropdownMenuContent>
+                                <MenuItem
+                                    key={item.key}
+                                    index={menuItems.indexOf(item)}
+                                    icon={item.icon}
+                                    label={item.label ?? ''}
+                                    disabled={item.disabled}
+                                    destructive={item.destructive}
+                                    closeOnClick={item.closeOnClick}
+                                    onSelect={item.onSelect}
+                                />
+                            ),
+                        )}
+                    </DropdownContent>
                 </DropdownMenu>
             ) : null}
         </div>

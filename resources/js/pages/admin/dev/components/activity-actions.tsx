@@ -19,7 +19,7 @@ import {
     components,
     seedActivityAction,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,11 +54,13 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 const SEVERITY_CLASS: Record<string, string> = {
-    success: 'border-emerald-200 bg-emerald-100 text-emerald-700',
-    info: 'border-blue-200 bg-blue-100 text-blue-700',
-    warning: 'border-amber-200 bg-amber-100 text-amber-700',
-    danger: 'border-red-200 bg-red-100 text-red-700',
-    muted: 'border-slate-200 bg-slate-100 text-slate-600',
+    success:
+        'border-success-soft-foreground/20 bg-success-soft text-success-soft-foreground',
+    info: 'border-info-soft-foreground/20 bg-info-soft text-info-soft-foreground',
+    warning:
+        'border-warning-soft-foreground/20 bg-warning-soft text-warning-soft-foreground',
+    danger: 'border-destructive-soft-foreground/20 bg-destructive-soft text-destructive-soft-foreground',
+    muted: 'border-border bg-muted text-muted-foreground',
 };
 
 export default function ActivityActionsPlayground({
@@ -95,18 +97,17 @@ export default function ActivityActionsPlayground({
         <>
             <Head title="Activity Actions playground" />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Activity Actions"
-                            description="Playground para testar a camada configuravel de auditoria baseada no activity_log."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            config/activity-actions.php
-                        </Badge>
-                    </div>
+            <Header
+                title="Activity Actions"
+                subtitle="Playground para testar a camada configurável de auditoria baseada no activity_log."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    config/activity-actions.php
+                </Badge>
+            </Header>
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card className="rounded-lg">
                             <CardHeader>
@@ -139,7 +140,7 @@ export default function ActivityActionsPlayground({
                                     Relatorios
                                 </CardTitle>
                                 <CardDescription>
-                                    Os filtros por usuario, data, canal, evento
+                                    Os filtros por usuário, data, canal, evento
                                     e action_key usam a mesma API da tela
                                     principal.
                                 </CardDescription>
@@ -149,10 +150,10 @@ export default function ActivityActionsPlayground({
 
                     <Card className="rounded-lg">
                         <CardHeader>
-                            <CardTitle>Açõesconfiguradas</CardTitle>
+                            <CardTitle>Ações configuradas</CardTitle>
                             <CardDescription>
                                 Clique para emitir um log de teste com o seu
-                                usuario como causador.
+                                usuário como causador.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -217,7 +218,7 @@ export default function ActivityActionsPlayground({
                         <CardHeader>
                             <CardTitle>Logs de teste recentes</CardTitle>
                             <CardDescription>
-                                Ultimos registros com properties.test=true.
+                                Últimos registros com properties.test=true.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -231,7 +232,7 @@ export default function ActivityActionsPlayground({
                                         <thead className="border-b bg-muted/40">
                                             <tr>
                                                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                                                    Acao
+                                                    Ação
                                                 </th>
                                                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">
                                                     Causador
@@ -254,7 +255,7 @@ export default function ActivityActionsPlayground({
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
                                                         {log.causer?.name ??
-                                                            'Sistema'}
+                                                            'Não disponível'}
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground">
                                                         {log.subject?.name ??

@@ -15,7 +15,11 @@ export function groupTimelineItems(items: TimelineItem[]): TimelineDayGroup[] {
 
     items.forEach((item) => {
         const date = item.created_at ? new Date(item.created_at) : new Date();
-        const key = date.toISOString().slice(0, 10);
+        const key = [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, '0'),
+            String(date.getDate()).padStart(2, '0'),
+        ].join('-');
         const existing = groups.get(key);
 
         if (existing) {

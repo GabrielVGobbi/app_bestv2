@@ -1,5 +1,9 @@
 import type {
     ColumnDef,
+    ColumnOrderState,
+    ColumnPinningState,
+    ColumnSizingState,
+    HeaderGroup,
     Row,
     RowSelectionState,
     SortingState,
@@ -32,6 +36,23 @@ export interface DataTableBulkAggregate<TData> {
 
 export interface DataTableBulkActionsConfig {
     selectedLabel?: string;
+    maxActionCount?: number;
+}
+
+export type DataTableSelectionResolver<TData> = (
+    ids: readonly string[],
+    options: { signal: AbortSignal },
+) => Promise<{ rows: TData[]; unavailableIds: string[] }>;
+
+export interface DataTableSelectionStatus<TData> {
+    complete: boolean;
+    pending: boolean;
+    reviewed: boolean;
+    error: string | null;
+    unavailableIds: string[];
+    canResolve: boolean;
+    onResolve: () => void;
+    onAction: (action: DataTableBulkAction<TData>) => void;
 }
 
 import type { Paginated, PaginationMeta } from '@/types/pagination';
@@ -91,6 +112,8 @@ export interface DataTableFilterOption {
     label: string;
     color?: string;
     count?: number;
+    operator?: DataTableFilterOperator;
+    filterValue?: DataTableFilterValue;
 }
 
 export interface DataTableFilterConfig {
@@ -106,21 +129,12 @@ export interface DataTableFilterConfig {
     clearable?: boolean;
 }
 
-export interface DataTableAsyncSelectConfig {
-    endpoint: string;
-    params?: Record<string, string | number | boolean | null | undefined>;
-    searchPlaceholder?: string;
-    emptyMessage?: string;
-}
-
 export interface DataTableQuickFilter {
     id: string;
     label: string;
-    type?: 'select' | 'async-select';
     placeholder?: string;
     icon?: ComponentType<{ className?: string }>;
-    options?: DataTableFilterOption[];
-    asyncSelect?: DataTableAsyncSelectConfig;
+    options: DataTableFilterOption[];
     multiple?: boolean;
     clearable?: boolean;
     operator?: DataTableFilterOperator;
@@ -153,6 +167,8 @@ export interface DataTablePersistStateConfig {
     sorting?: boolean;
     perPage?: boolean;
     columnVisibility?: boolean;
+    layout?: boolean;
+    density?: boolean;
 }
 
 export interface DataTableExportConfig {
@@ -164,7 +180,6 @@ export interface DataTableExportConfig {
 
 export interface DataTableAction<TData> {
     label: string;
-    render?: (row: TData) => ReactNode;
     href?: (row: TData) => string;
     onClick?: (row: TData) => void;
     icon?: ReactNode;
@@ -179,6 +194,8 @@ export interface DataTableAction<TData> {
     showLabel?: boolean;
     tooltip?: string | boolean;
     prefetch?: boolean;
+    /** Inline display only: renders a custom control (e.g. a row menu) in place of the button. */
+    render?: (row: TData) => ReactNode;
 }
 
 export interface DataTableActionsConfig {
@@ -207,6 +224,10 @@ export interface DataTableState {
     search: string;
     sorting: SortingState;
     columnVisibility: VisibilityState;
+    columnOrder: ColumnOrderState;
+    columnPinning: ColumnPinningState;
+    columnSizing: ColumnSizingState;
+    density: DataTableSize;
     rowSelection: RowSelectionState;
     filters: Record<string, DataTableFilterValue>;
 }
@@ -223,6 +244,7 @@ export interface DataTableQueryParams {
 
 export interface DataTableProps<TData> {
     queryKey: string;
+    tableId?: string;
     endpoint: string;
     mode?: DataTableMode;
     columns: ColumnDef<TData>[];
@@ -237,6 +259,7 @@ export interface DataTableProps<TData> {
     bulkActions?: DataTableBulkAction<TData>[];
     bulkAggregates?: DataTableBulkAggregate<TData>[];
     bulkActionsConfig?: DataTableBulkActionsConfig;
+    selectionResolver?: DataTableSelectionResolver<TData>;
     infiniteScrollConfig?: DataTableInfiniteScrollConfig;
     appearance?: DataTableAppearance;
     size?: DataTableSize;
@@ -252,6 +275,8 @@ export interface DataTableProps<TData> {
 
 export interface DataTableShellProps<TData> {
     table: Table<TData>;
+    headerGroups: HeaderGroup<TData>[];
+    tableWidth: number;
     rows: Row<TData>[];
     isLoading: boolean;
     isFetching: boolean;
@@ -277,12 +302,15 @@ export interface DataTableShellProps<TData> {
     selectedRows?: TData[];
     selectedCount?: number;
     onClearSelection?: () => void;
+    selectionStatus?: DataTableSelectionStatus<TData>;
     onSearchChange: (value: string) => void;
     onFilterChange: (id: string, value: DataTableFilterValue) => void;
     onResetFilters: () => void;
-    onResetTable: () => void;
-    canResetTable: boolean;
     onClearSearch: () => void;
+    onResetLayout: () => void;
+    onResetAll: () => void;
+    onDensityChange: (size: DataTableSize) => void;
+    storageStatus: string;
     onRefresh: () => void;
     onPageChange: (page: number) => void;
     onPerPageChange: (perPage: number) => void;

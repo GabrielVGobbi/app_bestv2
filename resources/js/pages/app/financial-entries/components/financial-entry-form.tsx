@@ -167,16 +167,6 @@ function optionFromResource(item: unknown): AsyncSelectOption {
         ),
         description:
             [companyName, document].filter(Boolean).join(' - ') || undefined,
-        imageUrl:
-            typeof record.logo_url === 'string' ? record.logo_url : undefined,
-        avatarInitials:
-            typeof record.logo_initials === 'string'
-                ? record.logo_initials
-                : undefined,
-        avatarColor:
-            typeof record.logo_color === 'string'
-                ? record.logo_color
-                : undefined,
     };
 }
 
@@ -217,7 +207,7 @@ function SectionHeading({
 }) {
     return (
         <div className="space-y-1">
-            <h2 id={id} className="text-sm font-semibold tracking-[-0.01em]">
+            <h2 id={id} className="text-sm font-semibold">
                 {title}
             </h2>
             {description ? (
@@ -325,7 +315,7 @@ function AmountHeroInput({
                 disabled={disabled}
                 aria-invalid={invalid || undefined}
                 placeholder="0,00"
-                className="min-w-0 flex-1 rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-3xl font-extralight tracking-tight transition-colors outline-none selection:bg-primary/20 selection:text-foreground placeholder:text-muted-foreground/20 hover:border-border/25 focus:border-border/40 focus:ring-0 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:selection:bg-primary/30"
+                className="min-w-0 flex-1 rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-3xl font-extralight tracking-tight transition-colors outline-none selection:bg-primary/20 selection:text-foreground placeholder:text-muted-foreground/20 hover:border-border focus:border-border focus:ring-0 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:selection:bg-primary/30"
             />
         </div>
     );
@@ -763,12 +753,12 @@ export default function FinancialEntryForm({
                                         <label
                                             key={option.value}
                                             className={cn(
-                                                'relative flex cursor-pointer items-center justify-center gap-3 rounded-xl border px-4 py-3 transition-all duration-300 outline-none has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/30',
+                                                'relative flex cursor-pointer items-center justify-center gap-3 rounded-lg border px-4 py-3 transition-all duration-300 outline-none has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/30',
                                                 isSelected
                                                     ? isPayable
-                                                        ? 'scale-[1.02] border-outflow/40 bg-outflow-soft text-outflow-soft-foreground shadow-[0_4px_20px_-4px_color-mix(in_oklab,var(--outflow)_24%,transparent)] ring-1 ring-outflow/20'
-                                                        : 'scale-[1.02] border-inflow/40 bg-inflow-soft text-inflow-soft-foreground shadow-[0_4px_20px_-4px_color-mix(in_oklab,var(--inflow)_24%,transparent)] ring-1 ring-inflow/20'
-                                                    : 'border-border/60 bg-transparent text-muted-foreground hover:scale-[1.01] hover:bg-muted/50 hover:text-foreground',
+                                                        ? 'scale-[1.02] border-destructive/40 bg-destructive-soft text-destructive-soft-foreground ring-1 ring-destructive/20'
+                                                        : 'scale-[1.02] border-success/40 bg-success-soft text-success-soft-foreground ring-1 ring-success/20'
+                                                    : 'border-border bg-transparent text-muted-foreground hover:scale-[1.01] hover:bg-muted hover:text-foreground',
                                             )}
                                         >
                                             <input
@@ -787,14 +777,13 @@ export default function FinancialEntryForm({
                                             <Icon
                                                 className={cn(
                                                     'size-4 transition-transform duration-300',
-                                                    isSelected
-                                                        ? isPayable
+                                                    isSelected &&
+                                                        (isPayable
                                                             ? 'translate-y-0.5'
-                                                            : '-translate-y-0.5'
-                                                        : 'opacity-60',
+                                                            : '-translate-y-0.5'),
                                                 )}
                                             />
-                                            <span className="text-[15px] font-medium tracking-tight">
+                                            <span className="text-sm font-medium tracking-tight">
                                                 {option.label}
                                             </span>
                                         </label>
@@ -827,7 +816,7 @@ export default function FinancialEntryForm({
                                 aria-invalid={
                                     Boolean(errors.description) || undefined
                                 }
-                                className="w-full rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-2xl font-light tracking-tight transition-colors outline-none selection:bg-primary/20 selection:text-foreground placeholder:text-muted-foreground/30 hover:border-border/25 focus:border-border/40 focus:ring-0 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-2 dark:selection:bg-primary/30"
+                                className="w-full rounded-none border-0 border-b border-transparent bg-transparent px-0 py-2 text-2xl font-light tracking-tight transition-colors outline-none selection:bg-primary/20 selection:text-foreground placeholder:text-muted-foreground/30 hover:border-border focus:border-border focus:ring-0 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-2 dark:selection:bg-primary/30"
                                 autoFocus
                             />
                             {errors.description ? (
@@ -864,7 +853,7 @@ export default function FinancialEntryForm({
                         </FormField>
 
                         {hasNegativeNetAmount ? (
-                            <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                            <div className="rounded-lg border border-border bg-destructive-soft px-4 py-3 text-sm text-destructive-soft-foreground">
                                 Subtrações não podem ser maiores que o valor
                                 bruto. Revise os ajustes no valor para
                                 continuar.
@@ -872,7 +861,7 @@ export default function FinancialEntryForm({
                         ) : null}
 
                         {shouldRenderDetails ? (
-                            <div className="space-y-9 border-t border-border/60 pt-8">
+                            <div className="space-y-9 border-t border-border pt-8">
                                 <section
                                     aria-labelledby="entry-data-heading"
                                     className="space-y-5"
@@ -1070,7 +1059,7 @@ export default function FinancialEntryForm({
                                 <section
                                     data-financial-section="amount-composition"
                                     aria-labelledby="amount-composition-heading"
-                                    className="space-y-5 border-t border-border/60 pt-8"
+                                    className="space-y-5 border-t border-border pt-8"
                                 >
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                         <SectionHeading
@@ -1106,13 +1095,13 @@ export default function FinancialEntryForm({
                                             type="button"
                                             onClick={openAdjustmentsDialog}
                                             disabled={processing}
-                                            className="flex min-h-20 w-full items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/15 px-4 text-sm text-muted-foreground transition-[border-color,background-color,color] duration-150 hover:border-foreground/20 hover:bg-muted/30 hover:text-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                            className="flex min-h-20 w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted px-4 text-sm text-muted-foreground transition-[border-color,background-color,color] duration-150 hover:border-input hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                         >
                                             Nenhum ajuste informado. Clique para
                                             compor o valor.
                                         </button>
                                     ) : (
-                                        <div className="overflow-hidden rounded-xl border border-border/70 bg-background shadow-xs">
+                                        <div className="overflow-hidden rounded-lg border border-border bg-background shadow-xs">
                                             {data.components.map(
                                                 (component, index) => {
                                                     const option =
@@ -1128,7 +1117,7 @@ export default function FinancialEntryForm({
                                                             className={cn(
                                                                 'flex min-h-14 items-center gap-3 px-3 py-2.5 sm:px-4',
                                                                 index > 0 &&
-                                                                    'border-t border-border/60',
+                                                                    'border-t border-border',
                                                             )}
                                                         >
                                                             <button
@@ -1143,10 +1132,10 @@ export default function FinancialEntryForm({
                                                                         'flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold',
                                                                         component.operation ===
                                                                             'add'
-                                                                            ? 'bg-inflow-soft text-inflow-soft-foreground'
+                                                                            ? 'bg-success-soft text-success-soft-foreground'
                                                                             : component.operation ===
                                                                                 'subtract'
-                                                                              ? 'bg-outflow-soft text-outflow-soft-foreground'
+                                                                              ? 'bg-destructive-soft text-destructive-soft-foreground'
                                                                               : 'bg-secondary text-secondary-foreground',
                                                                     )}
                                                                 >
@@ -1171,10 +1160,10 @@ export default function FinancialEntryForm({
                                                                             variant={
                                                                                 component.operation ===
                                                                                 'add'
-                                                                                    ? 'inflow'
+                                                                                    ? 'success'
                                                                                     : component.operation ===
                                                                                         'subtract'
-                                                                                      ? 'outflow'
+                                                                                      ? 'destructive'
                                                                                       : 'secondary'
                                                                             }
                                                                             className="hidden sm:inline-flex"
@@ -1195,10 +1184,10 @@ export default function FinancialEntryForm({
                                                                     'shrink-0 text-sm font-semibold tabular-nums sm:text-base',
                                                                     component.operation ===
                                                                         'add'
-                                                                        ? 'text-inflow'
+                                                                        ? 'text-success'
                                                                         : component.operation ===
                                                                             'subtract'
-                                                                          ? 'text-outflow'
+                                                                          ? 'text-destructive'
                                                                           : 'text-muted-foreground',
                                                                 )}
                                                             >
@@ -1244,10 +1233,10 @@ export default function FinancialEntryForm({
                                         </div>
                                     )}
 
-                                    <div className="overflow-hidden rounded-2xl border border-border/70 bg-muted/25 shadow-[0_1px_0_oklch(0_0_0/0.03)]">
-                                        <div className="grid grid-cols-3 divide-x divide-border/60 border-b border-border/60">
+                                    <div className="overflow-hidden rounded-2xl border border-border bg-muted">
+                                        <div className="grid grid-cols-3 divide-x divide-separator border-b border-border">
                                             <div className="flex min-w-0 flex-col gap-1 px-3 py-3 sm:px-4">
-                                                <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                                <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Principal
                                                 </span>
                                                 <span className="truncate text-sm font-semibold tabular-nums">
@@ -1257,10 +1246,10 @@ export default function FinancialEntryForm({
                                                 </span>
                                             </div>
                                             <div className="flex min-w-0 flex-col gap-1 px-3 py-3 sm:px-4">
-                                                <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                                <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Acréscimos
                                                 </span>
-                                                <span className="truncate text-sm font-semibold text-inflow tabular-nums">
+                                                <span className="truncate text-sm font-semibold text-success tabular-nums">
                                                     +
                                                     {formatMoneyFromCents(
                                                         additionsAmount,
@@ -1268,10 +1257,10 @@ export default function FinancialEntryForm({
                                                 </span>
                                             </div>
                                             <div className="flex min-w-0 flex-col gap-1 px-3 py-3 sm:px-4">
-                                                <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                                <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
                                                     Reduções
                                                 </span>
-                                                <span className="truncate text-sm font-semibold text-outflow tabular-nums">
+                                                <span className="truncate text-sm font-semibold text-destructive tabular-nums">
                                                     −
                                                     {formatMoneyFromCents(
                                                         reductionsAmount,
@@ -1279,7 +1268,7 @@ export default function FinancialEntryForm({
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between gap-4 bg-background/70 px-4 py-4 sm:px-5">
+                                        <div className="flex items-center justify-between gap-4 bg-muted px-4 py-4 sm:px-5">
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium">
                                                     {data.direction ===
@@ -1299,8 +1288,8 @@ export default function FinancialEntryForm({
                                                         ? 'text-destructive'
                                                         : data.direction ===
                                                             'payable'
-                                                          ? 'text-outflow'
-                                                          : 'text-inflow',
+                                                          ? 'text-destructive'
+                                                          : 'text-success',
                                                 )}
                                             >
                                                 {formatMoneyFromCents(
@@ -1326,7 +1315,7 @@ export default function FinancialEntryForm({
 
                                 <section
                                     aria-labelledby="dates-heading"
-                                    className="space-y-5 border-t border-border/60 pt-8"
+                                    className="space-y-5 border-t border-border pt-8"
                                 >
                                     <SectionHeading
                                         id="dates-heading"
@@ -1405,7 +1394,7 @@ export default function FinancialEntryForm({
                                 <section
                                     data-financial-section="installments"
                                     aria-labelledby="installments-heading"
-                                    className="space-y-5 border-t border-border/60 pt-8"
+                                    className="space-y-5 border-t border-border pt-8"
                                 >
                                     <SectionHeading
                                         id="installments-heading"
@@ -1430,7 +1419,7 @@ export default function FinancialEntryForm({
 
                                 <section
                                     aria-labelledby="notes-heading"
-                                    className="space-y-5 border-t border-border/60 pt-8"
+                                    className="space-y-5 border-t border-border pt-8"
                                 >
                                     <SectionHeading
                                         id="notes-heading"
@@ -1459,7 +1448,7 @@ export default function FinancialEntryForm({
                     </CardContent>
 
                     {stepComplete ? (
-                        <div className="sticky bottom-0 z-10 mt-auto border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+                        <div className="sticky bottom-0 z-10 mt-auto border-t bg-card/95">
                             <div className="w-full px-4 py-3 sm:px-5">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="flex min-w-0 items-center justify-between gap-4 sm:justify-start">
@@ -1490,7 +1479,7 @@ export default function FinancialEntryForm({
                                                 <PopoverTrigger asChild>
                                                     <button
                                                         type="button"
-                                                        className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/10 focus-visible:ring-2 focus-visible:ring-amber-500/35 focus-visible:outline-none dark:text-amber-300"
+                                                        className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-warning-soft-foreground transition-colors hover:bg-warning-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                                         aria-label={`${pendingCount} ${pendingCount === 1 ? 'pendência no formulário' : 'pendências no formulário'}. Mostrar detalhes.`}
                                                         aria-expanded={
                                                             pendingPopoverOpen
@@ -1544,7 +1533,7 @@ export default function FinancialEntryForm({
                                                                                 )
                                                                             }
                                                                         >
-                                                                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-amber-500" />
+                                                                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-warning" />
                                                                             <span className="leading-snug">
                                                                                 {
                                                                                     issue.message
@@ -1553,7 +1542,7 @@ export default function FinancialEntryForm({
                                                                         </button>
                                                                     ) : (
                                                                         <div className="flex min-h-10 items-start gap-2 px-2 py-2 text-sm">
-                                                                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-amber-500" />
+                                                                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-warning" />
                                                                             <span className="leading-snug">
                                                                                 {
                                                                                     issue.message

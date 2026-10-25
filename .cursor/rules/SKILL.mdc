@@ -1,6 +1,12 @@
 ---
-description: Legacy entrypoint for the BestPlay frontend design skill.
-alwaysApply: false
+alwaysApply: true
+name: frontend-design
+description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+license: Complete terms in LICENSE.txt
 ---
 
-The frontend design instructions live in the [project skill](../../.agents/skills/frontend-design/SKILL.md). Use it for requested interface design work; it is not a global requirement for unrelated tasks.
+# Frontend design adapter
+
+Read and follow [AGENTS.md](../../AGENTS.md) first. Use the maintained [frontend design skill](../../.agents/skills/frontend-design/SKILL.md) for requested design work and the [Inertia/React skill](../../.agents/skills/inertia-react-development/SKILL.md) for project implementation.
+
+Preserve the existing design system during scoped fixes. A requested redesign may establish a new visual direction within its agreed scope; it does not authorize unrelated typography, dependency, or architecture changes. Keep the accessibility and verification requirements from the canonical instructions.

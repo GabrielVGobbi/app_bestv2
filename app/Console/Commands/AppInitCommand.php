@@ -2,8 +2,12 @@
 
 namespace App\Console\Commands;
 
+use Dotenv\Dotenv;
 use Illuminate\Console\Command;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\File;
+use RuntimeException;
+use Throwable;
 
 class AppInitCommand extends Command
 {
@@ -28,11 +32,17 @@ class AppInitCommand extends Command
      */
     public function handle(): int
     {
-        $this->createEnvironmentFile();
-        $this->createPrivateConfigFile();
-        $this->generateApplicationKey();
-        $this->createStorageLink();
-        $this->createSqliteDatabase();
+        try {
+            $this->createEnvironmentFile();
+            $this->createPrivateConfigFile();
+            $this->generateApplicationKey();
+            $this->createStorageLink();
+            $this->createSqliteDatabase();
+        } catch (Throwable) {
+            $this->components->error('Initialization failed. Check file permissions, application key configuration, and storage links.');
+
+            return self::FAILURE;
+        }
 
         $this->components->info('Start kit initialized.');
 
@@ -49,7 +59,10 @@ class AppInitCommand extends Command
             return;
         }
 
-        File::copy(base_path('.env.example'), $environmentPath);
+        $template = File::get(base_path('.env.example'));
+        if (! File::copy(base_path('.env.example'), $environmentPath) || File::get($environmentPath) !== $template) {
+            throw new RuntimeException('Unable to create the environment file.');
+        }
 
         $this->components->twoColumnDetail('.env', '<fg=green;options=bold>CREATED</>');
     }
@@ -64,7 +77,7 @@ class AppInitCommand extends Command
             return;
         }
 
-        File::put($configPath, $this->privateConfigTemplate());
+        $this->writeFile($configPath, $this->privateConfigTemplate());
 
         $this->components->twoColumnDetail('.config', '<fg=green;options=bold>CREATED</>');
     }
@@ -72,14 +85,77 @@ class AppInitCommand extends Command
     private function generateApplicationKey(): void
     {
         $environment = File::get(base_path('.env'));
+        $values = $this->parseEnvironment($environment);
+        $key = $values['APP_KEY'] ?? '';
 
-        if (preg_match('/^APP_KEY=.+$/m', $environment) === 1) {
+        if (trim($key) !== '') {
             $this->components->twoColumnDetail('APP_KEY', '<fg=yellow;options=bold>EXISTS</>');
 
             return;
         }
 
-        $this->call('key:generate', ['--no-interaction' => true]);
+        $configuredKey = config('app.key');
+        if ($configuredKey !== null && $configuredKey !== '') {
+            if (! is_string($configuredKey) || ! $this->validApplicationKey($configuredKey)) {
+                throw new RuntimeException('The configured application key is invalid.');
+            }
+
+            $this->components->twoColumnDetail('APP_KEY', '<fg=yellow;options=bold>EXISTS</>');
+
+            return;
+        }
+
+        $normalized = preg_replace('/^[\t ]*(?:export[\t ]+)?APP_KEY[\t ]*=[^\r\n]*(?:\r\n|\r|\n|$)/m', 'APP_KEY='.PHP_EOL, $environment, -1, $replacements);
+        if ($normalized === null) {
+            throw new RuntimeException('Unable to prepare the application key entry.');
+        }
+        if ($replacements === 0) {
+            $normalized = rtrim($normalized, "\r\n").PHP_EOL.'APP_KEY='.PHP_EOL;
+        }
+        $normalizedValues = $this->parseEnvironment($normalized);
+        unset($values['APP_KEY'], $normalizedValues['APP_KEY']);
+        if ($values !== $normalizedValues) {
+            throw new RuntimeException('Unable to safely prepare the application key entry.');
+        }
+        if ($normalized !== $environment) {
+            $this->writeFile(base_path('.env'), $normalized);
+        }
+
+        if ($this->call('key:generate', ['--no-interaction' => true]) !== self::SUCCESS) {
+            throw new RuntimeException('Application key generation failed.');
+        }
+
+        $persistedKey = $this->parseEnvironment(File::get(base_path('.env')))['APP_KEY'] ?? '';
+        if (! $this->validApplicationKey($persistedKey)) {
+            throw new RuntimeException('A valid application key was not persisted.');
+        }
+
+        config(['app.key' => $persistedKey]);
+    }
+
+    /** @return array<string, string|null> */
+    private function parseEnvironment(string $environment): array
+    {
+        $probe = 'APP_INIT_DOTENV_COMPLETION_CHECK';
+        while (str_contains($environment, $probe)) {
+            $probe .= '_';
+        }
+
+        $values = Dotenv::parse($environment.PHP_EOL.$probe.'=ready'.PHP_EOL);
+        if (($values[$probe] ?? null) !== 'ready') {
+            throw new RuntimeException('The environment file is incomplete.');
+        }
+        unset($values[$probe]);
+
+        return $values;
+    }
+
+    private function validApplicationKey(string $key): bool
+    {
+        $cipher = config('app.cipher');
+        $decoded = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : $key;
+
+        return is_string($cipher) && is_string($decoded) && Encrypter::supported($decoded, $cipher);
     }
 
     private function createStorageLink(): void
@@ -90,16 +166,65 @@ class AppInitCommand extends Command
             return;
         }
 
-        if (File::exists(public_path('storage')) && ! $this->option('force-storage-link')) {
+        $links = config('filesystems.links') ?? [public_path('storage') => storage_path('app/public')];
+        if (! is_array($links)) {
+            throw new RuntimeException('Invalid storage link configuration.');
+        }
+        if ($links === []) {
+            $this->components->twoColumnDetail('storage:link', '<fg=yellow;options=bold>SKIPPED</>');
+
+            return;
+        }
+
+        $allLinked = true;
+        foreach ($links as $link => $target) {
+            if (! is_string($link) || ! is_string($target)) {
+                throw new RuntimeException('Invalid storage link configuration.');
+            }
+            if (! $this->storageLinkMatchesTarget($link, $target)) {
+                $allLinked = false;
+            }
+        }
+        if ($allLinked && ! $this->option('force-storage-link')) {
             $this->components->twoColumnDetail('storage:link', '<fg=yellow;options=bold>EXISTS</>');
 
             return;
         }
 
-        $this->call('storage:link', [
+        if ($this->call('storage:link', [
             '--force' => (bool) $this->option('force-storage-link'),
             '--no-interaction' => true,
-        ]);
+        ]) !== self::SUCCESS) {
+            throw new RuntimeException('Storage link creation failed.');
+        }
+
+        foreach ($links as $link => $target) {
+            if (! $this->storageLinkMatchesTarget($link, $target)) {
+                throw new RuntimeException('A configured storage link is unavailable.');
+            }
+        }
+    }
+
+    private function storageLinkMatchesTarget(string $link, string $target): bool
+    {
+        clearstatcache(true, $link);
+        clearstatcache(true, $target);
+        $resolvedTarget = realpath($target);
+        if ($resolvedTarget !== false && realpath($link) === $resolvedTarget) {
+            return true;
+        }
+        if (! file_exists($link) || ! file_exists($target)) {
+            return false;
+        }
+
+        $linkStat = stat($link);
+        $targetStat = stat($target);
+
+        return $linkStat !== false && $targetStat !== false
+            && $linkStat['dev'] >= 0
+            && $linkStat['dev'] === $targetStat['dev']
+            && $linkStat['ino'] > 0
+            && $linkStat['ino'] === $targetStat['ino'];
     }
 
     private function createSqliteDatabase(): void
@@ -112,15 +237,22 @@ class AppInitCommand extends Command
             return;
         }
 
-        File::put($databasePath, '');
+        $this->writeFile($databasePath, '');
 
         $this->components->twoColumnDetail('database/database.sqlite', '<fg=green;options=bold>CREATED</>');
+    }
+
+    private function writeFile(string $path, string $contents): void
+    {
+        if (File::put($path, $contents) !== strlen($contents) || File::get($path) !== $contents) {
+            throw new RuntimeException('Unable to write an initialization file.');
+        }
     }
 
     private function privateConfigTemplate(): string
     {
         return <<<'CONFIG'
-# Configurações privadas do projeto
+# Configuracoes privadas do projeto
 #
 # Este arquivo e local e esta ignorado pelo Git.
 # Use para guardar anotacoes sensiveis, credenciais e comandos recorrentes.
@@ -161,7 +293,7 @@ routes=php artisan route:list --except-vendor
 migrate=php artisan migrate
 migrate_fresh=php artisan migrate:fresh --seed
 cache_clear=php artisan optimize:clear
-queue=php artisan queue:listen --tries=1
+queue=php artisan queue:listen --timeout=960 --tries=3 --backoff=30 --sleep=1
 pail=php artisan pail
 telescope=php artisan telescope:clear
 pulse_check=php artisan pulse:check

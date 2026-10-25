@@ -2,55 +2,14 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-type TextareaProps = React.ComponentProps<'textarea'> & {
-    autoResize?: boolean;
-};
-
-function Textarea({
-    className,
-    autoResize = false,
-    onInput,
-    rows = 4,
-    value,
-    defaultValue,
-    ...props
-}: TextareaProps) {
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-    const resize = React.useCallback(
-        (textarea: HTMLTextAreaElement | null = textareaRef.current): void => {
-            if (!autoResize || !textarea) {
-                return;
-            }
-
-            textarea.style.height = 'auto';
-            textarea.style.height = `${textarea.scrollHeight}px`;
-        },
-        [autoResize],
-    );
-
-    React.useEffect(() => {
-        resize();
-    }, [defaultValue, resize, value]);
-
+function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
     return (
         <textarea
-            ref={textareaRef}
             data-slot="textarea"
-            rows={rows}
-            value={value}
-            defaultValue={defaultValue}
             className={cn(
-                'border-input bg-card placeholder:text-muted-foreground flex min-h-24 w-full rounded-md border px-3 py-2 text-base shadow-xs outline-none transition-[border-color,box-shadow,color,background] hover:border-foreground/20 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-                'focus-visible:border-primary/60 focus-visible:ring-ring/20 focus-visible:ring-[3px]',
-                'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
-                autoResize && 'resize-none overflow-hidden',
+                'border-input placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-input-surface px-3 py-2 text-base shadow-none transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
                 className,
             )}
-            onInput={(event) => {
-                onInput?.(event);
-                resize(event.currentTarget);
-            }}
             {...props}
         />
     );

@@ -1,20 +1,27 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { X, Save } from 'lucide-react';
+import { useId, useState } from 'react';
 import { toast } from 'sonner';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { httpPut } from '@/lib/http';
-import { edit, index, show, update } from '@/routes/roles';
+import { usePrivateState } from '@/contexts/private-state-context';
+import { httpPut, toApiError } from '@/lib/http';
+import type { ValidationErrors } from '@/lib/http';
+import { update as apiUpdate } from '@/routes/api/roles';
+import { edit, index, show } from '@/routes/roles';
 import type { Role } from '@/types/app/role';
+import { RoleSubNav } from './components/role-sub-nav';
 
 interface Props {
     roleData: { data: Role };
 }
 
 export default function EditRole({ roleData }: Props) {
+    const formId = useId();
+    const { scope } = usePrivateState();
     const role = roleData.data;
 
     setLayoutProps({
@@ -30,7 +37,7 @@ export default function EditRole({ roleData }: Props) {
         slug: role.slug,
         description: role.description ?? '',
     });
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [errors, setErrors] = useState<ValidationErrors>({});
     const [processing, setProcessing] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -39,12 +46,27 @@ export default function EditRole({ roleData }: Props) {
         setErrors({});
 
         try {
-            await httpPut(update.url(role.id), form);
+            if (!scope.isCurrent()) {
+                return;
+            }
+
+            await httpPut(apiUpdate.url(role.id), form);
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Papel atualizado com sucesso!');
             router.visit(show.url(role.id));
-        } catch (err: any) {
-            if (err?.type === 'validation') {
-                setErrors(err.errors);
+        } catch (err: unknown) {
+            const failure = toApiError(err);
+
+            if (!scope.isCurrent() || failure.type === 'canceled') {
+                return;
+            }
+
+            if (failure.type === 'validation') {
+                setErrors(failure.errors);
             } else {
                 toast.error('Erro ao atualizar papel.');
             }
@@ -57,33 +79,44 @@ export default function EditRole({ roleData }: Props) {
         <>
             <Head title={`Editar ${role.name}`} />
 
-            <div className="container mx-auto max-w-3xl">
-                <div className="page-section">
-                    <div className="flex items-center justify-between">
-                        <Heading
-                            title="Editar Papel"
-                            description="Atualize as informações do papel"
-                        />
-                        <Button variant="outline" asChild>
-                            <Link href={show.url(role.id)}>Cancelar</Link>
-                        </Button>
-                    </div>
+            <Header
+                title={role.name}
+                subtitle="Atualize as informações do papel"
+                backHref={show.url(role.id)}
+            >
+                <RoleSubNav roleId={role.id} currentPage="edit" />
+                <Button variant="outline" asChild>
+                    <Link href={show.url(role.id)}>
+                        <X className="size-4" aria-hidden="true" />
+                        Cancelar
+                    </Link>
+                </Button>
+            </Header>
 
-                    <Card variant="form">
+            <div className="page-wrapper-sm">
+                <div className="flex h-full flex-1 flex-col gap-6">
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Informações do Papel</CardTitle>
+                            <CardTitle>Informações do papel</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid gap-4">
-                                    <div className="space-y-1">
-                                        <Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`${formId}-name`}>
                                             Nome{' '}
                                             <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
                                         <Input
+                                            id={`${formId}-name`}
+                                            aria-invalid={Boolean(errors.name)}
+                                            aria-describedby={
+                                                errors.name
+                                                    ? `${formId}-name-error`
+                                                    : undefined
+                                            }
                                             value={form.name}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -95,19 +128,29 @@ export default function EditRole({ roleData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.name && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-name-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.name}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`${formId}-slug`}>
                                             Slug{' '}
                                             <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
                                         <Input
+                                            id={`${formId}-slug`}
+                                            aria-invalid={Boolean(errors.slug)}
+                                            aria-describedby={
+                                                errors.slug
+                                                    ? `${formId}-slug-error`
+                                                    : undefined
+                                            }
                                             value={form.slug}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -119,14 +162,30 @@ export default function EditRole({ roleData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.slug && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-slug-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.slug}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <Label>Descrição</Label>
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor={`${formId}-description`}
+                                        >
+                                            Descrição
+                                        </Label>
                                         <Input
+                                            id={`${formId}-description`}
+                                            aria-invalid={Boolean(
+                                                errors.description,
+                                            )}
+                                            aria-describedby={
+                                                errors.description
+                                                    ? `${formId}-description-error`
+                                                    : undefined
+                                            }
                                             value={form.description}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -138,7 +197,10 @@ export default function EditRole({ roleData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.description && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-description-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.description}
                                             </p>
                                         )}
@@ -147,12 +209,20 @@ export default function EditRole({ roleData }: Props) {
 
                                 <div className="flex gap-3">
                                     <Button type="submit" disabled={processing}>
+                                        <Save
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
                                         {processing
                                             ? 'Salvando...'
                                             : 'Salvar alterações'}
                                     </Button>
                                     <Button variant="outline" asChild>
                                         <Link href={show.url(role.id)}>
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Cancelar
                                         </Link>
                                     </Button>

@@ -1,42 +1,51 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
+import { KeyRound, X, UserPlus } from 'lucide-react';
 import {
     create,
     index,
     store,
 } from '@/actions/App/Http/Controllers/UserController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UserFormFields from '@/pages/app/users/partials/user-form-fields';
+import { dashboard } from '@/routes/app';
 
-export default function Create() {
+interface Props {
+    can: { view: boolean };
+}
+
+export default function Create({ can }: Props) {
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Users', href: index.url() },
-            { title: 'New User', href: create.url() },
+            ...(can.view ? [{ title: 'Usuários', href: index.url() }] : []),
+            { title: 'Novo usuário', href: create.url() },
         ],
     });
 
     return (
         <>
-            <Head title="New User" />
+            <Head title="Novo usuário" />
 
-            <div className="container mx-auto max-w-3xl">
-                <div className="page-section">
-                    <div className="flex items-center justify-between">
-                        <Heading
-                            title="New User"
-                            description="Create a new user account"
-                        />
-                        <Button variant="outline" asChild>
-                            <Link href={index.url()}>Cancel</Link>
-                        </Button>
-                    </div>
+            <Header
+                title="Novo usuário"
+                subtitle="Crie uma nova conta de usuário"
+                backHref={can.view ? index.url() : dashboard.url()}
+            >
+                <Button variant="outline" asChild>
+                    <Link href={can.view ? index.url() : dashboard.url()}>
+                        <X className="size-4" aria-hidden="true" />
+                        Cancelar
+                    </Link>
+                </Button>
+            </Header>
 
-                    <Card variant="form">
+            <div className="page-wrapper-sm">
+                <div className="flex h-full flex-1 flex-col gap-6">
+                    <Card>
                         <CardHeader>
-                            <CardTitle>User Information</CardTitle>
+                            <CardTitle>Informações do usuário</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <Form
@@ -48,18 +57,18 @@ export default function Create() {
                             >
                                 {({ errors, processing }) => (
                                     <>
-                                        <Alert>
+                                        <Alert variant="info">
+                                            <KeyRound />
                                             <AlertTitle>
-                                                First access with temporary
-                                                password
+                                                Primeiro acesso com senha
+                                                temporária
                                             </AlertTitle>
                                             <AlertDescription>
-                                                The account will be created with
-                                                a secure temporary password.
-                                                Copy it after creation and send
-                                                it to the user. They will be
-                                                required to change it after
-                                                signing in.
+                                                A conta será criada com uma
+                                                senha temporária segura. Copie
+                                                após a criação e envie ao
+                                                usuário; ele precisará trocá-la
+                                                no primeiro acesso.
                                             </AlertDescription>
                                         </Alert>
 
@@ -70,13 +79,27 @@ export default function Create() {
                                                 type="submit"
                                                 disabled={processing}
                                             >
+                                                <UserPlus
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
                                                 {processing
-                                                    ? 'Creating...'
-                                                    : 'Create user'}
+                                                    ? 'Criando...'
+                                                    : 'Criar usuário'}
                                             </Button>
                                             <Button variant="outline" asChild>
-                                                <Link href={index.url()}>
-                                                    Cancel
+                                                <Link
+                                                    href={
+                                                        can.view
+                                                            ? index.url()
+                                                            : dashboard.url()
+                                                    }
+                                                >
+                                                    <X
+                                                        className="size-4"
+                                                        aria-hidden="true"
+                                                    />
+                                                    Cancelar
                                                 </Link>
                                             </Button>
                                         </div>

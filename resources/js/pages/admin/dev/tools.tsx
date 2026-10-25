@@ -1,12 +1,10 @@
-import { Head, router, setLayoutProps } from '@inertiajs/react';
+import { Head, router, setLayoutProps, useForm } from '@inertiajs/react';
 import {
     AlertTriangle,
     Bug,
     CheckCircle2,
     Clock,
     Database,
-    Eye,
-    EyeOff,
     FileCode,
     Globe,
     List,
@@ -15,7 +13,6 @@ import {
     Server,
     Settings,
     Shield,
-    Terminal,
     Trash2,
     Wrench,
     Zap,
@@ -28,13 +25,26 @@ import {
     index,
     optimize,
     toggleMaintenance,
-    toggleTelescope,
-    toggleTelescopeCaptureAll,
     updateEnv,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
+import Header from '@/components/dashboard/header';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from '@/components/ui/fluid/select';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -52,7 +62,13 @@ interface SystemInfo {
     timezone: string;
     locale: string;
     telescope_enabled: boolean;
-    telescope_capture_all: boolean;
+}
+
+interface OperationalSettings {
+    APP_NAME: string;
+    APP_LOCALE: string;
+    APP_FALLBACK_LOCALE: string;
+    TELESCOPE_ENABLED: boolean;
 }
 
 interface AppRoute {
@@ -65,7 +81,7 @@ interface AppRoute {
 
 interface PageProps {
     maintenanceMode: boolean;
-    envVariables: Record<string, string>;
+    operationalSettings: OperationalSettings;
     systemInfo: SystemInfo;
     routes: AppRoute[] | null;
 }
@@ -73,24 +89,31 @@ interface PageProps {
 type Tab = 'tools' | 'routes';
 
 const METHOD_COLORS: Record<string, string> = {
-    GET: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    POST: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    PUT: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    PATCH: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-    DELETE: 'bg-red-500/10 text-red-600 dark:text-red-400',
-    ANY: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    GET: 'bg-success-soft text-success-soft-foreground',
+    POST: 'bg-info-soft text-info-soft-foreground',
+    PUT: 'bg-warning-soft text-warning-soft-foreground',
+    PATCH: 'bg-warning-soft text-warning-soft-foreground',
+    DELETE: 'bg-destructive-soft text-destructive-soft-foreground',
+    ANY: 'bg-primary-soft text-primary-soft-foreground',
 };
 
-export default function Tools({ maintenanceMode, envVariables, systemInfo, routes }: PageProps) {
+export default function Tools({
+    maintenanceMode,
+    operationalSettings,
+    systemInfo,
+    routes,
+}: PageProps) {
     setLayoutProps({
-        breadcrumbs: [{ title: 'Dev Tools', href: index['/admin/dev/dev-tools'] }],
+        breadcrumbs: [
+            {
+                title: 'Ferramentas de desenvolvimento',
+                href: index['/admin/dev/dev-tools'],
+            },
+        ],
     });
 
     const [activeTab, setActiveTab] = useState<Tab>('tools');
     const [loading, setLoading] = useState<string | null>(null);
-    const [showEnvValues, setShowEnvValues] = useState(false);
-    const [envKey, setEnvKey] = useState('');
-    const [envValue, setEnvValue] = useState('');
     const [routeSearch, setRouteSearch] = useState('');
     const [methodFilter, setMethodFilter] = useState<string>('ALL');
 
@@ -101,108 +124,132 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
             onSuccess: () => {
                 toast.success('Ação executada com sucesso');
                 setLoading(null);
-                router.reload({ only: ['maintenanceMode', 'envVariables', 'systemInfo'] });
+                router.reload({
+                    only: [
+                        'maintenanceMode',
+                        'operationalSettings',
+                        'systemInfo',
+                    ],
+                });
             },
-            onError: () => {
-                toast.error('Erro ao executar ação');
+            onError: (errors) => {
+                toast.error(
+                    errors.value ?? errors.key ?? 'Erro ao executar ação',
+                );
                 setLoading(null);
             },
         });
     };
 
-    const handleUpdateEnv = () => {
-        if (!envKey || !envValue) {
-            toast.error('Preencha a chave e o valor');
-            return;
-        }
-        handleAction(updateEnv.url(), { key: envKey, value: envValue });
-        setEnvKey('');
-        setEnvValue('');
-    };
-
     const isLoading = (url: string) => loading === url;
 
     const filteredRoutes = useMemo(() => {
-        if (!routes) return [];
+        if (!routes) {
+            return [];
+        }
+
         return routes.filter((r) => {
             const matchesSearch =
                 routeSearch === '' ||
                 r.uri.toLowerCase().includes(routeSearch.toLowerCase()) ||
                 r.name.toLowerCase().includes(routeSearch.toLowerCase()) ||
                 r.action.toLowerCase().includes(routeSearch.toLowerCase());
-            const matchesMethod = methodFilter === 'ALL' || r.method.includes(methodFilter);
+            const matchesMethod =
+                methodFilter === 'ALL' || r.method.includes(methodFilter);
+
             return matchesSearch && matchesMethod;
         });
     }, [routes, routeSearch, methodFilter]);
 
     const availableMethods = useMemo(() => {
-        if (!routes) return [];
+        if (!routes) {
+            return [];
+        }
+
         const methods = new Set<string>();
-        routes.forEach((r) => r.method.split('|').forEach((m) => methods.add(m)));
+        routes.forEach((r) =>
+            r.method.split('|').forEach((m) => methods.add(m)),
+        );
+
         return ['ALL', ...Array.from(methods).sort()];
     }, [routes]);
 
     return (
         <>
-            <Head title="Dev Tools" />
+            <Head title="Ferramentas de desenvolvimento" />
 
-            <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-12 pt-6 lg:px-6">
-                {/* Header */}
-                <div className="flex items-center gap-4">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-linear-to-br from-violet-500/20 to-violet-500/5 ring-1 ring-violet-500/20">
-                        <Terminal className="size-6 text-violet-500" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Dev Tools</h1>
-                        <p className="text-muted-foreground text-sm">Ferramentas de desenvolvimento e manutenção do sistema</p>
-                    </div>
-                    {maintenanceMode && (
-                        <Badge variant="destructive" className="ml-auto animate-pulse gap-1.5">
-                            <AlertTriangle className="size-3" />
-                            Manutenção Ativa
-                        </Badge>
-                    )}
-                </div>
+            <Header
+                title="Ferramentas de desenvolvimento"
+                subtitle="Manutenção, cache, variáveis operacionais e rotas do sistema"
+            >
+                {maintenanceMode && (
+                    <Badge variant="warning" className="gap-1.5">
+                        <AlertTriangle className="size-3" />
+                        Manutenção ativa
+                    </Badge>
+                )}
+            </Header>
 
+            <Tabs
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as Tab)}
+                className="mx-auto w-full max-w-7xl space-y-6 px-4 pt-6 pb-12 lg:px-6"
+            >
                 {/* Tabs */}
-                <div className="border-b">
-                    <nav className="flex gap-1">
-                        <TabButton active={activeTab === 'tools'} onClick={() => setActiveTab('tools')} icon={<Settings className="size-4" />}>
-                            Dev Tools
-                        </TabButton>
-                        <TabButton active={activeTab === 'routes'} onClick={() => setActiveTab('routes')} icon={<List className="size-4" />}>
-                            Rotas Laravel
-                            {routes && (
-                                <span className="bg-muted text-muted-foreground ml-1.5 rounded-full px-1.5 py-0.5 text-xs tabular-nums">
-                                    {routes.length}
-                                </span>
-                            )}
-                        </TabButton>
-                    </nav>
-                </div>
+                <TabsList aria-label="Seções das ferramentas de desenvolvimento">
+                    <TabItem
+                        value="tools"
+                        icon={Settings}
+                        label="Ferramentas"
+                    />
+                    <TabItem
+                        value="routes"
+                        icon={List}
+                        label={
+                            routes
+                                ? `Rotas Laravel (${routes.length})`
+                                : 'Rotas Laravel'
+                        }
+                    />
+                </TabsList>
 
                 {/* ── Tab: Dev Tools ───────────────────────────────── */}
-                {activeTab === 'tools' && (
+                <TabPanel value="tools" className="space-y-6">
                     <>
                         {/* System Info */}
                         <Card>
                             <CardHeader className="pb-4">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Server className="text-muted-foreground size-4" />
-                                    Informações do Sistema
+                                    <Server className="size-4 text-muted-foreground" />
+                                    Informações do sistema
                                 </CardTitle>
-                                <CardDescription>Status atual do ambiente e serviços</CardDescription>
+                                <CardDescription>
+                                    Status atual do ambiente e serviços
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                                    <InfoItem label="PHP" icon={<FileCode className="size-3.5" />} value={systemInfo.php_version} />
-                                    <InfoItem label="Laravel" icon={<Zap className="size-3.5" />} value={systemInfo.laravel_version} />
+                                    <InfoItem
+                                        label="PHP"
+                                        icon={<FileCode className="size-3.5" />}
+                                        value={systemInfo.php_version}
+                                    />
+                                    <InfoItem
+                                        label="Laravel"
+                                        icon={<Zap className="size-3.5" />}
+                                        value={systemInfo.laravel_version}
+                                    />
                                     <InfoItem
                                         label="Ambiente"
                                         icon={<Globe className="size-3.5" />}
                                         value={
                                             <Badge
-                                                variant={systemInfo.app_env === 'production' ? 'destructive' : 'default'}
+                                                variant={
+                                                    systemInfo.app_env ===
+                                                    'production'
+                                                        ? 'destructive'
+                                                        : 'default'
+                                                }
                                                 className="text-xs"
                                             >
                                                 {systemInfo.app_env}
@@ -213,22 +260,62 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                         label="Debug"
                                         icon={<Bug className="size-3.5" />}
                                         value={
-                                            <Badge variant={systemInfo.app_debug ? 'destructive' : 'secondary'} className="text-xs">
-                                                {systemInfo.app_debug ? 'Ativo' : 'Inativo'}
+                                            <Badge
+                                                variant={
+                                                    systemInfo.app_debug
+                                                        ? 'destructive'
+                                                        : 'secondary'
+                                                }
+                                                className="text-xs"
+                                            >
+                                                {systemInfo.app_debug
+                                                    ? 'Ativo'
+                                                    : 'Inativo'}
                                             </Badge>
                                         }
                                     />
-                                    <InfoItem label="Cache Driver" icon={<Database className="size-3.5" />} value={systemInfo.cache_driver} />
-                                    <InfoItem label="Queue" icon={<RefreshCw className="size-3.5" />} value={systemInfo.queue_connection} />
-                                    <InfoItem label="Database" icon={<Database className="size-3.5" />} value={systemInfo.database_connection} />
-                                    <InfoItem label="Timezone" icon={<Clock className="size-3.5" />} value={systemInfo.timezone} />
-                                    <InfoItem label="Locale" icon={<Globe className="size-3.5" />} value={systemInfo.locale} />
+                                    <InfoItem
+                                        label="Cache Driver"
+                                        icon={<Database className="size-3.5" />}
+                                        value={systemInfo.cache_driver}
+                                    />
+                                    <InfoItem
+                                        label="Queue"
+                                        icon={
+                                            <RefreshCw className="size-3.5" />
+                                        }
+                                        value={systemInfo.queue_connection}
+                                    />
+                                    <InfoItem
+                                        label="Database"
+                                        icon={<Database className="size-3.5" />}
+                                        value={systemInfo.database_connection}
+                                    />
+                                    <InfoItem
+                                        label="Timezone"
+                                        icon={<Clock className="size-3.5" />}
+                                        value={systemInfo.timezone}
+                                    />
+                                    <InfoItem
+                                        label="Locale"
+                                        icon={<Globe className="size-3.5" />}
+                                        value={systemInfo.locale}
+                                    />
                                     <InfoItem
                                         label="Telescope"
                                         icon={<Settings className="size-3.5" />}
                                         value={
-                                            <Badge variant={systemInfo.telescope_enabled ? 'default' : 'secondary'} className="text-xs">
-                                                {systemInfo.telescope_enabled ? 'Habilitado' : 'Desabilitado'}
+                                            <Badge
+                                                variant={
+                                                    systemInfo.telescope_enabled
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
+                                                className="text-xs"
+                                            >
+                                                {systemInfo.telescope_enabled
+                                                    ? 'Habilitado'
+                                                    : 'Desabilitado'}
                                             </Badge>
                                         }
                                     />
@@ -238,29 +325,42 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
 
                         <div className="grid gap-6 lg:grid-cols-2">
                             {/* Modo de Manutenção */}
-                            <Card className={maintenanceMode ? 'border-yellow-500/40 bg-yellow-500/5' : ''}>
+                            <Card
+                                className={
+                                    maintenanceMode
+                                        ? 'border-warning-soft-foreground/40'
+                                        : ''
+                                }
+                            >
                                 <CardHeader className="pb-4">
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <Wrench className="text-muted-foreground size-4" />
-                                        Modo de Manutenção
+                                        <Wrench className="size-4 text-muted-foreground" />
+                                        Modo de manutenção
                                     </CardTitle>
-                                    <CardDescription>Ative ou desative o modo de manutenção do sistema</CardDescription>
+                                    <CardDescription>
+                                        Ative ou desative o modo de manutenção
+                                        do sistema
+                                    </CardDescription>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-3">
                                     <div className="flex items-center justify-between rounded-lg border p-4">
                                         <div className="flex items-center gap-3">
                                             {maintenanceMode ? (
-                                                <div className="flex size-9 items-center justify-center rounded-full bg-yellow-500/15">
-                                                    <AlertTriangle className="size-4 text-yellow-500" />
+                                                <div className="flex size-9 items-center justify-center rounded-full bg-warning-soft">
+                                                    <AlertTriangle className="size-4 text-warning-soft-foreground" />
                                                 </div>
                                             ) : (
-                                                <div className="flex size-9 items-center justify-center rounded-full bg-green-500/15">
-                                                    <CheckCircle2 className="size-4 text-green-500" />
+                                                <div className="flex size-9 items-center justify-center rounded-full bg-success-soft">
+                                                    <CheckCircle2 className="size-4 text-success-soft-foreground" />
                                                 </div>
                                             )}
                                             <div>
-                                                <p className="text-sm font-medium">{maintenanceMode ? 'Manutenção Ativa' : 'Sistema Online'}</p>
-                                                <p className="text-muted-foreground text-xs">
+                                                <p className="text-sm font-medium">
+                                                    {maintenanceMode
+                                                        ? 'Manutenção ativa'
+                                                        : 'Sistema online'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
                                                     {maintenanceMode
                                                         ? 'O sistema está indisponível para usuários'
                                                         : 'O sistema está operacional'}
@@ -268,19 +368,38 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                             </div>
                                         </div>
                                         <Button
-                                            variant={maintenanceMode ? 'default' : 'destructive'}
+                                            variant={
+                                                maintenanceMode
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
                                             size="sm"
-                                            onClick={() => handleAction(toggleMaintenance.url())}
+                                            onClick={() =>
+                                                handleAction(
+                                                    toggleMaintenance.url(),
+                                                )
+                                            }
                                             disabled={loading !== null}
                                         >
-                                            {isLoading(toggleMaintenance.url()) ? (
+                                            {isLoading(
+                                                toggleMaintenance.url(),
+                                            ) ? (
                                                 <RefreshCw className="size-3.5 animate-spin" />
                                             ) : (
                                                 <Wrench className="size-3.5" />
                                             )}
-                                            {maintenanceMode ? 'Restaurar' : 'Ativar'}
+                                            {maintenanceMode
+                                                ? 'Restaurar'
+                                                : 'Ativar'}
                                         </Button>
                                     </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Sua sessão mantém acesso para restaurar
+                                        o sistema; outros visitantes verão uma
+                                        página de indisponibilidade. Se perder o
+                                        acesso, um operador pode executar{' '}
+                                        <code>php artisan up</code> no servidor.
+                                    </p>
                                 </CardContent>
                             </Card>
 
@@ -288,10 +407,12 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                             <Card>
                                 <CardHeader className="pb-4">
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <Settings className="text-muted-foreground size-4" />
+                                        <Settings className="size-4 text-muted-foreground" />
                                         Telescope
                                     </CardTitle>
-                                    <CardDescription>Controle o Telescope e suas configurações de captura</CardDescription>
+                                    <CardDescription>
+                                        Habilite ou desabilite o Telescope
+                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <div className="flex items-center justify-between rounded-lg border p-3">
@@ -304,58 +425,48 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                                 />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium">Status</p>
-                                                <p className="text-muted-foreground text-xs">
-                                                    {systemInfo.telescope_enabled ? 'Capturando dados' : 'Desabilitado'}
+                                                <p className="text-sm font-medium">
+                                                    Status
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {operationalSettings.TELESCOPE_ENABLED
+                                                        ? 'Habilitado'
+                                                        : 'Desabilitado'}
                                                 </p>
                                             </div>
                                         </div>
                                         <Button
-                                            variant={systemInfo.telescope_enabled ? 'destructive' : 'default'}
+                                            variant={
+                                                systemInfo.telescope_enabled
+                                                    ? 'outline'
+                                                    : 'default'
+                                            }
                                             size="sm"
-                                            onClick={() => handleAction(toggleTelescope.url())}
+                                            onClick={() =>
+                                                handleAction(updateEnv.url(), {
+                                                    key: 'TELESCOPE_ENABLED',
+                                                    value: operationalSettings.TELESCOPE_ENABLED
+                                                        ? 'false'
+                                                        : 'true',
+                                                })
+                                            }
                                             disabled={loading !== null}
                                         >
-                                            {isLoading(toggleTelescope.url()) ? (
+                                            {isLoading(updateEnv.url()) ? (
                                                 <RefreshCw className="size-3.5 animate-spin" />
                                             ) : (
                                                 <Power className="size-3.5" />
                                             )}
-                                            {systemInfo.telescope_enabled ? 'Desabilitar' : 'Habilitar'}
+                                            {systemInfo.telescope_enabled
+                                                ? 'Desabilitar'
+                                                : 'Habilitar'}
                                         </Button>
                                     </div>
 
-                                    <div className="flex items-center justify-between rounded-lg border p-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-muted flex size-8 items-center justify-center rounded-full">
-                                                <Database className="text-muted-foreground size-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium">Modo de Captura</p>
-                                                <p className="text-muted-foreground text-xs">
-                                                    {systemInfo.telescope_capture_all
-                                                        ? 'Capturando todas as requisições'
-                                                        : 'Apenas exceções e falhas'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            variant={systemInfo.telescope_capture_all ? 'default' : 'outline'}
-                                            size="sm"
-                                            onClick={() => handleAction(toggleTelescopeCaptureAll.url())}
-                                            disabled={loading !== null}
-                                        >
-                                            {isLoading(toggleTelescopeCaptureAll.url()) ? (
-                                                <RefreshCw className="size-3.5 animate-spin" />
-                                            ) : (
-                                                <Power className="size-3.5" />
-                                            )}
-                                            {systemInfo.telescope_capture_all ? 'Modo Filtrado' : 'Capturar Tudo'}
-                                        </Button>
-                                    </div>
-
-                                    <p className="bg-muted/50 text-muted-foreground rounded-md px-3 py-2 text-xs">
-                                        <strong>Nota:</strong> Alterações no Telescope requerem reinicialização para efeito completo.
+                                    <p className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                                        <strong>Nota:</strong> Alterações no
+                                        Telescope requerem reinicialização para
+                                        efeito completo.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -365,31 +476,67 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                         <Card>
                             <CardHeader className="pb-4">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Database className="text-muted-foreground size-4" />
-                                    Gerenciamento de Cache
+                                    <Database className="size-4 text-muted-foreground" />
+                                    Gerenciamento de cache
                                 </CardTitle>
-                                <CardDescription>Limpe caches específicos ou otimize a aplicação</CardDescription>
+                                <CardDescription>
+                                    Limpe caches específicos ou otimize a
+                                    aplicação
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <p className="text-muted-foreground mb-2.5 text-xs font-medium uppercase tracking-wide">Limpeza individual</p>
+                                    <p className="mb-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                        Limpeza individual
+                                    </p>
                                     <div className="flex flex-wrap gap-2">
                                         {(
                                             [
-                                                { type: 'cache', label: 'Cache', icon: <Database className="size-3.5" /> },
-                                                { type: 'config', label: 'Config', icon: <Settings className="size-3.5" /> },
-                                                { type: 'route', label: 'Rotas', icon: <FileCode className="size-3.5" /> },
-                                                { type: 'view', label: 'Views', icon: <Trash2 className="size-3.5" /> },
+                                                {
+                                                    type: 'cache',
+                                                    label: 'Cache',
+                                                    icon: (
+                                                        <Database className="size-3.5" />
+                                                    ),
+                                                },
+                                                {
+                                                    type: 'config',
+                                                    label: 'Config',
+                                                    icon: (
+                                                        <Settings className="size-3.5" />
+                                                    ),
+                                                },
+                                                {
+                                                    type: 'route',
+                                                    label: 'Rotas',
+                                                    icon: (
+                                                        <FileCode className="size-3.5" />
+                                                    ),
+                                                },
+                                                {
+                                                    type: 'view',
+                                                    label: 'Views',
+                                                    icon: (
+                                                        <Trash2 className="size-3.5" />
+                                                    ),
+                                                },
                                             ] as const
                                         ).map(({ type, label, icon }) => (
                                             <Button
                                                 key={type}
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleAction(clearSpecificCache.url(), { type })}
+                                                onClick={() =>
+                                                    handleAction(
+                                                        clearSpecificCache.url(),
+                                                        { type },
+                                                    )
+                                                }
                                                 disabled={loading !== null}
                                             >
-                                                {isLoading(clearSpecificCache.url()) ? (
+                                                {isLoading(
+                                                    clearSpecificCache.url(),
+                                                ) ? (
                                                     <RefreshCw className="size-3.5 animate-spin" />
                                                 ) : (
                                                     icon
@@ -403,12 +550,18 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                 <Separator />
 
                                 <div>
-                                    <p className="text-muted-foreground mb-2.5 text-xs font-medium uppercase tracking-wide">Ações globais</p>
+                                    <p className="mb-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                        Ações globais
+                                    </p>
                                     <div className="flex flex-wrap gap-2">
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            onClick={() => handleAction(clearAllCaches.url())}
+                                            onClick={() =>
+                                                handleAction(
+                                                    clearAllCaches.url(),
+                                                )
+                                            }
                                             disabled={loading !== null}
                                         >
                                             {isLoading(clearAllCaches.url()) ? (
@@ -416,12 +569,14 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                             ) : (
                                                 <Trash2 className="size-3.5" />
                                             )}
-                                            Limpar Todos os Caches
+                                            Limpar todos os caches
                                         </Button>
                                         <Button
                                             variant="default"
                                             size="sm"
-                                            onClick={() => handleAction(optimize.url())}
+                                            onClick={() =>
+                                                handleAction(optimize.url())
+                                            }
                                             disabled={loading !== null}
                                         >
                                             {isLoading(optimize.url()) ? (
@@ -436,107 +591,65 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                             </CardContent>
                         </Card>
 
-                        {/* Environment Variables */}
+                        {/* Operational Settings */}
                         <Card>
                             <CardHeader className="pb-4">
                                 <CardTitle className="flex items-center gap-2 text-base">
-                                    <Shield className="text-muted-foreground size-4" />
-                                    Variáveis de Ambiente
+                                    <Shield className="size-4 text-muted-foreground" />
+                                    Configurações operacionais
                                 </CardTitle>
-                                <CardDescription>Visualize e atualize variáveis do arquivo .env</CardDescription>
+                                <CardDescription>
+                                    Nome e idiomas da aplicação. Se as
+                                    configurações estiverem em cache, limpe o
+                                    cache de configuração antes de salvar.
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-muted-foreground text-sm">{Object.keys(envVariables).length} variáveis carregadas</p>
-                                    <Button variant="ghost" size="sm" onClick={() => setShowEnvValues(!showEnvValues)}>
-                                        {showEnvValues ? (
-                                            <>
-                                                <EyeOff className="size-3.5" />
-                                                Ocultar valores
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Eye className="size-3.5" />
-                                                Mostrar valores
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-
-                                <div className="bg-muted/30 max-h-64 overflow-y-auto rounded-lg border">
-                                    <div className="divide-y">
-                                        {Object.entries(envVariables).map(([key, value]) => (
-                                            <div
-                                                key={key}
-                                                className="hover:bg-muted/50 flex items-center justify-between px-4 py-2 transition-colors"
-                                            >
-                                                <span className="font-mono text-xs font-semibold">{key}</span>
-                                                <span className="text-muted-foreground ml-4 max-w-xs truncate font-mono text-xs">
-                                                    {showEnvValues ? value : '••••••••'}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div className="space-y-3">
-                                    <p className="text-sm font-medium">Atualizar variável</p>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="env-key" className="text-xs">
-                                                Chave
-                                            </Label>
-                                            <Input
-                                                id="env-key"
-                                                value={envKey}
-                                                onChange={(e) => setEnvKey(e.target.value)}
-                                                placeholder="APP_DEBUG"
-                                                className="font-mono text-sm"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="env-value" className="text-xs">
-                                                Valor
-                                            </Label>
-                                            <Input
-                                                id="env-value"
-                                                value={envValue}
-                                                onChange={(e) => setEnvValue(e.target.value)}
-                                                placeholder="true"
-                                                className="font-mono text-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button size="sm" onClick={handleUpdateEnv} disabled={loading !== null || !envKey || !envValue}>
-                                        {isLoading(updateEnv.url()) ? (
-                                            <RefreshCw className="size-3.5 animate-spin" />
-                                        ) : (
-                                            <Settings className="size-3.5" />
-                                        )}
-                                        Atualizar Variável
-                                    </Button>
-                                </div>
+                                <OperationalSettingForm
+                                    key={`APP_NAME:${operationalSettings.APP_NAME}`}
+                                    settingKey="APP_NAME"
+                                    label="Nome da aplicação"
+                                    value={operationalSettings.APP_NAME}
+                                    disabled={loading !== null}
+                                />
+                                <OperationalSettingForm
+                                    key={`APP_LOCALE:${operationalSettings.APP_LOCALE}`}
+                                    settingKey="APP_LOCALE"
+                                    label="Idioma da aplicação"
+                                    value={operationalSettings.APP_LOCALE}
+                                    disabled={loading !== null}
+                                    locales
+                                />
+                                <OperationalSettingForm
+                                    key={`APP_FALLBACK_LOCALE:${operationalSettings.APP_FALLBACK_LOCALE}`}
+                                    settingKey="APP_FALLBACK_LOCALE"
+                                    label="Idioma alternativo"
+                                    value={
+                                        operationalSettings.APP_FALLBACK_LOCALE
+                                    }
+                                    disabled={loading !== null}
+                                    locales
+                                />
                             </CardContent>
                         </Card>
                     </>
-                )}
+                </TabPanel>
 
                 {/* ── Tab: Rotas Laravel ───────────────────────────── */}
-                {activeTab === 'routes' && (
+                <TabPanel value="routes">
                     <Card>
                         <CardHeader className="pb-4">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <List className="text-muted-foreground size-4" />
-                                        Rotas Registradas
+                                        <List className="size-4 text-muted-foreground" />
+                                        Rotas registradas
                                     </CardTitle>
                                     <CardDescription>
                                         {routes ? (
                                             <>
-                                                {filteredRoutes.length} de {routes.length} rotas
+                                                {filteredRoutes.length} de{' '}
+                                                {routes.length} rotas
                                             </>
                                         ) : (
                                             'Carregando rotas…'
@@ -549,14 +662,18 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                     <Input
                                         placeholder="Buscar uri, nome, action…"
                                         value={routeSearch}
-                                        onChange={(e) => setRouteSearch(e.target.value)}
+                                        onChange={(e) =>
+                                            setRouteSearch(e.target.value)
+                                        }
                                         className="h-8 w-56 text-sm"
                                     />
                                     <div className="flex gap-1">
                                         {availableMethods.map((m) => (
                                             <button
                                                 key={m}
-                                                onClick={() => setMethodFilter(m)}
+                                                onClick={() =>
+                                                    setMethodFilter(m)
+                                                }
                                                 className={`rounded px-2 py-1 font-mono text-xs font-semibold transition-colors ${
                                                     methodFilter === m
                                                         ? 'bg-foreground text-background'
@@ -575,7 +692,10 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                 // Deferred loading skeleton
                                 <div className="divide-y">
                                     {Array.from({ length: 8 }).map((_, i) => (
-                                        <div key={i} className="flex items-center gap-4 px-6 py-3">
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-4 px-6 py-3"
+                                        >
                                             <Skeleton className="h-5 w-14 rounded" />
                                             <Skeleton className="h-4 w-48 rounded" />
                                             <Skeleton className="h-4 w-32 rounded" />
@@ -583,59 +703,84 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                                     ))}
                                 </div>
                             ) : filteredRoutes.length === 0 ? (
-                                <div className="text-muted-foreground py-12 text-center text-sm">Nenhuma rota encontrada.</div>
+                                <div className="py-12 text-center text-sm text-muted-foreground">
+                                    Nenhuma rota encontrada.
+                                </div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="bg-muted/40 border-b">
-                                                <th className="text-muted-foreground px-6 py-2.5 text-left font-medium">Método</th>
-                                                <th className="text-muted-foreground px-6 py-2.5 text-left font-medium">URI</th>
-                                                <th className="text-muted-foreground px-6 py-2.5 text-left font-medium">Nome</th>
-                                                <th className="text-muted-foreground px-6 py-2.5 text-left font-medium">Action</th>
-                                                <th className="text-muted-foreground px-6 py-2.5 text-left font-medium">Middleware</th>
+                                            <tr className="border-b bg-muted/40">
+                                                <th className="px-6 py-2.5 text-left font-medium text-muted-foreground">
+                                                    Método
+                                                </th>
+                                                <th className="px-6 py-2.5 text-left font-medium text-muted-foreground">
+                                                    URI
+                                                </th>
+                                                <th className="px-6 py-2.5 text-left font-medium text-muted-foreground">
+                                                    Nome
+                                                </th>
+                                                <th className="px-6 py-2.5 text-left font-medium text-muted-foreground">
+                                                    Ação
+                                                </th>
+                                                <th className="px-6 py-2.5 text-left font-medium text-muted-foreground">
+                                                    Middleware
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
                                             {filteredRoutes.map((route, i) => (
-                                                <tr key={i} className="hover:bg-muted/30 transition-colors">
+                                                <tr
+                                                    key={i}
+                                                    className="transition-colors hover:bg-muted/30"
+                                                >
                                                     <td className="px-6 py-2.5">
                                                         <div className="flex flex-wrap gap-1">
-                                                            {route.method.split('|').map((m) => (
-                                                                <span
-                                                                    key={m}
-                                                                    className={`inline-block rounded px-1.5 py-0.5 font-mono text-xs font-bold ${METHOD_COLORS[m] ?? METHOD_COLORS.ANY}`}
-                                                                >
-                                                                    {m}
-                                                                </span>
-                                                            ))}
+                                                            {route.method
+                                                                .split('|')
+                                                                .map((m) => (
+                                                                    <span
+                                                                        key={m}
+                                                                        className={`inline-block rounded px-1.5 py-0.5 font-mono text-xs font-bold ${METHOD_COLORS[m] ?? METHOD_COLORS.ANY}`}
+                                                                    >
+                                                                        {m}
+                                                                    </span>
+                                                                ))}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-2.5">
-                                                        <span className="font-mono text-xs">{route.uri}</span>
+                                                        <span className="font-mono text-xs">
+                                                            {route.uri}
+                                                        </span>
                                                     </td>
                                                     <td className="px-6 py-2.5">
                                                         {route.name ? (
-                                                            <span className="text-muted-foreground font-mono text-xs">{route.name}</span>
+                                                            <span className="font-mono text-xs text-muted-foreground">
+                                                                {route.name}
+                                                            </span>
                                                         ) : (
-                                                            <span className="text-muted-foreground/40 text-xs">—</span>
+                                                            <span className="text-xs text-muted-foreground/40">
+                                                                -
+                                                            </span>
                                                         )}
                                                     </td>
                                                     <td className="max-w-xs px-6 py-2.5">
-                                                        <span className="text-muted-foreground block truncate font-mono text-xs">
+                                                        <span className="block truncate font-mono text-xs text-muted-foreground">
                                                             {route.action}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-2.5">
                                                         <div className="flex flex-wrap gap-1">
-                                                            {route.middleware.map((m) => (
-                                                                <span
-                                                                    key={m}
-                                                                    className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs"
-                                                                >
-                                                                    {m}
-                                                                </span>
-                                                            ))}
+                                                            {route.middleware.map(
+                                                                (m) => (
+                                                                    <span
+                                                                        key={m}
+                                                                        className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
+                                                                    >
+                                                                        {m}
+                                                                    </span>
+                                                                ),
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -646,44 +791,116 @@ export default function Tools({ maintenanceMode, envVariables, systemInfo, route
                             )}
                         </CardContent>
                     </Card>
-                )}
-            </div>
+                </TabPanel>
+            </Tabs>
         </>
     );
 }
 
 /* ── Componentes auxiliares ───────────────────────────────────────────────── */
 
-function TabButton({
-    active,
-    onClick,
-    icon,
-    children,
+function OperationalSettingForm({
+    settingKey,
+    label,
+    value,
+    disabled,
+    locales = false,
 }: {
-    active: boolean;
-    onClick: () => void;
-    icon: React.ReactNode;
-    children: React.ReactNode;
+    settingKey: 'APP_NAME' | 'APP_LOCALE' | 'APP_FALLBACK_LOCALE';
+    label: string;
+    value: string;
+    disabled: boolean;
+    locales?: boolean;
 }) {
+    const form = useForm({ key: settingKey, value });
+    const id = `operational-${settingKey}`;
+    const error = form.errors.value ?? form.errors.key;
+
     return (
-        <button
-            onClick={onClick}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-                active
-                    ? 'border-foreground text-foreground'
-                    : 'text-muted-foreground hover:text-foreground border-transparent hover:border-border'
-            }`}
+        <form
+            action={updateEnv.url()}
+            method="post"
+            className="space-y-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.post(updateEnv.url(), {
+                    preserveScroll: true,
+                    onSuccess: () => toast.success('Configuração atualizada'),
+                });
+            }}
         >
-            {icon}
-            {children}
-        </button>
+            <input type="hidden" name="key" value={settingKey} />
+            <Label htmlFor={id}>{label}</Label>
+            <div className="flex items-start gap-3">
+                {locales ? (
+                    <Select
+                        name="value"
+                        value={form.data.value}
+                        onValueChange={(next) => {
+                            form.setData('value', next);
+                            form.clearErrors();
+                        }}
+                        disabled={disabled || form.processing}
+                    >
+                        <SelectTrigger
+                            id={id}
+                            className="w-full"
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={error ? `${id}-error` : undefined}
+                        />
+                        <SelectContent>
+                            <SelectItem index={0} value="en">
+                                English
+                            </SelectItem>
+                            <SelectItem index={1} value="pt_BR">
+                                Português (Brasil)
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <Input
+                        id={id}
+                        name="value"
+                        value={form.data.value}
+                        required
+                        maxLength={80}
+                        disabled={disabled || form.processing}
+                        aria-invalid={Boolean(error)}
+                        aria-describedby={error ? `${id}-error` : undefined}
+                        onChange={(event) => {
+                            form.setData('value', event.target.value);
+                            form.clearErrors();
+                        }}
+                    />
+                )}
+                <Button
+                    type="submit"
+                    size="sm"
+                    disabled={disabled || form.processing}
+                >
+                    {form.processing && (
+                        <RefreshCw className="size-3.5 animate-spin" />
+                    )}
+                    Salvar
+                </Button>
+            </div>
+            <InputError id={`${id}-error`} message={error} aria-live="polite" />
+        </form>
     );
 }
 
-function InfoItem({ label, icon, value }: { label: string; icon: React.ReactNode; value: React.ReactNode }) {
+function InfoItem({
+    label,
+    icon,
+    value,
+}: {
+    label: string;
+    icon: React.ReactNode;
+    value: React.ReactNode;
+}) {
     return (
         <div className="space-y-1">
-            <div className="text-muted-foreground flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 {icon}
                 {label}
             </div>

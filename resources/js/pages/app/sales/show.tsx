@@ -1,6 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import {
-    ArrowLeft,
     BadgeCheck,
     Building2,
     CheckCircle2,
@@ -161,10 +160,10 @@ function SpecPanel({
 }) {
     return (
         <section className="grid h-full min-w-0 grid-rows-[auto_minmax(0,1fr)]">
-            <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+            <h4 className="mb-2 text-2xs font-semibold text-muted-foreground uppercase">
                 {title}
             </h4>
-            <dl className="h-full divide-y divide-border/70 overflow-hidden rounded-lg border border-border/70 bg-background/70">
+            <dl className="h-full divide-y divide-separator overflow-hidden rounded-lg border border-border bg-card">
                 {children}
             </dl>
         </section>
@@ -174,7 +173,7 @@ function SpecPanel({
 function SpecRow({ label, children }: { label: string; children: ReactNode }) {
     return (
         <div className="grid grid-cols-[4.75rem_minmax(0,1fr)] items-start gap-3 px-3 py-2">
-            <dt className="text-[11px] text-muted-foreground">{label}</dt>
+            <dt className="text-2xs text-muted-foreground">{label}</dt>
             <dd className="min-w-0 text-xs font-medium break-words text-foreground">
                 {children}
             </dd>
@@ -333,8 +332,8 @@ function ItemOriginVisual({ item }: { item: SaleItem }) {
             className={cn(
                 'flex size-12 shrink-0 items-center justify-center rounded-md border',
                 item.type === 'playlist_slot'
-                    ? 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300'
-                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                    ? 'border-border bg-info-soft text-info-soft-foreground'
+                    : 'border-border bg-success-soft text-success-soft-foreground',
             )}
         >
             <Icon className="size-5" />
@@ -383,13 +382,13 @@ function ItemMusicDetails({ item }: { item: SaleItem }) {
                         href={item.track_spotify_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex max-w-full items-center gap-1 rounded-sm font-mono text-[11px] text-primary underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        className="inline-flex max-w-full items-center gap-1 rounded-sm font-mono text-2xs text-primary underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                         <span className="truncate">{spotifyLabel}</span>
                         <ExternalLink className="size-3 shrink-0" />
                     </a>
                 ) : (
-                    <span className="font-mono text-[11px] text-muted-foreground">
+                    <span className="font-mono text-2xs text-muted-foreground">
                         {spotifyLabel}
                     </span>
                 )}
@@ -404,7 +403,7 @@ function SaleOverview({ sale, items }: { sale: Sale; items: SaleItem[] }) {
             aria-label="Resumo da venda"
             className="overflow-hidden rounded-lg border bg-card"
         >
-            <div className="border-b bg-muted/30 px-4 py-5 sm:px-5">
+            <div className="border-b bg-muted px-4 py-5 sm:px-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 space-y-3">
                         <div className="min-w-0">
@@ -483,7 +482,7 @@ function SaleComposition({
         items.some((item) => item.type === 'playlist_slot');
 
     return (
-        <section className="overflow-hidden rounded-xl border bg-card">
+        <section className="overflow-hidden rounded-lg border bg-card">
             <header className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div className="flex items-baseline gap-2">
                     <h2 className="text-base font-semibold">Itens da venda</h2>
@@ -579,7 +578,7 @@ function SaleComposition({
                                                               item,
                                                           )}
                                                 </p>
-                                                <p className="mt-2 text-[11px] text-muted-foreground">
+                                                <p className="mt-2 text-2xs text-muted-foreground">
                                                     {itemOriginLabel(item)}
                                                 </p>
                                             </div>
@@ -618,8 +617,8 @@ function SaleComposition({
                                         </div>
                                     </div>
 
-                                    <details className="group border-t bg-muted/15">
-                                        <summary className="flex min-h-9 cursor-pointer list-none items-center gap-2 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/35 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset sm:px-5 [&::-webkit-details-marker]:hidden">
+                                    <details className="group border-t bg-muted">
+                                        <summary className="flex min-h-9 cursor-pointer list-none items-center gap-2 px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset sm:px-5 [&::-webkit-details-marker]:hidden">
                                             <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
                                             Ver detalhes
                                         </summary>
@@ -708,7 +707,7 @@ function SaleComposition({
                 </>
             ) : (
                 <div className="p-4">
-                    <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
+                    <div className="rounded-lg border border-dashed bg-muted p-8 text-center">
                         <ListPlus className="mx-auto size-8 text-muted-foreground" />
                         <p className="mt-3 text-sm font-medium">
                             Nenhum serviço adicionado nesta venda.
@@ -738,38 +737,18 @@ export default function ShowSale({ saleData, permissions }: Props) {
         <>
             <Head title={sale.order_number} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="page-heading-title">
-                                {sale.order_number}
-                            </h1>
-                            <StatusBadge presenter={sale.status_presenter} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            {sale.title ??
-                                sale.client?.name ??
-                                'Venda sem título'}
-                        </p>
-                    </div>
-                </div>
+            <Header
+                title={sale.order_number}
+                subtitle={sale.title ?? sale.client?.name ?? 'Venda sem título'}
+                backHref={index.url()}
+            >
                 <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge presenter={sale.status_presenter} />
                     {permissions.can_update &&
                     ['draft', 'quoted'].includes(sale.status) ? (
-                        <Button variant="outline" size="sm" asChild>
+                        <Button variant="outline" asChild>
                             <Link href={edit.url(sale.uuid)}>
-                                <Pencil className="size-4" />
+                                <Pencil className="size-4" aria-hidden="true" />
                                 Editar
                             </Link>
                         </Button>
@@ -779,7 +758,7 @@ export default function ShowSale({ saleData, permissions }: Props) {
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="space-y-4 p-4">
+                <div className="space-y-4">
                     <SaleOverview sale={sale} items={items} />
                     <SaleComposition
                         sale={sale}

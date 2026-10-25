@@ -3,7 +3,7 @@
 use App\Modules\CrudGenerator\Http\Controllers\CrudGeneratorController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['web', 'auth', 'verified', 'role:developer'])
+Route::middleware(['web', 'auth', 'can:useDeveloperTools'])
     ->prefix('admin/dev/crud-generator')
     ->name('admin.dev.crud-generator.')
     ->group(function (): void {

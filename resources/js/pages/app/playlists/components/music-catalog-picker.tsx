@@ -8,7 +8,7 @@ import {
     Tags,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -17,10 +17,20 @@ import {
 } from '@/actions/App/Modules/Playlists/Http/Controllers/MusicGenreController';
 import { AsyncSelect } from '@/components/async-select';
 import type { AsyncSelectOption } from '@/components/async-select';
+import { EmptyState } from '@/components/empty-state';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import FormField from '@/components/ui/forms/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { getErrorMessage, httpPost, isApiError } from '@/lib/http';
 import type { ApiResponse } from '@/lib/http';
 import { cn } from '@/lib/utils';
@@ -80,68 +90,24 @@ function catalogErrorMessage(error: unknown): string {
         : 'Erro inesperado. Tente novamente.';
 }
 
+/** Sempre montado aberto: quem chama decide a montagem; fechar pelo overlay, Escape ou X avisa onClose. */
 function ModalShell({
     title,
     description,
     children,
     onClose,
 }: ModalShellProps) {
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'Escape') {
-                onClose();
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <button
-                type="button"
-                className="absolute inset-0 bg-black/55"
-                aria-label="Fechar modal"
-                onClick={onClose}
-            />
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="music-catalog-modal-title"
-                aria-describedby="music-catalog-modal-description"
-                className="relative z-10 grid w-full max-w-lg gap-4 rounded-lg border bg-background p-6 shadow-lg"
-            >
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 right-3 size-8 text-muted-foreground"
-                    aria-label="Fechar"
-                    onClick={onClose}
-                >
-                    <X className="size-4" />
-                </Button>
-
-                <div className="space-y-2 pr-8">
-                    <h2
-                        id="music-catalog-modal-title"
-                        className="text-lg leading-none font-semibold"
-                    >
-                        {title}
-                    </h2>
-                    <p
-                        id="music-catalog-modal-description"
-                        className="text-sm text-muted-foreground"
-                    >
-                        {description}
-                    </p>
-                </div>
+        <Dialog open onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
+                </DialogHeader>
 
                 {children}
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -153,24 +119,11 @@ function CreateGenreButton({
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [busy, setBusy] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
 
     function close(): void {
         setOpen(false);
         setName('');
     }
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        const frame = window.requestAnimationFrame(() => {
-            inputRef.current?.focus({ preventScroll: true });
-        });
-
-        return () => window.cancelAnimationFrame(frame);
-    }, [open]);
 
     async function createGenre(): Promise<void> {
         const nextName = name.trim();
@@ -217,9 +170,9 @@ function CreateGenreButton({
                     onClose={close}
                 >
                     <Input
-                        ref={inputRef}
                         value={name}
                         placeholder="Ex.: MPB"
+                        aria-label="Nome do gênero"
                         disabled={busy}
                         onChange={(event) => setName(event.target.value)}
                         onKeyDown={(event) => {
@@ -230,8 +183,9 @@ function CreateGenreButton({
                         }}
                     />
 
-                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <DialogFooter>
                         <Button type="button" variant="outline" onClick={close}>
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button
@@ -246,7 +200,7 @@ function CreateGenreButton({
                             )}
                             Criar gênero
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </ModalShell>
             ) : null}
         </>
@@ -277,13 +231,12 @@ export function MusicGenrePicker({
     );
 
     return (
-        <div className="space-y-2">
-            <Label htmlFor="field-music-genre">
-                Gênero musical
-                {required ? (
-                    <span className="text-destructive"> *</span>
-                ) : null}
-            </Label>
+        <FormField
+            id="field-music-genre"
+            label="Gênero musical"
+            required={required}
+            error={error}
+        >
             <div className="flex gap-2">
                 <AsyncSelect
                     className="min-w-0 flex-1"
@@ -319,8 +272,7 @@ export function MusicGenrePicker({
                     />
                 ) : null}
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
+        </FormField>
     );
 }
 
@@ -341,7 +293,6 @@ function AttachSubgenreButton({
     const [search, setSearch] = useState('');
     const [visibleLimit, setVisibleLimit] = useState(12);
     const [busyKey, setBusyKey] = useState<string | null>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
 
     function updateSearch(value: string): void {
         setSearch(value);
@@ -353,18 +304,6 @@ function AttachSubgenreButton({
         updateSearch('');
         setBusyKey(null);
     }
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        const frame = window.requestAnimationFrame(() => {
-            inputRef.current?.focus({ preventScroll: true });
-        });
-
-        return () => window.cancelAnimationFrame(frame);
-    }, [open]);
 
     const availableSubgenres = useMemo(() => {
         const normalizedSearch = normalizeSearch(search);
@@ -494,11 +433,14 @@ function AttachSubgenreButton({
                     <div className="space-y-3">
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <div className="relative min-w-0 flex-1">
-                                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                />
                                 <Input
-                                    ref={inputRef}
                                     value={search}
                                     placeholder="Buscar ou criar subgênero"
+                                    aria-label="Buscar ou criar subgênero"
                                     className="pl-9"
                                     disabled={Boolean(busyKey)}
                                     onChange={(event) =>
@@ -515,6 +457,7 @@ function AttachSubgenreButton({
                             <Button
                                 type="button"
                                 variant="outline"
+                                size="lg"
                                 onClick={() => void createSubgenre()}
                                 disabled={Boolean(busyKey) || !search.trim()}
                             >
@@ -560,7 +503,7 @@ function AttachSubgenreButton({
                                                 <button
                                                     key={subgenre.id}
                                                     type="button"
-                                                    className="inline-flex min-h-8 items-center gap-1.5 rounded-full border bg-background px-3 text-sm transition-colors hover:bg-accent disabled:opacity-60"
+                                                    className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-sm transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                                                     disabled={Boolean(busyKey)}
                                                     onClick={() =>
                                                         void linkSubgenre(
@@ -603,9 +546,15 @@ function AttachSubgenreButton({
                                     ) : null}
                                 </>
                             ) : (
-                                <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                                    Nenhum subgênero disponível para atrelar.
-                                </p>
+                                <EmptyState
+                                    icon={Tags}
+                                    title="Nenhum subgênero disponível para atrelar"
+                                    description={
+                                        hasSearch
+                                            ? 'Nenhum subgênero corresponde à busca. Crie um novo com o botão acima.'
+                                            : undefined
+                                    }
+                                />
                             )}
                         </div>
                     </div>
@@ -707,12 +656,15 @@ export function MusicCatalogPicker({
                 onGenreChange={selectGenre}
             />
 
-            <div className="rounded-md border bg-muted/20 p-3">
+            <div className="rounded-lg border border-border bg-muted p-3">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <Tags className="size-4 text-muted-foreground" />
+                        <Tags
+                            className="size-4 text-muted-foreground"
+                            aria-hidden="true"
+                        />
                         <span className="text-sm font-medium">Subgêneros</span>
-                        <Badge variant="outline">
+                        <Badge variant="secondary">
                             {selectedSubgenreIds.length} selecionado
                             {selectedSubgenreIds.length === 1 ? '' : 's'}
                         </Badge>
@@ -753,12 +705,12 @@ export function MusicCatalogPicker({
                                         key={subgenre.id}
                                         type="button"
                                         disabled={!subgenre.is_active}
+                                        aria-pressed={selected}
                                         className={cn(
-                                            'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors',
+                                            'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
                                             selected
-                                                ? 'border-primary bg-primary text-primary-foreground'
-                                                : 'bg-background hover:bg-accent',
-                                            !subgenre.is_active && 'opacity-50',
+                                                ? 'border-transparent bg-primary-soft font-medium text-primary-soft-foreground'
+                                                : 'border-border bg-card hover:bg-accent',
                                         )}
                                         onClick={() => toggleSubgenre(subgenre)}
                                     >
@@ -784,11 +736,7 @@ export function MusicCatalogPicker({
                 )}
             </div>
 
-            {errors.subgenre_ids ? (
-                <p className="text-sm text-destructive">
-                    {errors.subgenre_ids}
-                </p>
-            ) : null}
+            <InputError message={errors.subgenre_ids} />
         </div>
     );
 }

@@ -180,6 +180,30 @@ class FinancialInstallmentQueueTest extends TestCase
             ->assertJsonPath('data.0.direction', FinancialDirection::Payable->value);
     }
 
+    public function test_consolidated_api_eager_loads_the_entry_origin(): void
+    {
+        $user = $this->userWithRole('finance');
+        $company = Company::factory()->create();
+        $month = today()->startOfMonth();
+        // Laravel only flags lazy loading when the query returns more than one model.
+        foreach ([30000, 20000] as $amount) {
+            $origin = Client::factory()->create(['company_id' => $company->id, 'name' => 'Origem da venda']);
+            $this->createReceivable($company, $amount, [$amount], [$month->toDateString()])
+                ->forceFill(['originable_type' => Client::class, 'originable_id' => $origin->id])
+                ->saveQuietly();
+        }
+
+        Sanctum::actingAs($user);
+
+        // Lazy loading is disabled outside production, so a missing eager load turns this into a 500.
+        $this->getJson(route('api.financial-installments.index', [
+            'direction' => 'all',
+            'month' => $month->format('Y-m'),
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.0.entry.origin_display_name', 'Origem da venda');
+    }
+
     public function test_agenda_and_api_reject_invalid_months(): void
     {
         $this->withoutVite();

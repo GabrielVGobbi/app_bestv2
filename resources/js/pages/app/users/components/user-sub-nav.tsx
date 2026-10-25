@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { Eye, KeyRound, Pencil, Shield } from 'lucide-react';
 
 import {
@@ -6,13 +7,14 @@ import {
     show,
     userPermissions,
 } from '@/actions/App/Http/Controllers/UserController';
-import { SubNavigation } from '@/components/sub-navigation';
+import { cn } from '@/lib/utils';
 
 type UserPage = 'show' | 'edit' | 'roles' | 'permissions';
 
 interface UserSubNavProps {
     userUuid: string;
     currentPage: UserPage;
+    can: { view: boolean; update: boolean; authority: boolean };
 }
 
 const navItems: {
@@ -23,7 +25,7 @@ const navItems: {
 }[] = [
     {
         key: 'show',
-        label: 'Visão geral',
+        label: 'Detalhes',
         icon: Eye,
         getHref: (uuid) => show.url(uuid),
     },
@@ -47,14 +49,39 @@ const navItems: {
     },
 ];
 
-export function UserSubNav({ userUuid, currentPage }: UserSubNavProps) {
+export function UserSubNav({ userUuid, currentPage, can }: UserSubNavProps) {
     return (
-        <SubNavigation
-            current={currentPage}
-            items={navItems.map((item) => ({
-                ...item,
-                href: item.getHref(userUuid),
-            }))}
-        />
+        <nav className="flex gap-1 rounded-lg border border-border bg-muted p-1">
+            {navItems
+                .filter(({ key }) =>
+                    key === 'show'
+                        ? can.view
+                        : key === 'edit'
+                          ? can.update
+                          : can.authority,
+                )
+                .map(({ key, label, icon: Icon, getHref }) => {
+                    const isActive = key === currentPage;
+
+                    return (
+                        <Link
+                            key={key}
+                            href={getHref(userUuid)}
+                            aria-label={label}
+                            title={label}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={cn(
+                                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                isActive
+                                    ? 'bg-card text-foreground shadow-xs'
+                                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                            )}
+                        >
+                            <Icon className="size-3.5" />
+                            <span className="hidden sm:inline">{label}</span>
+                        </Link>
+                    );
+                })}
+        </nav>
     );
 }

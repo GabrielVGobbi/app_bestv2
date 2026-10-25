@@ -2,11 +2,24 @@
 
 namespace Tests\Feature\Export;
 
+use App\Concerns\Exportable;
+use App\Concerns\Searchable;
 use App\Jobs\ProcessExport;
 use App\Models\Export;
 use App\Models\User;
+use App\Modules\Clients\Models\Client;
+use App\Modules\Permissions\Models\Permission;
+use App\Modules\Permissions\Models\Role;
+use App\Supports\ApiTokenAbilities;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class ExportApiControllerTest extends TestCase
@@ -19,7 +32,20 @@ class ExportApiControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
+        $this->isolateProjectFiles();
+        config(['permissions.super_role' => 'developer']);
+        $this->user = $this->actor('developer');
+        $this->grant($this->user, 'view-users', 'view-clients');
+        Bus::fake();
+        Storage::fake('local');
+        Notification::fake();
+        Mail::fake();
+        Http::preventStrayRequests();
+    }
+
+    public function test_export_tracker_poll_is_served_by_a_user_recency_index(): void
+    {
+        $this->assertTrue(Schema::hasIndex('exports', ['user_id', 'created_at']));
     }
 
     public function test_store_creates_export_and_dispatches_job(): void
@@ -138,4 +164,118 @@ class ExportApiControllerTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    #[DataProvider('exportModels')]
+    /** @return array<string, array{class-string<Model>}> */
+    public static function exportModels(): array
+    {
+        return ['users' => [User::class], 'clients' => [Client::class]];
+    }
+
+    #[DataProvider('invalidRequests')]
+    public function test_invalid_export_requests_create_no_record_or_job(array $changes, string $field): void
+    {
+        $this->actingAs($this->user, 'web')->postJson(route('api.exports.store'), array_replace($this->payload(), $changes))
+            ->assertUnprocessable()->assertJsonValidationErrors($field);
+
+        $this->assertDatabaseCount('exports', 0);
+        Bus::assertNotDispatched(ProcessExport::class);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+        Notification::assertNothingSent();
+    }
+
+    /** @return array<string, array{array<string, mixed>, string}> */
+    public static function invalidRequests(): array
+    {
+        return [
+            'disallowed model' => [['model_class' => Export::class], 'model_class'],
+            'nonexistent model' => [['model_class' => 'SEC016\\MissingExportModel'], 'model_class'],
+            'malformed model' => [['model_class' => ['not-a-class']], 'model_class'],
+            'private column' => [['columns' => ['password']], 'columns.0'],
+            'mixed public and private' => [['columns' => ['name', 'password']], 'columns.1'],
+            'associative columns' => [['columns' => ['field' => 'name']], 'columns'],
+            'duplicate columns' => [['columns' => ['name', 'name']], 'columns.0'],
+            'nonstring column' => [['columns' => [7]], 'columns.0'],
+        ];
+    }
+
+    #[DataProvider('defaultColumns')]
+    public function test_omitted_null_and_empty_columns_keep_the_authorized_exportable_map(string $shape): void
+    {
+        $payload = $this->payload();
+        if ($shape === 'omitted') {
+            unset($payload['columns']);
+        } else {
+            $payload['columns'] = $shape === 'null' ? null : [];
+        }
+
+        $this->actingAs($this->user, 'web')->postJson(route('api.exports.store'), $payload)->assertCreated();
+        $export = Export::query()->sole();
+        $this->assertSame([], $export->columns);
+        $this->assertSame(User::getExportableColumns(), User::resolveExportColumns($export->columns));
+        Bus::assertDispatched(ProcessExport::class, 1);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function defaultColumns(): array
+    {
+        return ['omitted' => ['omitted'], 'null' => ['null'], 'empty' => ['empty']];
+    }
+
+    /** @param list<string> $abilities */
+    /** @return array<string, array{list<string>}> */
+    public static function personalAccessTokenAbilities(): array
+    {
+        return ['empty' => [[]], 'wildcard' => [['*']], 'known scopes' => [ApiTokenAbilities::ALL]];
+    }
+
+    /** @return array<string, mixed> */
+    private function payload(string $model = User::class): array
+    {
+        return ['model_class' => $model, 'format' => 'csv', 'columns' => ['name', 'email']];
+    }
+
+    private function actor(?string $role, ?string $name = null): User
+    {
+        $actor = User::factory()->create($name === null ? [] : ['name' => $name]);
+        if ($role !== null) {
+            $actor->roles()->syncWithoutDetaching([Role::firstOrCreate(['slug' => $role], ['name' => $role])->id]);
+        }
+
+        return $actor;
+    }
+
+    private function grant(User $actor, string ...$slugs): void
+    {
+        foreach ($slugs as $slug) {
+            $actor->permissions()->syncWithoutDetaching([Permission::firstOrCreate(['slug' => $slug], ['name' => $slug])->id]);
+        }
+    }
+
+    /** @return list<list<string|null>> */
+    private function csvRows(Export $export): array
+    {
+        $stream = fopen(Storage::disk('local')->path($export->file_path), 'rb');
+        $this->assertIsResource($stream);
+        $rows = [];
+        try {
+            $this->assertSame("\xEF\xBB\xBF", fread($stream, 3));
+            while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+                $rows[] = $row;
+            }
+        } finally {
+            fclose($stream);
+        }
+
+        return $rows;
+    }
+}
+
+class UnscopedApiExportUser extends Model
+{
+    use Exportable, Searchable;
+
+    protected $table = 'users';
+
+    protected array $exportable = ['name' => 'Nome', 'email' => 'Email'];
 }

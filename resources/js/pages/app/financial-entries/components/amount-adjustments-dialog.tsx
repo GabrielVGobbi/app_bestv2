@@ -248,7 +248,7 @@ export function AmountAdjustmentsDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden p-0 sm:max-w-2xl">
-                <DialogHeader className="border-b border-border/60 px-5 pt-5 pr-12 pb-4 sm:px-6 sm:pt-6">
+                <DialogHeader className="border-b border-border px-5 pt-5 pr-12 pb-4 sm:px-6 sm:pt-6">
                     <DialogTitle className="text-xl text-balance">
                         Ajustar composição
                     </DialogTitle>
@@ -260,10 +260,10 @@ export function AmountAdjustmentsDialog({
 
                 <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
                     <div className="flex flex-col gap-6">
-                        <div className="overflow-hidden rounded-2xl border border-border/70 bg-muted/25 shadow-[0_1px_0_oklch(0_0_0/0.03)]">
-                            <div className="grid grid-cols-3 divide-x divide-border/60 border-b border-border/60">
+                        <div className="overflow-hidden rounded-2xl border border-border bg-muted">
+                            <div className="grid grid-cols-3 divide-x divide-separator border-b border-border">
                                 <div className="flex min-w-0 flex-col gap-1 px-3 py-3 sm:px-4">
-                                    <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                    <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
                                         Principal
                                     </span>
                                     <span className="truncate text-sm font-semibold tabular-nums sm:text-base">
@@ -273,10 +273,10 @@ export function AmountAdjustmentsDialog({
                                     </span>
                                 </div>
                                 <div className="flex min-w-0 flex-col gap-1 px-3 py-3 sm:px-4">
-                                    <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                    <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
                                         Acréscimos
                                     </span>
-                                    <span className="truncate text-sm font-semibold text-inflow tabular-nums sm:text-base">
+                                    <span className="truncate text-sm font-semibold text-success tabular-nums sm:text-base">
                                         +
                                         {moneyFormatter.format(
                                             additionsCents / 100,
@@ -284,10 +284,10 @@ export function AmountAdjustmentsDialog({
                                     </span>
                                 </div>
                                 <div className="flex min-w-0 flex-col gap-1 px-3 py-3 sm:px-4">
-                                    <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                    <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
                                         Reduções
                                     </span>
-                                    <span className="truncate text-sm font-semibold text-outflow tabular-nums sm:text-base">
+                                    <span className="truncate text-sm font-semibold text-destructive tabular-nums sm:text-base">
                                         −
                                         {moneyFormatter.format(
                                             subtractionsCents / 100,
@@ -295,7 +295,7 @@ export function AmountAdjustmentsDialog({
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between gap-4 bg-background/70 px-4 py-4 sm:px-5">
+                            <div className="flex items-center justify-between gap-4 bg-muted px-4 py-4 sm:px-5">
                                 <div className="flex items-center gap-2 text-sm font-medium">
                                     <BadgeDollarSign className="size-4 text-muted-foreground" />
                                     Líquido projetado
@@ -306,8 +306,8 @@ export function AmountAdjustmentsDialog({
                                         projectedNetCents <= 0
                                             ? 'text-destructive'
                                             : direction === 'payable'
-                                              ? 'text-outflow'
-                                              : 'text-inflow',
+                                              ? 'text-destructive'
+                                              : 'text-success',
                                     )}
                                 >
                                     {moneyFormatter.format(
@@ -352,10 +352,10 @@ export function AmountAdjustmentsDialog({
                                             disabled={disabled}
                                             aria-pressed={isSelected}
                                             className={cn(
-                                                'group flex min-h-20 items-start gap-3 rounded-xl border border-border/70 bg-background px-3 py-3 text-left shadow-xs transition-[border-color,background-color,transform,box-shadow] duration-150 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100',
+                                                'group flex min-h-20 items-start gap-3 rounded-lg border border-border bg-card px-3 py-3 text-left transition-[border-color,background-color,transform,box-shadow] duration-150 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100',
                                                 isSelected
-                                                    ? 'border-primary/35 bg-primary/5 shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_14%,transparent)]'
-                                                    : 'hover:border-foreground/20 hover:bg-muted/35',
+                                                    ? 'border-primary bg-primary-soft'
+                                                    : 'hover:border-input hover:bg-muted',
                                             )}
                                         >
                                             <span
@@ -363,10 +363,10 @@ export function AmountAdjustmentsDialog({
                                                     'flex size-9 shrink-0 items-center justify-center rounded-lg',
                                                     option.operation ===
                                                         'subtract'
-                                                        ? 'bg-outflow-soft text-outflow-soft-foreground'
+                                                        ? 'bg-destructive-soft text-destructive-soft-foreground'
                                                         : option.operation ===
                                                             'add'
-                                                          ? 'bg-inflow-soft text-inflow-soft-foreground'
+                                                          ? 'bg-success-soft text-success-soft-foreground'
                                                           : 'bg-secondary text-secondary-foreground',
                                                 )}
                                             >
@@ -404,14 +404,14 @@ export function AmountAdjustmentsDialog({
                                 >
                                     Ajustes selecionados
                                 </h3>
-                                <Badge variant="muted">
+                                <Badge variant="secondary">
                                     {drafts.length}{' '}
                                     {drafts.length === 1 ? 'item' : 'itens'}
                                 </Badge>
                             </div>
 
                             {drafts.length === 0 ? (
-                                <div className="mt-3 flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 bg-muted/20 px-4 py-5 text-center">
+                                <div className="mt-3 flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted px-4 py-5 text-center">
                                     <CircleDollarSign className="size-5 text-muted-foreground" />
                                     <p className="text-sm text-muted-foreground">
                                         Nenhum ajuste selecionado.
@@ -434,7 +434,7 @@ export function AmountAdjustmentsDialog({
                                             <div
                                                 key={draft.id}
                                                 className={cn(
-                                                    'rounded-xl border border-border/70 bg-background p-3 shadow-xs transition-[border-color,box-shadow] duration-150',
+                                                    'rounded-lg border border-border bg-background p-3 shadow-xs transition-[border-color,box-shadow] duration-150',
                                                     isInvalid &&
                                                         'border-destructive/50 ring-2 ring-destructive/10',
                                                 )}
@@ -445,10 +445,10 @@ export function AmountAdjustmentsDialog({
                                                             'flex size-10 shrink-0 items-center justify-center rounded-lg',
                                                             draft.operation ===
                                                                 'add'
-                                                                ? 'bg-inflow-soft text-inflow-soft-foreground'
+                                                                ? 'bg-success-soft text-success-soft-foreground'
                                                                 : draft.operation ===
                                                                     'subtract'
-                                                                  ? 'bg-outflow-soft text-outflow-soft-foreground'
+                                                                  ? 'bg-destructive-soft text-destructive-soft-foreground'
                                                                   : 'bg-secondary text-secondary-foreground',
                                                         )}
                                                     >
@@ -466,10 +466,10 @@ export function AmountAdjustmentsDialog({
                                                                 variant={
                                                                     draft.operation ===
                                                                     'add'
-                                                                        ? 'inflow'
+                                                                        ? 'success'
                                                                         : draft.operation ===
                                                                             'subtract'
-                                                                          ? 'outflow'
+                                                                          ? 'destructive'
                                                                           : 'secondary'
                                                                 }
                                                             >
@@ -524,7 +524,7 @@ export function AmountAdjustmentsDialog({
                                                 </div>
 
                                                 {draft.code === 'other' ? (
-                                                    <div className="mt-3 grid gap-3 border-t border-border/60 pt-3 sm:grid-cols-[1fr_auto]">
+                                                    <div className="mt-3 grid gap-3 border-t border-border pt-3 sm:grid-cols-[1fr_auto]">
                                                         <div className="flex flex-col gap-1.5">
                                                             <label
                                                                 htmlFor={`adjustment-label-${draft.id}`}
@@ -592,14 +592,14 @@ export function AmountAdjustmentsDialog({
                                                             >
                                                                 <ToggleGroupItem
                                                                     value="add"
-                                                                    className="h-10 px-3 data-[state=on]:bg-inflow-soft data-[state=on]:text-inflow-soft-foreground"
+                                                                    className="h-10 px-3 data-[state=on]:bg-success-soft data-[state=on]:text-success-soft-foreground"
                                                                 >
                                                                     <ArrowUpFromLine className="size-4" />
                                                                     Acréscimo
                                                                 </ToggleGroupItem>
                                                                 <ToggleGroupItem
                                                                     value="subtract"
-                                                                    className="h-10 px-3 data-[state=on]:bg-outflow-soft data-[state=on]:text-outflow-soft-foreground"
+                                                                    className="h-10 px-3 data-[state=on]:bg-destructive-soft data-[state=on]:text-destructive-soft-foreground"
                                                                 >
                                                                     <ArrowDownToLine className="size-4" />
                                                                     Desconto
@@ -635,7 +635,7 @@ export function AmountAdjustmentsDialog({
                     </div>
                 </div>
 
-                <DialogFooter className="border-t border-border/60 bg-muted/15 px-5 py-4 sm:px-6">
+                <DialogFooter className="border-t border-border bg-muted px-5 py-4 sm:px-6">
                     <Button
                         type="button"
                         variant="outline"

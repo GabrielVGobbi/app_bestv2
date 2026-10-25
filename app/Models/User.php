@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use App\Concerns\Exportable;
 use App\Concerns\Searchable;
 use App\Modules\Companies\Models\Company;
@@ -20,6 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -37,7 +36,9 @@ class User extends Authenticatable
         HasUuidIdentifier,
         Notifiable,
         Searchable,
-        TwoFactorAuthenticatable;
+        TwoFactorAuthenticatable {
+            replaceRecoveryCode as private replaceRecoveryCodeWithoutLock;
+        }
 
     /** @var array<string, string> */
     protected array $exportable = [
@@ -87,6 +88,38 @@ class User extends Authenticatable
         return $this->belongsToMany(Company::class)
             ->withPivot('access_source')
             ->withTimestamps();
+    }
+
+    /**
+     * Consume a recovery code under a row lock so two concurrent challenges cannot reuse it.
+     */
+    public function replaceRecoveryCode(string $code): void
+    {
+        $this->getConnection()->transaction(function () use ($code): void {
+            $fresh = $this->newQuery()->whereKey($this->getKey())->lockForUpdate()->first();
+            if (! $fresh instanceof self || ! $this->containsRecoveryCode($fresh->recoveryCodes(), $code)) {
+                throw ValidationException::withMessages([
+                    'recovery_code' => __('The provided two factor recovery code was invalid.'),
+                ]);
+            }
+            $fresh->replaceRecoveryCodeWithoutLock($code);
+            $this->setAttribute('two_factor_recovery_codes', $fresh->getAttribute('two_factor_recovery_codes'));
+            $this->syncOriginalAttribute('two_factor_recovery_codes');
+        });
+    }
+
+    private function containsRecoveryCode(mixed $codes, string $submitted): bool
+    {
+        if (! is_array($codes)) {
+            return false;
+        }
+        foreach ($codes as $stored) {
+            if (is_string($stored) && hash_equals($stored, $submitted)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

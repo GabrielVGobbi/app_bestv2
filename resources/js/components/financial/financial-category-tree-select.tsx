@@ -40,14 +40,19 @@ interface FinancialCategoryTreeSelectProps {
     className?: string;
 }
 
-function flattenCategories(categories: FinancialCategory[]): FinancialCategory[] {
+function flattenCategories(
+    categories: FinancialCategory[],
+): FinancialCategory[] {
     return categories.flatMap((category) => [
         category,
         ...flattenCategories(category.children ?? []),
     ]);
 }
 
-function buildUrl(type?: FinancialCategoryType, companyId?: number | null): string {
+function buildUrl(
+    type?: FinancialCategoryType,
+    companyId?: number | null,
+): string {
     const params = new URLSearchParams();
     params.set('active', '1');
 
@@ -71,9 +76,12 @@ function CategoryPath({ category }: { category: FinancialCategory }) {
     return (
         <span className="flex min-w-0 flex-wrap items-center gap-1">
             {path.map((item, index) => (
-                <span key={`${item}-${index}`} className="inline-flex min-w-0 items-center gap-1">
+                <span
+                    key={`${item}-${index}`}
+                    className="inline-flex min-w-0 items-center gap-1"
+                >
                     {index > 0 ? (
-                        <span className="text-muted-foreground/50">/</span>
+                        <span className="text-muted-foreground">/</span>
                     ) : null}
                     <span
                         className={cn(
@@ -137,6 +145,7 @@ export default function FinancialCategoryTreeSelect({
     useEffect(() => {
         if (!isOpen) {
             autoNavigatedForValue.current = null;
+
             return;
         }
 
@@ -187,6 +196,7 @@ export default function FinancialCategoryTreeSelect({
 
         if (hasChildren && !canSelectParent && !isSearching) {
             setPath((current) => [...current, category]);
+
             return;
         }
 
@@ -202,6 +212,7 @@ export default function FinancialCategoryTreeSelect({
                     ),
             );
             setSearch('');
+
             return;
         }
 
@@ -226,8 +237,8 @@ export default function FinancialCategoryTreeSelect({
                     aria-required={required || undefined}
                     disabled={disabled}
                     className={cn(
-                        'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm shadow-xs transition-colors',
-                        'hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/20 focus-visible:outline-none',
+                        'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-sm border border-input bg-input-surface px-3 py-2 text-left text-sm transition-[border-color,box-shadow]',
+                        'focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/15 focus-visible:outline-none aria-invalid:border-destructive',
                         'disabled:cursor-not-allowed disabled:opacity-50',
                         className,
                     )}
@@ -263,13 +274,14 @@ export default function FinancialCategoryTreeSelect({
                 onWheelCapture={stopScrollPropagation}
                 onTouchMoveCapture={stopScrollPropagation}
             >
-                <div className="border-b bg-muted/30 p-2">
-                    <div className="flex items-center gap-2 rounded-md border bg-background px-2">
+                <div className="border-b bg-muted p-2">
+                    <div className="flex items-center gap-2 rounded-md border border-input bg-input-surface px-2">
                         <Search className="size-4 text-muted-foreground" />
                         <input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Buscar na arvore..."
+                            placeholder="Buscar na árvore"
+                            aria-label="Buscar categoria"
                             className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                         />
                     </div>
@@ -279,7 +291,9 @@ export default function FinancialCategoryTreeSelect({
                     <div className="flex items-center gap-2 border-b px-2 py-2 text-xs text-muted-foreground">
                         <button
                             type="button"
-                            onClick={() => setPath((current) => current.slice(0, -1))}
+                            onClick={() =>
+                                setPath((current) => current.slice(0, -1))
+                            }
                             className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-accent hover:text-foreground"
                         >
                             <ChevronLeft className="size-3.5" />
@@ -334,7 +348,7 @@ export default function FinancialCategoryTreeSelect({
                                           'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors',
                                           'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:outline-none',
                                           isSelected &&
-                                              'bg-primary/10 text-primary',
+                                              'bg-primary-soft text-primary-soft-foreground',
                                       )}
                                   >
                                       <span
@@ -347,7 +361,9 @@ export default function FinancialCategoryTreeSelect({
 
                                       <span className="min-w-0 flex-1">
                                           {isSearching ? (
-                                              <CategoryPath category={category} />
+                                              <CategoryPath
+                                                  category={category}
+                                              />
                                           ) : (
                                               <span className="block truncate font-medium">
                                                   {category.name}
@@ -363,7 +379,9 @@ export default function FinancialCategoryTreeSelect({
                                       {isSelected ? (
                                           <Check className="size-4 shrink-0" />
                                       ) : null}
-                                      {!isSelected && hasChildren && !canSelect ? (
+                                      {!isSelected &&
+                                      hasChildren &&
+                                      !canSelect ? (
                                           <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                                       ) : null}
                                   </button>
@@ -373,7 +391,9 @@ export default function FinancialCategoryTreeSelect({
                 </div>
             </PopoverContent>
 
-            {name ? <input type="hidden" name={name} value={value ?? ''} /> : null}
+            {name ? (
+                <input type="hidden" name={name} value={value ?? ''} />
+            ) : null}
         </Popover>
     );
 }

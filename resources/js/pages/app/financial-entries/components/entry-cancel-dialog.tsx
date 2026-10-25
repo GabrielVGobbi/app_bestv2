@@ -90,20 +90,20 @@ export function EntryCancelDialog({
             <DialogContent>
                 <DialogHeader>
                     <div className="flex items-center gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-destructive-soft text-destructive-soft-foreground">
                             <XCircle className="size-5" />
                         </span>
                         <div>
                             <DialogTitle>Cancelar lançamento</DialogTitle>
                             <DialogDescription>
-                                As parcelas em aberto serão canceladas e o
-                                saldo deixará de contar nos relatórios.
+                                As parcelas em aberto serão canceladas e o saldo
+                                deixará de contar nos relatórios.
                             </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <div className="rounded-md border bg-muted p-3 text-sm">
                     <p className="font-medium">{entry.description}</p>
                     <p className="text-xs text-muted-foreground">
                         Saldo em aberto de{' '}

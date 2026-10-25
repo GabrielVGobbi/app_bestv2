@@ -1,20 +1,19 @@
+import { CreditCard } from 'lucide-react';
 import { useState } from 'react';
 
-import FormField from '@/components/ui/forms/form-field';
-import FormSection from '@/components/ui/forms/form-section';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import FormSection from '@/components/ui/forms/form-section';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type {
     PaymentMethod,
-    PaymentMethodType,
     PaymentMethodTypeOption,
 } from '@/types/app/payment-method';
 
@@ -30,9 +29,6 @@ export default function PaymentMethodFormFields({
     errors,
 }: Props) {
     const record = paymentMethod;
-    const [type, setType] = useState<PaymentMethodType>(
-        record?.type ?? 'other',
-    );
     const [requiresReference, setRequiresReference] = useState(
         record?.requires_reference ?? false,
     );
@@ -41,8 +37,8 @@ export default function PaymentMethodFormFields({
     return (
         <div className="space-y-8">
             <FormSection
-                title="Identificacao"
-                description="Cadastro mestre usado em baixas, filtros e conciliacao futura."
+                title="Identificação"
+                description="Cadastro mestre usado em baixas, filtros e conciliação futura."
             >
                 <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
@@ -64,7 +60,7 @@ export default function PaymentMethodFormFields({
 
                     <FormField
                         id="field-code"
-                        label="Codigo"
+                        label="Código"
                         variant="stacked"
                         error={errors.code}
                     >
@@ -85,24 +81,22 @@ export default function PaymentMethodFormFields({
                         required
                         error={errors.type}
                     >
-                        <input name="type" type="hidden" value={type} />
                         <Select
-                            value={type}
-                            onValueChange={(value) =>
-                                setType(value as PaymentMethodType)
-                            }
+                            name="type"
+                            defaultValue={record?.type ?? 'other'}
                         >
                             <SelectTrigger
                                 id="field-type"
                                 className="w-full"
-                                aria-invalid={!!errors.type}
-                            >
-                                <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
+                                placeholder="Selecione o tipo"
+                                icon={CreditCard}
+                                error={errors.type}
+                            />
                             <SelectContent>
-                                {typeOptions.map((option) => (
+                                {typeOptions.map((option, optionIndex) => (
                                     <SelectItem
                                         key={option.value}
+                                        index={optionIndex}
                                         value={option.value}
                                     >
                                         {option.label}
@@ -114,7 +108,7 @@ export default function PaymentMethodFormFields({
 
                     <FormField
                         id="field-sort-order"
-                        label="Ordenacao"
+                        label="Ordenação"
                         variant="stacked"
                         error={errors.sort_order}
                     >
@@ -147,13 +141,14 @@ export default function PaymentMethodFormFields({
                     />
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-md border p-4">
+                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-lg border border-border p-4">
                             <span>
                                 <span className="block text-sm font-medium">
-                                    Exige referencia
+                                    Exige referência
                                 </span>
                                 <span className="block text-xs text-muted-foreground">
-                                    Solicita comprovante, codigo ou identificador na baixa.
+                                    Solicita comprovante, código ou
+                                    identificador na baixa.
                                 </span>
                             </span>
                             <Switch
@@ -162,13 +157,13 @@ export default function PaymentMethodFormFields({
                             />
                         </label>
 
-                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-md border p-4">
+                        <label className="flex min-h-24 items-center justify-between gap-4 rounded-lg border border-border p-4">
                             <span>
                                 <span className="block text-sm font-medium">
-                                    Metodo ativo
+                                    Método ativo
                                 </span>
                                 <span className="block text-xs text-muted-foreground">
-                                    Permite uso em novas operacoes financeiras.
+                                    Permite uso em novas operações financeiras.
                                 </span>
                             </span>
                             <Switch
@@ -180,7 +175,7 @@ export default function PaymentMethodFormFields({
 
                     <FormField
                         id="field-notes"
-                        label="Observacoes internas"
+                        label="Observações internas"
                         variant="stacked"
                         error={errors['metadata.notes']}
                     >

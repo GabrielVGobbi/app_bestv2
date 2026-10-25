@@ -11,6 +11,7 @@ use App\Modules\Notifications\Enums\NotificationCategory;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Models\AppNotification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use RuntimeException;
 
 class NotificationService
 {
@@ -38,11 +39,38 @@ class NotificationService
     public function __construct(
         private readonly CreateNotificationAction $createAction,
         private readonly MentionService $mentionService,
+        private readonly NotificationActionResolver $actionResolver,
     ) {}
 
     public function create(CreateNotificationDTO $dto): AppNotification
     {
         return $this->createAction->handle($dto);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function executeAction(User $user, AppNotification $notification, string $actionType, array $payload = []): mixed
+    {
+        return $notification->getConnection()->transaction(function () use ($user, $notification, $actionType, $payload): mixed {
+            $current = $notification->newQuery()->whereKey($notification->getKey())->lockForUpdate()->firstOrFail();
+
+            abort_unless($current->recipient_id === $user->id, 403);
+            abort_unless($current->hasActions(), 422, 'Esta notificação não possui ações.');
+            abort_unless($current->isActionPending(), 409, 'A ação desta notificação já foi executada ou está em estado final.');
+            abort_unless($current->hasActionOfType($actionType), 422, "Ação [{$actionType}] não encontrada nesta notificação.");
+            abort_unless($this->actionResolver->supports($actionType), 422, "Tipo de ação [{$actionType}] não é executável pelo sistema.");
+
+            $result = $this->actionResolver->resolve($actionType)->execute($current, $user, $payload);
+            $saved = $current->update([
+                'action_status' => $actionType === 'reject_request' ? 'rejected' : 'executed',
+            ]);
+            if (! $saved) {
+                throw new RuntimeException('Não foi possível concluir a ação da notificação.');
+            }
+
+            return $result;
+        });
     }
 
     /**

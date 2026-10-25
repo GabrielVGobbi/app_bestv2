@@ -19,6 +19,7 @@ use App\Modules\Permissions\Models\Role;
 use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Sanctum\Sanctum;
@@ -27,6 +28,13 @@ use Tests\TestCase;
 class FinancialEntryOperationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Os vencimentos fixos destes cenarios sao de 2026; o relogio congelado mantem as parcelas em aberto.
+        Carbon::setTestNow('2026-07-01 10:00:00');
+    }
 
     public function test_financial_entry_pages_render_for_authorized_user(): void
     {

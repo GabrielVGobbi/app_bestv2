@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 
 import { show } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialEntryController';
+import Header from '@/components/dashboard/header';
 import { DirectionBadge } from '@/components/direction-badge';
-import Heading from '@/components/heading';
 import { MoneyAmount } from '@/components/money-amount';
 import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,14 +105,14 @@ const cardTone: Record<
 
 const cardIconTone: Record<(typeof cardOrder)[number], string> = {
     open_receivables:
-        'border-inflow/25 bg-inflow-soft text-inflow-soft-foreground',
+        'border-success/25 bg-success-soft text-success-soft-foreground',
     overdue_receivables:
         'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
     open_payables:
-        'border-outflow/25 bg-outflow-soft text-outflow-soft-foreground',
+        'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
     overdue_payables:
         'border-destructive/25 bg-destructive-soft text-destructive-soft-foreground',
-    monthly_settlements: 'border bg-muted/30 text-muted-foreground',
+    monthly_settlements: 'border bg-muted text-muted-foreground',
     pending_reconciliation:
         'border-warning/25 bg-warning-soft text-warning-soft-foreground',
 };
@@ -121,11 +121,11 @@ function moneyAmountTone(
     tone: 'inflow' | 'outflow' | 'warning' | 'destructive' | 'muted',
 ): string {
     if (tone === 'inflow') {
-        return 'text-inflow';
+        return 'text-success';
     }
 
     if (tone === 'outflow') {
-        return 'text-outflow';
+        return 'text-destructive';
     }
 
     if (tone === 'warning') {
@@ -197,14 +197,14 @@ export default function FinancialReportsIndex({
         <>
             <Head title="Relatórios financeiros" />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <Heading
-                        title="Relatórios financeiros"
-                        description="Visão consolidada de saldos, baixas e pendências de conciliação."
-                    />
+            <Header
+                title="Relatórios financeiros"
+                subtitle="Visão consolidada de saldos, baixas e pendências de conciliação"
+            />
 
-                    <div className="grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 xl:grid-cols-3">
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {cardOrder.map((key) => {
                             const card = dashboard.cards[key];
                             const Icon = cardIcons[key];
@@ -214,10 +214,7 @@ export default function FinancialReportsIndex({
                             }
 
                             return (
-                                <Card
-                                    key={key}
-                                    className="gap-4 rounded-none border-0 py-5"
-                                >
+                                <Card key={key} className="gap-4 py-5">
                                     <CardHeader className="flex-row items-center justify-between gap-3">
                                         <CardTitle>{card.label}</CardTitle>
                                         <span
@@ -264,12 +261,12 @@ export default function FinancialReportsIndex({
                         </CardHeader>
                         <CardContent>
                             {dashboard.account_balances?.length ? (
-                                <div className="divide-y">
+                                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                                     {dashboard.account_balances.map(
                                         (account) => (
                                             <div
                                                 key={account.uuid}
-                                                className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0"
+                                                className="rounded-md border px-3 py-2"
                                             >
                                                 <div className="min-w-0">
                                                     <p className="truncate text-sm font-medium">
@@ -279,7 +276,7 @@ export default function FinancialReportsIndex({
                                                         {account.type_label}
                                                     </p>
                                                 </div>
-                                                <p className="text-base font-medium tabular-nums">
+                                                <p className="mt-3 text-base font-semibold">
                                                     <MoneyAmount
                                                         value={
                                                             account.current_balance_amount
@@ -324,9 +321,9 @@ export default function FinancialReportsIndex({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-x-auto rounded-lg border">
-                                <table className="w-full min-w-[600px] text-sm">
-                                    <thead className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
+                            <div className="overflow-hidden rounded-md border">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                         <tr>
                                             <th className="px-3 py-3">
                                                 Vencimento
@@ -472,9 +469,9 @@ export default function FinancialReportsIndex({
                             <CardTitle>Relatórios iniciais</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-x-auto rounded-lg border">
-                                <table className="w-full min-w-[600px] text-sm">
-                                    <thead className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
+                            <div className="overflow-hidden rounded-md border">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                         <tr>
                                             <th className="px-3 py-3">
                                                 Relatório

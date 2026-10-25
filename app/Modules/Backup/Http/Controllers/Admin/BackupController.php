@@ -34,6 +34,8 @@ class BackupController extends Controller
 
         $disk = $backupHistory->disk;
 
+        abort_if(! $disk, 404);
+
         abort_unless(Storage::disk($disk)->exists($backupHistory->path), 404);
 
         activity('backups')

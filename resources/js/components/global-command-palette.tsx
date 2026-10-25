@@ -25,20 +25,19 @@ import type { CommandItem, NavItem, User } from '@/types';
 
 function flattenNavigation(items: NavItem[], group: string): CommandItem[] {
     return items.flatMap((item, index) => {
-        const current =
-            item.href && item.href !== '#' && item.type !== 'section'
-                ? [
-                      {
-                          id: `nav-${group}-${index}-${item.title}`,
-                          group: 'Navegação' as const,
-                          label: item.title,
-                          description: group,
-                          keywords: [group, item.title],
-                          href: String(item.href),
-                          icon: item.icon,
-                      },
-                  ]
-                : [];
+        const current = item.href
+            ? [
+                  {
+                      id: `nav-${group}-${index}-${item.title}`,
+                      group: 'Navegação' as const,
+                      label: item.title,
+                      description: group,
+                      keywords: [group, item.title],
+                      href: String(item.href),
+                      icon: item.icon,
+                  },
+              ]
+            : [];
 
         return [
             ...current,
@@ -150,14 +149,14 @@ export function GlobalCommandPalette() {
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="group flex size-9 items-center justify-center gap-2 rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground xl:w-56 xl:justify-start xl:border xl:border-border xl:bg-muted/50 xl:px-3"
+                className="flex size-9 items-center gap-2 rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-md:justify-center md:h-9 md:w-56 md:border md:border-input md:bg-input-surface md:px-3"
                 aria-label="Buscar páginas e ações"
             >
-                <Search className="size-4 shrink-0" />
-                <span className="hidden min-w-0 flex-1 text-left text-sm xl:block">
+                <Search className="size-4 shrink-0" aria-hidden="true" />
+                <span className="hidden min-w-0 flex-1 text-left text-sm md:block">
                     Buscar
                 </span>
-                <kbd className="hidden rounded border bg-background px-1 py-0.5 text-[10px] text-muted-foreground xl:inline-flex">
+                <kbd className="hidden rounded-xs bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground lg:inline-flex">
                     Ctrl K
                 </kbd>
             </button>

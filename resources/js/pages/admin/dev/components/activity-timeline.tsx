@@ -17,7 +17,7 @@ import {
     activityTimeline,
     components,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -26,17 +26,16 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityTimeline } from '@/modules/timeline';
 
 interface Props {
@@ -154,18 +153,17 @@ export default function ActivityTimelineDevReference({
         <>
             <Head title="Activity Timeline - Referencia" />
 
-            <main className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Activity Timeline"
-                            description="Componente operacional para comentarios, replies, anexos e eventos por model."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            @/modules/timeline
-                        </Badge>
-                    </div>
+            <Header
+                title="Activity Timeline"
+                subtitle="Componente operacional para comentários, replies, anexos e eventos por model."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    @/modules/timeline
+                </Badge>
+            </Header>
 
+            <main className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <FeatureCard
                             icon={Route}
@@ -174,8 +172,8 @@ export default function ActivityTimelineDevReference({
                         />
                         <FeatureCard
                             icon={MessageSquare}
-                            title="Comentarios"
-                            description="Raiz, replies de um nivel, edicao e soft delete por policy."
+                            title="Comentários"
+                            description="Raiz, replies de um nível, edição e soft delete por policy."
                         />
                         <FeatureCard
                             icon={Paperclip}
@@ -185,7 +183,7 @@ export default function ActivityTimelineDevReference({
                         <FeatureCard
                             icon={Shield}
                             title="Policies"
-                            description="Permissoes calculadas no servidor e refletidas no JSON."
+                            description="Permissões calculadas no servidor e refletidas no JSON."
                         />
                     </div>
 
@@ -194,25 +192,20 @@ export default function ActivityTimelineDevReference({
                         onValueChange={setActiveTab}
                         className="space-y-6"
                     >
-                        <TabsList className="flex h-auto w-full flex-wrap gap-1">
-                            <TabsTrigger value="playground">
-                                Playground
-                            </TabsTrigger>
-                            <TabsTrigger value="architecture">
-                                Arquitetura
-                            </TabsTrigger>
-                            <TabsTrigger value="backend">Backend</TabsTrigger>
-                            <TabsTrigger value="frontend">Frontend</TabsTrigger>
-                            <TabsTrigger value="uploads">Uploads</TabsTrigger>
-                            <TabsTrigger value="security">
-                                Seguranca
-                            </TabsTrigger>
-                            <TabsTrigger value="checklist">
-                                Checklist
-                            </TabsTrigger>
+                        <TabsList
+                            aria-label="Seções da página"
+                            className="max-w-full overflow-x-auto"
+                        >
+                            <TabItem value="playground" label="Playground" />
+                            <TabItem value="architecture" label="Arquitetura" />
+                            <TabItem value="backend" label="Backend" />
+                            <TabItem value="frontend" label="Frontend" />
+                            <TabItem value="uploads" label="Uploads" />
+                            <TabItem value="security" label="Segurança" />
+                            <TabItem value="checklist" label="Checklist" />
                         </TabsList>
 
-                        <TabsContent value="playground" className="space-y-6">
+                        <TabPanel value="playground" className="space-y-6">
                             <div className="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)] xl:items-start">
                                 <Card className="rounded-lg xl:sticky xl:top-4">
                                     <CardHeader>
@@ -231,11 +224,12 @@ export default function ActivityTimelineDevReference({
                                                 value={modelType}
                                                 onValueChange={setModelType}
                                             >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
+                                                <SelectTrigger />
                                                 <SelectContent>
-                                                    <SelectItem value="client">
+                                                    <SelectItem
+                                                        index={0}
+                                                        value="client"
+                                                    >
                                                         client
                                                     </SelectItem>
                                                 </SelectContent>
@@ -269,17 +263,24 @@ export default function ActivityTimelineDevReference({
                                                 value={pageSize}
                                                 onValueChange={setPageSize}
                                             >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
+                                                <SelectTrigger />
                                                 <SelectContent>
-                                                    <SelectItem value="20">
+                                                    <SelectItem
+                                                        index={0}
+                                                        value="20"
+                                                    >
                                                         20
                                                     </SelectItem>
-                                                    <SelectItem value="50">
+                                                    <SelectItem
+                                                        index={1}
+                                                        value="50"
+                                                    >
                                                         50
                                                     </SelectItem>
-                                                    <SelectItem value="100">
+                                                    <SelectItem
+                                                        index={2}
+                                                        value="100"
+                                                    >
                                                         100
                                                     </SelectItem>
                                                 </SelectContent>
@@ -320,7 +321,7 @@ export default function ActivityTimelineDevReference({
                                                 <Label>allowAttachments</Label>
                                                 <p className="text-xs text-muted-foreground">
                                                     Renderiza FileAttachments
-                                                    por comentario.
+                                                    por comentário.
                                                 </p>
                                             </div>
                                             <Switch
@@ -344,9 +345,9 @@ export default function ActivityTimelineDevReference({
                                     title="Timeline do registro"
                                 />
                             </div>
-                        </TabsContent>
+                        </TabPanel>
 
-                        <TabsContent
+                        <TabPanel
                             value="architecture"
                             className="space-y-4 [contain-intrinsic-size:auto_260px] [content-visibility:auto]"
                         >
@@ -365,18 +366,18 @@ export default function ActivityTimelineDevReference({
                                     <FeatureCard
                                         icon={BookOpen}
                                         title="Activity log"
-                                        description="A fase seguinte une os logs Spatie com os comentarios."
+                                        description="A fase seguinte une os logs Spatie com os comentários."
                                     />
                                     <FeatureCard
                                         icon={Paperclip}
                                         title="Uploads"
-                                        description="Comentarios recebem anexos via parent polimorfico."
+                                        description="Comentários recebem anexos via parent polimórfico."
                                     />
                                 </div>
                             )}
-                        </TabsContent>
+                        </TabPanel>
 
-                        <TabsContent
+                        <TabPanel
                             value="backend"
                             className="space-y-4 [contain-intrinsic-size:auto_320px] [content-visibility:auto]"
                         >
@@ -405,9 +406,9 @@ export default function ActivityTimelineDevReference({
                                     </Card>
                                 </div>
                             )}
-                        </TabsContent>
+                        </TabPanel>
 
-                        <TabsContent
+                        <TabPanel
                             value="frontend"
                             className="space-y-4 [contain-intrinsic-size:auto_220px] [content-visibility:auto]"
                         >
@@ -415,7 +416,7 @@ export default function ActivityTimelineDevReference({
                                 <Card className="rounded-lg">
                                     <CardHeader>
                                         <CardTitle className="text-base">
-                                            Uso minimo
+                                            Uso mínimo
                                         </CardTitle>
                                         <CardDescription>
                                             O componente real recebe alias e ID
@@ -427,9 +428,9 @@ export default function ActivityTimelineDevReference({
                                     </CardContent>
                                 </Card>
                             )}
-                        </TabsContent>
+                        </TabPanel>
 
-                        <TabsContent
+                        <TabPanel
                             value="uploads"
                             className="space-y-4 [contain-intrinsic-size:auto_220px] [content-visibility:auto]"
                         >
@@ -438,10 +439,10 @@ export default function ActivityTimelineDevReference({
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Paperclip className="size-4" />
-                                            Anexos por comentario
+                                            Anexos por comentário
                                         </CardTitle>
                                         <CardDescription>
-                                            O comentario precisa existir antes
+                                            O comentário precisa existir antes
                                             do upload para ter UUID.
                                         </CardDescription>
                                     </CardHeader>
@@ -450,9 +451,9 @@ export default function ActivityTimelineDevReference({
                                     </CardContent>
                                 </Card>
                             )}
-                        </TabsContent>
+                        </TabPanel>
 
-                        <TabsContent
+                        <TabPanel
                             value="security"
                             className="space-y-4 [contain-intrinsic-size:auto_180px] [content-visibility:auto]"
                         >
@@ -465,14 +466,14 @@ export default function ActivityTimelineDevReference({
                                     />
                                     <FeatureCard
                                         icon={Shield}
-                                        title="Permissoes por item"
+                                        title="Permissões por item"
                                         description="can_update, can_delete e can_reply vem do backend."
                                     />
                                 </div>
                             )}
-                        </TabsContent>
+                        </TabPanel>
 
-                        <TabsContent
+                        <TabPanel
                             value="checklist"
                             className="space-y-4 [contain-intrinsic-size:auto_260px] [content-visibility:auto]"
                         >
@@ -516,7 +517,7 @@ export default function ActivityTimelineDevReference({
                                     </CardContent>
                                 </Card>
                             )}
-                        </TabsContent>
+                        </TabPanel>
                     </Tabs>
                 </div>
             </main>

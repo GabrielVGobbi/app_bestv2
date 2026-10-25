@@ -1,7 +1,7 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Music2, Plus } from 'lucide-react';
+import { Music2, Plus, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -10,7 +10,7 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -18,7 +18,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -120,7 +119,10 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                                         className="size-full object-cover"
                                     />
                                 ) : (
-                                    <Music2 className="size-4" />
+                                    <Music2
+                                        className="size-5"
+                                        aria-hidden="true"
+                                    />
                                 )}
                             </div>
                             <div className="min-w-0">
@@ -258,22 +260,22 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
         <>
             <Head title="Playlists" />
 
-            <ContentHeader>
-                <Heading
-                    title="Playlists"
-                    description="Cadastro comercial de canais musicais e métricas operacionais."
-                />
+            <Header
+                title="Playlists"
+                subtitle="Cadastro comercial de canais musicais e métricas operacionais"
+            >
                 {permissions.can_create ? (
                     <Button asChild>
                         <Link prefetch href={create.url()}>
-                            <Plus className="size-4" />
-                            Nova Playlist
+                            <Plus className="size-4" aria-hidden="true" />
+                            Nova playlist
                         </Link>
                     </Button>
                 ) : null}
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Dialog
                         open={playlistToDelete !== null}
                         onOpenChange={(open) =>
@@ -294,12 +296,17 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                                     variant="outline"
                                     onClick={() => setPlaylistToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
                                     onClick={deletePlaylist}
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Arquivar
                                 </Button>
                             </DialogFooter>
@@ -340,7 +347,7 @@ export default function PlaylistIndex({ permissions, filters }: Props) {
                             gridLines: 'horizontal',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar playlists..."
+                        searchPlaceholder="Buscar playlists"
                     />
                 </div>
             </div>

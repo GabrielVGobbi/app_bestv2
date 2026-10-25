@@ -1,6 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
-import type { ComponentProps } from 'react';
+import { Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -13,9 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { httpDelete } from '@/lib/http';
-
-type ButtonSize = ComponentProps<typeof Button>['size'];
 
 interface DeleteButtonProps {
     /** URL da rota de exclusão (ex: destroy.url(uuid)) */
@@ -28,8 +24,7 @@ interface DeleteButtonProps {
     redirectTo?: string;
     /** Callback alternativo ao redirectTo */
     onSuccess?: () => void;
-    size?: ButtonSize;
-    className?: string;
+    size?: 'sm' | 'default';
 }
 
 export default function DeleteButton({
@@ -39,28 +34,34 @@ export default function DeleteButton({
     redirectTo,
     onSuccess,
     size = 'sm',
-    className,
 }: DeleteButtonProps) {
     const [open, setOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         setDeleting(true);
 
-        try {
-            await httpDelete(url);
-            toast.success(`${capitalize(resourceType)} removido com sucesso!`);
-            setOpen(false);
+        router.delete(url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(
+                    `${capitalize(resourceType)} removido com sucesso!`,
+                );
+                setOpen(false);
 
-            if (onSuccess) {
-                onSuccess();
-            } else if (redirectTo) {
-                router.visit(redirectTo);
-            }
-        } catch {
-            toast.error(`Erro ao remover ${resourceType}.`);
-            setDeleting(false);
-        }
+                if (onSuccess) {
+                    onSuccess();
+                } else if (redirectTo) {
+                    router.visit(redirectTo);
+                }
+            },
+            onError: () => {
+                toast.error(`Erro ao remover ${resourceType}.`);
+            },
+            onFinish: () => {
+                setDeleting(false);
+            },
+        });
     };
 
     return (
@@ -68,10 +69,9 @@ export default function DeleteButton({
             <Button
                 variant="destructive"
                 size={size}
-                className={className}
                 onClick={() => setOpen(true)}
             >
-                <Trash2 className="" />
+                <Trash2 className="mr-1.5 size-4" />
                 Excluir
             </Button>
 
@@ -80,15 +80,26 @@ export default function DeleteButton({
                     <DialogHeader>
                         <DialogTitle>Excluir {resourceType}</DialogTitle>
                         <DialogDescription>
-                            Tem certeza que deseja excluir <strong>{resourceName}</strong>? Esta ação
-                            não pode ser desfeita.
+                            Tem certeza que deseja excluir{' '}
+                            <strong>{resourceName}</strong>? Esta ação não pode
+                            ser desfeita.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setOpen(false)} disabled={deleting}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            disabled={deleting}
+                        >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
-                        <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                        >
+                            <Trash2 className="size-4" aria-hidden="true" />
                             {deleting ? 'Excluindo...' : 'Excluir'}
                         </Button>
                     </DialogFooter>

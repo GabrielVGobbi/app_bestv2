@@ -3,6 +3,7 @@ import { lazy, Suspense, useId, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 import type { CommentPayload } from '../api/types';
@@ -27,8 +28,8 @@ interface CommentComposerProps {
 }
 
 export function CommentComposer({
-    label = 'Comentario',
-    placeholder = 'Adicionar comentario...',
+    label = 'Comentário',
+    placeholder = 'Adicionar comentário...',
     submitLabel = 'Enviar',
     initialValue = '',
     initialFormat = 'plain',
@@ -49,7 +50,7 @@ export function CommentComposer({
         () => textFromBody(body, bodyFormat),
         [body, bodyFormat],
     );
-    const canSubmit = plainText.length > 0 && !disabled && !submitting;
+    const canSubmit = plainText.trim().length > 0 && !disabled && !submitting;
 
     async function submit(): Promise<void> {
         if (!canSubmit) {
@@ -78,6 +79,7 @@ export function CommentComposer({
             )}
         >
             <Label
+                id={`${id}-label`}
                 htmlFor={id}
                 className="text-xs font-medium text-muted-foreground"
             >
@@ -92,6 +94,8 @@ export function CommentComposer({
                     }
                 >
                     <LazyRichTextEditor
+                        id={id}
+                        aria-labelledby={`${id}-label`}
                         value={body}
                         onChange={setBody}
                         placeholder={placeholder}
@@ -102,7 +106,7 @@ export function CommentComposer({
                     />
                 </Suspense>
             ) : (
-                <textarea
+                <Textarea
                     id={id}
                     value={body}
                     disabled={disabled || submitting}
@@ -119,7 +123,8 @@ export function CommentComposer({
                             void submit();
                         }
                     }}
-                    className="min-h-18 w-full resize-y rounded-md border border-transparent bg-transparent px-0 py-1 text-sm leading-relaxed shadow-none transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    // The composer frame draws the border; the field stays flush inside it.
+                    className="min-h-18 resize-y border-transparent bg-transparent px-0 py-1 leading-relaxed shadow-none focus-visible:border-transparent focus-visible:ring-0"
                 />
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2">
@@ -130,9 +135,14 @@ export function CommentComposer({
                     className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
                     disabled={disabled || submitting}
                     onClick={() => {
-                        setBodyFormat((current) =>
-                            current === 'html' ? 'plain' : 'html',
+                        const nextFormat =
+                            bodyFormat === 'html' ? 'plain' : 'html';
+                        setBody(
+                            bodyFormat === 'html'
+                                ? textFromBody(body, 'html')
+                                : plainToHtml(body),
                         );
+                        setBodyFormat(nextFormat);
                     }}
                 >
                     <Type className="size-3.5" />
@@ -169,15 +179,99 @@ export function CommentComposer({
 
 function textFromBody(body: string, format: 'plain' | 'html'): string {
     if (format === 'plain') {
-        return body.trim();
+        return body;
     }
 
     if (typeof document === 'undefined') {
+        // Preserve the existing SSR submit estimate; interactive conversion uses
+        // the inert template below and never treats this estimate as a parser.
         return body.replace(/<[^>]*>/g, '').trim();
     }
 
-    const element = document.createElement('div');
-    element.innerHTML = body;
+    const template = document.createElement('template');
+    template.innerHTML = body;
+    const pieces: Array<{ value: string; structural: boolean }> = [];
+    const blocks = new Set([
+        'P',
+        'DIV',
+        'H1',
+        'H2',
+        'H3',
+        'H4',
+        'H5',
+        'H6',
+        'PRE',
+        'BLOCKQUOTE',
+        'UL',
+        'OL',
+        'LI',
+    ]);
+    const lineBlocks = new Set([
+        'P',
+        'H1',
+        'H2',
+        'H3',
+        'H4',
+        'H5',
+        'H6',
+        'PRE',
+    ]);
+    const endsWithBreak = () => pieces.at(-1)?.value.endsWith('\n') ?? false;
+    function walk(node: Node): void {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.textContent) {
+                pieces.push({ value: node.textContent, structural: false });
+            }
 
-    return (element.textContent ?? '').trim();
+            return;
+        }
+
+        if (!(node instanceof Element)) {
+            return;
+        }
+
+        if (['SCRIPT', 'STYLE', 'TEMPLATE'].includes(node.tagName)) {
+            return;
+        }
+
+        if (node.tagName === 'BR') {
+            pieces.push({ value: '\n', structural: false });
+
+            return;
+        }
+
+        const block = blocks.has(node.tagName);
+
+        if (block && pieces.length && !endsWithBreak()) {
+            pieces.push({ value: '\n', structural: true });
+        }
+
+        for (const child of node.childNodes) {
+            walk(child);
+        }
+
+        if (lineBlocks.has(node.tagName) || (block && !endsWithBreak())) {
+            pieces.push({ value: '\n', structural: true });
+        }
+    }
+
+    for (const child of template.content.childNodes) {
+        walk(child);
+    }
+
+    if (pieces.at(-1)?.structural) {
+        pieces.pop();
+    }
+
+    return pieces.map((piece) => piece.value).join('');
+}
+
+function plainToHtml(body: string): string {
+    return body
+        .split(/\r\n|\r|\n/)
+        .map(
+            (line) =>
+                `<p>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</p>`,
+        )
+        .join('');
 }

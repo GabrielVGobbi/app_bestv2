@@ -7,6 +7,7 @@ import {
     Layers,
     Puzzle,
     Zap,
+    RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -16,7 +17,7 @@ import {
     notifications,
     seedNotification,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { NotificationBell } from '@/components/notification-bell';
 import { NotificationItem } from '@/components/notification-item';
 import { Badge } from '@/components/ui/badge';
@@ -43,31 +44,31 @@ const SEED_TYPES = [
         type: 'user',
         label: 'Usuário',
         description: 'Comentário de outro usuário',
-        color: 'text-blue-500',
+        color: 'text-info-soft-foreground',
     },
     {
         type: 'mention',
         label: 'Menção',
         description: 'Você foi mencionado @usuario',
-        color: 'text-purple-500',
+        color: 'text-primary-soft-foreground',
     },
     {
         type: 'social',
         label: 'Social',
         description: 'Novo seguidor, curtida',
-        color: 'text-pink-500',
+        color: 'text-primary-soft-foreground',
     },
     {
         type: 'action',
         label: 'Ação',
         description: 'Solicitação com Aprovar / Recusar',
-        color: 'text-orange-500',
+        color: 'text-warning-soft-foreground',
     },
     {
         type: 'warning',
         label: 'Aviso',
         description: 'Alerta de segurança',
-        color: 'text-yellow-500',
+        color: 'text-warning-soft-foreground',
     },
 ];
 
@@ -153,7 +154,7 @@ const realtimeCode = `// TODO: quando Laravel Reverb/Echo for configurado:
 // 2. Descomentar em CreateNotificationAction::handle():
 //    broadcast(new NotificationCreated($notification))->toOthers();
 
-// 3. Frontend — assinar no canal privado do usuário:
+// 3. Frontend, assinar no canal privado do usuário:
 // window.Echo.private(\`user.\${userId}.notifications\`)
 //     .listen('NotificationCreated', (e) => {
 //         setUnreadCount(prev => prev + 1)
@@ -208,18 +209,17 @@ export default function NotificationsPlayground() {
         <>
             <Head title="Notifications playground" />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Notifications"
-                            description="Módulo completo: tipos, categorias, menções, ações executáveis e bell no header."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            app/Modules/Notifications
-                        </Badge>
-                    </div>
+            <Header
+                title="Notifications"
+                subtitle="Módulo completo: tipos, categorias, menções, ações executáveis e bell no header."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    app/Modules/Notifications
+                </Badge>
+            </Header>
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     {/* Feature cards */}
                     <div className="grid gap-4 md:grid-cols-3">
                         <Card className="rounded-lg">
@@ -254,7 +254,7 @@ export default function NotificationsPlayground() {
                                     Preparado para realtime
                                 </CardTitle>
                                 <CardDescription>
-                                    Estrutura pronta para Laravel Reverb/Echo —
+                                    Estrutura pronta para Laravel Reverb/Echo:
                                     só descomentar o broadcast.
                                 </CardDescription>
                             </CardHeader>
@@ -290,7 +290,7 @@ export default function NotificationsPlayground() {
                                         >
                                             {item.label}
                                         </span>
-                                        <span className="text-[10px] font-normal text-muted-foreground">
+                                        <span className="text-2xs font-normal text-muted-foreground">
                                             {item.description}
                                         </span>
                                     </Button>
@@ -331,6 +331,10 @@ export default function NotificationsPlayground() {
                                             onClick={refresh}
                                             disabled={loading}
                                         >
+                                            <RefreshCw
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Atualizar
                                         </Button>
                                     </div>
@@ -445,7 +449,7 @@ export default function NotificationsPlayground() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <BookOpen className="size-5" />
-                                Realtime — próximos passos
+                                Realtime: próximos passos
                             </CardTitle>
                             <CardDescription>
                                 A estrutura está pronta. Para habilitar push em

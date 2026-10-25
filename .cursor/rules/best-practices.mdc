@@ -1,7 +1,9 @@
 ---
-description: Project verification for behavioral changes and tests.
-globs: "tests/**/*.php"
-alwaysApply: false
+alwaysApply: true
 ---
 
-Follow verification guidance in [AGENTS.md](../../AGENTS.md). For Laravel test implementation, load the [Laravel skill](../../.agents/skills/laravel-best-practices/SKILL.md) and its testing reference. Preserve PHPUnit and the existing test environment.
+# Project conventions
+
+Read and follow [AGENTS.md](../../AGENTS.md) first. Its testing, isolation, documentation, style, and browser UUID requirements apply to every change.
+
+Follow nearby code and the existing formatter, lint, and type-check configuration. Prefer precise types, descriptive names, early returns, and reuse of existing components and hooks. Verify observable behavior with the existing tools; report the checks performed and their limits.

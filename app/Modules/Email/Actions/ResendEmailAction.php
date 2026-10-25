@@ -4,29 +4,28 @@ declare(strict_types=1);
 
 namespace App\Modules\Email\Actions;
 
-use App\Modules\Email\Enums\EmailStatus;
 use App\Modules\Email\Jobs\ProcessEmailJob;
 use App\Modules\Email\Models\EmailLog;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ResendEmailAction
 {
     public function handle(EmailLog $log): EmailLog
     {
-        if ($log->status !== EmailStatus::Failed) {
-            throw ValidationException::withMessages([
-                'log' => ['Only failed emails can be resent.'],
-            ]);
-        }
+        return DB::transaction(function () use ($log): EmailLog {
+            $queued = $log->queueAgain();
 
-        $log->update([
-            'status' => EmailStatus::Queued,
-            'error_message' => null,
-            'failed_at' => null,
-        ]);
+            if ($queued === null) {
+                throw ValidationException::withMessages([
+                    'log' => ['Only confirmed pre-delivery failures can be resent. Reconcile uncertain deliveries first.'],
+                ]);
+            }
 
-        ProcessEmailJob::dispatch($log);
+            $job = new ProcessEmailJob($queued);
+            DB::afterCommit(fn () => dispatch($job->afterCommit()));
 
-        return $log->fresh();
+            return $queued;
+        });
     }
 }

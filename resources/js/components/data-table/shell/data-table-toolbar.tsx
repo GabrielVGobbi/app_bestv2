@@ -1,9 +1,13 @@
 import type { Table } from '@tanstack/react-table';
-import { Search, X } from 'lucide-react';
-import { useState } from 'react';
+import { Download, FilterX, RefreshCw, Search, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
+import { buildFilterChips } from '../core/filter-presentation';
+import { isActiveFilterValue } from '../core/filter-utils';
 import type {
     DataTableDateColumn,
     DataTableDatePreset,
@@ -15,14 +19,13 @@ import type {
 } from '../core/types';
 
 import { useExport } from '../hooks/use-export';
-import {
-    AdvancedFilterPanel,
-    DataTableFilterChips,
-} from './advanced-filter-panel';
+import { AdvancedFilterPanel } from './advanced-filter-panel';
 import { DataTableActionsMenu } from './data-table-actions-menu';
 import { DataTableExportDialog } from './data-table-export-dialog';
 import { DataTableExportStatus } from './data-table-export-status';
 import { QuickFilterSelect } from './quick-filter-select';
+import { TableLayoutSettings } from './table-layout-settings';
+import type { TableLayoutControls } from './table-layout-settings';
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>;
@@ -38,12 +41,11 @@ interface DataTableToolbarProps<TData> {
     onSearchChange: (value: string) => void;
     onFilterChange: (id: string, value: DataTableFilterValue) => void;
     onResetFilters: () => void;
-    onResetTable: () => void;
-    canResetTable: boolean;
     onRefresh: () => void;
     exportConfig?: DataTableExportConfig;
     currentSort?: string;
     currentSortDirection?: 'asc' | 'desc';
+    layoutControls?: TableLayoutControls;
 }
 
 export function DataTableToolbar<TData>({
@@ -60,49 +62,157 @@ export function DataTableToolbar<TData>({
     onSearchChange,
     onFilterChange,
     onResetFilters,
-    onResetTable,
-    canResetTable,
     onRefresh,
     exportConfig,
     currentSort,
     currentSortDirection,
+    layoutControls,
 }: DataTableToolbarProps<TData>) {
+    const [searchExpanded, setSearchExpanded] = useState(false);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const searchOpen = searchExpanded || search.length > 0;
 
-    const { activeExports, startExport, markAsDownloaded } =
-        useExport(exportConfig);
+    const hasActiveFilters = useMemo(
+        () => Object.values(filterValues).some(isActiveFilterValue),
+        [filterValues],
+    );
 
-    const showExport = Boolean(
-        features.export && exportConfig && exportConfig.enabled !== false,
+    const dateFilters = useMemo<DataTableFilterConfig[]>(
+        () =>
+            dateFilterColumns.map((column) => ({
+                id: column.value,
+                label: column.label,
+                type: 'date-range' as const,
+                operator: 'between' as const,
+            })),
+        [dateFilterColumns],
+    );
+
+    const exportFilterConfig = useMemo(
+        () => [...quickFilters, ...filters, ...dateFilters],
+        [dateFilters, filters, quickFilters],
+    );
+    const activeChips = buildFilterChips(
+        [...filters, ...dateFilters].filter(
+            (filter) => !quickFilters.some((quick) => quick.id === filter.id),
+        ),
+        filterValues,
+    );
+
+    const showExport =
+        features.export && exportConfig && exportConfig.enabled !== false;
+    const { activeExports, startExport, markAsDownloaded } = useExport(
+        exportConfig,
+        Boolean(showExport),
     );
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex items-start gap-2">
+        <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                     {features.search && (
-                        <div className="relative w-full shrink-0 md:max-w-80">
-                            <Search className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    onSearchChange(event.target.value)
+                        <div
+                            className={cn(
+                                'relative h-9 transition-[width] duration-200 ease-out',
+                                searchOpen ? 'w-full md:w-60' : 'w-9',
+                            )}
+                            onMouseEnter={() => setSearchExpanded(true)}
+                            onMouseLeave={() => {
+                                if (!search) {
+                                    setSearchExpanded(false);
                                 }
-                                placeholder={searchPlaceholder}
-                                aria-label={searchPlaceholder}
-                                className="h-10 bg-background pr-9 pl-10"
-                            />
-                            {search.length > 0 && (
-                                <button
+                            }}
+                            onFocus={() => setSearchExpanded(true)}
+                            onBlur={(event) => {
+                                if (
+                                    !event.currentTarget.contains(
+                                        event.relatedTarget,
+                                    ) &&
+                                    !search
+                                ) {
+                                    setSearchExpanded(false);
+                                }
+                            }}
+                        >
+                            {!searchOpen ? (
+                                <Button
                                     type="button"
-                                    className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground"
-                                    onClick={() => onSearchChange('')}
-                                    aria-label="Limpar busca"
+                                    variant="outline"
+                                    size="icon"
+                                    aria-label="Buscar"
                                 >
-                                    <X className="size-4" />
-                                </button>
+                                    <Search />
+                                </Button>
+                            ) : (
+                                <>
+                                    <Search className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        aria-label={searchPlaceholder}
+                                        value={search}
+                                        onChange={(event) =>
+                                            onSearchChange(event.target.value)
+                                        }
+                                        placeholder={searchPlaceholder}
+                                        className="h-9 pr-9 pl-9"
+                                        autoFocus={searchExpanded && !search}
+                                    />
+                                    {search.length > 0 && (
+                                        <button
+                                            type="button"
+                                            className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground"
+                                            onClick={() => {
+                                                onSearchChange('');
+                                                setSearchExpanded(false);
+                                            }}
+                                            aria-label="Limpar busca"
+                                        >
+                                            <X className="size-4" />
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
+                    )}
+
+                    {quickFilters.map((filter) => (
+                        <QuickFilterSelect
+                            key={filter.id}
+                            filter={filter}
+                            value={filterValues[filter.id]}
+                            onChange={(value) =>
+                                onFilterChange(filter.id, value)
+                            }
+                        />
+                    ))}
+
+                    {activeChips.length > 0 && (
+                        <>
+                            {activeChips.map((chip) => (
+                                <Button
+                                    key={`${chip.id}:${chip.value ?? ''}`}
+                                    type="button"
+                                    size="sm"
+                                    variant="secondary"
+                                    aria-label={`Remover filtro ${chip.title}: ${chip.label}`}
+                                    onClick={() => {
+                                        const value = filterValues[chip.id];
+                                        onFilterChange(
+                                            chip.id,
+                                            Array.isArray(value)
+                                                ? value.filter(
+                                                      (item) =>
+                                                          String(item) !==
+                                                          chip.value,
+                                                  )
+                                                : undefined,
+                                        );
+                                    }}
+                                >
+                                    {chip.title}: {chip.label}
+                                    <X className="size-3.5" />
+                                </Button>
+                            ))}
+                        </>
                     )}
 
                     {features.filters && (
@@ -116,66 +226,85 @@ export function DataTableToolbar<TData>({
                         />
                     )}
 
-                    {quickFilters.map((filter) => (
-                        <QuickFilterSelect
-                            key={filter.id}
-                            filter={filter}
-                            value={filterValues[filter.id]}
-                            onChange={(value) =>
-                                onFilterChange(filter.id, value)
-                            }
-                        />
-                    ))}
+                    {hasActiveFilters && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={onResetFilters}
+                            className="text-muted-foreground hover:text-foreground"
+                        >
+                            <FilterX className="size-4" />
+                            Limpar filtros
+                        </Button>
+                    )}
                 </div>
 
-                <div className="ml-auto flex shrink-0 items-center gap-2">
-                    {showExport && (
-                        <DataTableExportStatus
-                            activeExports={activeExports}
-                            onDownload={markAsDownloaded}
-                        />
+                <div className="flex items-center gap-2">
+                    {features.refresh && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={onRefresh}
+                            disabled={isFetching}
+                            aria-label="Atualizar"
+                        >
+                            <RefreshCw
+                                className={cn(
+                                    'size-4',
+                                    isFetching && 'animate-spin',
+                                )}
+                            />
+                        </Button>
                     )}
-                    <DataTableActionsMenu
-                        table={table}
-                        showColumnVisibility={features.columnVisibility}
-                        canResetTable={canResetTable}
-                        onResetTable={onResetTable}
-                        showRefresh={features.refresh}
-                        isFetching={isFetching}
-                        onRefresh={onRefresh}
-                        showExport={showExport}
-                        onExport={() => setExportDialogOpen(true)}
-                    />
-                    {showExport && exportConfig && (
-                        <DataTableExportDialog
-                            open={exportDialogOpen}
-                            onClose={() => setExportDialogOpen(false)}
-                            modelClass={exportConfig.modelClass}
-                            columnsEndpoint={exportConfig.columnsEndpoint}
-                            currentFilters={{
-                                ...filterValues,
-                                ...(exportConfig.fixedFilters ?? {}),
-                            }}
-                            currentSearch={search}
-                            currentSort={currentSort}
-                            currentSortDirection={currentSortDirection}
-                            activeExports={activeExports}
-                            onStartExport={startExport}
-                            onExportStarted={() => setExportDialogOpen(false)}
+
+                    {showExport && (
+                        <>
+                            <DataTableExportStatus
+                                activeExports={activeExports}
+                                onDownload={markAsDownloaded}
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setExportDialogOpen(true)}
+                            >
+                                <Download className="size-4" />
+                                Exportar
+                            </Button>
+                            <DataTableExportDialog
+                                open={exportDialogOpen}
+                                onClose={() => setExportDialogOpen(false)}
+                                modelClass={exportConfig.modelClass}
+                                columnsEndpoint={exportConfig.columnsEndpoint}
+                                currentFilters={filterValues}
+                                fixedFilters={exportConfig.fixedFilters}
+                                currentFilterConfig={exportFilterConfig}
+                                currentSearch={search}
+                                currentSort={currentSort}
+                                currentSortDirection={currentSortDirection}
+                                activeExports={activeExports}
+                                onStartExport={startExport}
+                                onExportStarted={() =>
+                                    setExportDialogOpen(false)
+                                }
+                            />
+                        </>
+                    )}
+                    {features.columnVisibility && layoutControls ? (
+                        <TableLayoutSettings
+                            table={table}
+                            {...layoutControls}
+                        />
+                    ) : (
+                        <DataTableActionsMenu
+                            table={table}
+                            showColumnVisibility={features.columnVisibility}
                         />
                     )}
                 </div>
             </div>
-
-            {features.filters && (
-                <DataTableFilterChips
-                    filters={filters}
-                    dateFilterColumns={dateFilterColumns}
-                    values={filterValues}
-                    onChange={onFilterChange}
-                    onReset={onResetFilters}
-                />
-            )}
         </div>
     );
 }

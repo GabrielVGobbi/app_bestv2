@@ -33,11 +33,6 @@ class TimelineHtmlSanitizer
         'h3',
     ];
 
-    /** @var array<string, array<int, string>> */
-    private const ALLOWED_ATTRIBUTES = [
-        'a' => ['href', 'target', 'rel'],
-    ];
-
     public function clean(string $html): string
     {
         $html = trim($html);
@@ -49,93 +44,69 @@ class TimelineHtmlSanitizer
         $document = new DOMDocument('1.0', 'UTF-8');
 
         $previous = libxml_use_internal_errors(true);
-        $document->loadHTML(
-            '<div>'.$html.'</div>',
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING,
-        );
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
+        try {
+            $loaded = $document->loadHTML(
+                '<html><head><meta charset="UTF-8"></head><body>'.$html.'</body></html>',
+                LIBXML_NONET | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING,
+            );
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
 
-        $root = $document->documentElement;
+        $root = $document->getElementsByTagName('body')->item(0);
 
-        if (! $root instanceof DOMElement) {
+        if (! $loaded || ! $root instanceof DOMElement) {
             return '';
         }
 
-        $this->sanitizeNode($root);
-
-        return trim($this->innerHtml($root));
+        return trim($this->renderChildren($root));
     }
 
-    private function sanitizeNode(DOMNode $node): void
+    private function renderChildren(DOMNode $node): string
     {
-        foreach (iterator_to_array($node->childNodes) as $child) {
-            if ($child instanceof DOMText) {
-                continue;
-            }
-
-            if (! $child instanceof DOMElement) {
-                $node->removeChild($child);
-
-                continue;
-            }
-
-            $tag = strtolower($child->tagName);
-
-            if (in_array($tag, ['script', 'style'], true)) {
-                $node->removeChild($child);
-
-                continue;
-            }
-
-            if (! in_array($tag, self::ALLOWED_TAGS, true)) {
-                $this->unwrapNode($child);
-
-                continue;
-            }
-
-            $this->sanitizeAttributes($child, $tag);
-            $this->sanitizeNode($child);
+        $html = '';
+        foreach ($node->childNodes as $child) {
+            $html .= $this->renderNode($child);
         }
+
+        return $html;
     }
 
-    private function sanitizeAttributes(DOMElement $element, string $tag): void
+    private function renderNode(DOMNode $node): string
     {
-        $allowed = self::ALLOWED_ATTRIBUTES[$tag] ?? [];
-
-        foreach (iterator_to_array($element->attributes) as $attribute) {
-            $name = strtolower($attribute->name);
-
-            if (! in_array($name, $allowed, true)) {
-                $element->removeAttribute($attribute->name);
-
-                continue;
-            }
-
-            if ($tag === 'a' && $name === 'href' && ! $this->isSafeHref($attribute->value)) {
-                $element->removeAttribute($attribute->name);
-            }
+        if ($node instanceof DOMText) {
+            return htmlspecialchars($node->data, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+        if (! $node instanceof DOMElement) {
+            return '';
+        }
+        $tag = strtolower($node->tagName);
+        if (in_array($tag, ['script', 'style'], true)) {
+            return '';
         }
 
-        if ($tag === 'a' && $element->hasAttribute('href')) {
-            $element->setAttribute('target', '_blank');
-            $element->setAttribute('rel', 'noopener noreferrer');
+        $children = $this->renderChildren($node);
+        if (! in_array($tag, self::ALLOWED_TAGS, true)) {
+            return $children;
         }
+        if ($tag === 'br') {
+            return '<br>';
+        }
+
+        $attributes = $tag === 'a' ? $this->linkAttributes($node) : '';
+
+        return '<'.$tag.$attributes.'>'.$children.'</'.$tag.'>';
     }
 
-    private function unwrapNode(DOMElement $node): void
+    private function linkAttributes(DOMElement $element): string
     {
-        $parent = $node->parentNode;
-
-        if (! $parent) {
-            return;
+        if (! $element->hasAttribute('href') || ! $this->isSafeHref($element->getAttribute('href'))) {
+            return '';
         }
+        $href = htmlspecialchars($element->getAttribute('href'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-        while ($node->firstChild) {
-            $parent->insertBefore($node->firstChild, $node);
-        }
-
-        $parent->removeChild($node);
+        return ' href="'.$href.'" target="_blank" rel="noopener noreferrer"';
     }
 
     private function isSafeHref(string $href): bool
@@ -146,16 +117,5 @@ class TimelineHtmlSanitizer
             || str_starts_with($href, 'https://')
             || str_starts_with($href, 'mailto:')
             || str_starts_with($href, '/');
-    }
-
-    private function innerHtml(DOMElement $element): string
-    {
-        $html = '';
-
-        foreach ($element->childNodes as $child) {
-            $html .= $element->ownerDocument?->saveHTML($child) ?? '';
-        }
-
-        return $html;
     }
 }

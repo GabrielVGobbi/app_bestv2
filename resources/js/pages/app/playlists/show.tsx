@@ -1,15 +1,20 @@
 import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/react';
 import {
-    ArrowLeft,
     BarChart3,
+    Braces,
     CalendarDays,
     ExternalLink,
+    Info,
+    Link2,
     ListMusic,
+    ListOrdered,
     Pencil,
     Plus,
     Radio,
+    Save,
     Trash2,
     Users,
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -25,6 +30,7 @@ import {
     update as configurePlaylistTop,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/PlaylistTopController';
 import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,25 +42,20 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { InputMoney } from '@/components/ui/input-money';
-import { Label } from '@/components/ui/label';
-import {
-    PanelTable,
-    PanelTableBody,
-    PanelTableHead,
-    PanelTableRow,
-} from '@/components/ui/panel-table';
+import { SurfaceProvider } from '@/components/ui/fluid/lib/surface-context';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { TabItem, TabPanel, Tabs, TabsList } from '@/components/ui/fluid/tabs';
+import FormField from '@/components/ui/forms/form-field';
+import { Input } from '@/components/ui/input';
+import { InputMoney } from '@/components/ui/input-money';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatMoney } from '@/lib/utils';
 import type {
@@ -279,51 +280,59 @@ function PlaylistTopsPanel({
                     </p>
                 </div>
                 {permissions.can_attach ? (
-                    <Button
-                        size="icon"
-                        className="size-8"
-                        onClick={openAttachDialog}
-                        aria-label="Adicionar TOP"
-                        title="Adicionar TOP"
-                    >
-                        <Plus className="size-4" />
+                    <Button type="button" size="sm" onClick={openAttachDialog}>
+                        <Plus className="size-4" aria-hidden="true" />
+                        Adicionar TOP
                     </Button>
                 ) : null}
             </CardHeader>
             <CardContent>
                 {playlistTops.length === 0 ? (
-                    <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-                        Nenhum TOP vinculado a esta playlist.
-                    </div>
+                    <EmptyState
+                        icon={ListOrdered}
+                        title="Nenhum TOP vinculado"
+                        description="Vincule um TOP para definir capacidade, preço e métricas desta playlist."
+                        action={
+                            permissions.can_attach ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={openAttachDialog}
+                                >
+                                    <Plus
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    Adicionar TOP
+                                </Button>
+                            ) : undefined
+                        }
+                    />
                 ) : (
-                    <PanelTable>
-                        <PanelTableHead
-                            className="grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem]"
-                            columns={[
-                                { label: 'TOP' },
-                                { label: 'Capacidade', align: 'right' },
-                                { label: 'Ocupadas', align: 'right' },
-                                { label: 'Disponíveis', align: 'right' },
-                                { label: 'Valor', align: 'right' },
-                                { label: 'Score', align: 'right' },
-                                { label: 'Ações', srOnly: true },
-                            ]}
-                        />
-                        <PanelTableBody as="ul">
+                    <div className="overflow-hidden rounded-lg border border-border">
+                        <div className="hidden grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem] gap-3 border-b border-separator bg-muted px-4 py-2 text-xs font-semibold text-muted-foreground lg:grid">
+                            <span>TOP</span>
+                            <span className="text-right">Capacidade</span>
+                            <span className="text-right">Ocupadas</span>
+                            <span className="text-right">Disponíveis</span>
+                            <span className="text-right">Valor</span>
+                            <span className="text-right">Score</span>
+                            <span className="sr-only">Ações</span>
+                        </div>
+                        <ul className="divide-y divide-separator">
                             {playlistTops.map((playlistTop) => {
                                 const topName =
                                     playlistTop.top?.name ?? 'TOP removido';
 
                                 return (
-                                    <PanelTableRow
-                                        as="li"
+                                    <li
                                         key={playlistTop.uuid}
-                                        className="lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem]"
+                                        className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(5rem,0.55fr))_4.5rem] lg:items-center"
                                     >
                                         <div className="min-w-0">
                                             <h3 className="truncate text-sm font-semibold">
-                                                {playlistTop.top?.name ??
-                                                    'TOP removido'}
+                                                {topName}
                                             </h3>
                                             {playlistTop.notes ? (
                                                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -388,7 +397,7 @@ function PlaylistTopsPanel({
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="size-8 text-destructive hover:text-destructive"
+                                                    className="size-8 hover:bg-destructive-soft hover:text-destructive-soft-foreground focus-visible:bg-destructive-soft focus-visible:text-destructive-soft-foreground"
                                                     onClick={() =>
                                                         setPlaylistTopToDelete(
                                                             playlistTop,
@@ -401,16 +410,16 @@ function PlaylistTopsPanel({
                                                 </Button>
                                             ) : null}
                                         </div>
-                                    </PanelTableRow>
+                                    </li>
                                 );
                             })}
-                        </PanelTableBody>
-                    </PanelTable>
+                        </ul>
+                    </div>
                 )}
             </CardContent>
 
             <Dialog open={isAttachOpen} onOpenChange={setIsAttachOpen}>
-                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Adicionar TOP à playlist</DialogTitle>
                         <DialogDescription>
@@ -418,31 +427,38 @@ function PlaylistTopsPanel({
                             mas pode ser ajustado para esta playlist.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={submitAttach} className="space-y-4">
-                        <TopConfigurationFields
-                            form={attachForm}
-                            topOptions={topOptions}
-                            onTopChange={updateSelectedTop}
-                            includeTopSelector
-                        />
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsAttachOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={attachForm.processing}
-                            >
-                                {attachForm.processing
-                                    ? 'Salvando...'
-                                    : 'Vincular TOP'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                    <SurfaceProvider value={3}>
+                        <form onSubmit={submitAttach} className="space-y-4">
+                            <TopConfigurationFields
+                                form={attachForm}
+                                topOptions={topOptions}
+                                onTopChange={updateSelectedTop}
+                                includeTopSelector
+                            />
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsAttachOpen(false)}
+                                >
+                                    <X className="size-4" aria-hidden="true" />
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={attachForm.processing}
+                                >
+                                    <Link2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    {attachForm.processing
+                                        ? 'Salvando...'
+                                        : 'Vincular TOP'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </SurfaceProvider>
                 </DialogContent>
             </Dialog>
 
@@ -450,36 +466,43 @@ function PlaylistTopsPanel({
                 open={editingPlaylistTop !== null}
                 onOpenChange={(open) => !open && setEditingPlaylistTop(null)}
             >
-                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Configurar TOP da playlist</DialogTitle>
                         <DialogDescription>
                             Ocupação atual é somente leitura nesta fase.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={submitConfigure} className="space-y-4">
-                        <TopConfigurationFields
-                            form={configureForm}
-                            topOptions={topOptions}
-                        />
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setEditingPlaylistTop(null)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={configureForm.processing}
-                            >
-                                {configureForm.processing
-                                    ? 'Salvando...'
-                                    : 'Salvar configuração'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                    <SurfaceProvider value={3}>
+                        <form onSubmit={submitConfigure} className="space-y-4">
+                            <TopConfigurationFields
+                                form={configureForm}
+                                topOptions={topOptions}
+                            />
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setEditingPlaylistTop(null)}
+                                >
+                                    <X className="size-4" aria-hidden="true" />
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={configureForm.processing}
+                                >
+                                    <Save
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                    {configureForm.processing
+                                        ? 'Salvando...'
+                                        : 'Salvar configuração'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </SurfaceProvider>
                 </DialogContent>
             </Dialog>
 
@@ -500,9 +523,11 @@ function PlaylistTopsPanel({
                             variant="outline"
                             onClick={() => setPlaylistTopToDelete(null)}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button variant="destructive" onClick={detachTop}>
+                            <Trash2 className="size-4" aria-hidden="true" />
                             Remover
                         </Button>
                     </DialogFooter>
@@ -528,8 +553,7 @@ function TopConfigurationFields({
     return (
         <div className="space-y-4">
             {includeTopSelector ? (
-                <div className="space-y-2">
-                    <Label htmlFor="field-top-id">TOP</Label>
+                <FormField id="field-top-id" label="TOP" error={errors.top_id}>
                     <Select
                         value={form.data.top_id}
                         onValueChange={(value) =>
@@ -538,30 +562,31 @@ function TopConfigurationFields({
                                 : form.setData('top_id', value)
                         }
                     >
-                        <SelectTrigger id="field-top-id" className="w-full">
-                            <SelectValue placeholder="Selecione um TOP" />
-                        </SelectTrigger>
+                        <SelectTrigger
+                            id="field-top-id"
+                            className="w-full"
+                            placeholder="Selecione um TOP"
+                        />
                         <SelectContent>
-                            {topOptions.map((top) => (
-                                <SelectItem key={top.id} value={String(top.id)}>
+                            {topOptions.map((top, index) => (
+                                <SelectItem
+                                    key={top.id}
+                                    index={index}
+                                    value={String(top.id)}
+                                >
                                     {topLabel(top)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
-                    {errors.top_id ? (
-                        <p className="text-sm text-destructive">
-                            {errors.top_id}
-                        </p>
-                    ) : null}
-                </div>
+                </FormField>
             ) : null}
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                    <Label htmlFor="field-slots-quantity">
-                        Quantidade de vagas
-                    </Label>
+                <FormField
+                    label="Quantidade de vagas"
+                    error={errors.slots_quantity}
+                >
                     <Input
                         id="field-slots-quantity"
                         type="number"
@@ -572,29 +597,16 @@ function TopConfigurationFields({
                             form.setData('slots_quantity', event.target.value)
                         }
                         inputMode="numeric"
-                        aria-invalid={!!errors.slots_quantity}
                     />
-                    {errors.slots_quantity ? (
-                        <p className="text-sm text-destructive">
-                            {errors.slots_quantity}
-                        </p>
-                    ) : null}
-                </div>
+                </FormField>
 
-                <div className="space-y-2">
-                    <Label htmlFor="field-price">Valor sugerido</Label>
+                <FormField label="Valor sugerido" error={errors.price}>
                     <InputMoney
                         id="field-price"
                         value={form.data.price}
                         onChange={(value) => form.setData('price', value)}
-                        aria-invalid={!!errors.price}
                     />
-                    {errors.price ? (
-                        <p className="text-sm text-destructive">
-                            {errors.price}
-                        </p>
-                    ) : null}
-                </div>
+                </FormField>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -644,8 +656,7 @@ function TopConfigurationFields({
                 />
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="field-playlist-top-notes">Observações</Label>
+            <FormField label="Observações" error={errors.notes}>
                 <Textarea
                     id="field-playlist-top-notes"
                     value={form.data.notes}
@@ -653,14 +664,10 @@ function TopConfigurationFields({
                         form.setData('notes', event.target.value)
                     }
                     rows={3}
-                    aria-invalid={!!errors.notes}
                 />
-                {errors.notes ? (
-                    <p className="text-sm text-destructive">{errors.notes}</p>
-                ) : null}
-            </div>
+            </FormField>
 
-            <div className="flex min-h-16 items-center justify-between gap-4 rounded-md border px-4 py-3">
+            <div className="flex min-h-16 items-center justify-between gap-4 rounded-lg border border-border bg-muted px-4 py-3">
                 <div className="space-y-1">
                     <Label htmlFor="field-playlist-top-active">Ativo</Label>
                     <p className="text-xs text-muted-foreground">
@@ -693,8 +700,7 @@ function MetricInput({
     const id = `metric-${label.toLowerCase().replaceAll(' ', '-')}`;
 
     return (
-        <div className="space-y-2">
-            <Label htmlFor={id}>{label}</Label>
+        <FormField label={label} error={error}>
             <Input
                 id={id}
                 type="number"
@@ -703,10 +709,8 @@ function MetricInput({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 inputMode="numeric"
-                aria-invalid={!!error}
             />
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </div>
+        </FormField>
     );
 }
 
@@ -718,6 +722,7 @@ export default function ShowPlaylist({
     playlistTopPermissions,
 }: Props) {
     const playlist = playlistData.data;
+    const [tab, setTab] = useState('summary');
 
     setLayoutProps({
         breadcrumbs: [
@@ -730,36 +735,18 @@ export default function ShowPlaylist({
         <>
             <Head title={playlist.name} />
 
-            <Header>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        asChild
-                    >
-                        <Link href={index.url()}>
-                            <ArrowLeft className="size-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="page-heading-title">{playlist.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {playlist.slug}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
+            <Header title={playlist.name} backHref={index.url()}>
+                <div className="flex flex-wrap items-center gap-2">
                     <PlaylistSubNav
                         playlistUuid={playlist.uuid}
                         currentPage="show"
                         canUpdate={permissions.can_update}
                     />
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" asChild>
                         <Link
                             href={`/playlists/metrics?search=${encodeURIComponent(playlist.name)}`}
                         >
-                            <BarChart3 className="size-4" />
+                            <BarChart3 className="size-4" aria-hidden="true" />
                             Métricas
                         </Link>
                     </Button>
@@ -769,12 +756,15 @@ export default function ShowPlaylist({
                                 orientation="vertical"
                                 className="mx-1 h-6"
                             />
-                            <Button variant="destructive" size="sm" asChild>
+                            <Button variant="outline" asChild>
                                 <Link
                                     href={destroy.url(playlist.uuid)}
                                     method="delete"
                                 >
-                                    <Trash2 className="size-4" />
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Arquivar
                                 </Link>
                             </Button>
@@ -784,9 +774,9 @@ export default function ShowPlaylist({
             </Header>
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="lg:sticky lg:top-4 lg:self-start">
-                        <div className="rounded-lg border bg-card">
+                        <Card className="gap-0 py-0">
                             <div className="p-5">
                                 {playlist.cover_image?.url ? (
                                     <img
@@ -797,8 +787,11 @@ export default function ShowPlaylist({
                                         height={112}
                                     />
                                 ) : (
-                                    <div className="flex h-28 items-center justify-center rounded-lg bg-secondary text-primary">
-                                        <ListMusic className="size-12" />
+                                    <div className="flex h-28 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+                                        <ListMusic
+                                            className="size-12"
+                                            aria-hidden="true"
+                                        />
                                     </div>
                                 )}
 
@@ -829,8 +822,11 @@ export default function ShowPlaylist({
 
                                 <div className="mt-5 space-y-2 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
-                                        <Users className="size-4 shrink-0" />
-                                        <span>
+                                        <Users
+                                            className="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="tabular-nums">
                                             {playlist.followers_count?.toLocaleString(
                                                 'pt-BR',
                                             ) ?? '-'}{' '}
@@ -838,8 +834,11 @@ export default function ShowPlaylist({
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Radio className="size-4 shrink-0" />
-                                        <span>
+                                        <Radio
+                                            className="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="tabular-nums">
                                             {playlist.estimated_reach?.toLocaleString(
                                                 'pt-BR',
                                             ) ?? '-'}{' '}
@@ -849,35 +848,57 @@ export default function ShowPlaylist({
                                 </div>
                             </div>
 
-                            <div className="border-t px-5 py-4 text-xs text-muted-foreground">
+                            <div className="border-t border-separator px-5 py-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
-                                    <CalendarDays className="size-3.5" />
-                                    <span>
+                                    <CalendarDays
+                                        className="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="tabular-nums">
                                         Criada {formatDate(playlist.created_at)}
                                     </span>
                                 </div>
-                                <p className="mt-1">
+                                <p className="mt-1 tabular-nums">
                                     Última edição{' '}
                                     {formatDate(playlist.updated_at)}
                                 </p>
                             </div>
-                        </div>
+                        </Card>
                     </aside>
 
                     <main className="min-w-0">
-                        <Tabs defaultValue="summary" className="gap-4">
-                            <TabsList variant="line">
-                                <TabsTrigger value="summary">
-                                    Resumo
-                                </TabsTrigger>
-                                <TabsTrigger value="links">Links</TabsTrigger>
-                                <TabsTrigger value="tops">TOPs</TabsTrigger>
-                                <TabsTrigger value="metadata">
-                                    Metadata
-                                </TabsTrigger>
+                        <Tabs
+                            value={tab}
+                            onValueChange={setTab}
+                            className="space-y-4"
+                        >
+                            <TabsList
+                                aria-label="Seções da playlist"
+                                className="max-w-full overflow-x-auto"
+                            >
+                                <TabItem
+                                    value="summary"
+                                    label="Resumo"
+                                    icon={Info}
+                                />
+                                <TabItem
+                                    value="links"
+                                    label="Links"
+                                    icon={Link2}
+                                />
+                                <TabItem
+                                    value="tops"
+                                    label="TOPs"
+                                    icon={ListOrdered}
+                                />
+                                <TabItem
+                                    value="metadata"
+                                    label="Metadata"
+                                    icon={Braces}
+                                />
                             </TabsList>
 
-                            <TabsContent value="summary" className="space-y-4">
+                            <TabPanel value="summary" className="space-y-4">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Dados comerciais</CardTitle>
@@ -929,9 +950,9 @@ export default function ShowPlaylist({
                                         </CardContent>
                                     </Card>
                                 ) : null}
-                            </TabsContent>
+                            </TabPanel>
 
-                            <TabsContent value="links">
+                            <TabPanel value="links">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>
@@ -971,7 +992,10 @@ export default function ShowPlaylist({
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
-                                                        <ExternalLink className="size-4" />
+                                                        <ExternalLink
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                         Spotify
                                                     </a>
                                                 </Button>
@@ -989,7 +1013,10 @@ export default function ShowPlaylist({
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >
-                                                        <ExternalLink className="size-4" />
+                                                        <ExternalLink
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                         YouTube
                                                     </a>
                                                 </Button>
@@ -997,24 +1024,24 @@ export default function ShowPlaylist({
                                         </div>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
+                            </TabPanel>
 
-                            <TabsContent value="tops">
+                            <TabPanel value="tops">
                                 <PlaylistTopsPanel
                                     playlist={playlist}
                                     playlistTops={playlistTops.data}
                                     topOptions={topOptions.data}
                                     permissions={playlistTopPermissions}
                                 />
-                            </TabsContent>
+                            </TabPanel>
 
-                            <TabsContent value="metadata">
+                            <TabPanel value="metadata">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Metadata legada</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <pre className="max-h-[360px] overflow-auto rounded-md border bg-muted/30 p-4 text-xs leading-relaxed text-muted-foreground">
+                                        <pre className="max-h-[360px] overflow-auto rounded-lg border border-border bg-muted p-4 text-xs leading-relaxed text-muted-foreground">
                                             <code>
                                                 {metadataSummary(
                                                     playlist.external_metadata,
@@ -1023,7 +1050,7 @@ export default function ShowPlaylist({
                                         </pre>
                                     </CardContent>
                                 </Card>
-                            </TabsContent>
+                            </TabPanel>
                         </Tabs>
                     </main>
                 </div>

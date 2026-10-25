@@ -1,6 +1,6 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -11,7 +11,7 @@ import {
     restore,
     show,
 } from '@/actions/App/Modules/Playlists/Http/Controllers/TopController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type {
     DataTableAction,
@@ -19,7 +19,6 @@ import type {
     DataTableExportConfig,
     DataTableFilterConfig,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,14 +81,22 @@ export default function PlaylistTopIndex({ permissions }: Props) {
                 id: 'default_slots_quantity',
                 accessorKey: 'default_slots_quantity',
                 header: 'Vagas padrão',
-                cell: ({ row }) => row.original.default_slots_quantity,
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.default_slots_quantity}
+                    </span>
+                ),
                 meta: { label: 'Vagas padrão' },
             },
             {
                 id: 'sort_order',
                 accessorKey: 'sort_order',
                 header: 'Ordem',
-                cell: ({ row }) => row.original.sort_order,
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.sort_order}
+                    </span>
+                ),
                 meta: { label: 'Ordem' },
             },
             {
@@ -98,7 +105,9 @@ export default function PlaylistTopIndex({ permissions }: Props) {
                 header: 'Status',
                 cell: ({ row }) => (
                     <Badge
-                        variant={row.original.is_active ? 'default' : 'outline'}
+                        variant={
+                            row.original.is_active ? 'success' : 'secondary'
+                        }
                     >
                         {row.original.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
@@ -197,22 +206,22 @@ export default function PlaylistTopIndex({ permissions }: Props) {
         <>
             <Head title="TOPs" />
 
-            <ContentHeader>
-                <Heading
-                    title="TOPs"
-                    description="Catálogo de posições comerciais reutilizáveis em playlists."
-                />
+            <Header
+                title="TOPs"
+                subtitle="Catálogo de posições comerciais reutilizáveis em playlists"
+            >
                 {permissions.can_create ? (
                     <Button asChild>
                         <Link prefetch href={create.url()}>
-                            <Plus className="size-4" />
+                            <Plus className="size-4" aria-hidden="true" />
                             Novo TOP
                         </Link>
                     </Button>
                 ) : null}
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Dialog
                         open={topToDelete !== null}
                         onOpenChange={(open) => !open && setTopToDelete(null)}
@@ -230,12 +239,17 @@ export default function PlaylistTopIndex({ permissions }: Props) {
                                     variant="outline"
                                     onClick={() => setTopToDelete(null)}
                                 >
+                                    <X className="size-4" aria-hidden="true" />
                                     Cancelar
                                 </Button>
                                 <Button
                                     variant="destructive"
                                     onClick={deleteTop}
                                 >
+                                    <Trash2
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
                                     Arquivar
                                 </Button>
                             </DialogFooter>
@@ -276,7 +290,7 @@ export default function PlaylistTopIndex({ permissions }: Props) {
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar TOPs..."
+                        searchPlaceholder="Buscar TOPs"
                     />
                 </div>
             </div>

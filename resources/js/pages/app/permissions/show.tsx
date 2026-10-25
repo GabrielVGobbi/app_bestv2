@@ -1,8 +1,9 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { ArrowLeft, KeyRound, Pencil, Trash2 } from 'lucide-react';
+import { KeyRound, Pencil, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { toast } from 'sonner';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -15,8 +16,9 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { usePrivateState } from '@/contexts/private-state-context';
 import { apiRoutes } from '@/lib/api/api-routes';
-import { httpDelete } from '@/lib/http';
+import { httpDelete, toApiError } from '@/lib/http';
 import { edit, index, show } from '@/routes/permissions';
 import type { Permission } from '@/types/app/permission';
 
@@ -52,6 +54,7 @@ function InfoField({
 }
 
 export default function ShowPermission({ permissionData }: ShowProps) {
+    const { scope } = usePrivateState();
     const permission = permissionData.data;
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -67,10 +70,23 @@ export default function ShowPermission({ permissionData }: ShowProps) {
         setDeleting(true);
 
         try {
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             await httpDelete(apiRoutes.permissions.destroy(permission.id));
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Permissão removida com sucesso!');
             router.visit(index.url());
-        } catch {
+        } catch (failure) {
+            if (!scope.isCurrent() || toApiError(failure).type === 'canceled') {
+                return;
+            }
+
             toast.error('Erro ao remover permissão.');
             setDeleting(false);
         }
@@ -80,48 +96,33 @@ export default function ShowPermission({ permissionData }: ShowProps) {
         <>
             <Head title={permission.name} />
 
-            <div className="container mx-auto max-w-3xl">
-                <div className="page-section">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="size-8"
-                                asChild
-                            >
-                                <Link href={index.url()}>
-                                    <ArrowLeft className="size-4" />
-                                </Link>
-                            </Button>
-                            <h1 className="page-heading-title">
-                                Detalhes da Permissão
-                            </h1>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => setDeleteOpen(true)}
-                            >
-                                <Trash2 className="mr-2 size-4" />
-                                Excluir
-                            </Button>
-                            <Button size="sm" asChild>
-                                <Link href={edit.url(permission.id)}>
-                                    <Pencil className="mr-2 size-4" />
-                                    Editar
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
+            <Header title={permission.name} backHref={index.url()}>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteOpen(true)}
+                    >
+                        <Trash2 className="mr-2 size-4" />
+                        Excluir
+                    </Button>
+                    <Button size="sm" asChild>
+                        <Link href={edit.url(permission.id)}>
+                            <Pencil className="mr-2 size-4" />
+                            Editar
+                        </Link>
+                    </Button>
+                </div>
+            </Header>
 
+            <div className="page-wrapper-sm">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
-                                <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
-                                    <KeyRound className="size-6 text-primary" />
+                                <div className="flex size-12 items-center justify-center rounded-xl bg-primary-soft text-primary-soft-foreground">
+                                    <KeyRound className="size-6" />
                                 </div>
                                 <div>
                                     <h2 className="font-bold">
@@ -193,6 +194,7 @@ export default function ShowPermission({ permissionData }: ShowProps) {
                             variant="outline"
                             onClick={() => setDeleteOpen(false)}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button
@@ -200,6 +202,7 @@ export default function ShowPermission({ permissionData }: ShowProps) {
                             disabled={deleting}
                             onClick={handleDelete}
                         >
+                            <Trash2 className="size-4" aria-hidden="true" />
                             {deleting ? 'Excluindo...' : 'Excluir'}
                         </Button>
                     </DialogFooter>

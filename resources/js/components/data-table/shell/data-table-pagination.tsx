@@ -6,8 +6,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
 import type { PaginationMeta } from '@/types/pagination';
 
 interface DataTablePaginationProps {
@@ -32,7 +31,7 @@ export function DataTablePagination({
     }
 
     return (
-        <div className="flex flex-col gap-3 py-1 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
             {showSummary ? (
                 <p className="text-sm text-muted-foreground">
                     Mostrando {meta.from ?? 0} a {meta.to ?? 0} de {meta.total}{' '}
@@ -47,19 +46,24 @@ export function DataTablePagination({
                     value={String(perPage)}
                     onValueChange={(value) => onPerPageChange(Number(value))}
                 >
-                    <SelectTrigger size="sm" className="w-24">
-                        <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger
+                        aria-label="Itens por página"
+                        className="w-24 min-w-0"
+                    />
                     <SelectContent>
-                        {[10, 15, 30, 50, 100].map((value) => (
-                            <SelectItem key={value} value={String(value)}>
-                                {value}
+                        {[10, 15, 30, 50, 100].map((value, index) => (
+                            <SelectItem
+                                key={value}
+                                index={index}
+                                value={String(value)}
+                            >
+                                {String(value)}
                             </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
 
-                <div className="text-xs font-medium text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                     Página {meta.current_page} de {meta.last_page}
                 </div>
 
@@ -67,8 +71,7 @@ export function DataTablePagination({
                     <Button
                         type="button"
                         variant="outline"
-                        size="sm"
-                        className="size-8 p-0"
+                        size="icon"
                         disabled={page <= 1}
                         onClick={() => onPageChange(page - 1)}
                     >
@@ -77,8 +80,7 @@ export function DataTablePagination({
                     <Button
                         type="button"
                         variant="outline"
-                        size="sm"
-                        className="size-8 p-0"
+                        size="icon"
                         disabled={page >= meta.last_page}
                         onClick={() => onPageChange(page + 1)}
                     >

@@ -72,8 +72,8 @@ export default function SpotifyPlaylistImporter({
     }
 
     return (
-        <Card variant="form" className="overflow-hidden">
-            <CardContent className="space-y-4">
+        <Card className="overflow-hidden py-0 shadow-xs">
+            <CardContent className="space-y-4 p-4 sm:p-6">
                 <form
                     className="grid gap-3 sm:grid-cols-[1fr_auto]"
                     onSubmit={handleSubmit}
@@ -102,7 +102,7 @@ export default function SpotifyPlaylistImporter({
                             </p>
                         )}
                     </div>
-                    <div className="flex items-start sm:pt-6">
+                    <div className="flex items-end">
                         <Button
                             type="submit"
                             className="w-full sm:w-auto"
@@ -119,7 +119,7 @@ export default function SpotifyPlaylistImporter({
                 </form>
 
                 {processing && !preview ? (
-                    <div className="flex gap-4 rounded-md border bg-muted/30 p-4">
+                    <div className="flex gap-4 rounded-md border bg-muted p-4">
                         <Skeleton className="size-20 shrink-0 rounded-md" />
                         <div className="min-w-0 flex-1 space-y-2">
                             <Skeleton className="h-5 w-2/3" />
@@ -130,7 +130,7 @@ export default function SpotifyPlaylistImporter({
                 ) : null}
 
                 {preview ? (
-                    <div className="flex flex-col gap-4 rounded-md border bg-muted/30 p-4 sm:flex-row sm:items-center">
+                    <div className="flex flex-col gap-4 rounded-md border bg-muted p-4 sm:flex-row sm:items-center">
                         {preview.image_url ? (
                             <img
                                 src={preview.image_url}
@@ -150,7 +150,10 @@ export default function SpotifyPlaylistImporter({
                         )}
                         <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
-                                <CheckCircle2 className="size-4 text-emerald-600" />
+                                <CheckCircle2
+                                    className="size-4 text-success"
+                                    aria-hidden="true"
+                                />
                                 <p className="font-medium">
                                     {preview.name ?? 'Playlist Spotify'}
                                 </p>

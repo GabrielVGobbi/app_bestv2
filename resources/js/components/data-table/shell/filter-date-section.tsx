@@ -10,27 +10,26 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 import {
     dateToApiDateTime,
     dateToInputValue,
     defaultDatePresets,
-    formatShortDate,
     toApiDateTime,
     toDateInputValue,
 } from '../core/date-presets';
+import { filterValueLabel } from '../core/filter-presentation';
 import { isActiveFilterValue, rangeValue } from '../core/filter-utils';
 import type {
     DataTableDateColumn,
@@ -39,8 +38,18 @@ import type {
 } from '../core/types';
 
 const MONTH_NAMES = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
 ];
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -58,16 +67,25 @@ function buildCalendarCells(
     }> = [];
 
     for (let i = firstWeekday - 1; i >= 0; i--) {
-        cells.push({ day: daysInPrevMonth - i, dateStr: null, isCurrentMonth: false });
+        cells.push({
+            day: daysInPrevMonth - i,
+            dateStr: null,
+            isCurrentMonth: false,
+        });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
         const m = String(month + 1).padStart(2, '0');
         const day = String(d).padStart(2, '0');
-        cells.push({ day: d, dateStr: `${year}-${m}-${day}`, isCurrentMonth: true });
+        cells.push({
+            day: d,
+            dateStr: `${year}-${m}-${day}`,
+            isCurrentMonth: true,
+        });
     }
 
     const remaining = Math.ceil(cells.length / 7) * 7 - cells.length;
+
     for (let d = 1; d <= remaining; d++) {
         cells.push({ day: d, dateStr: null, isCurrentMonth: false });
     }
@@ -77,6 +95,7 @@ function buildCalendarCells(
 
 function formatDisplayDate(dateStr: string): string {
     const parts = dateStr.split('-');
+
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
@@ -85,27 +104,41 @@ export function DatePickerInput({
     onChange,
     placeholder = 'Selecione',
     minDate,
+    label,
 }: {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
     minDate?: string;
+    label?: string;
 }) {
     const [open, setOpen] = useState(false);
     const today = new Date();
     const parsedDate = value ? new Date(value + 'T00:00:00') : null;
-    const [viewYear, setViewYear] = useState(parsedDate?.getFullYear() ?? today.getFullYear());
-    const [viewMonth, setViewMonth] = useState(parsedDate?.getMonth() ?? today.getMonth());
+    const [viewYear, setViewYear] = useState(
+        parsedDate?.getFullYear() ?? today.getFullYear(),
+    );
+    const [viewMonth, setViewMonth] = useState(
+        parsedDate?.getMonth() ?? today.getMonth(),
+    );
     const todayStr = dateToInputValue(today);
 
     function prevMonth(): void {
-        if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-        else { setViewMonth((m) => m - 1); }
+        if (viewMonth === 0) {
+            setViewMonth(11);
+            setViewYear((y) => y - 1);
+        } else {
+            setViewMonth((m) => m - 1);
+        }
     }
 
     function nextMonth(): void {
-        if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-        else { setViewMonth((m) => m + 1); }
+        if (viewMonth === 11) {
+            setViewMonth(0);
+            setViewYear((y) => y + 1);
+        } else {
+            setViewMonth((m) => m + 1);
+        }
     }
 
     const cells = buildCalendarCells(viewYear, viewMonth);
@@ -116,8 +149,9 @@ export function DatePickerInput({
                 <Button
                     type="button"
                     variant="outline"
+                    aria-label={`${label ?? placeholder}${value ? `: ${formatDisplayDate(value)}` : ''}`}
                     className={cn(
-                        'w-full justify-start gap-2 text-left font-normal',
+                        'w-full justify-start gap-2 border-input text-left font-normal',
                         !value && 'text-muted-foreground',
                     )}
                 >
@@ -135,6 +169,7 @@ export function DatePickerInput({
                         size="icon"
                         className="size-7"
                         onClick={prevMonth}
+                        aria-label="Mês anterior"
                     >
                         <ChevronLeft className="size-4" />
                     </Button>
@@ -147,6 +182,7 @@ export function DatePickerInput({
                         size="icon"
                         className="size-7"
                         onClick={nextMonth}
+                        aria-label="Próximo mês"
                     >
                         <ChevronRight className="size-4" />
                     </Button>
@@ -180,23 +216,33 @@ export function DatePickerInput({
 
                         const isSelected = cell.dateStr === value;
                         const isToday = cell.dateStr === todayStr;
-                        const isDisabled = minDate ? cell.dateStr < minDate : false;
+                        const isDisabled = minDate
+                            ? cell.dateStr < minDate
+                            : false;
 
                         return (
                             <button
                                 key={i}
                                 type="button"
                                 disabled={isDisabled}
+                                aria-label={formatDisplayDate(cell.dateStr)}
+                                aria-pressed={isSelected}
                                 onClick={() => {
                                     onChange(cell.dateStr!);
                                     setOpen(false);
                                 }}
                                 className={cn(
                                     'flex h-9 w-9 items-center justify-center rounded-md text-xs font-medium transition-colors',
-                                    isSelected && 'bg-primary text-primary-foreground shadow-sm',
-                                    !isSelected && isToday && 'border border-primary/40 text-primary',
-                                    !isSelected && !isToday && 'hover:bg-accent',
-                                    isDisabled && 'cursor-not-allowed opacity-25',
+                                    isSelected &&
+                                        'bg-primary text-primary-foreground shadow-sm',
+                                    !isSelected &&
+                                        isToday &&
+                                        'border border-primary/40 text-primary',
+                                    !isSelected &&
+                                        !isToday &&
+                                        'hover:bg-accent',
+                                    isDisabled &&
+                                        'cursor-not-allowed opacity-25',
                                 )}
                             >
                                 {cell.day}
@@ -212,7 +258,10 @@ export function DatePickerInput({
                             variant="ghost"
                             size="sm"
                             className="h-7 w-full text-xs text-muted-foreground"
-                            onClick={() => { onChange(''); setOpen(false); }}
+                            onClick={() => {
+                                onChange('');
+                                setOpen(false);
+                            }}
                         >
                             <X className="size-3" />
                             Limpar
@@ -236,7 +285,8 @@ export function DateFilterSection({
     onChange: (id: string, value: DataTableFilterValue) => void;
 }) {
     const activeColumn =
-        columns.find((column) => isActiveFilterValue(values[column.value]))?.value ??
+        columns.find((column) => isActiveFilterValue(values[column.value]))
+            ?.value ??
         columns[0]?.value ??
         '';
     const [selectedColumn, setSelectedColumn] = useState(activeColumn);
@@ -285,13 +335,19 @@ export function DateFilterSection({
                         setActivePreset(null);
                     }}
                 >
-                    <SelectTrigger className="h-9 w-full bg-background md:w-60">
-                        <CalendarDays className="mr-2 size-4 text-muted-foreground" />
-                        <SelectValue placeholder="Selecione a coluna" />
-                    </SelectTrigger>
+                    <SelectTrigger
+                        icon={CalendarDays}
+                        className="w-full md:w-60"
+                        aria-label="Campo de data"
+                        placeholder="Selecione a coluna"
+                    />
                     <SelectContent>
-                        {columns.map((column) => (
-                            <SelectItem key={column.value} value={column.value}>
+                        {columns.map((column, index) => (
+                            <SelectItem
+                                key={column.value}
+                                index={index}
+                                value={column.value}
+                            >
                                 {column.label}
                             </SelectItem>
                         ))}
@@ -303,8 +359,16 @@ export function DateFilterSection({
                         variant="secondary"
                         className="h-7 bg-primary/10 px-2.5 text-primary"
                     >
-                        {formatShortDate(selectedValue.from)} -{' '}
-                        {formatShortDate(selectedValue.to)}
+                        {
+                            columns.find(
+                                (column) => column.value === selectedColumn,
+                            )?.label
+                        }
+                        :{' '}
+                        {filterValueLabel(
+                            { label: 'Data', type: 'date-range' },
+                            selectedValue,
+                        )}
                     </Badge>
                 )}
 
@@ -329,10 +393,11 @@ export function DateFilterSection({
                         variant={
                             activePreset === preset.value
                                 ? 'default'
-                                : 'outline'
+                                : 'secondary'
                         }
                         size="sm"
                         className="h-7 rounded-full px-2.5 text-xs"
+                        aria-pressed={activePreset === preset.value}
                         onClick={() => applyPreset(preset)}
                     >
                         {preset.label}
@@ -344,7 +409,7 @@ export function DateFilterSection({
                         <PopoverTrigger asChild>
                             <Button
                                 type="button"
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 className="h-7 rounded-full px-2.5 text-xs"
                             >
@@ -363,6 +428,7 @@ export function DateFilterSection({
                                             'bg-primary text-primary-foreground',
                                     )}
                                     onClick={() => applyPreset(preset)}
+                                    aria-pressed={activePreset === preset.value}
                                 >
                                     {preset.label}
                                 </button>
@@ -380,6 +446,7 @@ export function DateFilterSection({
                     <DatePickerInput
                         value={toDateInputValue(selectedValue.from)}
                         placeholder="Data inicial"
+                        label={`${columns.find((column) => column.value === selectedColumn)?.label ?? 'Data'}: início`}
                         onChange={(date) =>
                             setRange(date, toDateInputValue(selectedValue.to))
                         }
@@ -392,7 +459,10 @@ export function DateFilterSection({
                     <DatePickerInput
                         value={toDateInputValue(selectedValue.to)}
                         placeholder="Data final"
-                        minDate={toDateInputValue(selectedValue.from) || undefined}
+                        label={`${columns.find((column) => column.value === selectedColumn)?.label ?? 'Data'}: fim`}
+                        minDate={
+                            toDateInputValue(selectedValue.from) || undefined
+                        }
                         onChange={(date) =>
                             setRange(toDateInputValue(selectedValue.from), date)
                         }

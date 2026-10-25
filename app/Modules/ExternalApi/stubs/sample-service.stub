@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }}\Services;
+
+use App\Modules\ExternalApi\Core\Contracts\HttpClientInterface;
+use {{ namespace }}\DTOs\SampleResource;
+
+class SampleService
+{
+    public function __construct(private HttpClientInterface $httpClient) {}
+
+    public function find(string $id): SampleResource
+    {
+        return SampleResource::fromArray($this->httpClient->get("/sample/{$id}")->getData());
+    }
+}
+

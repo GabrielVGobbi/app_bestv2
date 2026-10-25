@@ -37,9 +37,9 @@ export function ClientProfileSidebar({
 
     return (
         <aside className="lg:sticky lg:top-4 lg:self-start">
-            <div className="rounded-xl bg-muted/60">
+            <div className="rounded-lg border bg-card">
                 <div className="p-5">
-                    <div className="flex size-16 items-center justify-center rounded-2xl border bg-background text-xl font-medium text-foreground">
+                    <div className="flex h-20 items-center justify-center rounded-lg bg-secondary text-2xl font-semibold text-primary">
                         {initials}
                     </div>
 

@@ -1,4 +1,5 @@
-import { cva, type VariantProps } from "class-variance-authority"
+import { cva } from "class-variance-authority"
+import type { VariantProps } from "class-variance-authority"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -8,14 +9,14 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
-        destructive:
-          "text-destructive-foreground [&>svg]:text-current *:data-[slot=alert-description]:text-destructive-foreground/80",
+        default: "bg-muted text-foreground border-border",
+        destructive: "bg-destructive-soft text-destructive-soft-foreground border-destructive-soft-foreground/20",
+        success: "bg-success-soft text-success-soft-foreground border-success-soft-foreground/20",
+        warning: "bg-warning-soft text-warning-soft-foreground border-warning-soft-foreground/20",
+        info: "bg-info-soft text-info-soft-foreground border-info-soft-foreground/20",
       },
     },
-    defaultVariants: {
-      variant: "default",
-    },
+    defaultVariants: { variant: "default" },
   }
 )
 
@@ -55,7 +56,7 @@ function AlertDescription({
     <div
       data-slot="alert-description"
       className={cn(
-        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+        "text-current opacity-90 col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
         className
       )}
       {...props}

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Uploads\Http\Requests;
 
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 class StoreUploadRequest extends FormRequest
@@ -26,7 +28,17 @@ class StoreUploadRequest extends FormRequest
             'parentable_type' => ['required', 'string', Rule::in($aliases)],
             'parentable_id' => ['required'],
             'files' => ['required', 'array', 'min:1'],
-            'files.*' => ['required', 'file', "max:{$maxKb}"],
+            'files.*' => [
+                'bail',
+                'required',
+                'file',
+                "max:{$maxKb}",
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($value instanceof UploadedFile && preg_match('//u', $value->getClientOriginalName()) !== 1) {
+                        $fail('O nome do arquivo deve conter texto UTF-8 válido.');
+                    }
+                },
+            ],
             'name' => ['nullable', 'string', 'max:255'],
             'tag' => ['nullable', 'string', 'max:50'],
             'collection' => ['nullable', 'string', 'max:100'],

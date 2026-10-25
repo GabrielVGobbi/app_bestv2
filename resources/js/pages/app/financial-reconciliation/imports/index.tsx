@@ -1,21 +1,22 @@
 import { Head, setLayoutProps, useForm } from '@inertiajs/react';
-import { FileUp, RefreshCw } from 'lucide-react';
+import { FileText, FileUp, Inbox, RefreshCw } from 'lucide-react';
 import type { FormEvent } from 'react';
 
 import { AsyncSelect } from '@/components/async-select';
 import type { AsyncSelectOption } from '@/components/async-select';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
+import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/status-badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { Input } from '@/components/ui/input';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { FinancialAccount } from '@/types/app/financial-account';
 import type { StatusPresenter } from '@/types/status';
@@ -114,13 +115,13 @@ export default function FinancialReconciliationImportsIndex({
         <>
             <Head title="Conciliação financeira" />
 
-            <div className="page-wrapper-lg">
-                <div className="page-section">
-                    <Heading
-                        title="Conciliação financeira"
-                        description="Importe extratos para gerar sugestões de match com movimentos financeiros."
-                    />
+            <Header
+                title="Conciliação financeira"
+                subtitle="Importe extratos para gerar sugestões de match com movimentos financeiros"
+            />
 
+            <div className="page-wrapper-lg">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Nova importação</CardTitle>
@@ -139,12 +140,18 @@ export default function FinancialReconciliationImportsIndex({
                                         )
                                     }
                                 >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
+                                    <SelectTrigger
+                                        className="w-full"
+                                        icon={FileText}
+                                        aria-label="Formato do extrato"
+                                    />
                                     <SelectContent>
-                                        <SelectItem value="csv">CSV</SelectItem>
-                                        <SelectItem value="ofx">OFX</SelectItem>
+                                        <SelectItem index={0} value="csv">
+                                            CSV
+                                        </SelectItem>
+                                        <SelectItem index={1} value="ofx">
+                                            OFX
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
 
@@ -170,6 +177,7 @@ export default function FinancialReconciliationImportsIndex({
 
                                 <Input
                                     type="file"
+                                    aria-label="Arquivo do extrato"
                                     accept=".csv,.ofx,text/csv,application/x-ofx"
                                     onChange={(event) =>
                                         form.setData(
@@ -200,11 +208,13 @@ export default function FinancialReconciliationImportsIndex({
                             {(form.errors.source ||
                                 form.errors.file ||
                                 form.errors.financial_account_id) && (
-                                <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                                    {form.errors.source ||
-                                        form.errors.file ||
-                                        form.errors.financial_account_id}
-                                </div>
+                                <Alert variant="destructive" className="mt-3">
+                                    <AlertDescription>
+                                        {form.errors.source ||
+                                            form.errors.file ||
+                                            form.errors.financial_account_id}
+                                    </AlertDescription>
+                                </Alert>
                             )}
                         </CardContent>
                     </Card>
@@ -215,13 +225,15 @@ export default function FinancialReconciliationImportsIndex({
                         </CardHeader>
                         <CardContent>
                             {imports.data.length === 0 ? (
-                                <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                    Nenhum extrato importado.
-                                </div>
+                                <EmptyState
+                                    icon={Inbox}
+                                    title="Nenhum extrato importado"
+                                    description="Envie um arquivo CSV ou OFX para iniciar a conciliação."
+                                />
                             ) : (
                                 <div className="overflow-hidden rounded-md border">
                                     <table className="w-full text-sm">
-                                        <thead className="bg-muted/50 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                        <thead className="bg-muted text-left text-xs font-semibold text-muted-foreground">
                                             <tr>
                                                 <th className="px-3 py-3">
                                                     Arquivo
@@ -273,10 +285,10 @@ export default function FinancialReconciliationImportsIndex({
                                                             item.status
                                                         )}
                                                     </td>
-                                                    <td className="px-3 py-3 text-right">
+                                                    <td className="px-3 py-3 text-right tabular-nums">
                                                         {item.line_count}
                                                     </td>
-                                                    <td className="px-3 py-3 text-right">
+                                                    <td className="px-3 py-3 text-right tabular-nums">
                                                         {item.duplicate_count}
                                                     </td>
                                                     <td className="px-3 py-3 text-muted-foreground">

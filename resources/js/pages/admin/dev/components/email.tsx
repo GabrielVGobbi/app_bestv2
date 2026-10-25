@@ -14,6 +14,7 @@ import {
     Send,
     Settings,
     Zap,
+    X,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,7 +24,7 @@ import {
     previewEmail,
     sendTestEmail,
 } from '@/actions/App/Http/Controllers/Admin/DevToolsController';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,15 +34,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EmailLog {
     uuid: string;
@@ -96,7 +97,7 @@ const dtoPropCode = `readonly class SendEmailDTO {
     public function withTo(string $email, ?string $name = null): self { ... }
 }`;
 
-const killSwitchCode = `// Runtime, sem deploy — persiste em DB + cache (60s TTL)
+const killSwitchCode = `// Runtime, sem deploy: persiste em DB + cache (60s TTL)
 use App\\Support\\AppSettings;
 
 // Ler
@@ -110,7 +111,7 @@ AppSettings::set('email', 'export_enabled', false); // bloqueia só Export
 // Grupos disponíveis: enabled, auth_enabled, export_enabled,
 //                     notification_enabled, system_enabled`;
 
-const idempotencyCode = `// Chave explícita — evita reenvio em retries de job ou reprocessamento
+const idempotencyCode = `// Chave explícita: evita reenvio em retries de job ou reprocessamento
 $dto = new SendEmailDTO(
     to: 'user@example.com',
     subject: 'Exportação pronta',
@@ -178,7 +179,7 @@ const templateCode = `{{-- resources/views/emails/exports/ready.blade.php --}}
     </p>
 @endsection`;
 
-const routeCode = `// web.php — UI de logs
+const routeCode = `// web.php: UI de logs
 Route::middleware('auth')->group(function () {
     Route::get('/email-logs', [EmailLogController::class, 'index'])
         ->name('email-logs.index');
@@ -188,26 +189,26 @@ Route::middleware('auth')->group(function () {
         ->name('email-logs.settings.update');
 });
 
-// api.php — webhooks (público, sem auth)
+// api.php: webhooks (público, sem auth)
 Route::post('/email/webhook/{provider}', [EmailWebhookController::class, 'handle']);`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function statusColor(status: string): string {
     const map: Record<string, string> = {
-        queued: 'bg-blue-500/10 text-blue-600',
-        processing: 'bg-yellow-500/10 text-yellow-600',
-        sent: 'bg-green-500/10 text-green-600',
-        delivered: 'bg-emerald-500/10 text-emerald-600',
-        failed: 'bg-red-500/10 text-red-600',
-        bounced: 'bg-orange-500/10 text-orange-600',
-        delivery_delayed: 'bg-yellow-500/10 text-yellow-600',
-        complained: 'bg-rose-500/10 text-rose-600',
-        opened: 'bg-cyan-500/10 text-cyan-600',
-        clicked: 'bg-violet-500/10 text-violet-600',
-        received: 'bg-sky-500/10 text-sky-600',
-        scheduled: 'bg-slate-500/10 text-slate-600',
-        suppressed: 'bg-stone-500/10 text-stone-600',
+        queued: 'bg-info-soft text-info-soft-foreground',
+        processing: 'bg-warning-soft text-warning-soft-foreground',
+        sent: 'bg-success-soft text-success-soft-foreground',
+        delivered: 'bg-success-soft text-success-soft-foreground',
+        failed: 'bg-destructive-soft text-destructive-soft-foreground',
+        bounced: 'bg-warning-soft text-warning-soft-foreground',
+        delivery_delayed: 'bg-warning-soft text-warning-soft-foreground',
+        complained: 'bg-destructive-soft text-destructive-soft-foreground',
+        opened: 'bg-info-soft text-info-soft-foreground',
+        clicked: 'bg-primary-soft text-primary-soft-foreground',
+        received: 'bg-info-soft text-info-soft-foreground',
+        scheduled: 'bg-muted text-muted-foreground',
+        suppressed: 'bg-muted text-muted-foreground',
     };
 
     return map[status] ?? 'bg-muted text-muted-foreground';
@@ -262,7 +263,7 @@ function PropRow({
                 <code className="text-sm font-semibold text-primary">
                     {name}
                 </code>
-                {required && <Badge variant="outline">obrigatorio</Badge>}
+                {required && <Badge variant="outline">obrigatório</Badge>}
             </div>
             <code className="w-fit rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                 {type}
@@ -358,20 +359,20 @@ export default function EmailPage({ recentLogs, settings }: Props) {
 
     return (
         <>
-            <Head title="Email" />
+            <Head title="E-mail" />
+
+            <Header
+                title="E-mail"
+                subtitle="Módulo de envio assíncrono com kill switch, idempotência, retry automático e webhooks de entrega."
+            >
+                <Badge variant="secondary" className="w-fit">
+                    App/Modules/Email
+                </Badge>
+            </Header>
 
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     {/* Header */}
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <Heading
-                            title="Email"
-                            description="Módulo de envio assíncrono com kill switch, idempotência, retry automático e webhooks de entrega."
-                        />
-                        <Badge variant="secondary" className="w-fit">
-                            App/Modules/Email
-                        </Badge>
-                    </div>
 
                     {/* Feature cards */}
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -441,7 +442,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                             className="flex items-center gap-2 rounded-lg border px-3 py-2"
                                         >
                                             <span
-                                                className={`size-2 rounded-full ${isOn ? 'bg-green-500' : 'bg-red-500'}`}
+                                                className={`size-2 rounded-full ${isOn ? 'bg-success' : 'bg-destructive'}`}
                                             />
                                             <span className="text-sm font-medium">
                                                 {label}
@@ -468,7 +469,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Settings className="size-5" />
-                                Playground — envio de teste
+                                Playground: envio de teste
                             </CardTitle>
                             <CardDescription>
                                 Enfileira um email real via{' '}
@@ -528,11 +529,12 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                         value={template}
                                         onValueChange={setTemplate}
                                     >
-                                        <SelectTrigger id="pt-template">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger id="pt-template" />
                                         <SelectContent>
-                                            <SelectItem value="emails.exports.ready">
+                                            <SelectItem
+                                                index={0}
+                                                value="emails.exports.ready"
+                                            >
                                                 emails.exports.ready
                                             </SelectItem>
                                         </SelectContent>
@@ -547,20 +549,27 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                         value={category}
                                         onValueChange={setCategory}
                                     >
-                                        <SelectTrigger id="pt-category">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger id="pt-category" />
                                         <SelectContent>
-                                            <SelectItem value="export">
+                                            <SelectItem
+                                                index={0}
+                                                value="export"
+                                            >
                                                 export
                                             </SelectItem>
-                                            <SelectItem value="auth">
+                                            <SelectItem index={1} value="auth">
                                                 auth
                                             </SelectItem>
-                                            <SelectItem value="notification">
+                                            <SelectItem
+                                                index={2}
+                                                value="notification"
+                                            >
                                                 notification
                                             </SelectItem>
-                                            <SelectItem value="system">
+                                            <SelectItem
+                                                index={3}
+                                                value="system"
+                                            >
                                                 system
                                             </SelectItem>
                                         </SelectContent>
@@ -572,9 +581,9 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                 <Label htmlFor="pt-variables">
                                     Variáveis (JSON)
                                 </Label>
-                                <textarea
+                                <Textarea
                                     id="pt-variables"
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="min-h-20 font-mono text-xs"
                                     rows={6}
                                     value={variables}
                                     onChange={(
@@ -598,7 +607,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                     ) : (
                                         <Eye className="mr-2 size-4" />
                                     )}
-                                    {previewing ? 'Gerando…' : 'Preview'}
+                                    {previewing ? 'Gerando…' : 'Pré-visualizar'}
                                 </Button>
 
                                 <Button
@@ -617,7 +626,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                     <div
                                         className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
                                             result.success
-                                                ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
+                                                ? 'border-success-soft-foreground/20 bg-success-soft text-success-soft-foreground'
                                                 : 'border-destructive/30 bg-destructive/10 text-destructive'
                                         }`}
                                     >
@@ -645,7 +654,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                 <div className="flex items-center justify-between">
                                     <CardTitle className="flex items-center gap-2">
                                         <Eye className="size-5" />
-                                        Preview do template
+                                        Pré-visualização do template
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
                                         <Badge
@@ -659,20 +668,24 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                             size="sm"
                                             onClick={() => setPreviewHtml(null)}
                                         >
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Fechar
                                         </Button>
                                     </div>
                                 </div>
                                 <CardDescription>
                                     Renderizado no servidor com as variáveis
-                                    atuais. Atualiza ao clicar em Preview
+                                    atuais. Atualiza ao clicar em Pré-visualizar
                                     novamente.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
                                 <div className="overflow-hidden rounded-b-lg border-t">
                                     <iframe
-                                        title="Email preview"
+                                        title="Pré-visualização do e-mail"
                                         className="h-[600px] w-full bg-white"
                                         srcDoc={previewHtml ?? ''}
                                         sandbox="allow-scripts allow-same-origin"
@@ -773,7 +786,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                                     Kill switch runtime
                                 </CardTitle>
                                 <CardDescription>
-                                    Sem deploy — persiste em DB e invalida cache
+                                    Sem deploy: persiste em DB e invalida cache
                                     em 60s.
                                 </CardDescription>
                             </CardHeader>
@@ -856,7 +869,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <BookOpen className="size-5" />
-                                    SendEmailDTO — props
+                                    SendEmailDTO: props
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -921,7 +934,7 @@ export default function EmailPage({ recentLogs, settings }: Props) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <BookOpen className="size-5" />
-                                    EmailLog — colunas principais
+                                    EmailLog: colunas principais
                                 </CardTitle>
                                 <CardDescription>
                                     Tabela{' '}

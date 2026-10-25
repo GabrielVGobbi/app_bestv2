@@ -10,7 +10,7 @@ export function TimelineEmptyState() {
                 Nenhuma atividade registrada.
             </p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-                Os comentarios e eventos do registro aparecem aqui.
+                Os comentários e eventos do registro aparecem aqui.
             </p>
         </div>
     );

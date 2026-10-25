@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self' data:"
+        />
+        <title>UI-001 — React/Inertia reais</title>
+        <style>
+            body {
+                margin: 20px;
+                font: 14px system-ui;
+                color: #202020;
+                background: #fafafa;
+            }
+            #fixture-controls {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                padding: 12px;
+                border: 1px solid #ccc;
+                background: white;
+            }
+            #fixture-controls button {
+                padding: 10px 16px;
+                cursor: pointer;
+            }
+            #fixture-result,
+            #fixture-observations {
+                max-height: 430px;
+                overflow: auto;
+                padding: 12px;
+                background: #eee;
+                white-space: pre-wrap;
+            }
+            #fixture-state {
+                font-size: 11px;
+                max-height: 190px;
+                overflow: auto;
+            }
+            #real-notification-page {
+                border: 1px solid #bbb;
+                margin-top: 12px;
+                padding: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <section id="fixture-controls">
+            <button id="run-contracts" type="button">
+                Executar regressões UI-001
+            </button>
+            <p>
+                Somente dados sintéticos em memória. Provider, hooks, página e
+                sino reais; API e Echo simulados.
+            </p>
+            <pre id="fixture-result">
+Aguardando inicialização real do Inertia.</pre
+            >
+            <details>
+                <summary>Chamadas e observações</summary>
+                <pre id="fixture-observations"></pre>
+            </details>
+        </section>
+        <div id="app"></div>
+        <script type="module" src="./notification-state-probe.tsx"></script>
+    </body>
+</html>

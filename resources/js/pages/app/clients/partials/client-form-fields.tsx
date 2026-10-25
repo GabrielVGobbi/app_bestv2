@@ -1,21 +1,21 @@
-import { Handshake } from 'lucide-react';
+import { BadgeCheck, Handshake } from 'lucide-react';
 import { useState } from 'react';
 
 import { AsyncSelect } from '@/components/async-select';
-import FormField from '@/components/ui/forms/form-field';
-import FormSection from '@/components/ui/forms/form-section';
-import { Input } from '@/components/ui/input';
-import { InputDocument } from '@/components/ui/input-document';
-import { InputPhone } from '@/components/ui/input-phone';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/fluid/select';
+import FormField from '@/components/ui/forms/form-field';
+import FormSection from '@/components/ui/forms/form-section';
+import { Input } from '@/components/ui/input';
+import { InputDocument } from '@/components/ui/input-document';
+import { InputPhone } from '@/components/ui/input-phone';
 import { Separator } from '@/components/ui/separator';
 import { SwitchOption } from '@/components/ui/switch-option';
+import { Textarea } from '@/components/ui/textarea';
 import { apiRoutes } from '@/lib/api/api-routes';
 import { MusicGenrePicker } from '@/pages/app/playlists/components/music-catalog-picker';
 import type { Client } from '@/types/app/client';
@@ -65,7 +65,7 @@ export default function ClientFormFields({
 
     return (
         <div className="space-y-8">
-            <FormSection title="Identificação" description="">
+            <FormSection title="Identificação">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                         id="field-name"
@@ -81,7 +81,6 @@ export default function ClientFormFields({
                             defaultValue={record?.name ?? ''}
                             required
                             autoComplete="name"
-                            aria-invalid={!!errors.name}
                         />
                     </FormField>
 
@@ -95,17 +94,16 @@ export default function ClientFormFields({
                             id="field-document"
                             name="document"
                             defaultValue={record?.document ?? ''}
-                            aria-invalid={!!errors.document}
                         />
                     </FormField>
                 </div>
             </FormSection>
 
-            <FormSection title="Contato" description="">
+            <FormSection title="Contato">
                 <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                         id="field-email"
-                        label="Email"
+                        label="E-mail"
                         variant="stacked"
                         error={errors.email}
                     >
@@ -115,7 +113,6 @@ export default function ClientFormFields({
                             type="email"
                             defaultValue={record?.email ?? ''}
                             autoComplete="email"
-                            aria-invalid={!!errors.email}
                         />
                     </FormField>
 
@@ -129,25 +126,19 @@ export default function ClientFormFields({
                             id="field-phone"
                             name="phone"
                             defaultValue={record?.phone ?? ''}
-                            aria-invalid={!!errors.phone}
                         />
                     </FormField>
                 </div>
             </FormSection>
 
-            <FormSection title="Comercial" description="">
-                <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2">
+            <FormSection title="Comercial">
+                <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2">
                     <FormField
                         id="field-classification"
                         label="Classificação"
                         variant="stacked"
                         error={errors.classification}
                     >
-                        <input
-                            name="classification"
-                            type="hidden"
-                            value={classification}
-                        />
                         <Select
                             value={classification}
                             onValueChange={setClassification}
@@ -155,18 +146,27 @@ export default function ClientFormFields({
                             <SelectTrigger
                                 id="field-classification"
                                 className="w-full"
-                                aria-invalid={!!errors.classification}
-                            >
-                                <SelectValue placeholder="Selecione a classe" />
-                            </SelectTrigger>
+                                placeholder="Selecione a classe"
+                                icon={BadgeCheck}
+                                error={errors.classification}
+                            />
                             <SelectContent>
-                                {classificationOptions.map((option) => (
-                                    <SelectItem key={option} value={option}>
+                                {classificationOptions.map((option, index) => (
+                                    <SelectItem
+                                        key={option}
+                                        index={index}
+                                        value={option}
+                                    >
                                         {option}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
+                        <input
+                            name="classification"
+                            type="hidden"
+                            value={classification}
+                        />
                     </FormField>
 
                     {!musicGenres ? (
@@ -181,7 +181,6 @@ export default function ClientFormFields({
                                 name="musical_genre"
                                 type="text"
                                 defaultValue={record?.musical_genre ?? ''}
-                                aria-invalid={!!errors.musical_genre}
                             />
                         </FormField>
                     ) : null}
@@ -197,7 +196,6 @@ export default function ClientFormFields({
                             name="source_id"
                             type="text"
                             defaultValue={record?.source_id ?? ''}
-                            aria-invalid={!!errors.source_id}
                         />
                     </FormField>
 
@@ -207,21 +205,21 @@ export default function ClientFormFields({
                         variant="stacked"
                         error={errors.responsible_user_id}
                     >
-                        <input
-                            name="responsible_user_id"
-                            type="hidden"
-                            value={responsibleUserId ?? ''}
-                        />
                         <AsyncSelect
                             value={responsibleUserId}
                             initialLabel={record?.responsible_user?.name}
                             endpoint={apiRoutes.users.index}
                             params={{ role: 'commercial' }}
                             placeholder="Selecione o responsável"
-                            searchPlaceholder="Buscar por nome ou email..."
+                            searchPlaceholder="Buscar por nome ou e-mail"
                             emptyMessage="Nenhum usuário comercial encontrado."
                             clearable
                             onChange={setResponsibleUserId}
+                        />
+                        <input
+                            name="responsible_user_id"
+                            type="hidden"
+                            value={responsibleUserId ?? ''}
                         />
                     </FormField>
                 </div>
@@ -276,13 +274,11 @@ export default function ClientFormFields({
                 variant="stacked"
                 error={errors.notes}
             >
-                <textarea
+                <Textarea
                     id="field-notes"
                     name="notes"
                     defaultValue={record?.notes ?? ''}
                     rows={4}
-                    className="flex min-h-24 w-full rounded-md border border-input bg-background/60 px-3 py-2 text-base shadow-xs transition-[border-color,box-shadow,color] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/15 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm"
-                    aria-invalid={!!errors.notes}
                 />
             </FormField>
         </div>

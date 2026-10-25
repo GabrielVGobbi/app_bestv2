@@ -9,10 +9,9 @@ import {
     index,
     show,
 } from '@/actions/App/Modules/Finance/Http/Controllers/FinancialAccountController';
-import ContentHeader from '@/components/content-header';
+import Header from '@/components/dashboard/header';
 import { DataTable } from '@/components/data-table';
 import type { DataTableAction } from '@/components/data-table';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { apiRoutes } from '@/lib/api/api-routes';
 import type { FinancialAccount } from '@/types/app/financial-account';
@@ -72,21 +71,20 @@ export default function FinancialAccountsIndex() {
         <>
             <Head title="Contas financeiras" />
 
-            <ContentHeader>
-                <Heading
-                    title="Contas financeiras"
-                    description="Cadastre bancos, caixas, carteiras e gateways usados em baixas e conciliação"
-                />
-
+            <Header
+                title="Contas financeiras"
+                subtitle="Cadastre bancos, caixas, carteiras e gateways usados em baixas e conciliação"
+            >
                 <Button asChild>
                     <Link href={create.url()}>
-                        <Plus className="size-4" />
+                        <Plus className="size-4" aria-hidden="true" />
                         Nova conta
                     </Link>
                 </Button>
-            </ContentHeader>
+            </Header>
+
             <div className="page-wrapper-lg">
-                <div className="page-section">
+                <div className="flex h-full flex-1 flex-col gap-6">
                     <FinancialAccountDeleteDialog
                         financialAccount={financialAccountToDelete}
                         onCancel={() => setFinancialAccountToDelete(null)}
@@ -129,7 +127,7 @@ export default function FinancialAccountsIndex() {
                             gridLines: 'none',
                             rowStyle: 'soft-striped',
                         }}
-                        searchPlaceholder="Buscar contas..."
+                        searchPlaceholder="Buscar contas"
                     />
                 </div>
             </div>

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Laravel\Fortify\Events\RecoveryCodeReplaced;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
@@ -22,6 +23,10 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
         $isLocal = $this->app->environment('local');
 
         Telescope::filter(function (IncomingEntry $entry) use ($isLocal) {
+            if ($entry->isEvent() && ($entry->content['name'] ?? null) === RecoveryCodeReplaced::class) {
+                $entry->content['payload']['code'] = '********';
+            }
+
             return $isLocal ||
                    $entry->isReportableException() ||
                    $entry->isFailedRequest() ||
@@ -38,9 +43,12 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     {
         Telescope::hideRequestParameters([
             '_token',
+            'code',
             'current_password',
             'password',
             'password_confirmation',
+            'recovery_code',
+            'webhook_url',
         ]);
 
         Telescope::hideRequestHeaders([
@@ -48,6 +56,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
             'cookie',
             'php-auth-pw',
             'x-csrf-token',
+            'x-postmark-webhook-token',
             'x-xsrf-token',
         ]);
     }

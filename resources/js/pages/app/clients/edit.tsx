@@ -1,5 +1,5 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -8,7 +8,7 @@ import {
     update,
 } from '@/actions/App/Modules/Clients/Http/Controllers/ClientController';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 import ClientFormFields from '@/pages/app/clients/partials/client-form-fields';
 import type { ClientResource } from '@/types/app/client';
 
@@ -38,11 +38,10 @@ export default function EditClient({ clientData }: Props) {
             <ClientProfileHeader
                 client={client}
                 backHref={show.url(client.uuid)}
-                backAriaLabel="Voltar para a ficha do cliente"
             />
 
             <div className="page-wrapper-lg">
-                <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
                     <ClientProfileSidebar client={client} />
 
                     <main className="min-w-0">
@@ -57,34 +56,28 @@ export default function EditClient({ clientData }: Props) {
                         >
                             {({ errors, processing }) => (
                                 <div className="flex flex-1 flex-col gap-4">
-                                    <div className="overflow-hidden rounded-xl border border-border bg-card">
-                                        <div className="p-5 sm:p-6">
+                                    <Card>
+                                        <CardContent>
                                             <ClientFormFields
                                                 client={client}
                                                 errors={errors}
                                             />
-                                        </div>
-                                    </div>
+                                        </CardContent>
+                                    </Card>
 
-                                    <div
-                                        className={cn(
-                                            'sticky bottom-0 -mx-4 mt-auto border-t bg-background/95 px-4 backdrop-blur',
-                                            'supports-backdrop-filter:bg-background/80',
-                                        )}
-                                    >
+                                    <div className="sticky bottom-0 z-10 -mx-4 mt-auto border-t border-border bg-card/95 px-4">
                                         <div className="flex items-center justify-between gap-3 py-3">
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="hidden text-xs text-muted-foreground sm:block">
                                                 Campos marcados com{' '}
                                                 <span className="text-destructive">
                                                     *
                                                 </span>{' '}
-                                                são obrigatórios.
+                                                são obrigatórios
                                             </p>
-                                            <div className="flex items-center gap-2">
+                                            <div className="ml-auto flex items-center gap-2">
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
-                                                    size="sm"
                                                     asChild
                                                     disabled={processing}
                                                 >
@@ -93,12 +86,15 @@ export default function EditClient({ clientData }: Props) {
                                                             client.uuid,
                                                         )}
                                                     >
+                                                        <X
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                         Cancelar
                                                     </Link>
                                                 </Button>
                                                 <Button
                                                     type="submit"
-                                                    size="sm"
                                                     disabled={processing}
                                                 >
                                                     <Save />

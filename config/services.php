@@ -28,7 +28,10 @@ return [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-        'webhook_topic_arn' => env('SES_WEBHOOK_TOPIC_ARN'),
+        'allowed_topic_arns' => array_values(array_filter(
+            array_map('trim', explode(',', env('SES_ALLOWED_TOPIC_ARNS', '') ?: '')),
+            static fn (string $arn): bool => $arn !== '',
+        )),
     ],
 
     'slack' => [

@@ -41,4 +41,28 @@ class DashboardTest extends TestCase
                 ->where('layout.style', 'header-logo'),
         );
     }
+
+    public function test_config_derived_props_are_sent_once_and_skipped_when_the_client_has_them(): void
+    {
+        $user = User::factory()->create();
+        $onceProps = ['name', 'branding', 'layout'];
+
+        $first = $this->actingAs($user)->get(route('app.dashboard'))->assertOk();
+        $first->assertInertia(fn (Assert $page) => $page->has('nav.modules')->has('branding.hue')->has('auth.user'));
+        $this->assertEqualsCanonicalizing($onceProps, array_keys($first->viewData('page')['onceProps']));
+
+        $visit = $this->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => (string) $first->viewData('page')['version'],
+            'X-Inertia-Except-Once-Props' => implode(',', $onceProps),
+        ])->get(route('app.dashboard'))->assertOk();
+
+        $props = $visit->json('props');
+        foreach ($onceProps as $prop) {
+            $this->assertArrayNotHasKey($prop, $props);
+        }
+        $this->assertSame($user->id, $props['auth']['user']['id']);
+        // Role-filtered navigation is resent on every visit so it follows the current user.
+        $this->assertArrayHasKey('nav', $props);
+    }
 }

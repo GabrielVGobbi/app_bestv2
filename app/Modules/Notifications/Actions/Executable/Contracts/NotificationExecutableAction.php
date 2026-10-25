@@ -13,10 +13,16 @@ interface NotificationExecutableAction
      * Execute an action triggered from a notification.
      *
      * Implementations must:
-     * - Validate that the user has permission to perform this action
+     * - Validate the payload and authorize the user against the related entity
      * - Validate that the related entity still exists
-     * - Execute the domain logic
-     * - Return a result that will be forwarded to the frontend
+     * - Use the notification's database connection for transactional domain effects
+     * - Throw on refusal or failure so domain effects and notification state roll back
+     * - Return safe frontend data only after successful domain logic
+     *
+     * The executor locks this notification, without automatically retrying the handler.
+     * Other notifications for the same entity still need domain-level invariants.
+     * External effects need their own post-commit, idempotency and durability design;
+     * a database transaction does not make external delivery exactly once.
      *
      * @param  array<string, mixed>  $payload
      */

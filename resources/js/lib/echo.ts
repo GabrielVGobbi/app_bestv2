@@ -12,7 +12,7 @@ const realtimeEnabled = import.meta.env.VITE_REVERB_ENABLED === 'true';
 
 let echo: Echo<'reverb'> | null = null;
 
-if (realtimeEnabled) {
+if (realtimeEnabled && typeof window !== 'undefined') {
     window.Pusher = Pusher;
 
     echo = new Echo({

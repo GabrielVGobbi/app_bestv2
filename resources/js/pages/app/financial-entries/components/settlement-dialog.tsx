@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { Loader2, ReceiptText } from 'lucide-react';
+import { Loader2, ReceiptText, X } from 'lucide-react';
 import { useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -329,7 +329,7 @@ export function SettlementDialog({
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
                     <div className="flex items-center gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success-soft text-success-soft-foreground">
                             <ReceiptText className="size-5" />
                         </span>
                         <div>
@@ -448,11 +448,11 @@ export function SettlementDialog({
                             />
                         </FormField>
 
-                        <div className="rounded-md border bg-muted/30 px-3 py-2">
-                            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        <div className="rounded-lg border border-border bg-muted px-3 py-2">
+                            <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 Líquido movimentado
                             </p>
-                            <p className="mt-1 text-lg font-semibold">
+                            <p className="mt-1 text-lg font-semibold tabular-nums">
                                 {money(netAmount, currency)}
                             </p>
                         </div>
@@ -480,6 +480,7 @@ export function SettlementDialog({
                             onClick={close}
                             disabled={processing}
                         >
+                            <X className="size-4" aria-hidden="true" />
                             Cancelar
                         </Button>
                         <Button

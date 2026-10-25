@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { Eye, Pencil } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -5,7 +6,7 @@ import {
     edit,
     show,
 } from '@/actions/App/Modules/Companies/Http/Controllers/CompanyController';
-import { SubNavigation } from '@/components/sub-navigation';
+import { cn } from '@/lib/utils';
 
 type CompanyPage = 'show' | 'edit';
 
@@ -41,11 +42,33 @@ export function CompanySubNav({
     canManage = false,
 }: CompanySubNavProps) {
     return (
-        <SubNavigation
-            current={currentPage}
-            items={navItems
-                .filter((item) => item.key !== 'edit' || canManage)
-                .map((item) => ({ ...item, href: item.getHref(companyUuid) }))}
-        />
+        <nav className="flex gap-1 rounded-lg border border-border bg-muted p-1">
+            {navItems.map(({ key, label, icon: Icon, getHref }) => {
+                if (key === 'edit' && !canManage) {
+                    return null;
+                }
+
+                const isActive = key === currentPage;
+
+                return (
+                    <Link
+                        key={key}
+                        href={getHref(companyUuid)}
+                        aria-label={label}
+                        title={label}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={cn(
+                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                            isActive
+                                ? 'bg-card text-foreground shadow-xs'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                        )}
+                    >
+                        <Icon className="size-3.5" />
+                        <span className="hidden sm:inline">{label}</span>
+                    </Link>
+                );
+            })}
+        </nav>
     );
 }

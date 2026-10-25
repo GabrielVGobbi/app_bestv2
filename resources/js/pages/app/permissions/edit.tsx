@@ -1,13 +1,17 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { X, Save } from 'lucide-react';
+import { useId, useState } from 'react';
 import { toast } from 'sonner';
-import Heading from '@/components/heading';
+import Header from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { httpPut } from '@/lib/http';
-import { edit, index, show, update } from '@/routes/permissions';
+import { usePrivateState } from '@/contexts/private-state-context';
+import { httpPut, toApiError } from '@/lib/http';
+import type { ValidationErrors } from '@/lib/http';
+import { update as apiUpdate } from '@/routes/api/permissions';
+import { edit, index, show } from '@/routes/permissions';
 import type { Permission } from '@/types/app/permission';
 
 interface Props {
@@ -15,6 +19,8 @@ interface Props {
 }
 
 export default function EditPermission({ permissionData }: Props) {
+    const formId = useId();
+    const { scope } = usePrivateState();
     const permission = permissionData.data;
 
     setLayoutProps({
@@ -31,7 +37,7 @@ export default function EditPermission({ permissionData }: Props) {
         group: permission.group ?? '',
         description: permission.description ?? '',
     });
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [errors, setErrors] = useState<ValidationErrors>({});
     const [processing, setProcessing] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -40,12 +46,27 @@ export default function EditPermission({ permissionData }: Props) {
         setErrors({});
 
         try {
-            await httpPut(update.url(permission.id), form);
+            if (!scope.isCurrent()) {
+                return;
+            }
+
+            await httpPut(apiUpdate.url(permission.id), form);
+
+            if (!scope.isCurrent()) {
+                return;
+            }
+
             toast.success('Permissão atualizada com sucesso!');
             router.visit(show.url(permission.id));
-        } catch (err: any) {
-            if (err?.type === 'validation') {
-                setErrors(err.errors);
+        } catch (err: unknown) {
+            const failure = toApiError(err);
+
+            if (!scope.isCurrent() || failure.type === 'canceled') {
+                return;
+            }
+
+            if (failure.type === 'validation') {
+                setErrors(failure.errors);
             } else {
                 toast.error('Erro ao atualizar permissão.');
             }
@@ -58,33 +79,43 @@ export default function EditPermission({ permissionData }: Props) {
         <>
             <Head title={`Editar ${permission.name}`} />
 
-            <div className="container mx-auto max-w-3xl">
-                <div className="page-section">
-                    <div className="flex items-center justify-between">
-                        <Heading
-                            title="Editar Permissão"
-                            description="Atualize as informações da permissão"
-                        />
-                        <Button variant="outline" asChild>
-                            <Link href={show.url(permission.id)}>Cancelar</Link>
-                        </Button>
-                    </div>
+            <Header
+                title={permission.name}
+                subtitle="Atualize as informações da permissão"
+                backHref={show.url(permission.id)}
+            >
+                <Button variant="outline" asChild>
+                    <Link href={show.url(permission.id)}>
+                        <X className="size-4" aria-hidden="true" />
+                        Cancelar
+                    </Link>
+                </Button>
+            </Header>
 
-                    <Card variant="form">
+            <div className="page-wrapper-sm">
+                <div className="flex h-full flex-1 flex-col gap-6">
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Informações da Permissão</CardTitle>
+                            <CardTitle>Informações da permissão</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid gap-4">
-                                    <div className="space-y-1">
-                                        <Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`${formId}-name`}>
                                             Nome{' '}
                                             <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
                                         <Input
+                                            id={`${formId}-name`}
+                                            aria-invalid={Boolean(errors.name)}
+                                            aria-describedby={
+                                                errors.name
+                                                    ? `${formId}-name-error`
+                                                    : undefined
+                                            }
                                             value={form.name}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -96,19 +127,29 @@ export default function EditPermission({ permissionData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.name && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-name-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.name}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`${formId}-slug`}>
                                             Slug{' '}
                                             <span className="text-destructive">
                                                 *
                                             </span>
                                         </Label>
                                         <Input
+                                            id={`${formId}-slug`}
+                                            aria-invalid={Boolean(errors.slug)}
+                                            aria-describedby={
+                                                errors.slug
+                                                    ? `${formId}-slug-error`
+                                                    : undefined
+                                            }
                                             value={form.slug}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -120,14 +161,26 @@ export default function EditPermission({ permissionData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.slug && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-slug-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.slug}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <Label>Grupo</Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`${formId}-group`}>
+                                            Grupo
+                                        </Label>
                                         <Input
+                                            id={`${formId}-group`}
+                                            aria-invalid={Boolean(errors.group)}
+                                            aria-describedby={
+                                                errors.group
+                                                    ? `${formId}-group-error`
+                                                    : undefined
+                                            }
                                             value={form.group}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -139,14 +192,30 @@ export default function EditPermission({ permissionData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.group && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-group-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.group}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <Label>Descrição</Label>
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor={`${formId}-description`}
+                                        >
+                                            Descrição
+                                        </Label>
                                         <Input
+                                            id={`${formId}-description`}
+                                            aria-invalid={Boolean(
+                                                errors.description,
+                                            )}
+                                            aria-describedby={
+                                                errors.description
+                                                    ? `${formId}-description-error`
+                                                    : undefined
+                                            }
                                             value={form.description}
                                             onChange={(e) =>
                                                 setForm((f) => ({
@@ -158,7 +227,10 @@ export default function EditPermission({ permissionData }: Props) {
                                             disabled={processing}
                                         />
                                         {errors.description && (
-                                            <p className="text-sm text-destructive">
+                                            <p
+                                                id={`${formId}-description-error`}
+                                                className="text-sm text-destructive"
+                                            >
                                                 {errors.description}
                                             </p>
                                         )}
@@ -167,12 +239,20 @@ export default function EditPermission({ permissionData }: Props) {
 
                                 <div className="flex gap-3">
                                     <Button type="submit" disabled={processing}>
+                                        <Save
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
                                         {processing
                                             ? 'Salvando...'
                                             : 'Salvar alterações'}
                                     </Button>
                                     <Button variant="outline" asChild>
                                         <Link href={show.url(permission.id)}>
+                                            <X
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                             Cancelar
                                         </Link>
                                     </Button>
