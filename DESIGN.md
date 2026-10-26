@@ -149,8 +149,8 @@ removidos; `components/ui/tooltip` fica só para os layouts legados sem uso.
 - Menus: superfície `Elevated` dois níveis acima do substrato, linhas de **36px**,
   raio **8px**, fluid hover, abertura em `spring.fast`. Itens são linhas com
   `onSelect`: navegação por `router.visit`, download por `window.open`.
-- Select: gatilho de **36px** (campos de texto seguem com **40px**); borda
-  `--input`, a mesma dos campos de texto.
+- Select: gatilho de **36px**, a mesma altura dos campos de texto; mesma borda
+  dos campos (`input-soft` em repouso, `input` no hover).
 
 ## Cores
 
@@ -173,7 +173,8 @@ WCAG sobre o fundo composto.
 | `--muted-foreground` | `oklch(0.46 0.02 H)` | #4c5b5f | texto secundário, 7.1:1 sobre card |
 | `--border` | `oklch(0.90 0.008 H)` | #d8dfe1 | bordas decorativas |
 | `--separator` | `oklch(0.93 0.006 H)` | | linhas internas |
-| `--input` | `oklch(0.66 0.02 H)` | #859699 | borda de campo, 3.1:1 sobre card (o tom mais claro que mantém 3:1) |
+| `--input` | `oklch(0.66 0.02 H)` | #859699 | borda forte de campo (hover, checkbox, contraste aumentado), 3.1:1 sobre card |
+| `--input-soft` | `oklch(0.85 0.012 H)` | | borda de campo em repouso |
 | `--input-surface` | `var(--card)` | | fundo de campo |
 | `--primary` | `oklch(0.48 0.11 H)` | #006c84 | ação, foco, marca; branco sobre ele 6.0:1 |
 | `--primary-hover` | `oklch(0.43 0.11 H)` | #005d75 | hover do primário |
@@ -209,6 +210,7 @@ WCAG sobre o fundo composto.
 | `--muted-foreground` | `oklch(0.72 0.015 H)` | | 6.8:1 sobre card |
 | `--border` / `--separator` | `oklch(0.32 0.012 H)` / `oklch(0.28 0.01 H)` | #2c3537 | |
 | `--input` / `--input-surface` | `oklch(0.52 0.02 H)` / `oklch(0.20 0.01 H)` | #5c6c70 / #111719 | 3.3:1 sobre o campo |
+| `--input-soft` | `oklch(0.36 0.014 H)` | | borda de campo em repouso |
 | `--primary` / `-foreground` | `oklch(0.78 0.10 H)` / `oklch(0.20 0.04 H)` | #62c8df / #001a21 | 9.3:1 |
 | `--primary-hover` | `oklch(0.83 0.09 H)` | | |
 | `--primary-soft` / `-foreground` | `oklch(0.30 0.045 H)` / `oklch(0.85 0.08 H)` | #0c333c / #8fdcef | 8.8:1 |
@@ -241,8 +243,8 @@ WCAG sobre o fundo composto.
   Badges e avatares nunca usam `text-white`.
 - **Hierarquia pelos neutros.** `card` sobre `background`; `muted` para áreas
   rebaixadas (cabeçalho de tabela, chips, trilhos); `popover` para flutuantes.
-- **Bordas por papel.** `border` decorativa; `separator` interna; `input` para
-  campos (3:1 garantido).
+- **Bordas por papel.** `border` decorativa; `separator` interna; `input-soft` para
+  campos em repouso e `input` (3:1) no hover, no checkbox e com contraste aumentado.
 - **Proibido** nos arquivos migrados: classes de paleta Tailwind fixa
   (`slate-500`, `emerald-50`...), `text-[10px]`, `text-white` sobre tinta,
   variantes `dark:` para cor (o token cobre os dois temas). A catraca
@@ -273,7 +275,7 @@ WCAG sobre o fundo composto.
 | Button | `default` = `primary`, hover `primary-hover`. `destructive` sólido só em diálogos de confirmação. `outline` = `card` + borda `border` (traço claro de painel; a borda `input` fica com os campos, inclusive gatilhos de campo feitos de botão, como `AsyncSelect` e o seletor de data). `secondary` = `secondary`. `ghost` neutro. Raio `sm` (10px), o mesmo dos campos. Altura 36px, sem misturar 32px na mesma linha; `size="icon"` 36px com área de toque 44px no mobile. Foco 2px `ring` com offset 2px. Press `active:translate-y-px`. |
 | Badge | Só tintas suaves: `default` (primary-soft), `secondary`, `success`, `warning`, `destructive`, `info`, `outline`. Sem `text-white`. |
 | Card | `card`, `border`, raio 16px, `shadow-xs` no claro e sem sombra no escuro. Cor só no chip de ícone (`*-soft`). |
-| Input, Textarea | Altura 40px, `input-surface`, borda `input`, foco `ring`. Obrigatório: asterisco em `destructive`. Erro (`InputError`): 12px `destructive-soft-foreground` com ícone decorativo; `FormField` marca o próprio campo com `aria-invalid` e `aria-describedby`; fora dele, o campo recebe `{...errorProps(field, message)}` e o `InputError` recebe o mesmo `field`. Nada de `<select>`, `<textarea>` ou `type="date"` nativos nas telas. |
+| Input, Textarea | Altura 36px (a mesma de Select, AsyncSelect, DatePicker e botões), raio `sm` (10px), `input-surface`, borda `input-soft` em repouso e `input` no hover, foco `ring`. A pele é `fieldSkinClass` de `components/ui/input.tsx`; gatilhos de campo feitos de botão a reutilizam. Obrigatório: asterisco em `destructive`. Erro (`InputError`): 12px `destructive-soft-foreground` com ícone decorativo; `FormField` marca o próprio campo com `aria-invalid` e `aria-describedby`; fora dele, o campo recebe `{...errorProps(field, message)}` e o `InputError` recebe o mesmo `field`. Nada de `<select>`, `<textarea>` ou `type="date"` nativos nas telas. |
 | DataTable (shell) | Card com raio 10px (`sm`, o mesmo dos botões da toolbar); `thead` em `sidebar` (mesmo petróleo da navegação) com `sidebar-foreground` 12px/600 e linhas verticais em `sidebar-border`; densidade `md` com cabeçalho de 40px e linhas de 48px, `sm` com 36px e 40px; toolbar com todos os controles em 36px e borda `border`; colunas fixas repetem listra e hover da linha em fundo opaco, para o destaque ir de borda a borda; hover `accent`; seleção `primary-soft/40`; separador `separator`; ações só com ícone em `ghost` neutro, excluir fica `destructive-soft` só em hover e foco. Hooks, estado, filtros e persistência não mudam. |
 | Alert | `default` = `muted`; `destructive`, `success`, `warning`, `info` com as tintas suaves. |
 | Toaster | `classNames` nas tintas suaves. |
@@ -281,7 +283,7 @@ WCAG sobre o fundo composto.
 | Empty state | `components/empty-state.tsx` (`EmptyState`): chip 40px `muted`, título 14px/600, descrição 13px `muted-foreground`, ação opcional. |
 | Segmented control | Selecionado `secondary` + `foreground`. |
 | Sidebar | Fluid. Item ativo e realce na pílula `sidebar-primary` com `foreground` (realce `sidebar-accent` no escuro); linhas em `sidebar-foreground`. |
-| Select, Dropdown, Tabs, Tooltip | Do Fluid (`components/ui/fluid/`); ver "Componentes Fluid nas telas". Select com gatilho de 36px e borda `input`. |
+| Select, Dropdown, Tabs, Tooltip | Do Fluid (`components/ui/fluid/`); ver "Componentes Fluid nas telas". Select com gatilho de 36px e a borda dos campos. |
 | Header | Botões de ícone `ghost` 36px; módulo ativo na pílula elevada do Fluid. |
 | Catálogo | `/admin/dev/components/design-system` mostra tokens, tintas suaves, escala tipográfica, badges e alerts. |
 
@@ -310,9 +312,9 @@ rolagem interna para que o formulário permaneça acessível em telas pequenas.
 Campos seguem o padrão da modal de novo usuário, definido nos primitivos e não por
 `className` na tela: `Label` com 14px/600 em `foreground`, asterisco de obrigatório
 em `destructive` e 8px até o campo (`FormField` empilhado, `space-y-2` ou
-`grid gap-2`). `Input` e `Textarea` usam a borda `input` em repouso (3,1:1 no claro
-e 3,3:1 no escuro, o tom mais leve que ainda atende aos 3:1 da WCAG 1.4.11 para
-contorno de controle), sem sombra duplicando o contorno; o foco e o erro continuam vindo do componente. A modal de novo usuário usa
+`grid gap-2`). `Input` e `Textarea` usam a borda `input-soft` em repouso (traço leve, escolha
+visual consciente abaixo dos 3:1 da WCAG 1.4.11), `input` no hover (3,1:1 no claro
+e 3,3:1 no escuro) e voltam a `input` em repouso com `prefers-contrast: more`, sem sombra duplicando o contorno; o foco e o erro continuam vindo do componente. A modal de novo usuário usa
 `outline-hidden` no contêiner para evitar o contorno nativo duplo, mantendo-o em
 cores forçadas.
 

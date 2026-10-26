@@ -36,8 +36,8 @@ const ActionInput = React.forwardRef<HTMLInputElement, ActionInputProps>(
         return (
             <div
                 className={cn(
-                    'flex h-9 w-full min-w-0 items-center overflow-hidden rounded-md border border-input bg-card shadow-xs transition-[border-color,box-shadow,color]',
-                    'focus-within:border-primary/60 focus-within:ring-[3px] focus-within:ring-ring/20',
+                    'flex h-9 w-full min-w-0 items-center overflow-hidden rounded-sm border border-input-soft bg-input-surface transition-[border-color,box-shadow,color]',
+                    'hover:border-input focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/15',
                     'has-[input[aria-invalid=true]]:border-destructive has-[input[aria-invalid=true]]:ring-destructive/20 dark:has-[input[aria-invalid=true]]:ring-destructive/40',
                     disabled && 'cursor-not-allowed opacity-50',
                     className,
@@ -58,7 +58,7 @@ const ActionInput = React.forwardRef<HTMLInputElement, ActionInputProps>(
                     onClick={onAction}
                     className={cn(
                         buttonVariants({ variant: 'ghost', size: 'sm' }),
-                        'mr-1 h-8 rounded-sm border-l border-input px-2.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-60',
+                        'mr-1 h-8 rounded-sm border-l border-input-soft px-2.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-60',
                         actionClassName,
                     )}
                 >

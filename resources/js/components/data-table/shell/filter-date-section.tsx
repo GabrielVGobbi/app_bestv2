@@ -15,6 +15,7 @@ import {
     SelectItem,
     SelectTrigger,
 } from '@/components/ui/fluid/select';
+import { fieldSkinClass } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
@@ -151,7 +152,8 @@ export function DatePickerInput({
                     variant="outline"
                     aria-label={`${label ?? placeholder}${value ? `: ${formatDisplayDate(value)}` : ''}`}
                     className={cn(
-                        'w-full justify-start gap-2 border-input text-left font-normal',
+                        fieldSkinClass,
+                        'w-full justify-start gap-2 text-left font-normal',
                         !value && 'text-muted-foreground',
                     )}
                 >

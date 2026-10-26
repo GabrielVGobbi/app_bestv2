@@ -74,7 +74,8 @@ const shapeMap: Record<ShapeVariant, ShapeClasses> = {
     mergedBg: "rounded-[8px]",
     container: "rounded-[12px]",
     button: "rounded-[8px]",
-    input: "rounded-[8px]",
+    // start-kit patch: 10px, the same radius as Input and Button.
+    input: "rounded-[10px]",
     bgRadius: 8,
     containerRadius: 12,
     mergedRadius: 8,

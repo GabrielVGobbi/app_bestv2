@@ -4,7 +4,7 @@ import type { MouseEvent, ReactNode, UIEvent } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { fieldSkinClass, Input } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
@@ -373,7 +373,8 @@ export function AsyncSelect(props: AsyncSelectProps) {
                     variant="outline"
                     disabled={disabled}
                     className={cn(
-                        'h-auto min-h-9 w-full justify-between border-input px-3 py-2 font-normal',
+                        fieldSkinClass,
+                        'h-auto min-h-9 w-full justify-between px-3 py-2 font-normal',
                         !hasSelection && 'text-muted-foreground',
                         className,
                     )}

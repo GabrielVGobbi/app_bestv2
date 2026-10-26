@@ -241,15 +241,21 @@ function auditContrast(page) {
         const input = document.querySelector(
             '[data-slot=input]:not([disabled])',
         );
-        const inputStyle = input ? getComputedStyle(input) : null;
+        // A borda em repouso (input-soft) é decorativa; a de hover (input) tem de dar 3:1.
+        const hoverBorder = input
+            ? (() => {
+                  const rest = input.style.borderColor;
+                  input.style.borderColor = 'var(--input)';
+                  const color = getComputedStyle(input).borderColor;
+                  input.style.borderColor = rest;
+                  return color;
+              })()
+            : null;
 
         return {
             failures,
             fieldBorderContrast: input
-                ? contrast(
-                      rgba(inputStyle.borderColor).slice(0, 3),
-                      background(input),
-                  )
+                ? contrast(rgba(hoverBorder).slice(0, 3), background(input))
                 : null,
             placeholderContrast: input
                 ? contrast(
@@ -1126,7 +1132,7 @@ try {
     const componentAudit = await auditContrast(page);
     report.componentAudit = componentAudit;
     check(
-        'dark field borders have at least 3:1 contrast',
+        'dark field borders have at least 3:1 contrast on hover',
         componentAudit.fieldBorderContrast >= 3,
     );
     check(
@@ -1274,7 +1280,7 @@ try {
         ),
     );
     check(
-        'field borders keep 3:1 contrast with other brand hues',
+        'field hover borders keep 3:1 contrast with other brand hues',
         report.hueAudits.every(
             (audit) =>
                 audit.fieldBorderContrast === null ||

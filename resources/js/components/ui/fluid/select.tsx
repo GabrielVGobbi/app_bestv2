@@ -235,10 +235,10 @@ const triggerVariants = cva(
   {
     variants: {
       variant: {
-        // start-kit patch: field border token (--input), 3:1 against the
-        // surface in dark mode; --border is a panel hairline there.
+        // start-kit patch: same field border as Input (--input-soft at rest,
+        // --input, 3:1, on hover).
         bordered:
-          "border border-input bg-transparent text-foreground hover:bg-hover",
+          "border border-input-soft bg-input-surface text-foreground hover:border-input hover:bg-hover",
         borderless:
           "border border-transparent bg-transparent text-foreground hover:bg-hover",
       },

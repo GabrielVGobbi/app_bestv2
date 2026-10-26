@@ -172,8 +172,8 @@ function FormField({
             <div className={cn('space-y-2', className)}>
                 <div
                     className={cn(
-                        'rounded-md border border-input bg-background px-3 pt-2 pb-1.5 shadow-xs transition-[border-color,box-shadow]',
-                        'focus-within:border-ring focus-within:ring-ring/15 focus-within:ring-[2px]',
+                        'rounded-sm border border-input-soft bg-background px-3 pt-2 pb-1.5 transition-[border-color,box-shadow]',
+                        'hover:border-input focus-within:border-ring focus-within:ring-ring/15 focus-within:ring-[2px]',
                         error && 'border-destructive ring-destructive/20',
                     )}
                 >

@@ -11,6 +11,7 @@ import {
 import type { MouseEvent, TouchEvent, WheelEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { fieldSkinClass } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
@@ -237,8 +238,8 @@ export default function FinancialCategoryTreeSelect({
                     aria-required={required || undefined}
                     disabled={disabled}
                     className={cn(
-                        'flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-sm border border-input bg-input-surface px-3 py-2 text-left text-sm transition-[border-color,box-shadow]',
-                        'focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/15 focus-visible:outline-none aria-invalid:border-destructive',
+                        fieldSkinClass,
+                        'flex h-9 w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-left text-sm',
                         'disabled:cursor-not-allowed disabled:opacity-50',
                         className,
                     )}

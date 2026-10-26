@@ -6,6 +6,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { fieldSkinClass } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 type DatePickerProps = {
@@ -82,7 +83,8 @@ function DatePicker({
                     disabled={disabled}
                     aria-invalid={ariaInvalid}
                     className={cn(
-                        'h-10 w-full min-w-0 justify-start overflow-hidden text-left font-normal',
+                        fieldSkinClass,
+                        'h-9 w-full min-w-0 justify-start overflow-hidden text-left font-normal',
                         !selected && 'text-muted-foreground',
                         className,
                     )}

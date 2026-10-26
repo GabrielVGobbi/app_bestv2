@@ -210,8 +210,8 @@ function LockedSuffixLinkInput({
     return (
         <div
             className={cn(
-                'flex h-10 items-center gap-2 rounded-md border border-input bg-input-surface px-2 transition-[border-color,box-shadow,color]',
-                'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+                'flex h-9 items-center gap-2 rounded-sm border border-input-soft bg-input-surface px-2 transition-[border-color,box-shadow,color]',
+                'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/15 hover:border-input',
                 invalid && 'border-destructive ring-destructive/20',
                 disabled && 'opacity-75',
             )}

@@ -260,7 +260,8 @@ class TokenUsageTest extends TestCase
         $this->assertFileDoesNotExist(self::root().'resources/js/components/ui/select.tsx', 'Um Select só: o do Fluid');
         $select = file_get_contents(self::root().'resources/js/components/ui/fluid/select.tsx');
 
-        $this->assertStringContainsString('border-input', $select, 'Borda de campo (3:1 no escuro) no Select do Fluid');
+        $this->assertStringContainsString('border-input-soft', $select, 'Borda de campo em repouso no Select do Fluid');
+        $this->assertStringContainsString('hover:border-input', $select, 'Borda de campo 3:1 no hover do Select do Fluid');
     }
 
     public function test_field_errors_use_small_soft_destructive_text_with_a_decorative_icon(): void
